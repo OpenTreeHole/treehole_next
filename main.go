@@ -3,7 +3,7 @@ package main
 import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
-	"log"
+	"treehole_next/config"
 )
 
 // @title Tree Hole
@@ -27,5 +27,10 @@ func main() {
 	RegisterRoutes(app)
 	app.Use(logger.New())
 
-	log.Fatal(app.Listen("0.0.0.0:8000"))
+	config.InitConfig()
+
+	err := app.Listen("0.0.0.0:8000")
+	if err != nil {
+		panic(err)
+	}
 }
