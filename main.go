@@ -2,8 +2,8 @@ package main
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/logger"
 	"treehole_next/config"
+	"treehole_next/middlewares"
 )
 
 // @title Tree Hole
@@ -24,8 +24,9 @@ import (
 // @name Authorization
 func main() {
 	app := fiber.New()
+
+	middlewares.RegisterMiddlewares(app)
 	RegisterRoutes(app)
-	app.Use(logger.New())
 
 	config.InitConfig()
 
