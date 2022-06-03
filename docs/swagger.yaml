@@ -1,0 +1,33 @@
+basePath: /
+definitions:
+  utils.MessageModel:
+    properties:
+      message:
+        type: string
+    type: object
+info:
+  contact:
+    email: hasbai@fduhole.com
+    name: Maintainer Shi Yue
+  description: A anonymous bbs
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: Tree Hole
+  version: 2.0.0
+paths:
+  /:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.MessageModel'
+securityDefinitions:
+  ApiKeyAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
