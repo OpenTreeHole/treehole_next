@@ -2,8 +2,10 @@ package main
 
 import (
 	"github.com/gofiber/fiber/v2"
+	"treehole_next/apis"
 	"treehole_next/config"
 	"treehole_next/middlewares"
+	"treehole_next/utils"
 )
 
 // @title Tree Hole
@@ -23,12 +25,14 @@ import (
 // @in header
 // @name Authorization
 func main() {
-	app := fiber.New()
-
-	middlewares.RegisterMiddlewares(app)
-	RegisterRoutes(app)
-
 	config.InitConfig()
+	initDB()
+
+	app := fiber.New(fiber.Config{
+		ErrorHandler: utils.MyErrorHandler,
+	})
+	middlewares.RegisterMiddlewares(app)
+	apis.RegisterRoutes(app)
 
 	err := app.Listen("0.0.0.0:8000")
 	if err != nil {

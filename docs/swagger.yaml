@@ -1,5 +1,30 @@
 basePath: /
 definitions:
+  division.AddDivisionModel:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+    type: object
+  division.Division:
+    properties:
+      createdAt:
+        type: string
+      description:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      pinned:
+        description: pinned holes in given order
+        items:
+          type: integer
+        type: array
+      updatedAt:
+        type: string
+    type: object
   utils.MessageModel:
     properties:
       message:
@@ -25,6 +50,66 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/utils.MessageModel'
+  /divisions:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/division.Division'
+            type: array
+      summary: List Divisions
+      tags:
+      - Division
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: json
+        in: body
+        name: json
+        required: true
+        schema:
+          $ref: '#/definitions/division.AddDivisionModel'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/division.Division'
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/division.Division'
+      summary: Add A Division
+      tags:
+      - Division
+  /divisions/{id}:
+    get:
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/division.Division'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.MessageModel'
+      summary: Get Division
+      tags:
+      - Division
 securityDefinitions:
   ApiKeyAuth:
     in: header
