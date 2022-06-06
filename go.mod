@@ -6,6 +6,9 @@ require (
 	github.com/gofiber/fiber/v2 v2.34.0
 	github.com/swaggo/fiber-swagger v1.2.1
 	github.com/swaggo/swag v1.8.2
+	gorm.io/driver/mysql v1.3.4
+	gorm.io/driver/sqlite v1.3.2
+	gorm.io/gorm v1.23.5
 )
 
 require (
@@ -30,7 +33,4 @@ require (
 	golang.org/x/sys v0.0.0-20220520151302-bc2c85ada10a // indirect
 	golang.org/x/tools v0.1.10 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	gorm.io/driver/mysql v1.3.4 // indirect
-	gorm.io/driver/sqlite v1.3.2 // indirect
-	gorm.io/gorm v1.23.5 // indirect
 )

@@ -53,7 +53,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/division.Division"
+                                "$ref": "#/definitions/models.Division"
                             }
                         }
                     }
@@ -77,7 +77,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/division.AddDivisionModel"
+                            "$ref": "#/definitions/models.AddDivisionModel"
                         }
                     }
                 ],
@@ -85,13 +85,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/division.Division"
+                            "$ref": "#/definitions/models.Division"
                         }
                     },
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/division.Division"
+                            "$ref": "#/definitions/models.Division"
                         }
                     }
                 }
@@ -119,7 +119,90 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/division.Division"
+                            "$ref": "#/definitions/models.Division"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/utils.MessageModel"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Division"
+                ],
+                "summary": "Modify A Division",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "json",
+                        "name": "json",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.ModifyDivisionModel"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Division"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/utils.MessageModel"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a division and move all of its holes to another given division",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Division"
+                ],
+                "summary": "Delete A Division",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "json",
+                        "name": "json",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.DeleteDivisionModel"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Division"
                         }
                     },
                     "404": {
@@ -133,7 +216,7 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "division.AddDivisionModel": {
+        "models.AddDivisionModel": {
             "type": "object",
             "properties": {
                 "description": {
@@ -144,7 +227,16 @@ const docTemplate = `{
                 }
             }
         },
-        "division.Division": {
+        "models.DeleteDivisionModel": {
+            "type": "object",
+            "properties": {
+                "to": {
+                    "description": "ID of the target division that move all the deleted division's holes to\ndefault to 1",
+                    "type": "integer"
+                }
+            }
+        },
+        "models.Division": {
             "type": "object",
             "properties": {
                 "createdAt": {
@@ -168,6 +260,23 @@ const docTemplate = `{
                 },
                 "updatedAt": {
                     "type": "string"
+                }
+            }
+        },
+        "models.ModifyDivisionModel": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "pinned": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
                 }
             }
         },

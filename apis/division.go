@@ -1,8 +1,8 @@
-package division
+package apis
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"treehole_next/db"
+	. "treehole_next/models"
 )
 
 // AddDivision
@@ -19,7 +19,7 @@ func AddDivision(c *fiber.Ctx) error {
 	if err := c.BodyParser(&division); err != nil {
 		return err
 	}
-	result := db.DB.Where(&Division{Name: division.Name}).FirstOrCreate(&division)
+	result := DB.Where("name = ?", division.Name).FirstOrCreate(&division)
 	if result.RowsAffected == 0 {
 		c.Status(200)
 	} else {
@@ -36,7 +36,7 @@ func AddDivision(c *fiber.Ctx) error {
 // @Success 200 {array} Division
 func ListDivisions(c *fiber.Ctx) error {
 	var divisions []Division
-	db.DB.Find(&divisions)
+	DB.Find(&divisions)
 	return c.JSON(divisions)
 }
 
@@ -51,8 +51,35 @@ func ListDivisions(c *fiber.Ctx) error {
 func GetDivision(c *fiber.Ctx) error {
 	id, _ := c.ParamsInt("id")
 	var division Division
-	if result := db.DB.First(&division, id); result.Error != nil {
+	if result := DB.First(&division, id); result.Error != nil {
 		return result.Error
 	}
 	return c.JSON(division)
+}
+
+// ModifyDivision
+// @Summary Modify A Division
+// @Tags Division
+// @Produce application/json
+// @Router /divisions/{id} [put]
+// @Param id path int true "id"
+// @Param json body ModifyDivisionModel true "json"
+// @Success 200 {object} Division
+// @Failure 404 {object} utils.MessageModel
+func ModifyDivision(c *fiber.Ctx) error {
+	return nil
+}
+
+// DeleteDivision
+// @Summary Delete A Division
+// @Description Delete a division and move all of its holes to another given division
+// @Tags Division
+// @Produce application/json
+// @Router /divisions/{id} [delete]
+// @Param id path int true "id"
+// @Param json body DeleteDivisionModel true "json"
+// @Success 200 {object} Division
+// @Failure 404 {object} utils.MessageModel
+func DeleteDivision(c *fiber.Ctx) error {
+	return nil
 }

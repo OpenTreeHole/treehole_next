@@ -5,6 +5,7 @@ import (
 	"treehole_next/apis"
 	"treehole_next/config"
 	"treehole_next/middlewares"
+	"treehole_next/models"
 	"treehole_next/utils"
 )
 
@@ -26,7 +27,7 @@ import (
 // @name Authorization
 func main() {
 	config.InitConfig()
-	initDB()
+	models.InitDB()
 
 	app := fiber.New(fiber.Config{
 		ErrorHandler: utils.MyErrorHandler,

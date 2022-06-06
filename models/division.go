@@ -1,32 +1,30 @@
-package division
+package models
 
 import (
-	"database/sql/driver"
-	"encoding/json"
 	"gorm.io/gorm"
-	"treehole_next/db"
 )
 
+type DeleteDivisionModel struct {
+	// ID of the target division that move all the deleted division's holes to
+	// default to 1
+	To int `json:"to"`
+}
+
 type AddDivisionModel struct {
-	Name        string `json:"name"`
+	Name        string `json:"name" gorm:"unique" `
 	Description string `json:"description"`
 }
 
+type ModifyDivisionModel struct {
+	AddDivisionModel
+	Pinned IntArray `json:"pinned"     `
+}
+
 type Division struct {
-	db.BaseModel
+	BaseModel
 	Name        string   `json:"name" gorm:"unique" `
 	Description string   `json:"description"`
-	Pinned      intArray `json:"pinned"     ` // pinned holes in given order
-}
-
-type intArray []int
-
-func (p intArray) Value() (driver.Value, error) {
-	return json.Marshal(p)
-}
-
-func (p *intArray) Scan(data interface{}) error {
-	return json.Unmarshal(data.([]byte), &p)
+	Pinned      IntArray `json:"pinned"     ` // pinned holes in given order
 }
 
 // AfterFind set default pinned as []

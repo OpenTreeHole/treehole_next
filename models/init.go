@@ -1,10 +1,11 @@
-package db
+package models
 
 import (
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/schema"
+	"os"
 	"treehole_next/config"
 )
 
@@ -18,10 +19,25 @@ var gormConfig = &gorm.Config{
 func InitDB() {
 	var err error
 	if config.Config.Debug {
-		DB, err = gorm.Open(sqlite.Open("db/sqlite.db"), gormConfig)
+		err = os.MkdirAll("data", 0750)
+		if err != nil {
+			panic(err)
+		}
+		DB, err = gorm.Open(sqlite.Open("data/sqlite.db"), gormConfig)
 	} else {
 		DB, err = gorm.Open(mysql.Open(config.Config.DbUrl), gormConfig)
 	}
+	if err != nil {
+		panic(err)
+	}
+	err = DB.AutoMigrate(
+		&Division{},
+		&Tag{},
+		&Hole{},
+		&Floor{},
+		&FloorHistory{},
+		&User{},
+	)
 	if err != nil {
 		panic(err)
 	}

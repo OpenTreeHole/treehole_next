@@ -1,13 +1,21 @@
 basePath: /
 definitions:
-  division.AddDivisionModel:
+  models.AddDivisionModel:
     properties:
       description:
         type: string
       name:
         type: string
     type: object
-  division.Division:
+  models.DeleteDivisionModel:
+    properties:
+      to:
+        description: |-
+          ID of the target division that move all the deleted division's holes to
+          default to 1
+        type: integer
+    type: object
+  models.Division:
     properties:
       createdAt:
         type: string
@@ -24,6 +32,17 @@ definitions:
         type: array
       updatedAt:
         type: string
+    type: object
+  models.ModifyDivisionModel:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+      pinned:
+        items:
+          type: integer
+        type: array
     type: object
   utils.MessageModel:
     properties:
@@ -59,7 +78,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/division.Division'
+              $ref: '#/definitions/models.Division'
             type: array
       summary: List Divisions
       tags:
@@ -73,22 +92,50 @@ paths:
         name: json
         required: true
         schema:
-          $ref: '#/definitions/division.AddDivisionModel'
+          $ref: '#/definitions/models.AddDivisionModel'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/division.Division'
+            $ref: '#/definitions/models.Division'
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/division.Division'
+            $ref: '#/definitions/models.Division'
       summary: Add A Division
       tags:
       - Division
   /divisions/{id}:
+    delete:
+      description: Delete a division and move all of its holes to another given division
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: json
+        in: body
+        name: json
+        required: true
+        schema:
+          $ref: '#/definitions/models.DeleteDivisionModel'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Division'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.MessageModel'
+      summary: Delete A Division
+      tags:
+      - Division
     get:
       parameters:
       - description: id
@@ -102,12 +149,39 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/division.Division'
+            $ref: '#/definitions/models.Division'
         "404":
           description: Not Found
           schema:
             $ref: '#/definitions/utils.MessageModel'
       summary: Get Division
+      tags:
+      - Division
+    put:
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: json
+        in: body
+        name: json
+        required: true
+        schema:
+          $ref: '#/definitions/models.ModifyDivisionModel'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Division'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.MessageModel'
+      summary: Modify A Division
       tags:
       - Division
 securityDefinitions:
