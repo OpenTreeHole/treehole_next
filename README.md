@@ -49,5 +49,5 @@ This project exists thanks to all the people who contribute.
 
 ## Licence
 
-[![license](https://img.shields.io/github/license/OpenTreeHole/treehole_next)](https://github.com/OpenTreeHole/treehole_next/blob/dev/LICENSE)
+[![license](https://img.shields.io/github/license/OpenTreeHole/treehole_next)](https://github.com/OpenTreeHole/treehole_next/blob/master/LICENSE)
 © OpenTreeHole
