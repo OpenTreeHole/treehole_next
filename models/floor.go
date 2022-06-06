@@ -29,6 +29,7 @@ type Floor struct {
 type FloorHistory struct {
 	BaseModel
 	Content string `json:"content,omitempty"`
+	Reason  string `json:"reason,omitempty"`
 	FloorID int    `json:"floor_id,omitempty"`
-	UserID  int    `json:"user_id,omitempty"`
+	UserID  int    `json:"user_id,omitempty"` // The one who modified the floor
 }

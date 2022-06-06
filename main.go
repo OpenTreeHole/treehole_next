@@ -9,9 +9,9 @@ import (
 	"treehole_next/utils"
 )
 
-// @title Tree Hole
+// @title Open Tree Hole
 // @version 2.0.0
-// @description A anonymous bbs
+// @description An Anonymous BBS \n Note: PUT methods are used to PARTLY update, and we don't use PATCH method.
 
 // @contact.name Maintainer Shi Yue
 // @contact.email hasbai@fduhole.com

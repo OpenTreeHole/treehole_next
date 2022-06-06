@@ -1,3 +1,4 @@
+// Package models contains database models
 package models
 
 import (
@@ -8,8 +9,8 @@ import (
 
 type BaseModel struct {
 	ID        int       `gorm:"primarykey" json:"id"`
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
+	CreatedAt time.Time `json:"time_created"`
+	UpdatedAt time.Time `json:"time_updated"`
 }
 
 type IntArray []int

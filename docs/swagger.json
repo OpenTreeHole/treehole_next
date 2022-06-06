@@ -1,8 +1,8 @@
 {
     "swagger": "2.0",
     "info": {
-        "description": "A anonymous bbs",
-        "title": "Tree Hole",
+        "description": "An Anonymous BBS \\n Note: PUT methods are used to PARTLY update, and we don't use PATCH method.",
+        "title": "Open Tree Hole",
         "contact": {
             "name": "Maintainer Shi Yue",
             "email": "hasbai@fduhole.com"
@@ -38,14 +38,14 @@
                 "tags": [
                     "Division"
                 ],
-                "summary": "List Divisions",
+                "summary": "List All Divisions",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/models.Division"
+                                "$ref": "#/definitions/schemas.DivisionResponse"
                             }
                         }
                     }
@@ -69,7 +69,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.AddDivisionModel"
+                            "$ref": "#/definitions/schemas.AddDivisionModel"
                         }
                     }
                 ],
@@ -77,13 +77,108 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.Division"
+                            "$ref": "#/definitions/schemas.DivisionResponse"
                         }
                     },
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/models.Division"
+                            "$ref": "#/definitions/schemas.DivisionResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/divisions/{division_id}/holes": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Hole"
+                ],
+                "summary": "List Holes In A Division",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "division_id",
+                        "name": "division_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "default": true,
+                        "description": "Is descending order",
+                        "name": "desc",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "default": "0",
+                        "description": "Either a time (ISO formatted) or an int\nIf a time, order by updated time (for created time, ordering by id is better)\nOtherwise, the int is passed after sql \"offset\"",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "default": "id",
+                        "description": "Now only supports id",
+                        "name": "order_by",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "length of object array",
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Hole"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a hole, create tags and floor binding to it and set the name mapping",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Hole"
+                ],
+                "summary": "Create A Hole",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "division id",
+                        "name": "division_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "json",
+                        "name": "json",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schemas.CreateHole"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/models.Hole"
                         }
                     }
                 }
@@ -111,7 +206,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.Division"
+                            "$ref": "#/definitions/schemas.DivisionResponse"
                         }
                     },
                     "404": {
@@ -144,7 +239,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.ModifyDivisionModel"
+                            "$ref": "#/definitions/schemas.ModifyDivisionModel"
                         }
                     }
                 ],
@@ -152,7 +247,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.Division"
+                            "$ref": "#/definitions/schemas.DivisionResponse"
                         }
                     },
                     "404": {
@@ -186,7 +281,80 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.DeleteDivisionModel"
+                            "$ref": "#/definitions/schemas.DeleteDivisionModel"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": ""
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/utils.MessageModel"
+                        }
+                    }
+                }
+            }
+        },
+        "/floors": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Floor"
+                ],
+                "summary": "Old API for Listing Floors",
+                "deprecated": true,
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "name": "hole_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "name": "length",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 0,
+                        "name": "start_floor",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Floor"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Floor"
+                ],
+                "summary": "Create A Floor",
+                "parameters": [
+                    {
+                        "description": "json",
+                        "name": "json",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schemas.CreateFloor"
                         }
                     }
                 ],
@@ -194,7 +362,114 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.Division"
+                            "$ref": "#/definitions/models.Floor"
+                        }
+                    },
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/models.Floor"
+                        }
+                    }
+                }
+            }
+        },
+        "/floors/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Floor"
+                ],
+                "summary": "Get A Floor",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Floor"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/utils.MessageModel"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Floor"
+                ],
+                "summary": "Modify A Floor",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "json",
+                        "name": "json",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ModifyFloor"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Floor"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/utils.MessageModel"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Floor"
+                ],
+                "summary": "Delete A Floor",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Floor"
                         }
                     },
                     "404": {
@@ -205,10 +480,606 @@
                     }
                 }
             }
+        },
+        "/holes": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Hole"
+                ],
+                "summary": "Old API for Listing Holes",
+                "deprecated": true,
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "name": "division_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "name": "length",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "name": "start_time",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "name": "tag",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Hole"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Hole"
+                ],
+                "summary": "Old API for Creating A Hole",
+                "deprecated": true,
+                "parameters": [
+                    {
+                        "description": "json",
+                        "name": "json",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schemas.CreateHoleOld"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/models.Hole"
+                        }
+                    }
+                }
+            }
+        },
+        "/holes/{hole_id}/floors": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Floor"
+                ],
+                "summary": "List Floors In A Hole",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "hole id",
+                        "name": "hole_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "default": true,
+                        "description": "Is descending order",
+                        "name": "desc",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "default": "0",
+                        "description": "Either a time (ISO formatted) or an int\nIf a time, order by updated time (for created time, ordering by id is better)\nOtherwise, the int is passed after sql \"offset\"",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "default": "id",
+                        "description": "Now only supports id",
+                        "name": "order_by",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "length of object array",
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Floor"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/holes/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Hole"
+                ],
+                "summary": "Get A Hole",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Hole"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/utils.MessageModel"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Hole"
+                ],
+                "summary": "Modify A Hole",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "json",
+                        "name": "json",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ModifyHole"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Hole"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/utils.MessageModel"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Hide a hole, but visible to admins. This may affect many floors, DO NOT ABUSE!!!",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Hole"
+                ],
+                "summary": "Delete A Hole",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": ""
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/utils.MessageModel"
+                        }
+                    }
+                }
+            }
+        },
+        "/tags": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Tag"
+                ],
+                "summary": "List All Tags",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Tag"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Tag"
+                ],
+                "summary": "Create A Tag",
+                "parameters": [
+                    {
+                        "description": "json",
+                        "name": "json",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schemas.CreateTag"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Tag"
+                        }
+                    },
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/models.Tag"
+                        }
+                    }
+                }
+            }
+        },
+        "/tags/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Tag"
+                ],
+                "summary": "Get A Tag",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Tag"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/utils.MessageModel"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Tag"
+                ],
+                "summary": "Modify A Tag",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "json",
+                        "name": "json",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ModifyTag"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Tag"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/utils.MessageModel"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a tag and link all of its holes to another given tag",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Tag"
+                ],
+                "summary": "Delete A Tag",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "json",
+                        "name": "json",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schemas.DeleteTag"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Tag"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/utils.MessageModel"
+                        }
+                    }
+                }
+            }
+        },
+        "/tags/{tag_name}/holes": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Hole"
+                ],
+                "summary": "List Holes By Tag",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "tag_name",
+                        "name": "tag_name",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "default": true,
+                        "description": "Is descending order",
+                        "name": "desc",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "default": "0",
+                        "description": "Either a time (ISO formatted) or an int\nIf a time, order by updated time (for created time, ordering by id is better)\nOtherwise, the int is passed after sql \"offset\"",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "default": "id",
+                        "description": "Now only supports id",
+                        "name": "order_by",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "length of object array",
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Hole"
+                            }
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
-        "models.AddDivisionModel": {
+        "models.Floor": {
+            "type": "object",
+            "properties": {
+                "anonyname": {
+                    "type": "string"
+                },
+                "content": {
+                    "type": "string"
+                },
+                "deleted": {
+                    "type": "boolean"
+                },
+                "fold": {
+                    "description": "fold reason",
+                    "type": "string"
+                },
+                "hole_id": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "like": {
+                    "description": "like - dislike",
+                    "type": "integer"
+                },
+                "mention": {
+                    "description": "Many to many mentions (in different holes)",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Floor"
+                    }
+                },
+                "reply_to": {
+                    "description": "Floor id that it replies to (must be in the same hole)",
+                    "type": "integer"
+                },
+                "special_tag": {
+                    "description": "Additional info",
+                    "type": "string"
+                },
+                "storey": {
+                    "description": "The sequence of the root nodes",
+                    "type": "integer"
+                },
+                "time_created": {
+                    "type": "string"
+                },
+                "time_updated": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.Hole": {
+            "type": "object",
+            "properties": {
+                "division_id": {
+                    "type": "integer"
+                },
+                "floors": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Floor"
+                    }
+                },
+                "hidden": {
+                    "type": "boolean"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "mapping": {
+                    "$ref": "#/definitions/models.IntStringMap"
+                },
+                "reply": {
+                    "type": "integer"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Tag"
+                    }
+                },
+                "time_created": {
+                    "type": "string"
+                },
+                "time_updated": {
+                    "type": "string"
+                },
+                "view": {
+                    "type": "integer"
+                }
+            }
+        },
+        "models.IntStringMap": {
+            "type": "object",
+            "additionalProperties": {
+                "type": "string"
+            }
+        },
+        "models.Tag": {
+            "type": "object",
+            "properties": {
+                "holes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Hole"
+                    }
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "temperature": {
+                    "type": "integer"
+                },
+                "time_created": {
+                    "type": "string"
+                },
+                "time_updated": {
+                    "type": "string"
+                }
+            }
+        },
+        "schemas.AddDivisionModel": {
             "type": "object",
             "properties": {
                 "description": {
@@ -219,21 +1090,86 @@
                 }
             }
         },
-        "models.DeleteDivisionModel": {
+        "schemas.CreateFloor": {
             "type": "object",
             "properties": {
-                "to": {
-                    "description": "ID of the target division that move all the deleted division's holes to\ndefault to 1",
-                    "type": "integer"
+                "content": {
+                    "description": "Owner or admin, if it's modified or deleted, the original content should be moved to  floor_history",
+                    "type": "string"
+                },
+                "special_tag": {
+                    "description": "Admin only",
+                    "type": "string"
                 }
             }
         },
-        "models.Division": {
+        "schemas.CreateHole": {
             "type": "object",
             "properties": {
-                "createdAt": {
+                "content": {
+                    "description": "Owner or admin, if it's modified or deleted, the original content should be moved to  floor_history",
                     "type": "string"
                 },
+                "special_tag": {
+                    "description": "Admin only",
+                    "type": "string"
+                },
+                "tags": {
+                    "$ref": "#/definitions/schemas.tags"
+                }
+            }
+        },
+        "schemas.CreateHoleOld": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "description": "Owner or admin, if it's modified or deleted, the original content should be moved to  floor_history",
+                    "type": "string"
+                },
+                "division_id": {
+                    "description": "Admin only",
+                    "type": "integer"
+                },
+                "special_tag": {
+                    "description": "Admin only",
+                    "type": "string"
+                },
+                "tags": {
+                    "$ref": "#/definitions/schemas.tags"
+                }
+            }
+        },
+        "schemas.CreateTag": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "description": "Admin only",
+                    "type": "string"
+                }
+            }
+        },
+        "schemas.DeleteDivisionModel": {
+            "type": "object",
+            "properties": {
+                "to": {
+                    "description": "Admin only\nID of the target division that all the deleted division's holes will be moved to",
+                    "type": "integer",
+                    "default": 1
+                }
+            }
+        },
+        "schemas.DeleteTag": {
+            "type": "object",
+            "properties": {
+                "to": {
+                    "description": "Admin only\nName of the target tag that all the deleted tag's holes will be connected to",
+                    "type": "string"
+                }
+            }
+        },
+        "schemas.DivisionResponse": {
+            "type": "object",
+            "properties": {
                 "description": {
                     "type": "string"
                 },
@@ -244,18 +1180,20 @@
                     "type": "string"
                 },
                 "pinned": {
-                    "description": "pinned holes in given order",
                     "type": "array",
                     "items": {
-                        "type": "integer"
+                        "$ref": "#/definitions/models.Hole"
                     }
                 },
-                "updatedAt": {
+                "time_created": {
+                    "type": "string"
+                },
+                "time_updated": {
                     "type": "string"
                 }
             }
         },
-        "models.ModifyDivisionModel": {
+        "schemas.ModifyDivisionModel": {
             "type": "object",
             "properties": {
                 "description": {
@@ -268,6 +1206,72 @@
                     "type": "array",
                     "items": {
                         "type": "integer"
+                    }
+                }
+            }
+        },
+        "schemas.ModifyFloor": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "description": "Owner or admin, if it's modified or deleted, the original content should be moved to  floor_history",
+                    "type": "string"
+                },
+                "fold": {
+                    "description": "Admin only",
+                    "type": "string"
+                },
+                "like": {
+                    "description": "To be compatible with the deprecated API, \"add\" is like, \"cancel\" is reset",
+                    "type": "string"
+                },
+                "like_int": {
+                    "description": "All users, 1 is like, -1 is dislike, 0 is reset",
+                    "type": "integer"
+                },
+                "special_tag": {
+                    "description": "Admin only",
+                    "type": "string"
+                }
+            }
+        },
+        "schemas.ModifyHole": {
+            "type": "object",
+            "properties": {
+                "division_id": {
+                    "description": "Admin only",
+                    "type": "integer"
+                },
+                "tags": {
+                    "description": "All users",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/schemas.CreateTag"
+                    }
+                }
+            }
+        },
+        "schemas.ModifyTag": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "description": "Admin only",
+                    "type": "string"
+                },
+                "temperature": {
+                    "description": "Admin only",
+                    "type": "integer"
+                }
+            }
+        },
+        "schemas.tags": {
+            "type": "object",
+            "properties": {
+                "tags": {
+                    "description": "All users",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/schemas.CreateTag"
                     }
                 }
             }

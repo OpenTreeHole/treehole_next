@@ -11,9 +11,9 @@ import (
 // @Accept application/json
 // @Produce application/json
 // @Router /divisions [post]
-// @Param json body AddDivisionModel true "json"
-// @Success 201 {object} Division
-// @Success 200 {object} Division
+// @Param json body schemas.AddDivisionModel true "json"
+// @Success 201 {object} schemas.DivisionResponse
+// @Success 200 {object} schemas.DivisionResponse
 func AddDivision(c *fiber.Ctx) error {
 	var division Division
 	if err := c.BodyParser(&division); err != nil {
@@ -29,11 +29,11 @@ func AddDivision(c *fiber.Ctx) error {
 }
 
 // ListDivisions
-// @Summary List Divisions
+// @Summary List All Divisions
 // @Tags Division
 // @Produce application/json
 // @Router /divisions [get]
-// @Success 200 {array} Division
+// @Success 200 {array} schemas.DivisionResponse
 func ListDivisions(c *fiber.Ctx) error {
 	var divisions []Division
 	DB.Find(&divisions)
@@ -46,7 +46,7 @@ func ListDivisions(c *fiber.Ctx) error {
 // @Produce application/json
 // @Router /divisions/{id} [get]
 // @Param id path int true "id"
-// @Success 200 {object} Division
+// @Success 200 {object} schemas.DivisionResponse
 // @Failure 404 {object} utils.MessageModel
 func GetDivision(c *fiber.Ctx) error {
 	id, _ := c.ParamsInt("id")
@@ -63,8 +63,8 @@ func GetDivision(c *fiber.Ctx) error {
 // @Produce application/json
 // @Router /divisions/{id} [put]
 // @Param id path int true "id"
-// @Param json body ModifyDivisionModel true "json"
-// @Success 200 {object} Division
+// @Param json body schemas.ModifyDivisionModel true "json"
+// @Success 200 {object} schemas.DivisionResponse
 // @Failure 404 {object} utils.MessageModel
 func ModifyDivision(c *fiber.Ctx) error {
 	return nil
@@ -77,8 +77,8 @@ func ModifyDivision(c *fiber.Ctx) error {
 // @Produce application/json
 // @Router /divisions/{id} [delete]
 // @Param id path int true "id"
-// @Param json body DeleteDivisionModel true "json"
-// @Success 200 {object} Division
+// @Param json body schemas.DeleteDivisionModel true "json"
+// @Success 204
 // @Failure 404 {object} utils.MessageModel
 func DeleteDivision(c *fiber.Ctx) error {
 	return nil

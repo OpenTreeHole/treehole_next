@@ -1,24 +1,159 @@
 basePath: /
 definitions:
-  models.AddDivisionModel:
+  models.Floor:
+    properties:
+      anonyname:
+        type: string
+      content:
+        type: string
+      deleted:
+        type: boolean
+      fold:
+        description: fold reason
+        type: string
+      hole_id:
+        type: integer
+      id:
+        type: integer
+      like:
+        description: like - dislike
+        type: integer
+      mention:
+        description: Many to many mentions (in different holes)
+        items:
+          $ref: '#/definitions/models.Floor'
+        type: array
+      reply_to:
+        description: Floor id that it replies to (must be in the same hole)
+        type: integer
+      special_tag:
+        description: Additional info
+        type: string
+      storey:
+        description: The sequence of the root nodes
+        type: integer
+      time_created:
+        type: string
+      time_updated:
+        type: string
+    type: object
+  models.Hole:
+    properties:
+      division_id:
+        type: integer
+      floors:
+        items:
+          $ref: '#/definitions/models.Floor'
+        type: array
+      hidden:
+        type: boolean
+      id:
+        type: integer
+      mapping:
+        $ref: '#/definitions/models.IntStringMap'
+      reply:
+        type: integer
+      tags:
+        items:
+          $ref: '#/definitions/models.Tag'
+        type: array
+      time_created:
+        type: string
+      time_updated:
+        type: string
+      view:
+        type: integer
+    type: object
+  models.IntStringMap:
+    additionalProperties:
+      type: string
+    type: object
+  models.Tag:
+    properties:
+      holes:
+        items:
+          $ref: '#/definitions/models.Hole'
+        type: array
+      id:
+        type: integer
+      name:
+        type: string
+      temperature:
+        type: integer
+      time_created:
+        type: string
+      time_updated:
+        type: string
+    type: object
+  schemas.AddDivisionModel:
     properties:
       description:
         type: string
       name:
         type: string
     type: object
-  models.DeleteDivisionModel:
+  schemas.CreateFloor:
+    properties:
+      content:
+        description: Owner or admin, if it's modified or deleted, the original content
+          should be moved to  floor_history
+        type: string
+      special_tag:
+        description: Admin only
+        type: string
+    type: object
+  schemas.CreateHole:
+    properties:
+      content:
+        description: Owner or admin, if it's modified or deleted, the original content
+          should be moved to  floor_history
+        type: string
+      special_tag:
+        description: Admin only
+        type: string
+      tags:
+        $ref: '#/definitions/schemas.tags'
+    type: object
+  schemas.CreateHoleOld:
+    properties:
+      content:
+        description: Owner or admin, if it's modified or deleted, the original content
+          should be moved to  floor_history
+        type: string
+      division_id:
+        description: Admin only
+        type: integer
+      special_tag:
+        description: Admin only
+        type: string
+      tags:
+        $ref: '#/definitions/schemas.tags'
+    type: object
+  schemas.CreateTag:
+    properties:
+      name:
+        description: Admin only
+        type: string
+    type: object
+  schemas.DeleteDivisionModel:
+    properties:
+      to:
+        default: 1
+        description: |-
+          Admin only
+          ID of the target division that all the deleted division's holes will be moved to
+        type: integer
+    type: object
+  schemas.DeleteTag:
     properties:
       to:
         description: |-
-          ID of the target division that move all the deleted division's holes to
-          default to 1
-        type: integer
-    type: object
-  models.Division:
-    properties:
-      createdAt:
+          Admin only
+          Name of the target tag that all the deleted tag's holes will be connected to
         type: string
+    type: object
+  schemas.DivisionResponse:
+    properties:
       description:
         type: string
       id:
@@ -26,14 +161,15 @@ definitions:
       name:
         type: string
       pinned:
-        description: pinned holes in given order
         items:
-          type: integer
+          $ref: '#/definitions/models.Hole'
         type: array
-      updatedAt:
+      time_created:
+        type: string
+      time_updated:
         type: string
     type: object
-  models.ModifyDivisionModel:
+  schemas.ModifyDivisionModel:
     properties:
       description:
         type: string
@@ -42,6 +178,54 @@ definitions:
       pinned:
         items:
           type: integer
+        type: array
+    type: object
+  schemas.ModifyFloor:
+    properties:
+      content:
+        description: Owner or admin, if it's modified or deleted, the original content
+          should be moved to  floor_history
+        type: string
+      fold:
+        description: Admin only
+        type: string
+      like:
+        description: To be compatible with the deprecated API, "add" is like, "cancel"
+          is reset
+        type: string
+      like_int:
+        description: All users, 1 is like, -1 is dislike, 0 is reset
+        type: integer
+      special_tag:
+        description: Admin only
+        type: string
+    type: object
+  schemas.ModifyHole:
+    properties:
+      division_id:
+        description: Admin only
+        type: integer
+      tags:
+        description: All users
+        items:
+          $ref: '#/definitions/schemas.CreateTag'
+        type: array
+    type: object
+  schemas.ModifyTag:
+    properties:
+      name:
+        description: Admin only
+        type: string
+      temperature:
+        description: Admin only
+        type: integer
+    type: object
+  schemas.tags:
+    properties:
+      tags:
+        description: All users
+        items:
+          $ref: '#/definitions/schemas.CreateTag'
         type: array
     type: object
   utils.MessageModel:
@@ -53,11 +237,12 @@ info:
   contact:
     email: hasbai@fduhole.com
     name: Maintainer Shi Yue
-  description: A anonymous bbs
+  description: 'An Anonymous BBS \n Note: PUT methods are used to PARTLY update, and
+    we don''t use PATCH method.'
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
-  title: Tree Hole
+  title: Open Tree Hole
   version: 2.0.0
 paths:
   /:
@@ -78,9 +263,9 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/models.Division'
+              $ref: '#/definitions/schemas.DivisionResponse'
             type: array
-      summary: List Divisions
+      summary: List All Divisions
       tags:
       - Division
     post:
@@ -92,21 +277,89 @@ paths:
         name: json
         required: true
         schema:
-          $ref: '#/definitions/models.AddDivisionModel'
+          $ref: '#/definitions/schemas.AddDivisionModel'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.Division'
+            $ref: '#/definitions/schemas.DivisionResponse'
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/models.Division'
+            $ref: '#/definitions/schemas.DivisionResponse'
       summary: Add A Division
       tags:
       - Division
+  /divisions/{division_id}/holes:
+    get:
+      parameters:
+      - description: division_id
+        in: path
+        name: division_id
+        required: true
+        type: integer
+      - default: true
+        description: Is descending order
+        in: query
+        name: desc
+        type: boolean
+      - default: "0"
+        description: |-
+          Either a time (ISO formatted) or an int
+          If a time, order by updated time (for created time, ordering by id is better)
+          Otherwise, the int is passed after sql "offset"
+        in: query
+        name: offset
+        type: string
+      - default: id
+        description: Now only supports id
+        in: query
+        name: order_by
+        type: string
+      - default: 10
+        description: length of object array
+        in: query
+        name: size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Hole'
+            type: array
+      summary: List Holes In A Division
+      tags:
+      - Hole
+    post:
+      description: Create a hole, create tags and floor binding to it and set the
+        name mapping
+      parameters:
+      - description: division id
+        in: path
+        name: division_id
+        required: true
+        type: integer
+      - description: json
+        in: body
+        name: json
+        required: true
+        schema:
+          $ref: '#/definitions/schemas.CreateHole'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Hole'
+      summary: Create A Hole
+      tags:
+      - Hole
   /divisions/{id}:
     delete:
       description: Delete a division and move all of its holes to another given division
@@ -121,14 +374,12 @@ paths:
         name: json
         required: true
         schema:
-          $ref: '#/definitions/models.DeleteDivisionModel'
+          $ref: '#/definitions/schemas.DeleteDivisionModel'
       produces:
       - application/json
       responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/models.Division'
+        "204":
+          description: ""
         "404":
           description: Not Found
           schema:
@@ -149,7 +400,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.Division'
+            $ref: '#/definitions/schemas.DivisionResponse'
         "404":
           description: Not Found
           schema:
@@ -169,14 +420,14 @@ paths:
         name: json
         required: true
         schema:
-          $ref: '#/definitions/models.ModifyDivisionModel'
+          $ref: '#/definitions/schemas.ModifyDivisionModel'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.Division'
+            $ref: '#/definitions/schemas.DivisionResponse'
         "404":
           description: Not Found
           schema:
@@ -184,6 +435,441 @@ paths:
       summary: Modify A Division
       tags:
       - Division
+  /floors:
+    get:
+      deprecated: true
+      parameters:
+      - in: query
+        name: hole_id
+        type: integer
+      - default: 20
+        in: query
+        name: length
+        type: integer
+      - default: 0
+        in: query
+        name: start_floor
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Floor'
+            type: array
+      summary: Old API for Listing Floors
+      tags:
+      - Floor
+    post:
+      parameters:
+      - description: json
+        in: body
+        name: json
+        required: true
+        schema:
+          $ref: '#/definitions/schemas.CreateFloor'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Floor'
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Floor'
+      summary: Create A Floor
+      tags:
+      - Floor
+  /floors/{id}:
+    delete:
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Floor'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.MessageModel'
+      summary: Delete A Floor
+      tags:
+      - Floor
+    get:
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Floor'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.MessageModel'
+      summary: Get A Floor
+      tags:
+      - Floor
+    put:
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: json
+        in: body
+        name: json
+        required: true
+        schema:
+          $ref: '#/definitions/schemas.ModifyFloor'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Floor'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.MessageModel'
+      summary: Modify A Floor
+      tags:
+      - Floor
+  /holes:
+    get:
+      deprecated: true
+      parameters:
+      - in: query
+        name: division_id
+        type: integer
+      - in: query
+        name: length
+        type: integer
+      - in: query
+        name: start_time
+        type: string
+      - in: query
+        name: tag
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Hole'
+            type: array
+      summary: Old API for Listing Holes
+      tags:
+      - Hole
+    post:
+      deprecated: true
+      parameters:
+      - description: json
+        in: body
+        name: json
+        required: true
+        schema:
+          $ref: '#/definitions/schemas.CreateHoleOld'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Hole'
+      summary: Old API for Creating A Hole
+      tags:
+      - Hole
+  /holes/{hole_id}/floors:
+    get:
+      parameters:
+      - description: hole id
+        in: path
+        name: hole_id
+        required: true
+        type: integer
+      - default: true
+        description: Is descending order
+        in: query
+        name: desc
+        type: boolean
+      - default: "0"
+        description: |-
+          Either a time (ISO formatted) or an int
+          If a time, order by updated time (for created time, ordering by id is better)
+          Otherwise, the int is passed after sql "offset"
+        in: query
+        name: offset
+        type: string
+      - default: id
+        description: Now only supports id
+        in: query
+        name: order_by
+        type: string
+      - default: 10
+        description: length of object array
+        in: query
+        name: size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Floor'
+            type: array
+      summary: List Floors In A Hole
+      tags:
+      - Floor
+  /holes/{id}:
+    delete:
+      description: Hide a hole, but visible to admins. This may affect many floors,
+        DO NOT ABUSE!!!
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: ""
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.MessageModel'
+      summary: Delete A Hole
+      tags:
+      - Hole
+    get:
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Hole'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.MessageModel'
+      summary: Get A Hole
+      tags:
+      - Hole
+    put:
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: json
+        in: body
+        name: json
+        required: true
+        schema:
+          $ref: '#/definitions/schemas.ModifyHole'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Hole'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.MessageModel'
+      summary: Modify A Hole
+      tags:
+      - Hole
+  /tags:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Tag'
+            type: array
+      summary: List All Tags
+      tags:
+      - Tag
+    post:
+      parameters:
+      - description: json
+        in: body
+        name: json
+        required: true
+        schema:
+          $ref: '#/definitions/schemas.CreateTag'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Tag'
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Tag'
+      summary: Create A Tag
+      tags:
+      - Tag
+  /tags/{id}:
+    delete:
+      description: Delete a tag and link all of its holes to another given tag
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: json
+        in: body
+        name: json
+        required: true
+        schema:
+          $ref: '#/definitions/schemas.DeleteTag'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Tag'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.MessageModel'
+      summary: Delete A Tag
+      tags:
+      - Tag
+    get:
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Tag'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.MessageModel'
+      summary: Get A Tag
+      tags:
+      - Tag
+    put:
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: json
+        in: body
+        name: json
+        required: true
+        schema:
+          $ref: '#/definitions/schemas.ModifyTag'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Tag'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.MessageModel'
+      summary: Modify A Tag
+      tags:
+      - Tag
+  /tags/{tag_name}/holes:
+    get:
+      parameters:
+      - description: tag_name
+        in: path
+        name: tag_name
+        required: true
+        type: string
+      - default: true
+        description: Is descending order
+        in: query
+        name: desc
+        type: boolean
+      - default: "0"
+        description: |-
+          Either a time (ISO formatted) or an int
+          If a time, order by updated time (for created time, ordering by id is better)
+          Otherwise, the int is passed after sql "offset"
+        in: query
+        name: offset
+        type: string
+      - default: id
+        description: Now only supports id
+        in: query
+        name: order_by
+        type: string
+      - default: 10
+        description: length of object array
+        in: query
+        name: size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Hole'
+            type: array
+      summary: List Holes By Tag
+      tags:
+      - Hole
 securityDefinitions:
   ApiKeyAuth:
     in: header
