@@ -354,7 +354,8 @@ const docTemplate = `{
                 "tags": [
                     "Floor"
                 ],
-                "summary": "Create A Floor",
+                "summary": "Old API for Creating A Floor",
+                "deprecated": true,
                 "parameters": [
                     {
                         "description": "json",
@@ -362,17 +363,11 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/schemas.CreateFloor"
+                            "$ref": "#/definitions/schemas.CreateFloorOld"
                         }
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/models.Floor"
-                        }
-                    },
                     "201": {
                         "description": "Created",
                         "schema": {
@@ -617,6 +612,41 @@ const docTemplate = `{
                             "items": {
                                 "$ref": "#/definitions/models.Floor"
                             }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Floor"
+                ],
+                "summary": "Create A Floor",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "hole id",
+                        "name": "hole_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "json",
+                        "name": "json",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schemas.CreateFloor"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/models.Floor"
                         }
                     }
                 }
@@ -1104,6 +1134,22 @@ const docTemplate = `{
                 "content": {
                     "description": "Owner or admin, if it's modified or deleted, the original content should be moved to  floor_history",
                     "type": "string"
+                },
+                "special_tag": {
+                    "description": "Admin only",
+                    "type": "string"
+                }
+            }
+        },
+        "schemas.CreateFloorOld": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "description": "Owner or admin, if it's modified or deleted, the original content should be moved to  floor_history",
+                    "type": "string"
+                },
+                "hole_id": {
+                    "type": "integer"
                 },
                 "special_tag": {
                     "description": "Admin only",

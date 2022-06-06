@@ -47,11 +47,23 @@ func GetFloor(c *fiber.Ctx) error {
 // @Summary Create A Floor
 // @Tags Floor
 // @Produce application/json
-// @Router /floors [post]
+// @Router /holes/{hole_id}/floors [post]
+// @Param hole_id path int true "hole id"
 // @Param json body schemas.CreateFloor true "json"
-// @Success 200 {object} Floor
 // @Success 201 {object} Floor
 func CreateFloor(c *fiber.Ctx) error {
+	return nil
+}
+
+// CreateFloorOld
+// @Summary Old API for Creating A Floor
+// @Deprecated
+// @Tags Floor
+// @Produce application/json
+// @Router /floors [post]
+// @Param json body schemas.CreateFloorOld true "json"
+// @Success 201 {object} Floor
+func CreateFloorOld(c *fiber.Ctx) error {
 	return nil
 }
 

@@ -102,6 +102,18 @@ definitions:
         description: Admin only
         type: string
     type: object
+  schemas.CreateFloorOld:
+    properties:
+      content:
+        description: Owner or admin, if it's modified or deleted, the original content
+          should be moved to  floor_history
+        type: string
+      hole_id:
+        type: integer
+      special_tag:
+        description: Admin only
+        type: string
+    type: object
   schemas.CreateHole:
     properties:
       content:
@@ -463,25 +475,22 @@ paths:
       tags:
       - Floor
     post:
+      deprecated: true
       parameters:
       - description: json
         in: body
         name: json
         required: true
         schema:
-          $ref: '#/definitions/schemas.CreateFloor'
+          $ref: '#/definitions/schemas.CreateFloorOld'
       produces:
       - application/json
       responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/models.Floor'
         "201":
           description: Created
           schema:
             $ref: '#/definitions/models.Floor'
-      summary: Create A Floor
+      summary: Old API for Creating A Floor
       tags:
       - Floor
   /floors/{id}:
@@ -642,6 +651,29 @@ paths:
               $ref: '#/definitions/models.Floor'
             type: array
       summary: List Floors In A Hole
+      tags:
+      - Floor
+    post:
+      parameters:
+      - description: hole id
+        in: path
+        name: hole_id
+        required: true
+        type: integer
+      - description: json
+        in: body
+        name: json
+        required: true
+        schema:
+          $ref: '#/definitions/schemas.CreateFloor'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Floor'
+      summary: Create A Floor
       tags:
       - Floor
   /holes/{id}:
