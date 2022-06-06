@@ -36,7 +36,7 @@ For documentation, please open http://localhost:8000/docs after running app
 
 Feel free to dive in! [Open an issue](https://github.com/OpenTreeHole/treehole_next/issues/new) or [Submit PRs](https://github.com/OpenTreeHole/treehole_next/compare).
 
-We are now in rapid development, any contribution would be great help. 
+We are now in rapid development, any contribution would be of great help. 
 For the developing roadmap, please visit [this issue](https://github.com/OpenTreeHole/treehole_next/issues/1).
 
 ### Contributors
