@@ -18,12 +18,14 @@ var gormConfig = &gorm.Config{
 
 func InitDB() {
 	var err error
-	if config.Config.Debug {
+	if config.Config.Mode == "dev" {
 		err = os.MkdirAll("data", 0750)
 		if err != nil {
 			panic(err)
 		}
 		DB, err = gorm.Open(sqlite.Open("data/sqlite.db"), gormConfig)
+	} else if config.Config.Mode == "test" {
+		DB, err = gorm.Open(sqlite.Open("file::memory:?cache=shared"), gormConfig)
 	} else {
 		DB, err = gorm.Open(mysql.Open(config.Config.DbUrl), gormConfig)
 	}
