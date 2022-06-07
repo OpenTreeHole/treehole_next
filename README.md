@@ -12,6 +12,10 @@ To be done
 ```shell
 git clone https://github.com/OpenTreeHole/treehole_next.git
 cd treehole_next
+# install swag and generate docs
+go install github.com/swaggo/swag/cmd/swag@latest
+swag init --parseInternal --parseDepth 1 # to generate the latest docs, this should be run before compiling
+# build and run
 go build -o treehole.exe
 ./treehole.exe
 ```
@@ -44,7 +48,7 @@ For the developing roadmap, please visit [this issue](https://github.com/OpenTre
 This project exists thanks to all the people who contribute.
 
 <a href="https://github.com/OpenTreeHole/treehole_next/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=OpenTreeHole/treehole_next" />
+  <img src="https://contrib.rocks/image?repo=OpenTreeHole/treehole_next"  alt="contributors"/>
 </a>
 
 ## Licence
