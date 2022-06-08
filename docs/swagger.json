@@ -24,7 +24,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/utils.MessageModel"
+                            "$ref": "#/definitions/schemas.MessageModel"
                         }
                     }
                 }
@@ -45,7 +45,7 @@
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/schemas.DivisionResponse"
+                                "$ref": "#/definitions/models.DivisionResponse"
                             }
                         }
                     }
@@ -77,13 +77,13 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/schemas.DivisionResponse"
+                            "$ref": "#/definitions/models.DivisionResponse"
                         }
                     },
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/schemas.DivisionResponse"
+                            "$ref": "#/definitions/models.DivisionResponse"
                         }
                     }
                 }
@@ -206,13 +206,13 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/schemas.DivisionResponse"
+                            "$ref": "#/definitions/models.DivisionResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/utils.MessageModel"
+                            "$ref": "#/definitions/schemas.MessageModel"
                         }
                     }
                 }
@@ -247,13 +247,13 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/schemas.DivisionResponse"
+                            "$ref": "#/definitions/models.DivisionResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/utils.MessageModel"
+                            "$ref": "#/definitions/schemas.MessageModel"
                         }
                     }
                 }
@@ -292,7 +292,7 @@
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/utils.MessageModel"
+                            "$ref": "#/definitions/schemas.MessageModel"
                         }
                     }
                 }
@@ -397,7 +397,7 @@
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/utils.MessageModel"
+                            "$ref": "#/definitions/schemas.MessageModel"
                         }
                     }
                 }
@@ -438,7 +438,7 @@
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/utils.MessageModel"
+                            "$ref": "#/definitions/schemas.MessageModel"
                         }
                     }
                 }
@@ -470,7 +470,7 @@
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/utils.MessageModel"
+                            "$ref": "#/definitions/schemas.MessageModel"
                         }
                     }
                 }
@@ -672,7 +672,7 @@
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/utils.MessageModel"
+                            "$ref": "#/definitions/schemas.MessageModel"
                         }
                     }
                 }
@@ -713,7 +713,7 @@
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/utils.MessageModel"
+                            "$ref": "#/definitions/schemas.MessageModel"
                         }
                     }
                 }
@@ -743,7 +743,7 @@
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/utils.MessageModel"
+                            "$ref": "#/definitions/schemas.MessageModel"
                         }
                     }
                 }
@@ -833,7 +833,7 @@
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/utils.MessageModel"
+                            "$ref": "#/definitions/schemas.MessageModel"
                         }
                     }
                 }
@@ -874,7 +874,7 @@
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/utils.MessageModel"
+                            "$ref": "#/definitions/schemas.MessageModel"
                         }
                     }
                 }
@@ -916,7 +916,7 @@
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/utils.MessageModel"
+                            "$ref": "#/definitions/schemas.MessageModel"
                         }
                     }
                 }
@@ -983,6 +983,32 @@
         }
     },
     "definitions": {
+        "models.DivisionResponse": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "pinned": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Hole"
+                    }
+                },
+                "time_created": {
+                    "type": "string"
+                },
+                "time_updated": {
+                    "type": "string"
+                }
+            }
+        },
         "models.Floor": {
             "type": "object",
             "properties": {
@@ -1161,7 +1187,11 @@
                     "type": "string"
                 },
                 "tags": {
-                    "$ref": "#/definitions/schemas.tags"
+                    "description": "All users",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/schemas.CreateTag"
+                    }
                 }
             }
         },
@@ -1181,7 +1211,11 @@
                     "type": "string"
                 },
                 "tags": {
-                    "$ref": "#/definitions/schemas.tags"
+                    "description": "All users",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/schemas.CreateTag"
+                    }
                 }
             }
         },
@@ -1213,28 +1247,10 @@
                 }
             }
         },
-        "schemas.DivisionResponse": {
+        "schemas.MessageModel": {
             "type": "object",
             "properties": {
-                "description": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "pinned": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/models.Hole"
-                    }
-                },
-                "time_created": {
-                    "type": "string"
-                },
-                "time_updated": {
+                "message": {
                     "type": "string"
                 }
             }
@@ -1307,26 +1323,6 @@
                 "temperature": {
                     "description": "Admin only",
                     "type": "integer"
-                }
-            }
-        },
-        "schemas.tags": {
-            "type": "object",
-            "properties": {
-                "tags": {
-                    "description": "All users",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/schemas.CreateTag"
-                    }
-                }
-            }
-        },
-        "utils.MessageModel": {
-            "type": "object",
-            "properties": {
-                "message": {
-                    "type": "string"
                 }
             }
         }

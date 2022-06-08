@@ -19,7 +19,7 @@ type divisionID struct {
 
 type CreateHole struct {
 	CreateFloor
-	Tags tags
+	tags
 }
 
 type CreateHoleOld struct {

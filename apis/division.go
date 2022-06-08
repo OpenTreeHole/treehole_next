@@ -2,7 +2,10 @@ package apis
 
 import (
 	"github.com/gofiber/fiber/v2"
+	"gorm.io/gorm"
 	. "treehole_next/models"
+	"treehole_next/schemas"
+	. "treehole_next/utils"
 )
 
 // AddDivision
@@ -12,20 +15,23 @@ import (
 // @Produce application/json
 // @Router /divisions [post]
 // @Param json body schemas.AddDivisionModel true "json"
-// @Success 201 {object} schemas.DivisionResponse
-// @Success 200 {object} schemas.DivisionResponse
+// @Success 201 {object} models.DivisionResponse
+// @Success 200 {object} models.DivisionResponse
 func AddDivision(c *fiber.Ctx) error {
 	var division Division
-	if err := c.BodyParser(&division); err != nil {
+	var body schemas.AddDivisionModel
+	if err := c.BodyParser(&body); err != nil {
 		return err
 	}
-	result := DB.Where("name = ?", division.Name).FirstOrCreate(&division)
+	division.Name = body.Name
+	division.Description = body.Description
+	result := DB.Where("name = ?", body.Name).FirstOrCreate(&division)
 	if result.RowsAffected == 0 {
 		c.Status(200)
 	} else {
 		c.Status(201)
 	}
-	return c.JSON(division)
+	return Serialize(c, &division)
 }
 
 // ListDivisions
@@ -33,10 +39,16 @@ func AddDivision(c *fiber.Ctx) error {
 // @Tags Division
 // @Produce application/json
 // @Router /divisions [get]
-// @Success 200 {array} schemas.DivisionResponse
+// @Success 200 {array} models.DivisionResponse
 func ListDivisions(c *fiber.Ctx) error {
-	var divisions []Division
+	var divisions []*Division
 	DB.Find(&divisions)
+	for _, d := range divisions {
+		err := d.Preprocess()
+		if err != nil {
+			return err
+		}
+	}
 	return c.JSON(divisions)
 }
 
@@ -46,15 +58,15 @@ func ListDivisions(c *fiber.Ctx) error {
 // @Produce application/json
 // @Router /divisions/{id} [get]
 // @Param id path int true "id"
-// @Success 200 {object} schemas.DivisionResponse
-// @Failure 404 {object} utils.MessageModel
+// @Success 200 {object} models.DivisionResponse
+// @Failure 404 {object} schemas.MessageModel
 func GetDivision(c *fiber.Ctx) error {
 	id, _ := c.ParamsInt("id")
 	var division Division
 	if result := DB.First(&division, id); result.Error != nil {
 		return result.Error
 	}
-	return c.JSON(division)
+	return Serialize(c, &division)
 }
 
 // ModifyDivision
@@ -64,10 +76,24 @@ func GetDivision(c *fiber.Ctx) error {
 // @Router /divisions/{id} [put]
 // @Param id path int true "id"
 // @Param json body schemas.ModifyDivisionModel true "json"
-// @Success 200 {object} schemas.DivisionResponse
-// @Failure 404 {object} utils.MessageModel
+// @Success 200 {object} models.DivisionResponse
+// @Failure 404 {object} schemas.MessageModel
 func ModifyDivision(c *fiber.Ctx) error {
-	return nil
+	var division Division
+	var body schemas.ModifyDivisionModel
+	if err := c.BodyParser(&body); err != nil {
+		return err
+	}
+	id, _ := c.ParamsInt("id")
+	division.ID = id
+	division.Name = body.Name
+	division.Description = body.Description
+	division.Pinned = body.Pinned
+	result := DB.Model(&division).Updates(division)
+	if result.RowsAffected == 0 { // nothing updated, means that the record does not exist
+		return gorm.ErrRecordNotFound
+	}
+	return Serialize(c, &division)
 }
 
 // DeleteDivision
@@ -79,7 +105,20 @@ func ModifyDivision(c *fiber.Ctx) error {
 // @Param id path int true "id"
 // @Param json body schemas.DeleteDivisionModel true "json"
 // @Success 204
-// @Failure 404 {object} utils.MessageModel
+// @Failure 404 {object} schemas.MessageModel
 func DeleteDivision(c *fiber.Ctx) error {
-	return nil
+	id, _ := c.ParamsInt("id")
+	var body schemas.DeleteDivisionModel
+	if err := BindJSON(c, &body); err != nil {
+		return err
+	}
+	if body.To == 0 { // default 1
+		body.To = 1
+	}
+	if id == body.To {
+		return BadRequest("The deleted division can't be the same as to.")
+	}
+	DB.Exec("update hole set division_id = ? where division_id = ?", body.To, id)
+	DB.Delete(&Division{}, id)
+	return c.Status(204).JSON(nil)
 }

@@ -1,13 +1,6 @@
 package main
 
-import (
-	"github.com/gofiber/fiber/v2"
-	"treehole_next/apis"
-	"treehole_next/config"
-	"treehole_next/middlewares"
-	"treehole_next/models"
-	"treehole_next/utils"
-)
+import "treehole_next/bootstrap"
 
 // @title Open Tree Hole
 // @version 2.0.0
@@ -26,15 +19,7 @@ import (
 // @in header
 // @name Authorization
 func main() {
-	config.InitConfig()
-	models.InitDB()
-
-	app := fiber.New(fiber.Config{
-		ErrorHandler: utils.MyErrorHandler,
-	})
-	middlewares.RegisterMiddlewares(app)
-	apis.RegisterRoutes(app)
-
+	app := bootstrap.Init()
 	err := app.Listen("0.0.0.0:8000")
 	if err != nil {
 		panic(err)
