@@ -1,5 +1,22 @@
 basePath: /
 definitions:
+  models.DivisionResponse:
+    properties:
+      description:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      pinned:
+        items:
+          $ref: '#/definitions/models.Hole'
+        type: array
+      time_created:
+        type: string
+      time_updated:
+        type: string
+    type: object
   models.Floor:
     properties:
       anonyname:
@@ -170,21 +187,9 @@ definitions:
           Name of the target tag that all the deleted tag's holes will be connected to
         type: string
     type: object
-  schemas.DivisionResponse:
+  schemas.MessageModel:
     properties:
-      description:
-        type: string
-      id:
-        type: integer
-      name:
-        type: string
-      pinned:
-        items:
-          $ref: '#/definitions/models.Hole'
-        type: array
-      time_created:
-        type: string
-      time_updated:
+      message:
         type: string
     type: object
   schemas.ModifyDivisionModel:
@@ -238,11 +243,6 @@ definitions:
         description: Admin only
         type: integer
     type: object
-  utils.MessageModel:
-    properties:
-      message:
-        type: string
-    type: object
 info:
   contact:
     email: hasbai@fduhole.com
@@ -263,7 +263,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/utils.MessageModel'
+            $ref: '#/definitions/schemas.MessageModel'
   /divisions:
     get:
       produces:
@@ -273,7 +273,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/schemas.DivisionResponse'
+              $ref: '#/definitions/models.DivisionResponse'
             type: array
       summary: List All Divisions
       tags:
@@ -294,11 +294,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/schemas.DivisionResponse'
+            $ref: '#/definitions/models.DivisionResponse'
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/schemas.DivisionResponse'
+            $ref: '#/definitions/models.DivisionResponse'
       summary: Add A Division
       tags:
       - Division
@@ -393,7 +393,7 @@ paths:
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/utils.MessageModel'
+            $ref: '#/definitions/schemas.MessageModel'
       summary: Delete A Division
       tags:
       - Division
@@ -410,11 +410,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/schemas.DivisionResponse'
+            $ref: '#/definitions/models.DivisionResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/utils.MessageModel'
+            $ref: '#/definitions/schemas.MessageModel'
       summary: Get Division
       tags:
       - Division
@@ -437,11 +437,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/schemas.DivisionResponse'
+            $ref: '#/definitions/models.DivisionResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/utils.MessageModel'
+            $ref: '#/definitions/schemas.MessageModel'
       summary: Modify A Division
       tags:
       - Division
@@ -509,7 +509,7 @@ paths:
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/utils.MessageModel'
+            $ref: '#/definitions/schemas.MessageModel'
       summary: Delete A Floor
       tags:
       - Floor
@@ -530,7 +530,7 @@ paths:
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/utils.MessageModel'
+            $ref: '#/definitions/schemas.MessageModel'
       summary: Get A Floor
       tags:
       - Floor
@@ -557,7 +557,7 @@ paths:
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/utils.MessageModel'
+            $ref: '#/definitions/schemas.MessageModel'
       summary: Modify A Floor
       tags:
       - Floor
@@ -692,7 +692,7 @@ paths:
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/utils.MessageModel'
+            $ref: '#/definitions/schemas.MessageModel'
       summary: Delete A Hole
       tags:
       - Hole
@@ -713,7 +713,7 @@ paths:
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/utils.MessageModel'
+            $ref: '#/definitions/schemas.MessageModel'
       summary: Get A Hole
       tags:
       - Hole
@@ -740,7 +740,7 @@ paths:
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/utils.MessageModel'
+            $ref: '#/definitions/schemas.MessageModel'
       summary: Modify A Hole
       tags:
       - Hole
@@ -805,7 +805,7 @@ paths:
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/utils.MessageModel'
+            $ref: '#/definitions/schemas.MessageModel'
       summary: Delete A Tag
       tags:
       - Tag
@@ -826,7 +826,7 @@ paths:
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/utils.MessageModel'
+            $ref: '#/definitions/schemas.MessageModel'
       summary: Get A Tag
       tags:
       - Tag
@@ -853,7 +853,7 @@ paths:
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/utils.MessageModel'
+            $ref: '#/definitions/schemas.MessageModel'
       summary: Modify A Tag
       tags:
       - Tag

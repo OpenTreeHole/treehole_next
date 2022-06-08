@@ -6,7 +6,6 @@ import (
 	"strconv"
 	"testing"
 	. "treehole_next/models"
-	"treehole_next/schemas"
 )
 
 func init() {
@@ -35,7 +34,7 @@ func TestGetDivision(t *testing.T) {
 	d.Pinned = divisionPinned
 	DB.Save(&d)
 
-	var division schemas.DivisionResponse
+	var division DivisionResponse
 	testAPIModel(t, "get", "/divisions/1", 200, &division)
 	// test pinned order
 	respPinned := make([]int, 3)
@@ -68,7 +67,7 @@ func TestModifyDivision(t *testing.T) {
 	pinned := []int{3, 2, 5, 1, 4}
 	data := Map{"name": "modify", "description": "modify", "pinned": pinned}
 
-	var division schemas.DivisionResponse
+	var division DivisionResponse
 	testAPIModel(t, "put", "/divisions/1", 200, &division, data)
 
 	// test modify

@@ -10,7 +10,6 @@ import (
 	"testing"
 	"treehole_next/bootstrap"
 	. "treehole_next/models"
-	. "treehole_next/schemas"
 )
 
 type JsonData interface {
@@ -74,7 +73,7 @@ func testAPIArray(t *testing.T, method string, route string, statusCode int, dat
 	return testAPIGeneric[[]Map](t, method, route, statusCode, data...)
 }
 
-func testAPIModel[T ResponseModels](t *testing.T, method string, route string, statusCode int, obj *T, data ...Map) {
+func testAPIModel[T ResponseModelFull](t *testing.T, method string, route string, statusCode int, obj *T, data ...Map) {
 	responseBytes := testCommon(t, method, route, statusCode, data...)
 	err := json.Unmarshal(responseBytes, obj)
 	assert.Nilf(t, err, "unmarshal response")

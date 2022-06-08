@@ -25,3 +25,25 @@ func BindJSON(c *fiber.Ctx, obj interface{}) error {
 	}
 	return json.Unmarshal(body, obj)
 }
+
+type CanPreprocess interface {
+	Preprocess() error
+}
+
+func Serialize(c *fiber.Ctx, obj CanPreprocess) error {
+	err := obj.Preprocess()
+	if err != nil {
+		return err
+	}
+	return c.JSON(obj)
+}
+
+func SerializeArray(c *fiber.Ctx, obj []CanPreprocess) error {
+	for _, model := range obj {
+		err := model.Preprocess()
+		if err != nil {
+			return err
+		}
+	}
+	return c.JSON(obj)
+}

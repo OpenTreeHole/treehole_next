@@ -52,7 +52,7 @@ func ListHolesOld(c *fiber.Ctx) error {
 // @Router /holes/{id} [get]
 // @Param id path int true "id"
 // @Success 200 {object} Hole
-// @Failure 404 {object} utils.MessageModel
+// @Failure 404 {object} schemas.MessageModel
 func GetHole(c *fiber.Ctx) error {
 	return nil
 }
@@ -90,7 +90,7 @@ func CreateHoleOld(c *fiber.Ctx) error {
 // @Param id path int true "id"
 // @Param json body schemas.ModifyHole true "json"
 // @Success 200 {object} Hole
-// @Failure 404 {object} utils.MessageModel
+// @Failure 404 {object} schemas.MessageModel
 func ModifyHole(c *fiber.Ctx) error {
 	return nil
 }
@@ -103,7 +103,7 @@ func ModifyHole(c *fiber.Ctx) error {
 // @Router /holes/{id} [delete]
 // @Param id path int true "id"
 // @Success 204
-// @Failure 404 {object} utils.MessageModel
+// @Failure 404 {object} schemas.MessageModel
 func DeleteHole(c *fiber.Ctx) error {
 	return nil
 }

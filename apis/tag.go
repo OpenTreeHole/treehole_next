@@ -24,7 +24,7 @@ func ListTags(c *fiber.Ctx) error {
 // @Router /tags/{id} [get]
 // @Param id path int true "id"
 // @Success 200 {object} Tag
-// @Failure 404 {object} utils.MessageModel
+// @Failure 404 {object} schemas.MessageModel
 func GetTag(c *fiber.Ctx) error {
 	return nil
 }
@@ -49,7 +49,7 @@ func CreateTag(c *fiber.Ctx) error {
 // @Param id path int true "id"
 // @Param json body schemas.ModifyTag true "json"
 // @Success 200 {object} Tag
-// @Failure 404 {object} utils.MessageModel
+// @Failure 404 {object} schemas.MessageModel
 func ModifyTag(c *fiber.Ctx) error {
 	return nil
 }
@@ -63,7 +63,7 @@ func ModifyTag(c *fiber.Ctx) error {
 // @Param id path int true "id"
 // @Param json body schemas.DeleteTag true "json"
 // @Success 200 {object} Tag
-// @Failure 404 {object} utils.MessageModel
+// @Failure 404 {object} schemas.MessageModel
 func DeleteTag(c *fiber.Ctx) error {
 	return nil
 }

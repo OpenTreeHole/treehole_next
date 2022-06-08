@@ -1,59 +1,12 @@
 package apis
 
 import (
-	"encoding/json"
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
 	. "treehole_next/models"
 	"treehole_next/schemas"
 	. "treehole_next/utils"
 )
-
-func serializeDivision(c *fiber.Ctx, division *Division) error {
-	var divisionResponse schemas.DivisionResponse
-
-	// save division.Pinned and remove it to ensure conversion
-	var pinned []int = division.Pinned
-	division.Pinned = nil
-	// merge division into divisionResponse
-	data, err := json.Marshal(&division)
-	if err != nil {
-		return err
-	}
-	err = json.Unmarshal(data, &divisionResponse)
-	if err != nil {
-		return err
-	}
-
-	// set divisionResponse.Pinned
-	var holes []Hole
-	DB.Find(&holes, pinned)
-	orderedHoles := make([]Hole, 0, len(holes))
-	for _, order := range pinned {
-		// binary search the index
-		index := func(target int) int {
-			left := 0
-			right := len(holes)
-			for left < right {
-				mid := left + (right-left)>>1
-				if holes[mid].ID < target {
-					left = mid + 1
-				} else if holes[mid].ID > target {
-					right = mid
-				} else {
-					return mid
-				}
-			}
-			return -1
-		}(order)
-		if index >= 0 {
-			orderedHoles = append(orderedHoles, holes[index])
-		}
-	}
-	divisionResponse.Pinned = orderedHoles
-
-	return c.JSON(divisionResponse)
-}
 
 // AddDivision
 // @Summary Add A Division
@@ -62,20 +15,23 @@ func serializeDivision(c *fiber.Ctx, division *Division) error {
 // @Produce application/json
 // @Router /divisions [post]
 // @Param json body schemas.AddDivisionModel true "json"
-// @Success 201 {object} schemas.DivisionResponse
-// @Success 200 {object} schemas.DivisionResponse
+// @Success 201 {object} models.DivisionResponse
+// @Success 200 {object} models.DivisionResponse
 func AddDivision(c *fiber.Ctx) error {
 	var division Division
-	if err := c.BodyParser(&division); err != nil {
+	var body schemas.AddDivisionModel
+	if err := c.BodyParser(&body); err != nil {
 		return err
 	}
-	result := DB.Where("name = ?", division.Name).FirstOrCreate(&division)
+	division.Name = body.Name
+	division.Description = body.Description
+	result := DB.Where("name = ?", body.Name).FirstOrCreate(&division)
 	if result.RowsAffected == 0 {
 		c.Status(200)
 	} else {
 		c.Status(201)
 	}
-	return serializeDivision(c, &division)
+	return Serialize(c, &division)
 }
 
 // ListDivisions
@@ -83,10 +39,16 @@ func AddDivision(c *fiber.Ctx) error {
 // @Tags Division
 // @Produce application/json
 // @Router /divisions [get]
-// @Success 200 {array} schemas.DivisionResponse
+// @Success 200 {array} models.DivisionResponse
 func ListDivisions(c *fiber.Ctx) error {
-	var divisions []Division
+	var divisions []*Division
 	DB.Find(&divisions)
+	for _, d := range divisions {
+		err := d.Preprocess()
+		if err != nil {
+			return err
+		}
+	}
 	return c.JSON(divisions)
 }
 
@@ -96,7 +58,7 @@ func ListDivisions(c *fiber.Ctx) error {
 // @Produce application/json
 // @Router /divisions/{id} [get]
 // @Param id path int true "id"
-// @Success 200 {object} schemas.DivisionResponse
+// @Success 200 {object} models.DivisionResponse
 // @Failure 404 {object} schemas.MessageModel
 func GetDivision(c *fiber.Ctx) error {
 	id, _ := c.ParamsInt("id")
@@ -104,7 +66,7 @@ func GetDivision(c *fiber.Ctx) error {
 	if result := DB.First(&division, id); result.Error != nil {
 		return result.Error
 	}
-	return serializeDivision(c, &division)
+	return Serialize(c, &division)
 }
 
 // ModifyDivision
@@ -114,20 +76,24 @@ func GetDivision(c *fiber.Ctx) error {
 // @Router /divisions/{id} [put]
 // @Param id path int true "id"
 // @Param json body schemas.ModifyDivisionModel true "json"
-// @Success 200 {object} schemas.DivisionResponse
+// @Success 200 {object} models.DivisionResponse
 // @Failure 404 {object} schemas.MessageModel
 func ModifyDivision(c *fiber.Ctx) error {
 	var division Division
-	if err := c.BodyParser(&division); err != nil {
+	var body schemas.ModifyDivisionModel
+	if err := c.BodyParser(&body); err != nil {
 		return err
 	}
 	id, _ := c.ParamsInt("id")
 	division.ID = id
+	division.Name = body.Name
+	division.Description = body.Description
+	division.Pinned = body.Pinned
 	result := DB.Model(&division).Updates(division)
 	if result.RowsAffected == 0 { // nothing updated, means that the record does not exist
 		return gorm.ErrRecordNotFound
 	}
-	return serializeDivision(c, &division)
+	return Serialize(c, &division)
 }
 
 // DeleteDivision

@@ -32,7 +32,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/utils.MessageModel"
+                            "$ref": "#/definitions/schemas.MessageModel"
                         }
                     }
                 }
@@ -53,7 +53,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/schemas.DivisionResponse"
+                                "$ref": "#/definitions/models.DivisionResponse"
                             }
                         }
                     }
@@ -85,13 +85,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/schemas.DivisionResponse"
+                            "$ref": "#/definitions/models.DivisionResponse"
                         }
                     },
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/schemas.DivisionResponse"
+                            "$ref": "#/definitions/models.DivisionResponse"
                         }
                     }
                 }
@@ -214,13 +214,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/schemas.DivisionResponse"
+                            "$ref": "#/definitions/models.DivisionResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/utils.MessageModel"
+                            "$ref": "#/definitions/schemas.MessageModel"
                         }
                     }
                 }
@@ -255,13 +255,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/schemas.DivisionResponse"
+                            "$ref": "#/definitions/models.DivisionResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/utils.MessageModel"
+                            "$ref": "#/definitions/schemas.MessageModel"
                         }
                     }
                 }
@@ -300,7 +300,7 @@ const docTemplate = `{
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/utils.MessageModel"
+                            "$ref": "#/definitions/schemas.MessageModel"
                         }
                     }
                 }
@@ -405,7 +405,7 @@ const docTemplate = `{
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/utils.MessageModel"
+                            "$ref": "#/definitions/schemas.MessageModel"
                         }
                     }
                 }
@@ -446,7 +446,7 @@ const docTemplate = `{
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/utils.MessageModel"
+                            "$ref": "#/definitions/schemas.MessageModel"
                         }
                     }
                 }
@@ -478,7 +478,7 @@ const docTemplate = `{
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/utils.MessageModel"
+                            "$ref": "#/definitions/schemas.MessageModel"
                         }
                     }
                 }
@@ -680,7 +680,7 @@ const docTemplate = `{
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/utils.MessageModel"
+                            "$ref": "#/definitions/schemas.MessageModel"
                         }
                     }
                 }
@@ -721,7 +721,7 @@ const docTemplate = `{
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/utils.MessageModel"
+                            "$ref": "#/definitions/schemas.MessageModel"
                         }
                     }
                 }
@@ -751,7 +751,7 @@ const docTemplate = `{
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/utils.MessageModel"
+                            "$ref": "#/definitions/schemas.MessageModel"
                         }
                     }
                 }
@@ -841,7 +841,7 @@ const docTemplate = `{
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/utils.MessageModel"
+                            "$ref": "#/definitions/schemas.MessageModel"
                         }
                     }
                 }
@@ -882,7 +882,7 @@ const docTemplate = `{
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/utils.MessageModel"
+                            "$ref": "#/definitions/schemas.MessageModel"
                         }
                     }
                 }
@@ -924,7 +924,7 @@ const docTemplate = `{
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/utils.MessageModel"
+                            "$ref": "#/definitions/schemas.MessageModel"
                         }
                     }
                 }
@@ -991,6 +991,32 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "models.DivisionResponse": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "pinned": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Hole"
+                    }
+                },
+                "time_created": {
+                    "type": "string"
+                },
+                "time_updated": {
+                    "type": "string"
+                }
+            }
+        },
         "models.Floor": {
             "type": "object",
             "properties": {
@@ -1229,28 +1255,10 @@ const docTemplate = `{
                 }
             }
         },
-        "schemas.DivisionResponse": {
+        "schemas.MessageModel": {
             "type": "object",
             "properties": {
-                "description": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "pinned": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/models.Hole"
-                    }
-                },
-                "time_created": {
-                    "type": "string"
-                },
-                "time_updated": {
+                "message": {
                     "type": "string"
                 }
             }
@@ -1323,14 +1331,6 @@ const docTemplate = `{
                 "temperature": {
                     "description": "Admin only",
                     "type": "integer"
-                }
-            }
-        },
-        "utils.MessageModel": {
-            "type": "object",
-            "properties": {
-                "message": {
-                    "type": "string"
                 }
             }
         }

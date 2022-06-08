@@ -38,7 +38,7 @@ func ListFloorsOld(c *fiber.Ctx) error {
 // @Router /floors/{id} [get]
 // @Param id path int true "id"
 // @Success 200 {object} Floor
-// @Failure 404 {object} utils.MessageModel
+// @Failure 404 {object} schemas.MessageModel
 func GetFloor(c *fiber.Ctx) error {
 	return nil
 }
@@ -75,7 +75,7 @@ func CreateFloorOld(c *fiber.Ctx) error {
 // @Param id path int true "id"
 // @Param json body schemas.ModifyFloor true "json"
 // @Success 200 {object} Floor
-// @Failure 404 {object} utils.MessageModel
+// @Failure 404 {object} schemas.MessageModel
 func ModifyFloor(c *fiber.Ctx) error {
 	return nil
 }
@@ -87,7 +87,7 @@ func ModifyFloor(c *fiber.Ctx) error {
 // @Router /floors/{id} [delete]
 // @Param id path int true "id"
 // @Success 200 {object} Floor
-// @Failure 404 {object} utils.MessageModel
+// @Failure 404 {object} schemas.MessageModel
 func DeleteFloor(c *fiber.Ctx) error {
 	return nil
 }
