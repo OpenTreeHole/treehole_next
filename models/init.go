@@ -1,6 +1,7 @@
 package models
 
 import (
+	"fmt"
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -38,6 +39,7 @@ func InitDB() {
 		&FloorHistory{},
 		&User{},
 	)
+	fmt.Println("DatabaseInit()")
 	if err != nil {
 		panic(err)
 	}
