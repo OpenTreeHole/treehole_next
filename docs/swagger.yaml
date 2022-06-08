@@ -124,7 +124,10 @@ definitions:
         description: Admin only
         type: string
       tags:
-        $ref: '#/definitions/schemas.tags'
+        description: All users
+        items:
+          $ref: '#/definitions/schemas.CreateTag'
+        type: array
     type: object
   schemas.CreateHoleOld:
     properties:
@@ -139,7 +142,10 @@ definitions:
         description: Admin only
         type: string
       tags:
-        $ref: '#/definitions/schemas.tags'
+        description: All users
+        items:
+          $ref: '#/definitions/schemas.CreateTag'
+        type: array
     type: object
   schemas.CreateTag:
     properties:
@@ -231,14 +237,6 @@ definitions:
       temperature:
         description: Admin only
         type: integer
-    type: object
-  schemas.tags:
-    properties:
-      tags:
-        description: All users
-        items:
-          $ref: '#/definitions/schemas.CreateTag'
-        type: array
     type: object
   utils.MessageModel:
     properties:

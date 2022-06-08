@@ -23,3 +23,7 @@ type Query[Offset int | time.Time] struct {
 
 type QueryID = Query[int]
 type QueryTime = Query[time.Time]
+
+type MessageModel struct {
+	Message string `json:"message,omitempty"`
+}

@@ -1169,7 +1169,11 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "tags": {
-                    "$ref": "#/definitions/schemas.tags"
+                    "description": "All users",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/schemas.CreateTag"
+                    }
                 }
             }
         },
@@ -1189,7 +1193,11 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "tags": {
-                    "$ref": "#/definitions/schemas.tags"
+                    "description": "All users",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/schemas.CreateTag"
+                    }
                 }
             }
         },
@@ -1315,18 +1323,6 @@ const docTemplate = `{
                 "temperature": {
                     "description": "Admin only",
                     "type": "integer"
-                }
-            }
-        },
-        "schemas.tags": {
-            "type": "object",
-            "properties": {
-                "tags": {
-                    "description": "All users",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/schemas.CreateTag"
-                    }
                 }
             }
         },

@@ -7,6 +7,6 @@ import (
 )
 
 func RegisterMiddlewares(app *fiber.App) {
-	app.Use(logger.New())
 	app.Use(recover.New())
+	app.Use(logger.New())
 }
