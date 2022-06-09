@@ -1,7 +1,6 @@
 package tests
 
 import (
-	"fmt"
 	"strconv"
 	"testing"
 	. "treehole_next/models"
@@ -22,7 +21,6 @@ func TestGetTag(t *testing.T) {
 	tag := Tag{}
 	tag.ID = id
 	DB.First(&tag)
-	fmt.Println(tag)
 
 	var newTag Tag
 	testAPIModel(t, "get", "/tags/"+strconv.Itoa(id), 200, &newTag)
