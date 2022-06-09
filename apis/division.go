@@ -3,7 +3,7 @@ package apis
 import (
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
-	."treehole_next/models"
+	. "treehole_next/models"
 	"treehole_next/schemas"
 	. "treehole_next/utils"
 )
