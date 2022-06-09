@@ -61,6 +61,11 @@ func TestDeleteTag(t *testing.T) {
 	associationHolesLen := DB.Model(&tag).Association("Holes").Count()
 	assert.EqualValuesf(t, 4, associationHolesLen, "move holes")
 	assert.EqualValuesf(t, 39, tag.Temperature, "tag Temperature add")
+	tag = Tag{}
+	
+	if result := DB.First(&tag, id); result.Error != nil {
+		assert.Error(t, result.Error, "delete tags")
+	}
 
 	// Duplicated delete holes
 	testAPI(t, "delete", "/tags/"+strconv.Itoa(id), 404, data)

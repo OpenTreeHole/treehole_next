@@ -1,6 +1,7 @@
 package apis
 
 import (
+	"fmt"
 	. "treehole_next/models"
 	"treehole_next/schemas"
 
@@ -98,24 +99,35 @@ func DeleteTag(c *fiber.Ctx) error {
 	id, _ := c.ParamsInt("id")
 	var tag Tag
 	var newtag Tag
+	var body schemas.DeleteTag
 
 	if result := DB.First(&tag, id); result.Error != nil {
 		return result.Error
 	}
-	var body schemas.DeleteTag
 	if err := c.BodyParser(&body); err != nil {
 		return err
 	}
 
 	newtag.Name = body.To
-
 	if result := DB.Where("name = ?", newtag.Name).First(&newtag); result.Error != nil {
 		return result.Error
 	}
 
 	newtag.Temperature += tag.Temperature
-	DB.Exec("UPDATE hole_tags SET tag_id = ? WHERE `hole_tags`.`tag_id` = ?", newtag.ID, id, newtag.ID)
-	DB.Updates(&newtag)
-	DB.Delete(&tag)
+
+	updateCommand := fmt.Sprintf(`
+DELETE FROM hole_tags WHERE tag_id = %v AND hole_id IN
+(SELECT a.hole_id FROM
+(SELECT hole_id FROM hole_tags WHERE tag_id = %v)a);
+UPDATE hole_tags SET tag_id = %v WHERE tag_id = %v;`, id, newtag.ID, newtag.ID, id)
+	if result := DB.Exec(updateCommand); result.Error != nil {
+		return result.Error
+	}
+	if result := DB.Updates(&newtag); result.Error != nil {
+		return result.Error
+	}
+	if result := DB.Delete(&tag); result.Error != nil {
+		return result.Error
+	}
 	return c.JSON(&newtag)
 }

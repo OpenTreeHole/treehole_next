@@ -27,7 +27,7 @@ func init() {
 	tags[0].Holes = []*Hole{&holes[0], &holes[1], &holes[2]}
 	tags[0].Temperature = 5
 	tags[1].Holes = []*Hole{&holes[3]}
-	tags[2].Holes = []*Hole{&holes[4]}
+	tags[2].Holes = []*Hole{&holes[0], &holes[4]}
 	tags[2].Temperature = 25
 	tags[3].Holes = []*Hole{&holes[1], &holes[0], &holes[2]}
 	tags[4].Holes = []*Hole{&holes[2], &holes[3], &holes[4]}
