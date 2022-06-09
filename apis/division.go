@@ -3,7 +3,7 @@ package apis
 import (
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
-	. "treehole_next/models"
+	."treehole_next/models"
 	"treehole_next/schemas"
 	. "treehole_next/utils"
 )
@@ -118,7 +118,7 @@ func DeleteDivision(c *fiber.Ctx) error {
 	if id == body.To {
 		return BadRequest("The deleted division can't be the same as to.")
 	}
-	DB.Exec("update hole set division_id = ? where division_id = ?", body.To, id)
+	DB.Exec("UPDATE hole SET division_id = ? WHERE division_id = ?", body.To, id)
 	DB.Delete(&Division{}, id)
 	return c.Status(204).JSON(nil)
 }
