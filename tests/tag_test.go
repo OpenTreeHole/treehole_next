@@ -34,8 +34,7 @@ func TestCreateTag(t *testing.T) {
 	testAPI(t, "post", "/tags", 201, data)
 
 	// duplicate post, return 200 and change nothing
-	resp := testAPI(t, "post", "/tags", 200, data)
-	fmt.Println(resp)
+	testAPI(t, "post", "/tags", 200, data)
 }
 
 func TestModifyTag(t *testing.T) {
@@ -54,16 +53,17 @@ func TestDeleteTag(t *testing.T) {
 
 	// Move holes to existed tag
 	id := 1
-	data := Map{"to": "another"}
+	toName := "6"
+	data := Map{"to": toName}
 	testAPI(t, "delete", "/tags/"+strconv.Itoa(id), 200, data)
 	var tag Tag
-	DB.Where("name = ?", "another").First(&tag)
+	DB.Where("name = ?", toName).First(&tag)
 	associationHolesLen := DB.Model(&tag).Association("Holes").Count()
 	assert.EqualValuesf(t, 4, associationHolesLen, "move holes")
 	assert.EqualValuesf(t, 39, tag.Temperature, "tag Temperature add")
 	tag = Tag{}
 	
-	if result := DB.First(&tag, id); result.Error != nil {
+	if result := DB.First(&tag, id); result.Error == nil {
 		assert.Error(t, result.Error, "delete tags")
 	}
 

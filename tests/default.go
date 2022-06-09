@@ -2,37 +2,52 @@ package tests
 
 import (
 	"strconv"
-	"strings"
 	. "treehole_next/models"
 )
 
 var largeInt = 1145141919810
 
 func init() {
-	for i := 1; i <= 5; i++ {
-		division := Division{
-			Name:        strconv.Itoa(i),
-			Description: strconv.Itoa(i),
-		}
-		division.ID = i
-		DB.Create(&division)
+	divisionsSize := 5
+	holesSize := 5
+	tagsSize := 6
+
+	divisions := make([]Division, divisionsSize)
+	holes := make([]Hole, holesSize)
+	tags := make([]Tag, tagsSize)
+	hole_tags := [][]int{
+		{0, 1, 2},
+		{3},
+		{0, 4},
+		{1, 0, 2},
+		{2, 3, 4},
+		{0, 4},
+	} // int[tag_id][hole_id]
+
+	for i := 0; i < divisionsSize; i++ {
+		divisions[i].Name = strconv.Itoa(i + 1)
+		divisions[i].Description = strconv.Itoa(i + 1)
+		divisions[i].ID = i + 1
 	}
-	holes := make([]Hole, 5)
-	for i := 0; i < 5; i++ {
-		holes[i] = Hole{
-			DivisionID: 1,
+
+	for i := 0; i < holesSize; i++ {
+		holes[i].DivisionID = 1
+		holes[i].ID = i + 1
+	}
+
+	for i := 0; i < tagsSize; i++ {
+		tags[i].ID = i + 1
+		tags[i].Name = strconv.Itoa(i + 1)
+		for _, v := range hole_tags[i] {
+			tags[i].Holes = append(tags[i].Holes, &holes[v])
 		}
 	}
-	tags := make([]Tag, 5)
-	tags[0].Holes = []*Hole{&holes[0], &holes[1], &holes[2]}
+
 	tags[0].Temperature = 5
-	tags[1].Holes = []*Hole{&holes[3]}
-	tags[2].Holes = []*Hole{&holes[0], &holes[4]}
 	tags[2].Temperature = 25
-	tags[3].Holes = []*Hole{&holes[1], &holes[0], &holes[2]}
-	tags[4].Holes = []*Hole{&holes[2], &holes[3], &holes[4]}
-	for i := 0; i < 5; i++ {
-		tags[i].Name = strings.Repeat("i", i+1)
-	}
+	tags[5].Temperature = 34
+
+	DB.Create(&divisions)
 	DB.Create(&tags)
+	// when create tags, holes auto create 
 }

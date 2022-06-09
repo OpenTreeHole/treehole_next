@@ -1,9 +1,10 @@
 package apis
 
 import (
-	"fmt"
 	. "treehole_next/models"
 	"treehole_next/schemas"
+
+	"gorm.io/gorm"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -115,19 +116,35 @@ func DeleteTag(c *fiber.Ctx) error {
 
 	newtag.Temperature += tag.Temperature
 
-	updateCommand := fmt.Sprintf(`
-DELETE FROM hole_tags WHERE tag_id = %v AND hole_id IN
-(SELECT a.hole_id FROM
-(SELECT hole_id FROM hole_tags WHERE tag_id = %v)a);
-UPDATE hole_tags SET tag_id = %v WHERE tag_id = %v;`, id, newtag.ID, newtag.ID, id)
-	if result := DB.Exec(updateCommand); result.Error != nil {
-		return result.Error
-	}
-	if result := DB.Updates(&newtag); result.Error != nil {
-		return result.Error
-	}
-	if result := DB.Delete(&tag); result.Error != nil {
-		return result.Error
+	err := DB.Transaction(func(tx *gorm.DB) error {
+		result := tx.Exec(`
+			DELETE FROM hole_tags WHERE tag_id = ? AND hole_id IN
+				(SELECT a.hole_id FROM
+					(SELECT hole_id FROM hole_tags WHERE tag_id = ?)a
+			)`, id, newtag.ID)
+		if result.Error != nil {
+			return result.Error
+		}
+
+		result = tx.Exec(`UPDATE hole_tags SET tag_id = ? WHERE tag_id = ?`, newtag.ID, id)
+		if result.Error != nil {
+			return result.Error
+		}
+
+		result = tx.Updates(&newtag)
+		if result.Error != nil {
+			return result.Error
+		}
+
+		result = tx.Delete(&tag)
+		if result.Error != nil {
+			return result.Error
+		}
+
+		return nil
+	})
+	if err != nil {
+		return err
 	}
 	return c.JSON(&newtag)
 }
