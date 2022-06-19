@@ -15,8 +15,8 @@ import (
 // @Produce application/json
 // @Router /divisions [post]
 // @Param json body schemas.AddDivisionModel true "json"
-// @Success 201 {object} models.DivisionResponse
-// @Success 200 {object} models.DivisionResponse
+// @Success 201 {object} models.Division
+// @Success 200 {object} models.Division
 func AddDivision(c *fiber.Ctx) error {
 	var division Division
 	var body schemas.AddDivisionModel
@@ -39,7 +39,7 @@ func AddDivision(c *fiber.Ctx) error {
 // @Tags Division
 // @Produce application/json
 // @Router /divisions [get]
-// @Success 200 {array} models.DivisionResponse
+// @Success 200 {array} models.Division
 func ListDivisions(c *fiber.Ctx) error {
 	var divisions []*Division
 	DB.Find(&divisions)
@@ -58,7 +58,7 @@ func ListDivisions(c *fiber.Ctx) error {
 // @Produce application/json
 // @Router /divisions/{id} [get]
 // @Param id path int true "id"
-// @Success 200 {object} models.DivisionResponse
+// @Success 200 {object} models.Division
 // @Failure 404 {object} schemas.MessageModel
 func GetDivision(c *fiber.Ctx) error {
 	id, _ := c.ParamsInt("id")
@@ -76,7 +76,7 @@ func GetDivision(c *fiber.Ctx) error {
 // @Router /divisions/{id} [put]
 // @Param id path int true "id"
 // @Param json body schemas.ModifyDivisionModel true "json"
-// @Success 200 {object} models.DivisionResponse
+// @Success 200 {object} models.Division
 // @Failure 404 {object} schemas.MessageModel
 func ModifyDivision(c *fiber.Ctx) error {
 	var division Division

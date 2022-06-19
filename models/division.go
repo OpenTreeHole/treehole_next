@@ -1,12 +1,5 @@
 package models
 
-type DivisionResponse struct {
-	BaseModel
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Pinned      []Hole `json:"pinned"`
-}
-
 type Division struct {
 	BaseModel
 	Name        string   `json:"name" gorm:"unique" `

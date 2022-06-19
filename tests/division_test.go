@@ -34,11 +34,11 @@ func TestGetDivision(t *testing.T) {
 	d.Pinned = divisionPinned
 	DB.Save(&d)
 
-	var division DivisionResponse
+	var division Division
 	testAPIModel(t, "get", "/divisions/1", 200, &division)
 	// test pinned order
 	respPinned := make([]int, 3)
-	for i, p := range division.Pinned {
+	for i, p := range division.Holes {
 		respPinned[i] = p.ID
 	}
 	assert.Equal(t, []int{2, 3, 1}, respPinned)
@@ -67,7 +67,7 @@ func TestModifyDivision(t *testing.T) {
 	pinned := []int{3, 2, 5, 1, 4}
 	data := Map{"name": "modify", "description": "modify", "pinned": pinned}
 
-	var division DivisionResponse
+	var division Division
 	testAPIModel(t, "put", "/divisions/1", 200, &division, data)
 
 	// test modify
@@ -76,7 +76,7 @@ func TestModifyDivision(t *testing.T) {
 
 	// test pinned order
 	respPinned := make([]int, 5)
-	for i, d := range division.Pinned {
+	for i, d := range division.Holes {
 		respPinned[i] = d.ID
 	}
 	assert.Equal(t, pinned, respPinned)

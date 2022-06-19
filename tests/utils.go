@@ -73,7 +73,7 @@ func testAPIArray(t *testing.T, method string, route string, statusCode int, dat
 	return testAPIGeneric[[]Map](t, method, route, statusCode, data...)
 }
 
-func testAPIModel[T ResponseModelFull](t *testing.T, method string, route string, statusCode int, obj *T, data ...Map) {
+func testAPIModel[T Models](t *testing.T, method string, route string, statusCode int, obj *T, data ...Map) {
 	responseBytes := testCommon(t, method, route, statusCode, data...)
 	err := json.Unmarshal(responseBytes, obj)
 	assert.Nilf(t, err, "unmarshal response")
