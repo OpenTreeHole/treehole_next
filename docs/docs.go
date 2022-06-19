@@ -53,7 +53,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/models.DivisionResponse"
+                                "$ref": "#/definitions/models.Division"
                             }
                         }
                     }
@@ -85,13 +85,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.DivisionResponse"
+                            "$ref": "#/definitions/models.Division"
                         }
                     },
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/models.DivisionResponse"
+                            "$ref": "#/definitions/models.Division"
                         }
                     }
                 }
@@ -115,24 +115,9 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "type": "boolean",
-                        "default": true,
-                        "description": "Is descending order",
-                        "name": "desc",
-                        "in": "query"
-                    },
-                    {
                         "type": "string",
-                        "default": "0",
-                        "description": "Either a time (ISO formatted) or an int\nIf a time, order by updated time (for created time, ordering by id is better)\nOtherwise, the int is passed after sql \"offset\"",
+                        "description": "query updated time earlier than offset (for created time, ordering by id is better)",
                         "name": "offset",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "default": "id",
-                        "description": "Now only supports id",
-                        "name": "order_by",
                         "in": "query"
                     },
                     {
@@ -214,7 +199,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.DivisionResponse"
+                            "$ref": "#/definitions/models.Division"
                         }
                     },
                     "404": {
@@ -255,7 +240,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.DivisionResponse"
+                            "$ref": "#/definitions/models.Division"
                         }
                     },
                     "404": {
@@ -585,7 +570,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "default": "0",
-                        "description": "Either a time (ISO formatted) or an int\nIf a time, order by updated time (for created time, ordering by id is better)\nOtherwise, the int is passed after sql \"offset\"",
+                        "description": "If a time, order by updated time (for created time, ordering by id is better)\nOtherwise, the int is passed after sql \"offset\"",
                         "name": "offset",
                         "in": "query"
                     },
@@ -948,24 +933,9 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "type": "boolean",
-                        "default": true,
-                        "description": "Is descending order",
-                        "name": "desc",
-                        "in": "query"
-                    },
-                    {
                         "type": "string",
-                        "default": "0",
-                        "description": "Either a time (ISO formatted) or an int\nIf a time, order by updated time (for created time, ordering by id is better)\nOtherwise, the int is passed after sql \"offset\"",
+                        "description": "query updated time earlier than offset (for created time, ordering by id is better)",
                         "name": "offset",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "default": "id",
-                        "description": "Now only supports id",
-                        "name": "order_by",
                         "in": "query"
                     },
                     {
@@ -991,7 +961,7 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "models.DivisionResponse": {
+        "models.Division": {
             "type": "object",
             "properties": {
                 "description": {
@@ -1077,19 +1047,14 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "floors": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/models.Floor"
-                    }
+                    "description": "return floors",
+                    "$ref": "#/definitions/models.HoleFloor"
                 },
                 "hidden": {
                     "type": "boolean"
                 },
                 "id": {
                     "type": "integer"
-                },
-                "mapping": {
-                    "$ref": "#/definitions/models.IntStringMap"
                 },
                 "reply": {
                     "type": "integer"
@@ -1111,10 +1076,21 @@ const docTemplate = `{
                 }
             }
         },
-        "models.IntStringMap": {
+        "models.HoleFloor": {
             "type": "object",
-            "additionalProperties": {
-                "type": "string"
+            "properties": {
+                "first_floor": {
+                    "$ref": "#/definitions/models.Floor"
+                },
+                "floors": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Floor"
+                    }
+                },
+                "last_floor": {
+                    "$ref": "#/definitions/models.Floor"
+                }
             }
         },
         "models.Tag": {

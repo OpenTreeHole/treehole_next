@@ -37,13 +37,3 @@ func Serialize(c *fiber.Ctx, obj CanPreprocess) error {
 	}
 	return c.JSON(obj)
 }
-
-func SerializeArray(c *fiber.Ctx, obj []CanPreprocess) error {
-	for _, model := range obj {
-		err := model.Preprocess()
-		if err != nil {
-			return err
-		}
-	}
-	return c.JSON(obj)
-}

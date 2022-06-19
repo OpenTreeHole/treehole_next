@@ -1,6 +1,6 @@
 basePath: /
 definitions:
-  models.DivisionResponse:
+  models.Division:
     properties:
       description:
         type: string
@@ -59,15 +59,12 @@ definitions:
       division_id:
         type: integer
       floors:
-        items:
-          $ref: '#/definitions/models.Floor'
-        type: array
+        $ref: '#/definitions/models.HoleFloor'
+        description: return floors
       hidden:
         type: boolean
       id:
         type: integer
-      mapping:
-        $ref: '#/definitions/models.IntStringMap'
       reply:
         type: integer
       tags:
@@ -81,9 +78,16 @@ definitions:
       view:
         type: integer
     type: object
-  models.IntStringMap:
-    additionalProperties:
-      type: string
+  models.HoleFloor:
+    properties:
+      first_floor:
+        $ref: '#/definitions/models.Floor'
+      floors:
+        items:
+          $ref: '#/definitions/models.Floor'
+        type: array
+      last_floor:
+        $ref: '#/definitions/models.Floor'
     type: object
   models.Tag:
     properties:
@@ -273,7 +277,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/models.DivisionResponse'
+              $ref: '#/definitions/models.Division'
             type: array
       summary: List All Divisions
       tags:
@@ -294,11 +298,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.DivisionResponse'
+            $ref: '#/definitions/models.Division'
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/models.DivisionResponse'
+            $ref: '#/definitions/models.Division'
       summary: Add A Division
       tags:
       - Division
@@ -310,23 +314,10 @@ paths:
         name: division_id
         required: true
         type: integer
-      - default: true
-        description: Is descending order
-        in: query
-        name: desc
-        type: boolean
-      - default: "0"
-        description: |-
-          Either a time (ISO formatted) or an int
-          If a time, order by updated time (for created time, ordering by id is better)
-          Otherwise, the int is passed after sql "offset"
+      - description: query updated time earlier than offset (for created time, ordering
+          by id is better)
         in: query
         name: offset
-        type: string
-      - default: id
-        description: Now only supports id
-        in: query
-        name: order_by
         type: string
       - default: 10
         description: length of object array
@@ -410,7 +401,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.DivisionResponse'
+            $ref: '#/definitions/models.Division'
         "404":
           description: Not Found
           schema:
@@ -437,7 +428,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.DivisionResponse'
+            $ref: '#/definitions/models.Division'
         "404":
           description: Not Found
           schema:
@@ -623,7 +614,6 @@ paths:
         type: boolean
       - default: "0"
         description: |-
-          Either a time (ISO formatted) or an int
           If a time, order by updated time (for created time, ordering by id is better)
           Otherwise, the int is passed after sql "offset"
         in: query
@@ -865,23 +855,10 @@ paths:
         name: tag_name
         required: true
         type: string
-      - default: true
-        description: Is descending order
-        in: query
-        name: desc
-        type: boolean
-      - default: "0"
-        description: |-
-          Either a time (ISO formatted) or an int
-          If a time, order by updated time (for created time, ordering by id is better)
-          Otherwise, the int is passed after sql "offset"
+      - description: query updated time earlier than offset (for created time, ordering
+          by id is better)
         in: query
         name: offset
-        type: string
-      - default: id
-        description: Now only supports id
-        in: query
-        name: order_by
         type: string
       - default: 10
         description: length of object array

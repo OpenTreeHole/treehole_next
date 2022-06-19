@@ -3,7 +3,10 @@ package apis
 import (
 	"fmt"
 	"github.com/gofiber/fiber/v2"
+	"time"
 	. "treehole_next/models"
+	"treehole_next/schemas"
+	. "treehole_next/utils"
 )
 
 // ListHolesByDivision
@@ -12,11 +15,26 @@ import (
 // @Produce application/json
 // @Router /divisions/{division_id}/holes [get]
 // @Param division_id path int true "division_id"
-// @Param object query schemas.DocQuery false "query"
+// @Param object query schemas.QueryTime false "query"
 // @Success 200 {array} Hole
 func ListHolesByDivision(c *fiber.Ctx) error {
-	fmt.Println(Hole{})
-	return nil
+	var query schemas.QueryTime
+	err := c.QueryParser(&query)
+	if err != nil {
+		return err
+	}
+	if query.Offset.IsZero() {
+		query.Offset = time.Now()
+	}
+	var holes Holes
+	id, _ := c.ParamsInt("id")
+	DB.
+		Where("division_id = ?", id).
+		Where("updated_at < ?", query.Offset).
+		Order("updated_at desc").Limit(query.Size).
+		Preload("Tags").
+		Find(&holes)
+	return Serialize(c, &holes)
 }
 
 // ListHolesByTag
@@ -25,11 +43,36 @@ func ListHolesByDivision(c *fiber.Ctx) error {
 // @Produce application/json
 // @Router /tags/{tag_name}/holes [get]
 // @Param tag_name path string true "tag_name"
-// @Param object query schemas.DocQuery false "query"
+// @Param object query schemas.QueryTime false "query"
 // @Success 200 {array} Hole
 func ListHolesByTag(c *fiber.Ctx) error {
-	fmt.Println(Hole{})
-	return nil
+	var query schemas.QueryTime
+	err := c.QueryParser(&query)
+	if err != nil {
+		return err
+	}
+	if query.Offset.IsZero() {
+		query.Offset = time.Now()
+	}
+	// get tag
+	var tag Tag
+	tagName := c.Params("name")
+	result := DB.Where("name = ?", tagName).First(&tag)
+	if result.Error != nil {
+		return result.Error
+	}
+	// get holes
+	var holes Holes
+	err = DB.Model(&tag).
+		Where("updated_at < ?", query.Offset).
+		Order("updated_at desc").Limit(query.Size).
+		Preload("Tags").
+		Association("Holes").
+		Find(&holes)
+	if err != nil {
+		return err
+	}
+	return Serialize(c, &holes)
 }
 
 // ListHolesOld
@@ -54,7 +97,13 @@ func ListHolesOld(c *fiber.Ctx) error {
 // @Success 200 {object} Hole
 // @Failure 404 {object} schemas.MessageModel
 func GetHole(c *fiber.Ctx) error {
-	return nil
+	id, _ := c.ParamsInt("id")
+	var hole Hole
+	result := DB.Preload("Tags").First(&hole, id)
+	if result.Error != nil {
+		return result.Error
+	}
+	return Serialize(c, &hole)
 }
 
 // CreateHole

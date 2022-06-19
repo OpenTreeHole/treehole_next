@@ -3,10 +3,8 @@ package schemas
 
 import "time"
 
-// DocQuery is for swagger docs only, because it doesn't support generic
-type DocQuery struct {
+type Query struct {
 	Size int `json:"size" default:"10"` // length of object array
-	// Either a time (ISO formatted) or an int
 	// If a time, order by updated time (for created time, ordering by id is better)
 	// Otherwise, the int is passed after sql "offset"
 	Offset  string `json:"offset" default:"0"`
@@ -14,15 +12,11 @@ type DocQuery struct {
 	Desc    bool   `json:"desc" default:"true"`   // Is descending order
 }
 
-// Query is the base query model
-type Query[Offset int | time.Time] struct {
-	Size    int    `query:"size"`
-	Offset  Offset `query:"offset"`
-	OrderBy string `query:"order_by"`
+type QueryTime struct {
+	Size int `json:"size" default:"10"` // length of object array
+	// updated time < offset (default is now)
+	Offset time.Time `json:"offset"`
 }
-
-type QueryID = Query[int]
-type QueryTime = Query[time.Time]
 
 type MessageModel struct {
 	Message string `json:"message,omitempty"`

@@ -20,4 +20,9 @@ func RegisterRoutes(app *fiber.App) {
 	app.Get("/divisions/:id", GetDivision)
 	app.Put("/divisions/:id", ModifyDivision)
 	app.Delete("/divisions/:id", DeleteDivision)
+
+	// holes
+	app.Get("/divisions/:id/holes", ListHolesByDivision)
+	app.Get("/tags/:name/holes", ListHolesByTag)
+	app.Get("/holes/:id", GetHole)
 }

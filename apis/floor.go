@@ -12,7 +12,7 @@ import (
 // @Produce application/json
 // @Router /holes/{hole_id}/floors [get]
 // @Param hole_id path int true "hole id"
-// @Param object query schemas.DocQuery false "query"
+// @Param object query schemas.Query false "query"
 // @Success 200 {array} Floor
 func ListFloorsInAHole(c *fiber.Ctx) error {
 	fmt.Println(Floor{})
