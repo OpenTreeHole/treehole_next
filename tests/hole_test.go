@@ -20,10 +20,9 @@ func TestGetHoleInDivision(t *testing.T) {
 	var holes []Hole
 	var ids, respIDs []int
 
-	DB.Raw("SELECT id FROM hole WHERE division_id = 1").Scan(&ids)
+	DB.Raw("SELECT id FROM hole WHERE division_id = 1 ORDER BY updated_at DESC").Scan(&ids)
 
 	testAPIModel(t, "get", "/divisions/1/holes", 200, &holes)
-
 	for _, hole := range holes {
 		respIDs = append(respIDs, hole.ID)
 	}

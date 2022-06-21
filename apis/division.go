@@ -25,7 +25,7 @@ func AddDivision(c *fiber.Ctx) error {
 	}
 	division.Name = body.Name
 	division.Description = body.Description
-	result := DB.Where("name = ?", body.Name).FirstOrCreate(&division)
+	result := DB.FirstOrCreate(&division, Division{Name: body.Name})
 	if result.RowsAffected == 0 {
 		c.Status(200)
 	} else {

@@ -1,7 +1,6 @@
 package tests
 
 import (
-	"fmt"
 	"github.com/stretchr/testify/assert"
 	"strconv"
 	"testing"
@@ -53,14 +52,13 @@ func TestListDivision(t *testing.T) {
 }
 
 func TestAddDivision(t *testing.T) {
-	data := Map{"name": "name", "description": "description"}
+	data := Map{"name": "TestAddDivision", "description": "TestAddDivisionDescription"}
 	testAPI(t, "post", "/divisions", 201, data)
 
 	// duplicate post, return 200 and change nothing
 	data["description"] = "another"
 	resp := testAPI(t, "post", "/divisions", 200, data)
-	fmt.Println(resp)
-	assert.Equal(t, "description", resp["description"])
+	assert.Equal(t, "TestAddDivisionDescription", resp["description"])
 }
 
 func TestModifyDivision(t *testing.T) {
