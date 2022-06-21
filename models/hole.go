@@ -38,23 +38,43 @@ func (hole *Hole) AfterCreate(tx *gorm.DB) (err error) {
 	return hole.AfterFind(tx)
 }
 
+func (hole *Hole) LoadTags() {
+	var tags []*Tag
+	DB.Raw(`
+		SELECT * FROM tag WHERE id IN (
+			SELECT tag_id FROM hole_tags WHERE hole_id = ?
+		)`, hole.ID).Scan(&tags)
+	if tags == nil {
+		hole.Tags = []*Tag{}
+	} else {
+		hole.Tags = tags
+	}
+}
+
 func (hole *Hole) Preprocess() error {
+	hole.LoadTags()
+
 	var floors []Floor
 	result := DB.Where("hole_id = ?", hole.ID).Limit(config.Config.Size).Find(&floors)
 	hole.HoleFloor.Floors = &floors
-	if result.RowsAffected > 0 {
-		hole.HoleFloor.FirstFloor = &floors[0]
+	if result.RowsAffected == 0 {
+		return nil
 	}
 
-	var floor Floor
-	result = DB.Where("hole_id = ?", hole.ID).Last(&floor)
-	if result.Error == nil { // last floor exists
+	hole.HoleFloor.FirstFloor = &floors[0]
+
+	if hole.Reply <= config.Config.Size {
+		hole.HoleFloor.LastFloor = &floors[result.RowsAffected-1]
+	} else {
+		var floor Floor
+		DB.Where("hole_id = ?", hole.ID).Last(&floor)
 		hole.HoleFloor.LastFloor = &floor
 	}
 
 	return nil
 }
 func (holes Holes) Preprocess() error {
+	// TODO: cache
 	for i := 0; i < len(holes); i++ {
 		err := holes[i].Preprocess()
 		if err != nil {

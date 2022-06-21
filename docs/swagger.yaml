@@ -314,8 +314,7 @@ paths:
         name: division_id
         required: true
         type: integer
-      - description: query updated time earlier than offset (for created time, ordering
-          by id is better)
+      - description: updated time < offset (default is now)
         in: query
         name: offset
         type: string
@@ -557,14 +556,14 @@ paths:
       deprecated: true
       parameters:
       - in: query
-        name: division_id
+        name: divisionID
         type: integer
       - in: query
-        name: length
-        type: integer
-      - in: query
-        name: start_time
+        name: offset
         type: string
+      - in: query
+        name: size
+        type: integer
       - in: query
         name: tag
         type: string
@@ -855,8 +854,7 @@ paths:
         name: tag_name
         required: true
         type: string
-      - description: query updated time earlier than offset (for created time, ordering
-          by id is better)
+      - description: updated time < offset (default is now)
         in: query
         name: offset
         type: string

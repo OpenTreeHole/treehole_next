@@ -1,8 +1,8 @@
 package apis
 
 import (
-	"fmt"
 	"github.com/gofiber/fiber/v2"
+	"gorm.io/gorm"
 	"time"
 	. "treehole_next/models"
 	"treehole_next/schemas"
@@ -28,12 +28,15 @@ func ListHolesByDivision(c *fiber.Ctx) error {
 	}
 	var holes Holes
 	id, _ := c.ParamsInt("id")
-	DB.
-		Where("division_id = ?", id).
+	var querySet *gorm.DB
+	if id != 0 {
+		querySet = DB.Where("division_id = ?", id)
+	}
+	querySet.
 		Where("updated_at < ?", query.Offset).
 		Order("updated_at desc").Limit(query.Size).
-		Preload("Tags").
 		Find(&holes)
+
 	return Serialize(c, &holes)
 }
 
@@ -66,7 +69,6 @@ func ListHolesByTag(c *fiber.Ctx) error {
 	err = DB.Model(&tag).
 		Where("updated_at < ?", query.Offset).
 		Order("updated_at desc").Limit(query.Size).
-		Preload("Tags").
 		Association("Holes").
 		Find(&holes)
 	if err != nil {
@@ -84,8 +86,35 @@ func ListHolesByTag(c *fiber.Ctx) error {
 // @Param object query schemas.GetHoleOld false "query"
 // @Success 200 {array} Hole
 func ListHolesOld(c *fiber.Ctx) error {
-	fmt.Println(Hole{})
-	return nil
+	var query schemas.GetHoleOld
+	err := c.QueryParser(&query)
+	if err != nil {
+		return err
+	}
+	if query.Offset.IsZero() {
+		query.Offset = time.Now()
+	}
+
+	var holes Holes
+	querySet := DB.
+		Where("updated_at < ?", query.Offset).
+		Order("updated_at desc").Limit(query.Size)
+
+	if query.Tag != "" {
+		var tag Tag
+		result := DB.Where("name = ?", query.Tag).First(&tag)
+		if result.Error != nil {
+			return result.Error
+		}
+		err = DB.Model(&tag).Association("Holes").Find(&holes)
+		if err != nil {
+			return err
+		}
+	} else {
+		querySet.Where("division_id = ?", query.DivisionID).Find(&holes)
+	}
+
+	return Serialize(c, &holes)
 }
 
 // GetHole
@@ -99,7 +128,7 @@ func ListHolesOld(c *fiber.Ctx) error {
 func GetHole(c *fiber.Ctx) error {
 	id, _ := c.ParamsInt("id")
 	var hole Hole
-	result := DB.Preload("Tags").First(&hole, id)
+	result := DB.First(&hole, id)
 	if result.Error != nil {
 		return result.Error
 	}

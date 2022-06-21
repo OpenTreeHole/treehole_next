@@ -116,7 +116,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "query updated time earlier than offset (for created time, ordering by id is better)",
+                        "description": "updated time \u003c offset (default is now)",
                         "name": "offset",
                         "in": "query"
                     },
@@ -482,17 +482,17 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "integer",
-                        "name": "division_id",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "name": "length",
+                        "name": "divisionID",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "name": "start_time",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "name": "size",
                         "in": "query"
                     },
                     {
@@ -934,7 +934,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "query updated time earlier than offset (for created time, ordering by id is better)",
+                        "description": "updated time \u003c offset (default is now)",
                         "name": "offset",
                         "in": "query"
                     },

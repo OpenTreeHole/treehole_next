@@ -25,4 +25,5 @@ func RegisterRoutes(app *fiber.App) {
 	app.Get("/divisions/:id/holes", ListHolesByDivision)
 	app.Get("/tags/:name/holes", ListHolesByTag)
 	app.Get("/holes/:id", GetHole)
+	app.Get("/holes", ListHolesOld)
 }

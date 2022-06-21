@@ -3,10 +3,10 @@ package schemas
 import "time"
 
 type GetHoleOld struct {
-	StartTime  time.Time `json:"start_time"`
-	Length     int       `json:"length,omitempty"`
-	DivisionID int       `json:"division_id,omitempty"`
-	Tag        string    `json:"tag,omitempty"`
+	Offset     time.Time `query:"start_time"`
+	Size       int       `query:"length,omitempty"`
+	DivisionID int       `query:"division_id,omitempty"`
+	Tag        string    `query:"tag,omitempty"`
 }
 
 type tags struct {
@@ -14,7 +14,7 @@ type tags struct {
 }
 
 type divisionID struct {
-	DivisionID int `json:"division_id,omitempty"` // Admin only
+	DivisionID int `json:"division_id"` // Admin only
 }
 
 type CreateHole struct {

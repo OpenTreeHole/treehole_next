@@ -10,26 +10,26 @@ package models
 //	id: 7, reply_to: 0, storey: 3
 type Floor struct {
 	BaseModel
-	HoleID      int      `json:"hole_id,omitempty"`
-	UserID      int      `json:"-,omitempty"`
-	Content     string   `json:"content,omitempty"`
-	Anonyname   string   `json:"anonyname,omitempty" gorm:"size:16"`
-	Storey      int      `json:"storey,omitempty" gorm:"index"`                    // The sequence of the root nodes
-	ReplyTo     int      `json:"reply_to,omitempty"`                               // Floor id that it replies to (must be in the same hole)
-	Mention     []Floor  `json:"mention,omitempty" gorm:"many2many:floor_mention"` // Many to many mentions (in different holes)
-	Like        int      `json:"like,omitempty" gorm:"index"`                      // like - dislike
-	LikeData    IntArray `json:"-,omitempty"`                                      // user ids
-	DislikeData IntArray `json:"-,omitempty"`                                      // user ids
-	Deleted     bool     `json:"deleted,omitempty"`
-	Fold        string   `json:"fold,omitempty"`        // fold reason
-	SpecialTag  string   `json:"special_tag,omitempty"` // Additional info
+	HoleID      int      `json:"hole_id"`
+	UserID      int      `json:"-"`
+	Content     string   `json:"content"`
+	Anonyname   string   `json:"anonyname" gorm:"size:16"`
+	Storey      int      `json:"storey" gorm:"index"`                    // The sequence of the root nodes
+	ReplyTo     int      `json:"reply_to"`                               // Floor id that it replies to (must be in the same hole)
+	Mention     []Floor  `json:"mention" gorm:"many2many:floor_mention"` // Many to many mentions (in different holes)
+	Like        int      `json:"like" gorm:"index"`                      // like - dislike
+	LikeData    IntArray `json:"-"`                                      // user ids
+	DislikeData IntArray `json:"-"`                                      // user ids
+	Deleted     bool     `json:"deleted"`
+	Fold        string   `json:"fold"`        // fold reason
+	SpecialTag  string   `json:"special_tag"` // Additional info
 }
 
 //goland:noinspection GoNameStartsWithPackageName
 type FloorHistory struct {
 	BaseModel
-	Content string `json:"content,omitempty"`
-	Reason  string `json:"reason,omitempty"`
-	FloorID int    `json:"floor_id,omitempty"`
-	UserID  int    `json:"user_id,omitempty"` // The one who modified the floor
+	Content string `json:"content"`
+	Reason  string `json:"reason"`
+	FloorID int    `json:"floor_id"`
+	UserID  int    `json:"user_id"` // The one who modified the floor
 }
