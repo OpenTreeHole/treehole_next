@@ -8,24 +8,6 @@ import (
 	. "treehole_next/models"
 )
 
-func init() {
-	for i := 1; i <= 5; i++ {
-		division := Division{
-			Name:        strconv.Itoa(i),
-			Description: strconv.Itoa(i),
-		}
-		division.ID = i
-		DB.Create(&division)
-	}
-	holes := make([]Hole, 5)
-	for i := 0; i < 5; i++ {
-		holes[i] = Hole{
-			DivisionID: 1,
-		}
-	}
-	DB.Create(&holes)
-}
-
 func TestGetDivision(t *testing.T) {
 	var divisionPinned = []int{0, 2, 3, 1, largeInt}
 
