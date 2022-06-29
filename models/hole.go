@@ -1,8 +1,9 @@
 package models
 
 import (
-	"gorm.io/gorm"
 	"treehole_next/config"
+
+	"gorm.io/gorm"
 )
 
 type HoleFloor struct {
@@ -38,22 +39,18 @@ func (hole *Hole) AfterCreate(tx *gorm.DB) (err error) {
 	return hole.AfterFind(tx)
 }
 
-func (hole *Hole) LoadTags() {
+func (hole *Hole) LoadTags() error {
 	var tags []*Tag
-	DB.Raw(`
-		SELECT * FROM tag WHERE id IN (
-			SELECT tag_id FROM hole_tags WHERE hole_id = ?
-		)`, hole.ID).Scan(&tags)
+	DB.Model(hole).Association("Tags").Find(&tags)
 	if tags == nil {
 		hole.Tags = []*Tag{}
 	} else {
 		hole.Tags = tags
 	}
+	return nil
 }
 
-func (hole *Hole) Preprocess() error {
-	hole.LoadTags()
-
+func (hole *Hole) LoadFloors() error {
 	var floors []Floor
 	result := DB.Where("hole_id = ?", hole.ID).Limit(config.Config.Size).Find(&floors)
 	hole.HoleFloor.Floors = &floors
@@ -70,14 +67,18 @@ func (hole *Hole) Preprocess() error {
 		DB.Where("hole_id = ?", hole.ID).Last(&floor)
 		hole.HoleFloor.LastFloor = &floor
 	}
-
 	return nil
 }
+
+func (hole *Hole) Preprocess() error {
+	hole.LoadTags()
+	return hole.LoadFloors()
+}
+
 func (holes Holes) Preprocess() error {
 	// TODO: cache
 	for i := 0; i < len(holes); i++ {
-		err := holes[i].Preprocess()
-		if err != nil {
+		if err := holes[i].Preprocess(); err != nil {
 			return err
 		}
 	}

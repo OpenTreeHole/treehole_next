@@ -137,6 +137,12 @@ const docTemplate = `{
                                 "$ref": "#/definitions/models.Hole"
                             }
                         }
+                    },
+                    "404": {
+                        "description": "record not found",
+                        "schema": {
+                            "type": "string"
+                        }
                     }
                 }
             },
@@ -954,6 +960,12 @@ const docTemplate = `{
                             "items": {
                                 "$ref": "#/definitions/models.Hole"
                             }
+                        }
+                    },
+                    "404": {
+                        "description": "RecordNotFound",
+                        "schema": {
+                            "type": "string"
                         }
                     }
                 }

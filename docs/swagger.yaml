@@ -332,6 +332,10 @@ paths:
             items:
               $ref: '#/definitions/models.Hole'
             type: array
+        "404":
+          description: record not found
+          schema:
+            type: string
       summary: List Holes In A Division
       tags:
       - Hole
@@ -872,6 +876,10 @@ paths:
             items:
               $ref: '#/definitions/models.Hole'
             type: array
+        "404":
+          description: RecordNotFound
+          schema:
+            type: string
       summary: List Holes By Tag
       tags:
       - Hole

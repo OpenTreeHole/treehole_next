@@ -1,11 +1,12 @@
 package apis
 
 import (
-	"github.com/gofiber/fiber/v2"
-	"gorm.io/gorm"
 	. "treehole_next/models"
 	"treehole_next/schemas"
 	. "treehole_next/utils"
+
+	"github.com/gofiber/fiber/v2"
+	"gorm.io/gorm"
 )
 
 // AddDivision
@@ -18,14 +19,16 @@ import (
 // @Success 201 {object} models.Division
 // @Success 200 {object} models.Division
 func AddDivision(c *fiber.Ctx) error {
-	var division Division
-	var body schemas.AddDivisionModel
-	if err := c.BodyParser(&body); err != nil {
+	var query schemas.AddDivision
+	if err := c.BodyParser(&query); err != nil {
 		return err
 	}
-	division.Name = body.Name
-	division.Description = body.Description
-	result := DB.FirstOrCreate(&division, Division{Name: body.Name})
+
+	// bind division
+	var division Division
+	division.Name = query.Name
+	division.Description = query.Description
+	result := DB.FirstOrCreate(&division, Division{Name: query.Name})
 	if result.RowsAffected == 0 {
 		c.Status(200)
 	} else {
@@ -80,7 +83,7 @@ func GetDivision(c *fiber.Ctx) error {
 // @Failure 404 {object} schemas.MessageModel
 func ModifyDivision(c *fiber.Ctx) error {
 	var division Division
-	var body schemas.ModifyDivisionModel
+	var body schemas.ModifyDivision
 	if err := c.BodyParser(&body); err != nil {
 		return err
 	}
@@ -89,8 +92,7 @@ func ModifyDivision(c *fiber.Ctx) error {
 	division.Name = body.Name
 	division.Description = body.Description
 	division.Pinned = body.Pinned
-	result := DB.Model(&division).Updates(division)
-	if result.RowsAffected == 0 { // nothing updated, means that the record does not exist
+	if result := DB.Model(&division).Updates(division); result.RowsAffected == 0 { // nothing updated, means that the record does not exist
 		return gorm.ErrRecordNotFound
 	}
 	return Serialize(c, &division)
@@ -108,7 +110,7 @@ func ModifyDivision(c *fiber.Ctx) error {
 // @Failure 404 {object} schemas.MessageModel
 func DeleteDivision(c *fiber.Ctx) error {
 	id, _ := c.ParamsInt("id")
-	var body schemas.DeleteDivisionModel
+	var body schemas.DeleteDivision
 	if err := BindJSON(c, &body); err != nil {
 		return err
 	}

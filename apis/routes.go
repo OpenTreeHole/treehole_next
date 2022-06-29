@@ -1,9 +1,10 @@
 package apis
 
 import (
+	_ "treehole_next/docs"
+
 	"github.com/gofiber/fiber/v2"
 	fiberSwagger "github.com/swaggo/fiber-swagger"
-	_ "treehole_next/docs"
 )
 
 func RegisterRoutes(app *fiber.App) {
@@ -26,4 +27,8 @@ func RegisterRoutes(app *fiber.App) {
 	app.Get("/tags/:name/holes", ListHolesByTag)
 	app.Get("/holes/:id", GetHole)
 	app.Get("/holes", ListHolesOld)
+	app.Post("/divisions/:id/holes", CreateHole)
+	app.Post("/holes", CreateHoleOld)
+	app.Put("/holes/:id", ModifyHole)
+	app.Delete("/holes/:id", DeleteHole)
 }
