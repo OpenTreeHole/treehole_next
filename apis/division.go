@@ -20,7 +20,8 @@ import (
 // @Success 200 {object} models.Division
 func AddDivision(c *fiber.Ctx) error {
 	var query schemas.AddDivision
-	if err := c.BodyParser(&query); err != nil {
+	err := c.BodyParser(&query)
+	if err != nil {
 		return err
 	}
 
@@ -66,7 +67,8 @@ func ListDivisions(c *fiber.Ctx) error {
 func GetDivision(c *fiber.Ctx) error {
 	id, _ := c.ParamsInt("id")
 	var division Division
-	if result := DB.First(&division, id); result.Error != nil {
+	result := DB.First(&division, id)
+	if result.Error != nil {
 		return result.Error
 	}
 	return Serialize(c, &division)
@@ -84,7 +86,8 @@ func GetDivision(c *fiber.Ctx) error {
 func ModifyDivision(c *fiber.Ctx) error {
 	var division Division
 	var body schemas.ModifyDivision
-	if err := c.BodyParser(&body); err != nil {
+	err := c.BodyParser(&body)
+	if err != nil {
 		return err
 	}
 	id, _ := c.ParamsInt("id")
@@ -111,7 +114,8 @@ func ModifyDivision(c *fiber.Ctx) error {
 func DeleteDivision(c *fiber.Ctx) error {
 	id, _ := c.ParamsInt("id")
 	var body schemas.DeleteDivision
-	if err := BindJSON(c, &body); err != nil {
+	err := BindJSON(c, &body)
+	if err != nil {
 		return err
 	}
 	if body.To == 0 { // default 1
