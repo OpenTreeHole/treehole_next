@@ -1,10 +1,11 @@
 package tests
 
 import (
-	"github.com/stretchr/testify/assert"
 	"strconv"
 	"testing"
 	. "treehole_next/models"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func init() {
@@ -22,6 +23,7 @@ func init() {
 			DivisionID: 1,
 		}
 	}
+	holes[2].Hidden = true
 	DB.Create(&holes)
 }
 

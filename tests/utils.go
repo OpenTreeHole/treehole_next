@@ -3,13 +3,14 @@ package tests
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"net/http"
 	"strings"
 	"testing"
 	"treehole_next/bootstrap"
 	. "treehole_next/models"
+
+	"github.com/stretchr/testify/assert"
 )
 
 type JsonData interface {

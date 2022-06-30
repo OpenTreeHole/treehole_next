@@ -19,6 +19,7 @@ import (
 // @Param object query schemas.QueryTime false "query"
 // @Success 200 {array} Hole
 // @Failure 404 {object} schemas.MessageModel
+// @Failure 500 {object} schemas.MessageModel
 func ListHolesByDivision(c *fiber.Ctx) error {
 	var query schemas.QueryTime
 	err := c.QueryParser(&query)
@@ -28,27 +29,18 @@ func ListHolesByDivision(c *fiber.Ctx) error {
 	if query.Offset.IsZero() {
 		query.Offset = time.Now()
 	}
-	id, _ := c.ParamsInt("id")
-
-	// get division
-	var division Division
-	result := DB.First(&division, id)
-	if result.Error != nil {
-		return result.Error
+	id, err := c.ParamsInt("id")
+	if err != nil {
+		return err
 	}
 
 	// get holes
 	var holes Holes
-	result = DB.
-		Where("division_id = ?", id).
-		Where("updated_at < ?", query.Offset).
-		Order("updated_at desc").Limit(query.Size).
-		Find(&holes)
-	if result.Error != nil {
-		return result.Error
-	} else if result.RowsAffected == 0 {
-		return gorm.ErrRecordNotFound
+	querySet := Hole{}.MakeQuerySet(query.Offset, query.Size, false)
+	if id != 0 {
+		querySet = querySet.Where("division_id = ?", id)
 	}
+	querySet.Find(&holes)
 
 	return Serialize(c, &holes)
 }
@@ -82,11 +74,9 @@ func ListHolesByTag(c *fiber.Ctx) error {
 
 	// get holes
 	var holes Holes
-	err = DB.Model(&tag).
-		Where("updated_at < ?", query.Offset).
-		Order("updated_at desc").Limit(query.Size).
-		Association("Holes").
-		Find(&holes)
+	querySet := Hole{}.MakeQuerySet(query.Offset, query.Size, false)
+	err = querySet.Model(&tag).
+		Association("Holes").Find(&holes)
 	if err != nil {
 		return err
 	}
@@ -113,25 +103,23 @@ func ListHolesOld(c *fiber.Ctx) error {
 	}
 
 	var holes Holes
+	querySet := Hole{}.MakeQuerySet(query.Offset, query.Size, false)
 	if query.Tag != "" {
 		var tag Tag
 		result := DB.Where("name = ?", query.Tag).First(&tag)
 		if result.Error != nil {
 			return result.Error
 		}
-		err := DB.Model(&tag).Association("Holes").Find(&holes)
+		err := querySet.Model(&tag).Association("Holes").Find(&holes)
 		if err != nil {
 			return err
 		}
-	} else {
-		result := DB.
-			Where("updated_at < ?", query.Offset).
-			Order("updated_at desc").Limit(query.Size).
+	} else if query.DivisionID != 0 {
+		querySet.
 			Where("division_id = ?", query.DivisionID).
 			Find(&holes)
-		if result.Error != nil {
-			return result.Error
-		}
+	} else {
+		querySet.Find(&holes)
 	}
 
 	return Serialize(c, &holes)
@@ -150,7 +138,8 @@ func GetHole(c *fiber.Ctx) error {
 
 	// get hole
 	var hole Hole
-	result := DB.First(&hole, id)
+	querySet := Hole{}.MakeHiddenQuerySet(false)
+	result := querySet.First(&hole, id)
 	if result.Error != nil {
 		return result.Error
 	}
@@ -173,34 +162,16 @@ func CreateHole(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	division_id, _ := c.ParamsInt("id")
-
-	// bind hole
-	var floor Floor
-	floor.Content = body.Content
-	floor.SpecialTag = body.SpecialTag
-	hole := Hole{
-		Tags: make([]*Tag, len(body.Tags)),
+	divisionID, _ := c.ParamsInt("id")
+	if divisionID == 0 {
+		divisionID = 1
 	}
-	hole.DivisionID = division_id
-	hole.Floors = []Floor{floor}
+	var tagNames []string
+	for _, v := range body.Tags {
+		tagNames = append(tagNames, v.Name)
+	}
 
-	// Create
-	err = DB.Transaction(func(tx *gorm.DB) error {
-		for i := 0; i < len(hole.Tags); i++ {
-			result := tx.Where(Tag{Name: body.Tags[i].Name}).
-				FirstOrCreate(&hole.Tags[i])
-			if result.Error != nil {
-				return result.Error
-			}
-			hole.Tags[i].Temperature += 1
-		}
-		result := tx.Session(&gorm.Session{FullSaveAssociations: true}).Create(&hole)
-		if result.Error != nil {
-			return result.Error
-		}
-		return nil
-	})
+	hole, err := createHole(body.Content, body.SpecialTag, tagNames, divisionID)
 	if err != nil {
 		return err
 	}
@@ -222,32 +193,15 @@ func CreateHoleOld(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-
-	var floor Floor
-	floor.Content = body.Content
-	floor.SpecialTag = body.SpecialTag
-	hole := Hole{
-		Tags: make([]*Tag, len(body.Tags)),
+	var tagNames []string
+	for _, v := range body.Tags {
+		tagNames = append(tagNames, v.Name)
 	}
-	hole.DivisionID = body.DivisionID
-	hole.Floors = []Floor{floor}
+	if body.DivisionID == 0 {
+		body.DivisionID = 1
+	}
 
-	// Create
-	err = DB.Transaction(func(tx *gorm.DB) error {
-		for i := 0; i < len(hole.Tags); i++ {
-			result := tx.Where(Tag{Name: body.Tags[i].Name}).
-				FirstOrCreate(&hole.Tags[i])
-			if result.Error != nil {
-				return result.Error
-			}
-			hole.Tags[i].Temperature += 1
-		}
-		result := tx.Session(&gorm.Session{FullSaveAssociations: true}).Create(&hole)
-		if result.Error != nil {
-			return result.Error
-		}
-		return nil
-	})
+	hole, err := createHole(body.Content, body.SpecialTag, tagNames, body.DivisionID)
 	if err != nil {
 		return err
 	}
@@ -270,32 +224,44 @@ func ModifyHole(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	hole_id, _ := c.ParamsInt("id")
+	holeID, _ := c.ParamsInt("id")
+
+	// Find hole
 	var hole Hole
-	result := DB.Where("id = ?", hole_id).First(&hole)
+	result := DB.First(&hole, holeID)
 	if result.Error != nil {
 		return result.Error
 	}
-	hole.DivisionID = body.DivisionID
 
-	// Modify
-	err = DB.Transaction(func(tx *gorm.DB) error {
-		for i := 0; i < len(hole.Tags); i++ {
-			result := tx.Where(Tag{Name: body.Tags[i].Name}).
-				FirstOrCreate(&hole.Tags[i])
+	if body.DivisionID != 0 {
+		hole.DivisionID = body.DivisionID
+	}
+	if len(body.Tags) == 0 {
+		DB.Save(&hole)
+		return Serialize(c, &hole)
+	} else {
+		var tagNames []string
+		for _, v := range body.Tags {
+			tagNames = append(tagNames, v.Name)
+		}
+		err = DB.Transaction(func(tx *gorm.DB) error {
+			err := DB.Model(&hole).Association("Tags").Clear()
+			if err != nil {
+				return err
+			}
+			err = findCreateTag(&hole, tagNames)
+			if err != nil {
+				return err
+			}
+			result := tx.Session(&gorm.Session{FullSaveAssociations: true}).Save(&hole)
 			if result.Error != nil {
 				return result.Error
 			}
-			hole.Tags[i].Temperature += 1
+			return nil
+		})
+		if err != nil {
+			return err
 		}
-		result := tx.Session(&gorm.Session{FullSaveAssociations: true}).Save(&hole)
-		if result.Error != nil {
-			return result.Error
-		}
-		return nil
-	})
-	if err != nil {
-		return err
 	}
 
 	return Serialize(c, &hole)
@@ -311,25 +277,59 @@ func ModifyHole(c *fiber.Ctx) error {
 // @Success 204
 // @Failure 404 {object} schemas.MessageModel
 func DeleteHole(c *fiber.Ctx) error {
-	hole_id, _ := c.ParamsInt("id")
+	holeID, _ := c.ParamsInt("id")
 	var hole Hole
-	result := DB.Where("id = ?", hole_id).First(&hole)
-	if result.Error != nil {
-		c.Status(404)
-		return result.Error
-	}
-	hole.Hidden = true
-	// Modify
-	err := DB.Transaction(func(tx *gorm.DB) error {
-		result := tx.Session(&gorm.Session{FullSaveAssociations: true}).Save(&hole)
-		if result.Error != nil {
-			return result.Error
-		}
-		return nil
-	})
-	if err != nil {
-		c.Status(404)
-		return err
+	hole.ID = holeID
+	result := DB.Model(&hole).Select("Hidden").Updates(Hole{Hidden: true})
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
 	}
 	return c.Status(204).JSON(nil)
+}
+
+// find or create Tags and increment Tags.temperature according to tagNames
+func findCreateTag(hole *Hole, tagNames []string) error {
+	result := DB.Where("name IN ?", tagNames).Find(&hole.Tags)
+	if result.Error != nil {
+		return result.Error
+	}
+	existTagNames := []string{}
+	for _, val := range hole.Tags {
+		existTagNames = append(existTagNames, val.Name)
+	}
+	createTagNames := DiffrenceSet(tagNames, existTagNames)
+	for _, val := range createTagNames {
+		hole.Tags = append(hole.Tags, &Tag{Name: val})
+	}
+	for i := 0; i < len(hole.Tags); i++ {
+		hole.Tags[i].Temperature += 1
+	}
+	return nil
+}
+
+func createHole(content string, specialTag string,
+	tagNames []string, divisionID int) (hole Hole, err error) {
+
+	// Bind and Create floor
+	var floor Floor
+	floor.Content = content
+	floor.SpecialTag = specialTag
+	hole.DivisionID = divisionID
+	hole.Floors = []Floor{floor}
+
+	// Find and create Tags
+	err = findCreateTag(&hole, tagNames)
+	if err != nil {
+		return Hole{}, err
+	}
+
+	// Create hole
+	result := DB.
+		Session(&gorm.Session{FullSaveAssociations: true}).
+		Create(&hole)
+	if result.Error != nil {
+		return Hole{}, result.Error
+	}
+
+	return hole, nil
 }

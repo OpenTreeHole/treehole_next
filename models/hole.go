@@ -1,6 +1,7 @@
 package models
 
 import (
+	"time"
 	"treehole_next/config"
 
 	"gorm.io/gorm"
@@ -83,4 +84,19 @@ func (holes Holes) Preprocess() error {
 		}
 	}
 	return nil
+}
+
+func (hole Hole) MakeHiddenQuerySet(isAdmin bool) (tx *gorm.DB) {
+	if isAdmin {
+		return DB
+	} else {
+		return DB.Where("hidden = ?", false)
+	}
+}
+
+func (hole Hole) MakeQuerySet(offset time.Time, size int, isadmin bool) (tx *gorm.DB) {
+	return hole.
+		MakeHiddenQuerySet(isadmin).
+		Where("updated_at < ?", offset).
+		Order("updated_at desc").Limit(size)
 }

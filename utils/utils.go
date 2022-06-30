@@ -2,8 +2,9 @@ package utils
 
 import (
 	"encoding/json"
-	"github.com/gofiber/fiber/v2"
 	"treehole_next/models"
+
+	"github.com/gofiber/fiber/v2"
 )
 
 //func InArray[T comparable](item *T, container *[]T) bool {
@@ -36,4 +37,19 @@ func Serialize(c *fiber.Ctx, obj CanPreprocess) error {
 		return err
 	}
 	return c.JSON(obj)
+}
+
+func DiffrenceSet[T comparable](mainSet []T, subSet []T) (ansSet []T) {
+	tmp := map[T]bool{}
+	for _, val := range subSet {
+		if _, ok := tmp[val]; !ok {
+			tmp[val] = true
+		}
+	}
+	for _, val := range mainSet {
+		if _, ok := tmp[val]; !ok {
+			ansSet = append(ansSet, val)
+		}
+	}
+	return ansSet
 }
