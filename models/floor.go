@@ -25,6 +25,8 @@ type Floor struct {
 	SpecialTag  string   `json:"special_tag"` // Additional info
 }
 
+type Floors []Floor
+
 //goland:noinspection GoNameStartsWithPackageName
 type FloorHistory struct {
 	BaseModel
@@ -32,4 +34,34 @@ type FloorHistory struct {
 	Reason  string `json:"reason"`
 	FloorID int    `json:"floor_id"`
 	UserID  int    `json:"user_id"` // The one who modified the floor
+}
+
+func (floor *Floor) Preprocess() error {
+	// Load mentions
+	if floor.Mention == nil {
+		floor.Mention = []Floor{}
+	}
+	return nil
+}
+
+func (floors Floors) Preprocess() error {
+	for i := 0; i < len(floors); i++ {
+		err := floors[i].Preprocess()
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (floor *Floor) LoadMention() error {
+	var Mention Floors
+	err := DB.Model(floor).Association("Mention").Find(&Mention)
+	if err != nil {
+		return err
+	}
+	if Mention != nil {
+		floor.Mention = Mention
+	}
+	return nil
 }

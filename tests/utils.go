@@ -3,6 +3,7 @@ package tests
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -10,6 +11,7 @@ import (
 	"treehole_next/bootstrap"
 	. "treehole_next/models"
 
+	"github.com/hetiansu5/urlquery"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -33,6 +35,34 @@ func testCommon(t *testing.T, method string, route string, statusCode int, data 
 		route,
 		bytes.NewBuffer(requestData),
 	)
+	req.Header.Add("Content-Type", "application/json")
+	assert.Nilf(t, err, "constructs http request")
+
+	res, err := App.Test(req, -1)
+	assert.Nilf(t, err, "perform request")
+	assert.Equalf(t, statusCode, res.StatusCode, "status code")
+
+	responseBody, err := ioutil.ReadAll(res.Body)
+	assert.Nilf(t, err, "decode response")
+
+	return responseBody
+}
+
+// testCommonQuery tests status code and returns response body in bytes
+func testCommonQuery(t *testing.T, method string, route string, statusCode int, data ...Map) []byte {
+	var err error
+	req, err := http.NewRequest(
+		strings.ToUpper(method),
+		route,
+		nil,
+	)
+	if len(data) > 0 && data[0] != nil { // data[0] is query data
+		queryData, err := urlquery.Marshal(data[0])
+		req.URL.RawQuery = string(queryData)
+		assert.Nilf(t, err, "encode request body")
+		fmt.Printf("req.URL: %v\n", req.URL)
+	}
+
 	req.Header.Add("Content-Type", "application/json")
 	assert.Nilf(t, err, "constructs http request")
 
@@ -76,6 +106,12 @@ func testAPIArray(t *testing.T, method string, route string, statusCode int, dat
 
 func testAPIModel[T Models](t *testing.T, method string, route string, statusCode int, obj *T, data ...Map) {
 	responseBytes := testCommon(t, method, route, statusCode, data...)
+	err := json.Unmarshal(responseBytes, obj)
+	assert.Nilf(t, err, "unmarshal response")
+}
+
+func testAPIModelWithQuery[T Models](t *testing.T, method string, route string, statusCode int, obj *T, data ...Map) {
+	responseBytes := testCommonQuery(t, method, route, statusCode, data...)
 	err := json.Unmarshal(responseBytes, obj)
 	assert.Nilf(t, err, "unmarshal response")
 }

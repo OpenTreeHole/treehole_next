@@ -9,7 +9,7 @@ import (
 )
 
 func init() {
-	for i := 1; i <= 5; i++ {
+	for i := 1; i <= 10; i++ {
 		division := Division{
 			Name:        strconv.Itoa(i),
 			Description: strconv.Itoa(i),

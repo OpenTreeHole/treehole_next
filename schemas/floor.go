@@ -1,13 +1,9 @@
 package schemas
 
-type HoleID struct {
-	HoleID int `json:"hole_id"`
-}
-
 type ListFloorOld struct {
-	HoleID
-	Size   int `json:"length" default:"20"`
-	Offset int `json:"start_floor"  default:"0"`
+	HoleID int `query:"hole_id"`
+	Size   int `query:"length" default:"20"`
+	Offset int `query:"start_floor"  default:"0"`
 }
 
 type CreateFloor struct {
@@ -18,7 +14,7 @@ type CreateFloor struct {
 }
 
 type CreateFloorOld struct {
-	HoleID
+	HoleID int `json:"hole_id"`
 	CreateFloor
 }
 

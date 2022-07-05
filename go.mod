@@ -4,6 +4,7 @@ go 1.18
 
 require (
 	github.com/gofiber/fiber/v2 v2.34.0
+	github.com/hetiansu5/urlquery v1.2.7
 	github.com/stretchr/testify v1.7.0
 	github.com/swaggo/fiber-swagger v1.2.1
 	github.com/swaggo/swag v1.8.2

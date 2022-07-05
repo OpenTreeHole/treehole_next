@@ -1,9 +1,15 @@
 package apis
 
 import (
-	"fmt"
-	"github.com/gofiber/fiber/v2"
+	"encoding/json"
+	"strconv"
+	. "treehole_next/config"
 	. "treehole_next/models"
+	"treehole_next/schemas"
+	. "treehole_next/utils"
+
+	"github.com/gofiber/fiber/v2"
+	"gorm.io/gorm"
 )
 
 // ListFloorsInAHole
@@ -15,8 +21,37 @@ import (
 // @Param object query schemas.Query false "query"
 // @Success 200 {array} Floor
 func ListFloorsInAHole(c *fiber.Ctx) error {
-	fmt.Println(Floor{})
-	return nil
+	var query schemas.Query
+	err := c.QueryParser(&query)
+	if err != nil {
+		return err
+	}
+	holeID, err := c.ParamsInt("id")
+	if err != nil {
+		return err
+	}
+	offset := 0
+	if query.Offset != "" {
+		offset, err = strconv.Atoi(query.Offset)
+		if err != nil {
+			return err
+		}
+	}
+	if query.Size == 0 {
+		query.Size = Config.Size
+	} else if query.Size > Config.MaxSize {
+		query.Size = Config.MaxSize
+	}
+
+	var floors Floors
+	result := DB.
+		Limit(query.Size).Offset(offset).
+		Where("hole_id = ?", holeID).
+		Preload("Mention").Find(&floors)
+	if result.Error != nil {
+		return result.Error
+	}
+	return Serialize(c, &floors)
 }
 
 // ListFloorsOld
@@ -28,7 +63,19 @@ func ListFloorsInAHole(c *fiber.Ctx) error {
 // @Param object query schemas.ListFloorOld false "query"
 // @Success 200 {array} Floor
 func ListFloorsOld(c *fiber.Ctx) error {
-	return nil
+	var query schemas.ListFloorOld
+	err := c.QueryParser(&query)
+	if err != nil {
+		return err
+	}
+	var floors Floors
+	result := DB.Limit(query.Size).Offset(query.Offset).
+		Where("hole_id = ?", query.HoleID).
+		Preload("Mention").Find(&floors)
+	if result.Error != nil {
+		return result.Error
+	}
+	return Serialize(c, &floors)
 }
 
 // GetFloor
@@ -40,7 +87,16 @@ func ListFloorsOld(c *fiber.Ctx) error {
 // @Success 200 {object} Floor
 // @Failure 404 {object} schemas.MessageModel
 func GetFloor(c *fiber.Ctx) error {
-	return nil
+	floorID, err := c.ParamsInt("id")
+	if err != nil {
+		return err
+	}
+	var floor Floor
+	result := DB.Preload("Mention").First(&floor, floorID)
+	if result.Error != nil {
+		return result.Error
+	}
+	return Serialize(c, &floor)
 }
 
 // CreateFloor
@@ -52,7 +108,28 @@ func GetFloor(c *fiber.Ctx) error {
 // @Param json body schemas.CreateFloor true "json"
 // @Success 201 {object} Floor
 func CreateFloor(c *fiber.Ctx) error {
-	return nil
+	var body schemas.CreateFloor
+	err := c.BodyParser(&body)
+	if err != nil {
+		return err
+	}
+	holeID, err := c.ParamsInt("id")
+	if err != nil {
+		return err
+	}
+	var floor Floor
+	floor.HoleID = holeID
+	floor.Content = body.Content
+	floor.SpecialTag = body.SpecialTag
+	result := DB.Create(&floor)
+	if result.Error != nil {
+		return result.Error
+	}
+	err = floor.LoadMention()
+	if err != nil {
+		return err
+	}
+	return Serialize(c.Status(201), &floor)
 }
 
 // CreateFloorOld
@@ -64,7 +141,24 @@ func CreateFloor(c *fiber.Ctx) error {
 // @Param json body schemas.CreateFloorOld true "json"
 // @Success 201 {object} Floor
 func CreateFloorOld(c *fiber.Ctx) error {
-	return nil
+	var body schemas.CreateFloorOld
+	err := c.BodyParser(&body)
+	if err != nil {
+		return err
+	}
+	var floor Floor
+	floor.HoleID = body.HoleID
+	floor.Content = body.Content
+	floor.SpecialTag = body.SpecialTag
+	result := DB.Create(&floor)
+	if result.Error != nil {
+		return result.Error
+	}
+	err = floor.LoadMention()
+	if err != nil {
+		return err
+	}
+	return Serialize(c.Status(201), &floor)
 }
 
 // ModifyFloor
@@ -77,7 +171,58 @@ func CreateFloorOld(c *fiber.Ctx) error {
 // @Success 200 {object} Floor
 // @Failure 404 {object} schemas.MessageModel
 func ModifyFloor(c *fiber.Ctx) error {
-	return nil
+	var body schemas.ModifyFloor
+	err := c.BodyParser(&body)
+	if err != nil {
+		return err
+	}
+	floorID, err := c.ParamsInt("id")
+	if err != nil {
+		return err
+	}
+
+	var bodyMap StringMap
+	err = json.Unmarshal(c.Body(), &bodyMap)
+	if err != nil {
+		return err
+	}
+
+	// find floor
+	var floor Floor
+	result := DB.First(&floor, floorID)
+	if result.Error != nil {
+		return result.Error
+	}
+
+	// partially modify floor
+	if body.Content != "" {
+		floor.Content = body.Content
+	}
+	if body.SpecialTag != "" {
+		floor.SpecialTag = body.SpecialTag
+	}
+	if _, ok := bodyMap["like_int"]; ok {
+		if body.Like != 0 {
+			floor.Like += body.Like
+		} else {
+			floor.Like = 0
+		}
+	} else if _, ok := bodyMap["like"]; ok {
+		if body.LikeOld == "add" {
+			floor.Like += 1
+		} else if body.LikeOld == "reset" {
+			floor.Like = 0
+		}
+	}
+	if body.Fold != "" {
+		floor.Fold = body.Fold
+	}
+	DB.Save(&floor)
+	err = floor.LoadMention()
+	if err != nil {
+		return err
+	}
+	return Serialize(c, &floor)
 }
 
 // DeleteFloor
@@ -86,8 +231,41 @@ func ModifyFloor(c *fiber.Ctx) error {
 // @Produce application/json
 // @Router /floors/{id} [delete]
 // @Param id path int true "id"
+// @Param json body schemas.DeleteFloor true "json"
 // @Success 200 {object} Floor
 // @Failure 404 {object} schemas.MessageModel
 func DeleteFloor(c *fiber.Ctx) error {
-	return nil
+	var body schemas.DeleteFloor
+	err := c.BodyParser(&body)
+	if err != nil {
+		return err
+	}
+	floorID, err := c.ParamsInt("id")
+	if err != nil {
+		return err
+	}
+	var floor Floor
+	floor.ID = floorID
+
+	var floorHistory FloorHistory
+	floorHistory.FloorID = floorID
+	floorHistory.Content = floor.Content
+	floorHistory.Reason = body.Reason
+
+	err = DB.Transaction(func(tx *gorm.DB) error {
+		result := DB.Model(&floor).Select("Deleted").Updates(Floor{Deleted: true})
+		if result.Error != nil {
+			return result.Error
+		}
+		result = DB.Create(&floorHistory)
+		if result.Error != nil {
+			return result.Error
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	return Serialize(c, &floor)
 }
