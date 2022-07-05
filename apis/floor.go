@@ -2,7 +2,6 @@ package apis
 
 import (
 	"encoding/json"
-	"strconv"
 	. "treehole_next/config"
 	. "treehole_next/models"
 	"treehole_next/schemas"
@@ -30,24 +29,20 @@ func ListFloorsInAHole(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	offset := 0
-	if query.Offset != "" {
-		offset, err = strconv.Atoi(query.Offset)
-		if err != nil {
-			return err
-		}
-	}
 	if query.Size == 0 {
 		query.Size = Config.Size
 	} else if query.Size > Config.MaxSize {
 		query.Size = Config.MaxSize
 	}
+	if query.OrderBy == "" {
+		query.OrderBy = "id"
+	}
 
 	var floors Floors
-	result := DB.
-		Limit(query.Size).Offset(offset).
-		Where("hole_id = ?", holeID).
-		Preload("Mention").Find(&floors)
+	result := Floor{}.MakeQuerySet(
+		query.Size, query.Offset, holeID,
+		query.OrderBy, query.Desc,
+	).Preload("Mention").Find(&floors)
 	if result.Error != nil {
 		return result.Error
 	}
@@ -69,9 +64,10 @@ func ListFloorsOld(c *fiber.Ctx) error {
 		return err
 	}
 	var floors Floors
-	result := DB.Limit(query.Size).Offset(query.Offset).
-		Where("hole_id = ?", query.HoleID).
-		Preload("Mention").Find(&floors)
+	result := Floor{}.MakeQuerySet(
+		query.Size, query.Offset, query.HoleID,
+		"id", false,
+	).Preload("Mention").Find(&floors)
 	if result.Error != nil {
 		return result.Error
 	}

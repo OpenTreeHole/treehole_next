@@ -3,7 +3,6 @@ package tests
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -60,7 +59,6 @@ func testCommonQuery(t *testing.T, method string, route string, statusCode int, 
 		queryData, err := urlquery.Marshal(data[0])
 		req.URL.RawQuery = string(queryData)
 		assert.Nilf(t, err, "encode request body")
-		fmt.Printf("req.URL: %v\n", req.URL)
 	}
 
 	req.Header.Add("Content-Type", "application/json")

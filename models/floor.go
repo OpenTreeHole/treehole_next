@@ -1,5 +1,10 @@
 package models
 
+import (
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
+)
+
 // Floor has a tree structure, example:
 //	id: 1, reply_to: 0, storey: 1
 //		id: 2, reply_to: 1, storey: 1
@@ -64,4 +69,14 @@ func (floor *Floor) LoadMention() error {
 		floor.Mention = Mention
 	}
 	return nil
+}
+
+func (floor Floor) MakeQuerySet(
+	limit int, offset int,
+	holeID int, orderBy string,
+	ifDesc bool) (tx *gorm.DB) {
+	return DB.
+		Limit(limit).Offset(offset).
+		Where("hole_id = ?", holeID).
+		Order(clause.OrderByColumn{Column: clause.Column{Name: orderBy}, Desc: ifDesc})
 }
