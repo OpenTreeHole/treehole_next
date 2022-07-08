@@ -91,10 +91,6 @@ definitions:
     type: object
   models.Tag:
     properties:
-      holes:
-        items:
-          $ref: '#/definitions/models.Hole'
-        type: array
       id:
         type: integer
       name:
@@ -106,7 +102,7 @@ definitions:
       time_updated:
         type: string
     type: object
-  schemas.AddDivisionModel:
+  schemas.AddDivision:
     properties:
       description:
         type: string
@@ -119,9 +115,9 @@ definitions:
         description: Owner or admin, if it's modified or deleted, the original content
           should be moved to  floor_history
         type: string
-      special_tag:
-        description: Admin only
-        type: string
+      reply_to:
+        description: id of the floor to which replied
+        type: integer
     type: object
   schemas.CreateFloorOld:
     properties:
@@ -131,18 +127,13 @@ definitions:
         type: string
       hole_id:
         type: integer
-      special_tag:
-        description: Admin only
-        type: string
+      reply_to:
+        description: id of the floor to which replied
+        type: integer
     type: object
   schemas.CreateHole:
     properties:
       content:
-        description: Owner or admin, if it's modified or deleted, the original content
-          should be moved to  floor_history
-        type: string
-      special_tag:
-        description: Admin only
         type: string
       tags:
         description: All users
@@ -153,15 +144,10 @@ definitions:
   schemas.CreateHoleOld:
     properties:
       content:
-        description: Owner or admin, if it's modified or deleted, the original content
-          should be moved to  floor_history
         type: string
       division_id:
         description: Admin only
         type: integer
-      special_tag:
-        description: Admin only
-        type: string
       tags:
         description: All users
         items:
@@ -174,7 +160,7 @@ definitions:
         description: Admin only
         type: string
     type: object
-  schemas.DeleteDivisionModel:
+  schemas.DeleteDivision:
     properties:
       to:
         default: 1
@@ -182,6 +168,11 @@ definitions:
           Admin only
           ID of the target division that all the deleted division's holes will be moved to
         type: integer
+    type: object
+  schemas.DeleteFloor:
+    properties:
+      delete_reason:
+        type: string
     type: object
   schemas.DeleteTag:
     properties:
@@ -196,7 +187,7 @@ definitions:
       message:
         type: string
     type: object
-  schemas.ModifyDivisionModel:
+  schemas.ModifyDivision:
     properties:
       description:
         type: string
@@ -222,6 +213,9 @@ definitions:
         type: string
       like_int:
         description: All users, 1 is like, -1 is dislike, 0 is reset
+        type: integer
+      reply_to:
+        description: id of the floor to which replied
         type: integer
       special_tag:
         description: Admin only
@@ -291,7 +285,7 @@ paths:
         name: json
         required: true
         schema:
-          $ref: '#/definitions/schemas.AddDivisionModel'
+          $ref: '#/definitions/schemas.AddDivision'
       produces:
       - application/json
       responses:
@@ -333,9 +327,13 @@ paths:
               $ref: '#/definitions/models.Hole'
             type: array
         "404":
-          description: record not found
+          description: Not Found
           schema:
-            type: string
+            $ref: '#/definitions/schemas.MessageModel'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/schemas.MessageModel'
       summary: List Holes In A Division
       tags:
       - Hole
@@ -378,7 +376,7 @@ paths:
         name: json
         required: true
         schema:
-          $ref: '#/definitions/schemas.DeleteDivisionModel'
+          $ref: '#/definitions/schemas.DeleteDivision'
       produces:
       - application/json
       responses:
@@ -424,7 +422,7 @@ paths:
         name: json
         required: true
         schema:
-          $ref: '#/definitions/schemas.ModifyDivisionModel'
+          $ref: '#/definitions/schemas.ModifyDivision'
       produces:
       - application/json
       responses:
@@ -444,15 +442,15 @@ paths:
       deprecated: true
       parameters:
       - in: query
-        name: hole_id
-        type: integer
-      - default: 20
-        in: query
-        name: length
+        name: holeID
         type: integer
       - default: 0
         in: query
-        name: start_floor
+        name: offset
+        type: integer
+      - default: 20
+        in: query
+        name: size
         type: integer
       produces:
       - application/json
@@ -493,6 +491,12 @@ paths:
         name: id
         required: true
         type: integer
+      - description: json
+        in: body
+        name: json
+        required: true
+        schema:
+          $ref: '#/definitions/schemas.DeleteFloor'
       produces:
       - application/json
       responses:
@@ -610,22 +614,20 @@ paths:
         name: hole_id
         required: true
         type: integer
-      - default: true
+      - default: false
         description: Is descending order
         in: query
         name: desc
         type: boolean
-      - default: "0"
-        description: |-
-          If a time, order by updated time (for created time, ordering by id is better)
-          Otherwise, the int is passed after sql "offset"
+      - default: 0
+        description: offset of object array
         in: query
         name: offset
-        type: string
+        type: integer
       - default: id
         description: Now only supports id
         in: query
-        name: order_by
+        name: orderBy
         type: string
       - default: 10
         description: length of object array
@@ -877,9 +879,9 @@ paths:
               $ref: '#/definitions/models.Hole'
             type: array
         "404":
-          description: RecordNotFound
+          description: Not Found
           schema:
-            type: string
+            $ref: '#/definitions/schemas.MessageModel'
       summary: List Holes By Tag
       tags:
       - Hole

@@ -2,8 +2,6 @@ package utils
 
 import (
 	"encoding/json"
-	"treehole_next/models"
-
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -16,13 +14,11 @@ import (
 //	return false
 //}
 
-var emptyMap = models.Map{}
-
 // BindJSON is a safe method to bind request body to struct
 func BindJSON(c *fiber.Ctx, obj interface{}) error {
 	body := c.Body()
 	if len(body) == 0 {
-		body, _ = json.Marshal(emptyMap)
+		body, _ = json.Marshal(fiber.Map{})
 	}
 	return json.Unmarshal(body, obj)
 }

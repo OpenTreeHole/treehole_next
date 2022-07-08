@@ -77,7 +77,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/schemas.AddDivisionModel"
+                            "$ref": "#/definitions/schemas.AddDivision"
                         }
                     }
                 ],
@@ -139,9 +139,15 @@ const docTemplate = `{
                         }
                     },
                     "404": {
-                        "description": "record not found",
+                        "description": "Not Found",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/schemas.MessageModel"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.MessageModel"
                         }
                     }
                 }
@@ -238,7 +244,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/schemas.ModifyDivisionModel"
+                            "$ref": "#/definitions/schemas.ModifyDivision"
                         }
                     }
                 ],
@@ -280,7 +286,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/schemas.DeleteDivisionModel"
+                            "$ref": "#/definitions/schemas.DeleteDivision"
                         }
                     }
                 ],
@@ -310,19 +316,19 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "integer",
-                        "name": "hole_id",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "default": 20,
-                        "name": "length",
+                        "name": "holeID",
                         "in": "query"
                     },
                     {
                         "type": "integer",
                         "default": 0,
-                        "name": "start_floor",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "name": "size",
                         "in": "query"
                     }
                 ],
@@ -457,6 +463,15 @@ const docTemplate = `{
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "description": "json",
+                        "name": "json",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schemas.DeleteFloor"
+                        }
                     }
                 ],
                 "responses": {
@@ -568,15 +583,15 @@ const docTemplate = `{
                     },
                     {
                         "type": "boolean",
-                        "default": true,
+                        "default": false,
                         "description": "Is descending order",
                         "name": "desc",
                         "in": "query"
                     },
                     {
-                        "type": "string",
-                        "default": "0",
-                        "description": "If a time, order by updated time (for created time, ordering by id is better)\nOtherwise, the int is passed after sql \"offset\"",
+                        "type": "integer",
+                        "default": 0,
+                        "description": "offset of object array",
                         "name": "offset",
                         "in": "query"
                     },
@@ -584,7 +599,7 @@ const docTemplate = `{
                         "type": "string",
                         "default": "id",
                         "description": "Now only supports id",
-                        "name": "order_by",
+                        "name": "orderBy",
                         "in": "query"
                     },
                     {
@@ -963,9 +978,9 @@ const docTemplate = `{
                         }
                     },
                     "404": {
-                        "description": "RecordNotFound",
+                        "description": "Not Found",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/schemas.MessageModel"
                         }
                     }
                 }
@@ -1108,12 +1123,6 @@ const docTemplate = `{
         "models.Tag": {
             "type": "object",
             "properties": {
-                "holes": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/models.Hole"
-                    }
-                },
                 "id": {
                     "type": "integer"
                 },
@@ -1131,7 +1140,7 @@ const docTemplate = `{
                 }
             }
         },
-        "schemas.AddDivisionModel": {
+        "schemas.AddDivision": {
             "type": "object",
             "properties": {
                 "description": {
@@ -1149,9 +1158,9 @@ const docTemplate = `{
                     "description": "Owner or admin, if it's modified or deleted, the original content should be moved to  floor_history",
                     "type": "string"
                 },
-                "special_tag": {
-                    "description": "Admin only",
-                    "type": "string"
+                "reply_to": {
+                    "description": "id of the floor to which replied",
+                    "type": "integer"
                 }
             }
         },
@@ -1165,9 +1174,9 @@ const docTemplate = `{
                 "hole_id": {
                     "type": "integer"
                 },
-                "special_tag": {
-                    "description": "Admin only",
-                    "type": "string"
+                "reply_to": {
+                    "description": "id of the floor to which replied",
+                    "type": "integer"
                 }
             }
         },
@@ -1175,11 +1184,6 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "content": {
-                    "description": "Owner or admin, if it's modified or deleted, the original content should be moved to  floor_history",
-                    "type": "string"
-                },
-                "special_tag": {
-                    "description": "Admin only",
                     "type": "string"
                 },
                 "tags": {
@@ -1195,16 +1199,11 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "content": {
-                    "description": "Owner or admin, if it's modified or deleted, the original content should be moved to  floor_history",
                     "type": "string"
                 },
                 "division_id": {
                     "description": "Admin only",
                     "type": "integer"
-                },
-                "special_tag": {
-                    "description": "Admin only",
-                    "type": "string"
                 },
                 "tags": {
                     "description": "All users",
@@ -1224,13 +1223,21 @@ const docTemplate = `{
                 }
             }
         },
-        "schemas.DeleteDivisionModel": {
+        "schemas.DeleteDivision": {
             "type": "object",
             "properties": {
                 "to": {
                     "description": "Admin only\nID of the target division that all the deleted division's holes will be moved to",
                     "type": "integer",
                     "default": 1
+                }
+            }
+        },
+        "schemas.DeleteFloor": {
+            "type": "object",
+            "properties": {
+                "delete_reason": {
+                    "type": "string"
                 }
             }
         },
@@ -1251,7 +1258,7 @@ const docTemplate = `{
                 }
             }
         },
-        "schemas.ModifyDivisionModel": {
+        "schemas.ModifyDivision": {
             "type": "object",
             "properties": {
                 "description": {
@@ -1285,6 +1292,10 @@ const docTemplate = `{
                 },
                 "like_int": {
                     "description": "All users, 1 is like, -1 is dislike, 0 is reset",
+                    "type": "integer"
+                },
+                "reply_to": {
+                    "description": "id of the floor to which replied",
                     "type": "integer"
                 },
                 "special_tag": {

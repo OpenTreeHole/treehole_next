@@ -36,6 +36,7 @@ func InitDB() {
 		&Division{},
 		&Tag{},
 		&Hole{},
+		&AnonynameMapping{},
 		&Floor{},
 		&FloorHistory{},
 		&User{},

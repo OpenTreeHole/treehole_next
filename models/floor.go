@@ -1,8 +1,10 @@
 package models
 
 import (
+	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+	"treehole_next/utils"
 )
 
 // Floor has a tree structure, example:
@@ -18,7 +20,7 @@ type Floor struct {
 	HoleID      int      `json:"hole_id"`
 	UserID      int      `json:"-"`
 	Content     string   `json:"content"`
-	Anonyname   string   `json:"anonyname" gorm:"size:16"`
+	Anonyname   string   `json:"anonyname" gorm:"size:32"`
 	Storey      int      `json:"storey" gorm:"index"`                    // The sequence of the root nodes
 	ReplyTo     int      `json:"reply_to"`                               // Floor id that it replies to (must be in the same hole)
 	Mention     []Floor  `json:"mention" gorm:"many2many:floor_mention"` // Many to many mentions (in different holes)
@@ -31,6 +33,12 @@ type Floor struct {
 }
 
 type Floors []Floor
+
+type AnonynameMapping struct {
+	HoleID    int    `json:"hole_id" gorm:"primarykey"`
+	UserID    int    `json:"user_id" gorm:"primarykey"`
+	Anonyname string `json:"anonyname" gorm:"index;size:32"`
+}
 
 //goland:noinspection GoNameStartsWithPackageName
 type FloorHistory struct {
@@ -79,4 +87,67 @@ func (floor Floor) MakeQuerySet(
 		Limit(limit).Offset(offset).
 		Where("hole_id = ?", holeID).
 		Order(clause.OrderByColumn{Column: clause.Column{Name: orderBy}, Desc: ifDesc})
+}
+
+func (floor *Floor) Create(c *fiber.Ctx, db ...*gorm.DB) error {
+	var tx *gorm.DB
+	if len(db) > 0 {
+		tx = db[0]
+	} else {
+		tx = DB
+	}
+
+	var user User
+	err := user.GetUser(c)
+	if err != nil {
+		return err
+	}
+
+	// get anonymous name
+	var mapping AnonynameMapping
+
+	err = tx.Transaction(func(tx *gorm.DB) error {
+		result := tx.
+			Where("hole_id = ?", floor.HoleID).
+			Where("user_id = ?", user.ID).
+			Take(&mapping)
+
+		if result.Error != nil {
+			// no mapping exists, generate anonyname
+			var names []string
+			result = tx.Clauses(clause.Locking{
+				Strength: "UPDATE",
+			}).Raw(`
+				SELECT anonyname FROM anonyname_mapping 
+				WHERE hole_id = ? 
+				ORDER BY anonyname`, floor.HoleID,
+			).Scan(&names)
+			if result.Error != nil {
+				return result.Error
+			}
+
+			floor.Anonyname = utils.GenerateName(names)
+			result = tx.Create(&AnonynameMapping{
+				UserID:    user.ID,
+				HoleID:    floor.HoleID,
+				Anonyname: floor.Anonyname,
+			})
+			if result.Error != nil {
+				return result.Error
+			}
+		} else {
+			floor.Anonyname = mapping.Anonyname
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	result := tx.Create(floor)
+	if result.Error != nil {
+		return result.Error
+	}
+
+	return nil
 }

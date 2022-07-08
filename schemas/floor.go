@@ -9,8 +9,8 @@ type ListFloorOld struct {
 type CreateFloor struct {
 	// Owner or admin, if it's modified or deleted, the original content should be moved to  floor_history
 	Content string `json:"content"`
-	// Admin only
-	SpecialTag string `json:"special_tag" default:""`
+	// id of the floor to which replied
+	ReplyTo int `json:"reply_to"`
 }
 
 type CreateFloorOld struct {
@@ -26,6 +26,8 @@ type ModifyFloor struct {
 	LikeOld string `json:"like"`
 	// Admin only
 	Fold string `json:"fold"`
+	// Admin only
+	SpecialTag string `json:"special_tag" default:""`
 }
 
 type DeleteFloor struct {

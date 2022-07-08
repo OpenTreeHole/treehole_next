@@ -109,22 +109,27 @@ func CreateFloor(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
+
 	holeID, err := c.ParamsInt("id")
 	if err != nil {
 		return err
 	}
-	var floor Floor
-	floor.HoleID = holeID
-	floor.Content = body.Content
-	floor.SpecialTag = body.SpecialTag
-	result := DB.Create(&floor)
-	if result.Error != nil {
-		return result.Error
+
+	floor := Floor{
+		HoleID:  holeID,
+		Content: body.Content,
+		ReplyTo: body.ReplyTo,
 	}
+	err = floor.Create(c)
+	if err != nil {
+		return err
+	}
+
 	err = floor.LoadMention()
 	if err != nil {
 		return err
 	}
+
 	return Serialize(c.Status(201), &floor)
 }
 
@@ -142,18 +147,22 @@ func CreateFloorOld(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	var floor Floor
-	floor.HoleID = body.HoleID
-	floor.Content = body.Content
-	floor.SpecialTag = body.SpecialTag
-	result := DB.Create(&floor)
-	if result.Error != nil {
-		return result.Error
+
+	floor := Floor{
+		HoleID:  body.HoleID,
+		Content: body.Content,
+		ReplyTo: body.ReplyTo,
 	}
+	err = floor.Create(c)
+	if err != nil {
+		return err
+	}
+
 	err = floor.LoadMention()
 	if err != nil {
 		return err
 	}
+
 	return Serialize(c.Status(201), &floor)
 }
 

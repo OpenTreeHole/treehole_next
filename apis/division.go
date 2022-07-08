@@ -15,7 +15,7 @@ import (
 // @Accept application/json
 // @Produce application/json
 // @Router /divisions [post]
-// @Param json body schemas.AddDivisionModel true "json"
+// @Param json body schemas.AddDivision true "json"
 // @Success 201 {object} models.Division
 // @Success 200 {object} models.Division
 func AddDivision(c *fiber.Ctx) error {
@@ -80,7 +80,7 @@ func GetDivision(c *fiber.Ctx) error {
 // @Produce application/json
 // @Router /divisions/{id} [put]
 // @Param id path int true "id"
-// @Param json body schemas.ModifyDivisionModel true "json"
+// @Param json body schemas.ModifyDivision true "json"
 // @Success 200 {object} models.Division
 // @Failure 404 {object} schemas.MessageModel
 func ModifyDivision(c *fiber.Ctx) error {
@@ -108,7 +108,7 @@ func ModifyDivision(c *fiber.Ctx) error {
 // @Produce application/json
 // @Router /divisions/{id} [delete]
 // @Param id path int true "id"
-// @Param json body schemas.DeleteDivisionModel true "json"
+// @Param json body schemas.DeleteDivision true "json"
 // @Success 204
 // @Failure 404 {object} schemas.MessageModel
 func DeleteDivision(c *fiber.Ctx) error {

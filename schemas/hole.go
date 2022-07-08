@@ -18,7 +18,7 @@ type divisionID struct {
 }
 
 type CreateHole struct {
-	CreateFloor
+	Content string `json:"content"`
 	tags
 }
 
