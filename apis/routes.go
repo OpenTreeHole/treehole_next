@@ -22,6 +22,13 @@ func RegisterRoutes(app *fiber.App) {
 	app.Put("/divisions/:id", ModifyDivision)
 	app.Delete("/divisions/:id", DeleteDivision)
 
+	// tags
+	app.Get("/tags", ListTags)
+	app.Get("/tags/:id", GetTag)
+	app.Post("/tags", CreateTag)
+	app.Put("/tags/:id", ModifyTag)
+	app.Delete("/tags/:id", DeleteTag)
+
 	// holes
 	app.Get("/divisions/:id/holes", ListHolesByDivision)
 	app.Get("/tags/:name/holes", ListHolesByTag)
