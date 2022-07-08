@@ -32,7 +32,8 @@ func GetTag(c *fiber.Ctx) error {
 	id, _ := c.ParamsInt("id")
 	var tag Tag
 	tag.ID = id
-	if result := DB.First(&tag); result.Error != nil {
+	result := DB.First(&tag)
+	if result.Error != nil {
 		return result.Error
 	}
 	return c.JSON(&tag)
@@ -75,7 +76,8 @@ func ModifyTag(c *fiber.Ctx) error {
 	id, _ := c.ParamsInt("id")
 	var tag Tag
 	var body schemas.ModifyTag
-	if err := c.BodyParser(&body); err != nil {
+	err := c.BodyParser(&body)
+	if err != nil {
 		return err
 	}
 	DB.Find(&tag, id)
@@ -97,25 +99,27 @@ func ModifyTag(c *fiber.Ctx) error {
 // @Failure 404 {object} schemas.MessageModel
 func DeleteTag(c *fiber.Ctx) error {
 	id, _ := c.ParamsInt("id")
-	var tag Tag
-	var newtag Tag
 	var body schemas.DeleteTag
-
-	if result := DB.First(&tag, id); result.Error != nil {
-		return result.Error
-	}
-	if err := c.BodyParser(&body); err != nil {
+	err := c.BodyParser(&body)
+	if err != nil {
 		return err
 	}
 
-	newtag.Name = body.To
-	if result := DB.Where("name = ?", newtag.Name).First(&newtag); result.Error != nil {
+	var tag Tag
+	result := DB.First(&tag, id)
+	if result.Error != nil {
+		return result.Error
+	}
+
+	var newtag Tag
+	result = DB.Where("name = ?", body.To).First(&newtag)
+	if result.Error != nil {
 		return result.Error
 	}
 
 	newtag.Temperature += tag.Temperature
 
-	err := DB.Transaction(func(tx *gorm.DB) error {
+	err = DB.Transaction(func(tx *gorm.DB) error {
 		result := tx.Exec(`
 			DELETE FROM hole_tags WHERE tag_id = ? AND hole_id IN
 				(SELECT a.hole_id FROM
