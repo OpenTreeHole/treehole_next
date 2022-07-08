@@ -217,12 +217,17 @@ func CreateHoleOld(c *fiber.Ctx) error {
 // @Success 200 {object} Hole
 // @Failure 404 {object} schemas.MessageModel
 func ModifyHole(c *fiber.Ctx) error {
+	// validate
 	var body schemas.ModifyHole
 	err := c.BodyParser(&body)
 	if err != nil {
 		return err
 	}
-	holeID, _ := c.ParamsInt("id")
+
+	holeID, err := c.ParamsInt("id")
+	if err != nil {
+		return err
+	}
 
 	// Find hole
 	var hole Hole
@@ -231,37 +236,26 @@ func ModifyHole(c *fiber.Ctx) error {
 		return result.Error
 	}
 
+	// update divisionID
 	if body.DivisionID != 0 {
 		hole.DivisionID = body.DivisionID
 	}
-	if len(body.Tags) == 0 {
-		DB.Save(&hole)
-		return Serialize(c, &hole)
-	} else {
-		var tagNames []string
-		for _, v := range body.Tags {
-			tagNames = append(tagNames, v.Name)
+
+	// update tags
+	if len(body.Tags) != 0 {
+		for _, tag := range body.Tags {
+			hole.Tags = append(hole.Tags, &Tag{Name: tag.Name})
 		}
 		err = DB.Transaction(func(tx *gorm.DB) error {
-			err = DB.Model(&hole).Association("Tags").Clear()
-			if err != nil {
-				return err
-			}
-			err = findCreateTag(&hole, tagNames)
-			if err != nil {
-				return err
-			}
-			result = tx.Session(&gorm.Session{FullSaveAssociations: true}).Save(&hole)
-			if result.Error != nil {
-				return result.Error
-			}
-			return nil
+			return hole.SetTags(tx, true)
 		})
 		if err != nil {
 			return err
 		}
 	}
 
+	// save
+	DB.Omit("Tags").Save(&hole)
 	return Serialize(c, &hole)
 }
 
@@ -283,24 +277,4 @@ func DeleteHole(c *fiber.Ctx) error {
 		return gorm.ErrRecordNotFound
 	}
 	return c.Status(204).JSON(nil)
-}
-
-// find or create Tags and increment Tags.temperature according to tagNames
-func findCreateTag(hole *Hole, tagNames []string) error {
-	result := DB.Where("name IN ?", tagNames).Find(&hole.Tags)
-	if result.Error != nil {
-		return result.Error
-	}
-	var existTagNames []string
-	for _, val := range hole.Tags {
-		existTagNames = append(existTagNames, val.Name)
-	}
-	createTagNames := DiffrenceSet(tagNames, existTagNames)
-	for _, val := range createTagNames {
-		hole.Tags = append(hole.Tags, &Tag{Name: val})
-	}
-	for i := 0; i < len(hole.Tags); i++ {
-		hole.Tags[i].Temperature += 1
-	}
-	return nil
 }

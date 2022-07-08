@@ -45,6 +45,7 @@ func (hole *Hole) LoadTags() error {
 }
 
 func (hole *Hole) LoadFloors() error {
+	// floors
 	var floors []Floor
 	result := DB.Where("hole_id = ?", hole.ID).Limit(config.Config.Size).Find(&floors)
 	hole.HoleFloor.Floors = &floors
@@ -52,8 +53,10 @@ func (hole *Hole) LoadFloors() error {
 		return nil
 	}
 
+	// first floor
 	hole.HoleFloor.FirstFloor = &floors[0]
 
+	// last floor
 	if hole.Reply <= config.Config.Size {
 		hole.HoleFloor.LastFloor = &floors[result.RowsAffected-1]
 	} else {
@@ -61,6 +64,7 @@ func (hole *Hole) LoadFloors() error {
 		DB.Where("hole_id = ?", hole.ID).Last(&floor)
 		hole.HoleFloor.LastFloor = &floor
 	}
+
 	return nil
 }
 
@@ -106,20 +110,30 @@ func (hole Hole) MakeQuerySet(offset time.Time, size int, isadmin bool) (tx *gor
 // SetTags sets tags for a hole
 func (hole *Hole) SetTags(tx *gorm.DB, clear bool) error {
 	if clear {
-		result := tx.Exec(`
+		// update tag temperature
+		var sql string
+		if config.Config.Debug {
+			sql = `
+			UPDATE tag
+			SET temperature = temperature - 1 
+			WHERE id IN (
+				SELECT tag_id FROM hole_tags WHERE hole_id = ?
+			)`
+		} else {
+			sql = `
 			UPDATE tag INNER JOIN hole_tags 
 			ON tag.id = hole_tags.tag_id 
 			SET temperature = temperature - 1 
-			WHERE hole_tags.hole_id = ?`,
-			hole.ID,
-		)
+			WHERE hole_tags.hole_id = ?`
+		}
+		result := tx.Exec(sql, hole.ID)
 		if result.Error != nil {
 			return result.Error
 		}
 
-		err := tx.Model(hole).Association("Tags").Clear()
-		if err != nil {
-			return err
+		result = tx.Exec("DELETE FROM hole_tags WHERE hole_id = ?", hole.ID)
+		if result.Error != nil {
+			return result.Error
 		}
 	}
 
@@ -135,14 +149,21 @@ func (hole *Hole) SetTags(tx *gorm.DB, clear bool) error {
 
 	// create associations
 	var builder strings.Builder
-	builder.WriteString("INSERT INTO hole_tags (hole_id, tag_id) VALUES ")
+	if config.Config.Debug {
+		builder.WriteString("INSERT INTO")
+	} else {
+		builder.WriteString("INSERT IGNORE INTO")
+	}
+	builder.WriteString(" hole_tags (hole_id, tag_id) VALUES ")
 	for i, tagID := range tagIDs {
 		builder.WriteString(fmt.Sprintf("(%d, %d)", hole.ID, tagID))
 		if i != len(tagIDs)-1 {
 			builder.WriteString(",")
 		}
 	}
-	builder.WriteString("ON CONFLICT DO NOTHING")
+	if config.Config.Debug {
+		builder.WriteString(" ON CONFLICT DO NOTHING")
+	}
 	result := tx.Exec(builder.String())
 	if result.Error != nil {
 		return result.Error
