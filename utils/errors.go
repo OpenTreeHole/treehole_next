@@ -15,9 +15,24 @@ func (e *HttpError) Error() string {
 	return e.Message
 }
 
-func BadRequest(message string) *HttpError {
+func BadRequest(messages ...string) *HttpError {
+	message := "Bad Request"
+	if len(messages) > 0 {
+		message = messages[0]
+	}
 	return &HttpError{
 		Code:    400,
+		Message: message,
+	}
+}
+
+func Forbidden(messages ...string) *HttpError {
+	message := "您没有权限进行此操作"
+	if len(messages) > 0 {
+		message = messages[0]
+	}
+	return &HttpError{
+		Code:    403,
 		Message: message,
 	}
 }

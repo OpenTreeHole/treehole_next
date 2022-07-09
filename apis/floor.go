@@ -1,14 +1,12 @@
 package apis
 
 import (
-	"encoding/json"
 	. "treehole_next/config"
 	. "treehole_next/models"
 	"treehole_next/schemas"
 	. "treehole_next/utils"
 
 	"github.com/gofiber/fiber/v2"
-	"gorm.io/gorm"
 )
 
 // ListFloorsInAHole
@@ -176,57 +174,124 @@ func CreateFloorOld(c *fiber.Ctx) error {
 // @Success 200 {object} Floor
 // @Failure 404 {object} schemas.MessageModel
 func ModifyFloor(c *fiber.Ctx) error {
+	// validate request body
 	var body schemas.ModifyFloor
 	err := c.BodyParser(&body)
 	if err != nil {
 		return err
 	}
+
+	// find floor
 	floorID, err := c.ParamsInt("id")
 	if err != nil {
 		return err
 	}
 
-	var bodyMap StringMap
-	err = json.Unmarshal(c.Body(), &bodyMap)
-	if err != nil {
-		return err
-	}
-
-	// find floor
 	var floor Floor
 	result := DB.First(&floor, floorID)
 	if result.Error != nil {
 		return result.Error
 	}
 
+	// get user
+	var user User
+	err = user.GetUser(c)
+	if err != nil {
+		return err
+	}
+
 	// partially modify floor
 	if body.Content != "" {
+		var reason string
+		if user.ID == floor.UserID {
+			reason = "该内容已被作者修改"
+		} else if user.IsAdmin {
+			reason = "该内容已被管理员修改"
+		} else {
+			return Forbidden()
+		}
+		err = floor.Backup(c, reason)
+		if err != nil {
+			return err
+		}
 		floor.Content = body.Content
 	}
-	if body.SpecialTag != "" {
-		floor.SpecialTag = body.SpecialTag
-	}
-	if _, ok := bodyMap["like_int"]; ok {
-		if body.Like != 0 {
-			floor.Like += body.Like
-		} else {
-			floor.Like = 0
-		}
-	} else if _, ok := bodyMap["like"]; ok {
-		if body.LikeOld == "add" {
-			floor.Like += 1
-		} else if body.LikeOld == "reset" {
-			floor.Like = 0
-		}
-	}
+
 	if body.Fold != "" {
+		if !user.IsAdmin {
+			return Forbidden()
+		}
 		floor.Fold = body.Fold
 	}
+
+	if body.SpecialTag != "" {
+		if !user.IsAdmin {
+			return Forbidden()
+		}
+		floor.SpecialTag = body.SpecialTag
+	}
+
+	// TODO: like
+	if body.Like == "add" {
+		floor.Like += 1
+	} else if body.Like == "reset" {
+		floor.Like = 0
+	}
+
 	DB.Save(&floor)
+
 	err = floor.LoadMention()
 	if err != nil {
 		return err
 	}
+
+	return Serialize(c, &floor)
+}
+
+// ModifyFloorLike
+// @Summary Modify A Floor's like
+// @Tags Floor
+// @Produce application/json
+// @Router /floors/{id}/like/{like} [post]
+// @Param id path int true "id"
+// @Param like path int true "like"
+// @Success 200 {object} Floor
+// @Failure 404 {object} schemas.MessageModel
+func ModifyFloorLike(c *fiber.Ctx) error {
+	// validate like option
+	likeOption, err := c.ParamsInt("like")
+	if err != nil {
+		return err
+	}
+
+	// find floor
+	floorID, err := c.ParamsInt("id")
+	if err != nil {
+		return err
+	}
+
+	var floor Floor
+	result := DB.First(&floor, floorID)
+	if result.Error != nil {
+		return result.Error
+	}
+
+	// TODO: like
+	if likeOption > 0 {
+
+	} else if likeOption < 0 {
+
+	} else {
+
+	}
+
+	DB.Save(&floor)
+
+	err = floor.LoadMention()
+	if err != nil {
+		return err
+	}
+
 	return Serialize(c, &floor)
 }
 
@@ -245,32 +310,25 @@ func DeleteFloor(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
+
 	floorID, err := c.ParamsInt("id")
 	if err != nil {
 		return err
 	}
+
 	var floor Floor
-	floor.ID = floorID
+	result := DB.First(&floor, floorID)
+	if result.Error != nil {
+		return result.Error
+	}
 
-	var floorHistory FloorHistory
-	floorHistory.FloorID = floorID
-	floorHistory.Content = floor.Content
-	floorHistory.Reason = body.Reason
-
-	err = DB.Transaction(func(tx *gorm.DB) error {
-		result := DB.Model(&floor).Select("Deleted").Updates(Floor{Deleted: true})
-		if result.Error != nil {
-			return result.Error
-		}
-		result = DB.Create(&floorHistory)
-		if result.Error != nil {
-			return result.Error
-		}
-		return nil
-	})
+	err = floor.Backup(c, body.Reason)
 	if err != nil {
 		return err
 	}
+
+	floor.Deleted = true
+	DB.Save(&floor)
 
 	return Serialize(c, &floor)
 }

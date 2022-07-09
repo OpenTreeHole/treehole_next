@@ -97,8 +97,7 @@ func (floor *Floor) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 		tx = DB
 	}
 
-	var user User
-	err := user.GetUser(c)
+	userID, err := GetUserID(c)
 	if err != nil {
 		return err
 	}
@@ -109,7 +108,7 @@ func (floor *Floor) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 	err = tx.Transaction(func(tx *gorm.DB) error {
 		result := tx.
 			Where("hole_id = ?", floor.HoleID).
-			Where("user_id = ?", user.ID).
+			Where("user_id = ?", userID).
 			Take(&mapping)
 
 		if result.Error != nil {
@@ -128,7 +127,7 @@ func (floor *Floor) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 
 			floor.Anonyname = utils.GenerateName(names)
 			result = tx.Create(&AnonynameMapping{
-				UserID:    user.ID,
+				UserID:    userID,
 				HoleID:    floor.HoleID,
 				Anonyname: floor.Anonyname,
 			})
@@ -150,4 +149,19 @@ func (floor *Floor) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 	}
 
 	return nil
+}
+
+func (floor *Floor) Backup(c *fiber.Ctx, reason string) error {
+	userID, err := GetUserID(c)
+	if err != nil {
+		return err
+	}
+
+	history := FloorHistory{
+		Content: floor.Content,
+		Reason:  reason,
+		FloorID: floor.ID,
+		UserID:  userID,
+	}
+	return DB.Create(&history).Error
 }

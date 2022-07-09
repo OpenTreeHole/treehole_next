@@ -7,7 +7,6 @@ type ListFloorOld struct {
 }
 
 type CreateFloor struct {
-	// Owner or admin, if it's modified or deleted, the original content should be moved to  floor_history
 	Content string `json:"content"`
 	// id of the floor to which replied
 	ReplyTo int `json:"reply_to"`
@@ -19,11 +18,10 @@ type CreateFloorOld struct {
 }
 
 type ModifyFloor struct {
-	CreateFloor
-	// All users, 1 is like, -1 is dislike, 0 is reset
-	Like int `json:"like_int"`
-	// To be compatible with the deprecated API, "add" is like, "cancel" is reset
-	LikeOld string `json:"like"`
+	// Owner or admin, the original content should be moved to  floor_history
+	Content string `json:"content"`
+	// All user, deprecated, "add" is like, "cancel" is reset
+	Like string `json:"like"`
 	// Admin only
 	Fold string `json:"fold"`
 	// Admin only

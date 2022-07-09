@@ -46,5 +46,6 @@ func RegisterRoutes(app *fiber.App) {
 	app.Post("/holes/:id/floors", CreateFloor)
 	app.Post("/floors", CreateFloorOld)
 	app.Put("/floors/:id", ModifyFloor)
+	app.Post("/floors/:id/like/:like", ModifyFloorLike)
 	app.Delete("/floors/:id", DeleteFloor)
 }

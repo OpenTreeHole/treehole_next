@@ -15,16 +15,24 @@ type User struct {
 }
 
 func (user *User) GetUser(c *fiber.Ctx) error {
+	id, err := GetUserID(c)
+	if err != nil {
+		return err
+	}
+	// TODO: jwt
+	user.ID = id
+	return nil
+}
+
+func GetUserID(c *fiber.Ctx) (int, error) {
 	if config.Config.Debug {
-		user.ID = 1
-		return nil
+		return 1, nil
 	}
 
 	id, err := strconv.Atoi(c.Get("X-Consumer-Username"))
 	if err != nil {
-		return err
+		return 0, err
 	}
 
-	user.ID = id
-	return nil
+	return id, nil
 }
