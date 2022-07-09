@@ -1,10 +1,11 @@
 package models
 
 import (
+	"treehole_next/utils"
+
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
-	"treehole_next/utils"
 )
 
 // Floor has a tree structure, example:
@@ -40,6 +41,12 @@ type AnonynameMapping struct {
 	Anonyname string `json:"anonyname" gorm:"index;size:32"`
 }
 
+type LikeMapping struct {
+	FloorID    int  `json:"floor_id" gorm:"primarykey"`
+	UserID     int  `json:"user_id" gorm:"primarykey"`
+	LikeOption bool `json:"like_option"`
+}
+
 //goland:noinspection GoNameStartsWithPackageName
 type FloorHistory struct {
 	BaseModel
@@ -50,11 +57,7 @@ type FloorHistory struct {
 }
 
 func (floor *Floor) Preprocess() error {
-	// Load mentions
-	if floor.Mention == nil {
-		floor.Mention = []Floor{}
-	}
-	return nil
+	return floor.LoadMention()
 }
 
 func (floors Floors) Preprocess() error {
@@ -164,4 +167,43 @@ func (floor *Floor) Backup(c *fiber.Ctx, reason string) error {
 		UserID:  userID,
 	}
 	return DB.Create(&history).Error
+}
+
+func (floor *Floor) ModifyLike(c *fiber.Ctx, likeOption bool, reset bool) error {
+	// get userID
+	userID, err := GetUserID(c)
+	if err != nil {
+		return err
+	}
+
+	if reset {
+		result := DB.Where("floor_id = ?", floor.ID).Delete(LikeMapping{})
+		if result != nil {
+			return result.Error
+		}
+		floor.Like = 0
+	} else {
+		var like LikeMapping
+		result := DB.
+			Where("floor_id = ?", floor.ID).
+			Where("user_id = ?", userID).
+			Take(&like)
+		if result.Error != nil {
+			if likeOption {
+				floor.Like++
+			}
+			like.LikeOption = likeOption
+			DB.Create(&like)
+		} else if like.LikeOption != likeOption {
+			if likeOption {
+				floor.Like++
+			} else {
+				floor.Like--
+			}
+			like.LikeOption = likeOption
+			DB.Save(&like)
+		}
+	}
+
+	return nil
 }

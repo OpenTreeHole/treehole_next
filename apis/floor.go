@@ -40,7 +40,7 @@ func ListFloorsInAHole(c *fiber.Ctx) error {
 	result := Floor{}.MakeQuerySet(
 		query.Size, query.Offset, holeID,
 		query.OrderBy, query.Desc,
-	).Preload("Mention").Find(&floors)
+	).Find(&floors)
 	if result.Error != nil {
 		return result.Error
 	}
@@ -65,7 +65,7 @@ func ListFloorsOld(c *fiber.Ctx) error {
 	result := Floor{}.MakeQuerySet(
 		query.Size, query.Offset, query.HoleID,
 		"id", false,
-	).Preload("Mention").Find(&floors)
+	).Find(&floors)
 	if result.Error != nil {
 		return result.Error
 	}
@@ -123,11 +123,6 @@ func CreateFloor(c *fiber.Ctx) error {
 		return err
 	}
 
-	err = floor.LoadMention()
-	if err != nil {
-		return err
-	}
-
 	return Serialize(c.Status(201), &floor)
 }
 
@@ -152,11 +147,6 @@ func CreateFloorOld(c *fiber.Ctx) error {
 		ReplyTo: body.ReplyTo,
 	}
 	err = floor.Create(c)
-	if err != nil {
-		return err
-	}
-
-	err = floor.LoadMention()
 	if err != nil {
 		return err
 	}
@@ -231,19 +221,13 @@ func ModifyFloor(c *fiber.Ctx) error {
 		floor.SpecialTag = body.SpecialTag
 	}
 
-	// TODO: like
 	if body.Like == "add" {
-		floor.Like += 1
+		floor.ModifyLike(c, true, false)
 	} else if body.Like == "reset" {
-		floor.Like = 0
+		floor.ModifyLike(c, false, true)
 	}
 
 	DB.Save(&floor)
-
-	err = floor.LoadMention()
-	if err != nil {
-		return err
-	}
 
 	return Serialize(c, &floor)
 }
@@ -276,21 +260,16 @@ func ModifyFloorLike(c *fiber.Ctx) error {
 		return result.Error
 	}
 
-	// TODO: like
+	// modify LikeMapping and Floor->Like
 	if likeOption > 0 {
-
+		floor.ModifyLike(c, true, false)
 	} else if likeOption < 0 {
-
+		floor.ModifyLike(c, false, false)
 	} else {
-
+		floor.ModifyLike(c, false, true)
 	}
 
 	DB.Save(&floor)
-
-	err = floor.LoadMention()
-	if err != nil {
-		return err
-	}
 
 	return Serialize(c, &floor)
 }
