@@ -19,8 +19,8 @@ func (user *User) GetUser(c *fiber.Ctx) error {
 		user.ID = 1
 		return nil
 	}
-	idString := c.Get("X-Consumer-Username")
-	id, err := strconv.Atoi(idString)
+
+	id, err := strconv.Atoi(c.Get("X-Consumer-Username"))
 	if err != nil {
 		return err
 	}
