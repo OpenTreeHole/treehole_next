@@ -39,6 +39,7 @@ func InitDB() {
 		&AnonynameMapping{},
 		&Floor{},
 		&FloorHistory{},
+		&FloorLike{},
 		&User{},
 	)
 	if err != nil {

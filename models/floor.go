@@ -41,10 +41,10 @@ type AnonynameMapping struct {
 	Anonyname string `json:"anonyname" gorm:"index;size:32"`
 }
 
-type LikeMapping struct {
-	FloorID    int  `json:"floor_id" gorm:"primarykey"`
-	UserID     int  `json:"user_id" gorm:"primarykey"`
-	LikeOption bool `json:"like_option"`
+type FloorLike struct {
+	FloorID  int  `json:"floor_id" gorm:"primarykey"`
+	UserID   int  `json:"user_id" gorm:"primarykey"`
+	LikeData int8 `json:"like_data"`
 }
 
 //goland:noinspection GoNameStartsWithPackageName
@@ -169,41 +169,48 @@ func (floor *Floor) Backup(c *fiber.Ctx, reason string) error {
 	return DB.Create(&history).Error
 }
 
-func (floor *Floor) ModifyLike(c *fiber.Ctx, likeOption bool, reset bool) error {
+func (floor *Floor) ModifyLike(c *fiber.Ctx, likeOption int8) error {
+	// validate like option
+	if likeOption > 1 || likeOption < -1 {
+		return utils.BadRequest("like option must be -1, 0 or 1")
+	}
+
 	// get userID
 	userID, err := GetUserID(c)
 	if err != nil {
 		return err
 	}
 
-	if reset {
-		result := DB.Where("floor_id = ?", floor.ID).Delete(LikeMapping{})
-		if result != nil {
+	return DB.Transaction(func(tx *gorm.DB) error {
+
+		result := tx.Exec("DELETE FROM floor_like WHERE floor_id = ? AND user_id = ?", floor.ID, userID)
+		if result.Error != nil {
 			return result.Error
 		}
-		floor.Like = 0
-	} else {
-		var like LikeMapping
-		result := DB.
-			Where("floor_id = ?", floor.ID).
-			Where("user_id = ?", userID).
-			Take(&like)
-		if result.Error != nil {
-			if likeOption {
-				floor.Like++
-			}
-			like.LikeOption = likeOption
-			DB.Create(&like)
-		} else if like.LikeOption != likeOption {
-			if likeOption {
-				floor.Like++
-			} else {
-				floor.Like--
-			}
-			like.LikeOption = likeOption
-			DB.Save(&like)
-		}
-	}
 
-	return nil
+		if likeOption != 0 {
+			result = tx.Create(&FloorLike{
+				FloorID:  floor.ID,
+				UserID:   userID,
+				LikeData: likeOption,
+			})
+			if result.Error != nil {
+				return err
+			}
+		}
+
+		var like int
+		result = tx.Raw(`
+			SELECT IFNULL(SUM(like_data), 0)
+			FROM floor_like 
+			WHERE floor_id = ?`,
+			floor.ID,
+		).Scan(&like)
+		if result.Error != nil {
+			return result.Error
+		}
+
+		floor.Like = like
+		return nil
+	})
 }

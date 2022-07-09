@@ -222,9 +222,12 @@ func ModifyFloor(c *fiber.Ctx) error {
 	}
 
 	if body.Like == "add" {
-		floor.ModifyLike(c, true, false)
+		err = floor.ModifyLike(c, 1)
 	} else if body.Like == "reset" {
-		floor.ModifyLike(c, false, true)
+		err = floor.ModifyLike(c, 0)
+	}
+	if err != nil {
+		return err
 	}
 
 	DB.Save(&floor)
@@ -238,7 +241,7 @@ func ModifyFloor(c *fiber.Ctx) error {
 // @Produce application/json
 // @Router /floors/{id}/like/{like} [post]
 // @Param id path int true "id"
-// @Param like path int true "like"
+// @Param like path int true "1 is like, 0 is reset, -1 is dislike"
 // @Success 200 {object} Floor
 // @Failure 404 {object} schemas.MessageModel
 func ModifyFloorLike(c *fiber.Ctx) error {
@@ -260,13 +263,10 @@ func ModifyFloorLike(c *fiber.Ctx) error {
 		return result.Error
 	}
 
-	// modify LikeMapping and Floor->Like
-	if likeOption > 0 {
-		floor.ModifyLike(c, true, false)
-	} else if likeOption < 0 {
-		floor.ModifyLike(c, false, false)
-	} else {
-		floor.ModifyLike(c, false, true)
+	// modify like
+	err = floor.ModifyLike(c, int8(likeOption))
+	if err != nil {
+		return err
 	}
 
 	DB.Save(&floor)

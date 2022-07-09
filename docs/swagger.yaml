@@ -20,10 +20,13 @@ definitions:
   models.Floor:
     properties:
       anonyname:
+        description: random username, not empty
         type: string
       content:
+        description: not empty
         type: string
       deleted:
+        description: whether the floor is deleted
         type: boolean
       fold:
         description: fold reason
@@ -32,9 +35,15 @@ definitions:
         type: integer
       id:
         type: integer
+      is_me:
+        description: whether the user is the author of the floor, dynamically generated
+        type: boolean
       like:
         description: like - dislike
         type: integer
+      liked:
+        description: whether the user has liked the floor, dynamically generated
+        type: boolean
       mention:
         description: Many to many mentions (in different holes)
         items:
@@ -47,7 +56,7 @@ definitions:
         description: Additional info
         type: string
       storey:
-        description: The sequence of the root nodes
+        description: The sequence of floors in a hole
         type: integer
       time_created:
         type: string
@@ -112,8 +121,6 @@ definitions:
   schemas.CreateFloor:
     properties:
       content:
-        description: Owner or admin, if it's modified or deleted, the original content
-          should be moved to  floor_history
         type: string
       reply_to:
         description: id of the floor to which replied
@@ -122,8 +129,6 @@ definitions:
   schemas.CreateFloorOld:
     properties:
       content:
-        description: Owner or admin, if it's modified or deleted, the original content
-          should be moved to  floor_history
         type: string
       hole_id:
         type: integer
@@ -201,22 +206,14 @@ definitions:
   schemas.ModifyFloor:
     properties:
       content:
-        description: Owner or admin, if it's modified or deleted, the original content
-          should be moved to  floor_history
+        description: Owner or admin, the original content should be moved to  floor_history
         type: string
       fold:
         description: Admin only
         type: string
       like:
-        description: To be compatible with the deprecated API, "add" is like, "cancel"
-          is reset
+        description: All user, deprecated, "add" is like, "cancel" is reset
         type: string
-      like_int:
-        description: All users, 1 is like, -1 is dislike, 0 is reset
-        type: integer
-      reply_to:
-        description: id of the floor to which replied
-        type: integer
       special_tag:
         description: Admin only
         type: string
@@ -557,6 +554,33 @@ paths:
           schema:
             $ref: '#/definitions/schemas.MessageModel'
       summary: Modify A Floor
+      tags:
+      - Floor
+  /floors/{id}/like/{like}:
+    post:
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 1 is like, 0 is reset, -1 is dislike
+        in: path
+        name: like
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Floor'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/schemas.MessageModel'
+      summary: Modify A Floor's like
       tags:
       - Floor
   /holes:

@@ -482,6 +482,47 @@
                 }
             }
         },
+        "/floors/{id}/like/{like}": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Floor"
+                ],
+                "summary": "Modify A Floor's like",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "1 is like, 0 is reset, -1 is dislike",
+                        "name": "like",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Floor"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.MessageModel"
+                        }
+                    }
+                }
+            }
+        },
         "/holes": {
             "get": {
                 "produces": [
@@ -1010,12 +1051,15 @@
             "type": "object",
             "properties": {
                 "anonyname": {
+                    "description": "random username, not empty",
                     "type": "string"
                 },
                 "content": {
+                    "description": "not empty",
                     "type": "string"
                 },
                 "deleted": {
+                    "description": "whether the floor is deleted",
                     "type": "boolean"
                 },
                 "fold": {
@@ -1028,9 +1072,17 @@
                 "id": {
                     "type": "integer"
                 },
+                "is_me": {
+                    "description": "whether the user is the author of the floor, dynamically generated",
+                    "type": "boolean"
+                },
                 "like": {
                     "description": "like - dislike",
                     "type": "integer"
+                },
+                "liked": {
+                    "description": "whether the user has liked the floor, dynamically generated",
+                    "type": "boolean"
                 },
                 "mention": {
                     "description": "Many to many mentions (in different holes)",
@@ -1048,7 +1100,7 @@
                     "type": "string"
                 },
                 "storey": {
-                    "description": "The sequence of the root nodes",
+                    "description": "The sequence of floors in a hole",
                     "type": "integer"
                 },
                 "time_created": {
@@ -1147,7 +1199,6 @@
             "type": "object",
             "properties": {
                 "content": {
-                    "description": "Owner or admin, if it's modified or deleted, the original content should be moved to  floor_history",
                     "type": "string"
                 },
                 "reply_to": {
@@ -1160,7 +1211,6 @@
             "type": "object",
             "properties": {
                 "content": {
-                    "description": "Owner or admin, if it's modified or deleted, the original content should be moved to  floor_history",
                     "type": "string"
                 },
                 "hole_id": {
@@ -1271,7 +1321,7 @@
             "type": "object",
             "properties": {
                 "content": {
-                    "description": "Owner or admin, if it's modified or deleted, the original content should be moved to  floor_history",
+                    "description": "Owner or admin, the original content should be moved to  floor_history",
                     "type": "string"
                 },
                 "fold": {
@@ -1279,16 +1329,8 @@
                     "type": "string"
                 },
                 "like": {
-                    "description": "To be compatible with the deprecated API, \"add\" is like, \"cancel\" is reset",
+                    "description": "All user, deprecated, \"add\" is like, \"cancel\" is reset",
                     "type": "string"
-                },
-                "like_int": {
-                    "description": "All users, 1 is like, -1 is dislike, 0 is reset",
-                    "type": "integer"
-                },
-                "reply_to": {
-                    "description": "id of the floor to which replied",
-                    "type": "integer"
                 },
                 "special_tag": {
                     "description": "Admin only",
