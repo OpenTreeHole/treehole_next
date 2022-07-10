@@ -19,5 +19,7 @@ func Init() *fiber.App {
 	middlewares.RegisterMiddlewares(app)
 	apis.RegisterRoutes(app)
 
+	startTasks()
+
 	return app
 }

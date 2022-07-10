@@ -288,10 +288,12 @@ func DeleteHole(c *fiber.Ctx) error {
 // @Success 204
 // @Failure 404 {object} MessageModel
 func PatchHole(c *fiber.Ctx) error {
-	holeID, _ := c.ParamsInt("id")
-	result := DB.Exec("UPDATE hole SET view = view + 1 WHERE id = ?", holeID)
-	if result.Error != nil {
-		return result.Error
+	holeID, err := c.ParamsInt("id")
+	if err != nil {
+		return err
 	}
+
+	holeViewsChan <- holeID
+
 	return c.Status(204).JSON(nil)
 }
