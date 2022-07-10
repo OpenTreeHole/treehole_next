@@ -11,7 +11,7 @@ import (
 // @Success 200 {object} models.MessageModel
 // @Router / [get]
 func Index(c *fiber.Ctx) error {
-	return c.JSON(fiber.Map{"message": "hello world"})
+	return c.SendFile("meta.json")
 }
 
 func registerRoutes(app *fiber.App) {
