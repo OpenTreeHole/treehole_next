@@ -32,7 +32,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/schemas.MessageModel"
+                            "$ref": "#/definitions/models.MessageModel"
                         }
                     }
                 }
@@ -77,7 +77,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/schemas.AddDivision"
+                            "$ref": "#/definitions/division.CreateModel"
                         }
                     }
                 ],
@@ -141,13 +141,13 @@ const docTemplate = `{
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/schemas.MessageModel"
+                            "$ref": "#/definitions/models.MessageModel"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/schemas.MessageModel"
+                            "$ref": "#/definitions/models.MessageModel"
                         }
                     }
                 }
@@ -175,7 +175,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/schemas.CreateHole"
+                            "$ref": "#/definitions/hole.CreateModel"
                         }
                     }
                 ],
@@ -217,7 +217,7 @@ const docTemplate = `{
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/schemas.MessageModel"
+                            "$ref": "#/definitions/models.MessageModel"
                         }
                     }
                 }
@@ -244,7 +244,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/schemas.ModifyDivision"
+                            "$ref": "#/definitions/division.ModifyModel"
                         }
                     }
                 ],
@@ -258,7 +258,7 @@ const docTemplate = `{
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/schemas.MessageModel"
+                            "$ref": "#/definitions/models.MessageModel"
                         }
                     }
                 }
@@ -286,7 +286,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/schemas.DeleteDivision"
+                            "$ref": "#/definitions/division.DeleteModel"
                         }
                     }
                 ],
@@ -297,7 +297,7 @@ const docTemplate = `{
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/schemas.MessageModel"
+                            "$ref": "#/definitions/models.MessageModel"
                         }
                     }
                 }
@@ -360,7 +360,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/schemas.CreateFloorOld"
+                            "$ref": "#/definitions/floor.CreateOldModel"
                         }
                     }
                 ],
@@ -402,7 +402,7 @@ const docTemplate = `{
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/schemas.MessageModel"
+                            "$ref": "#/definitions/models.MessageModel"
                         }
                     }
                 }
@@ -429,7 +429,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/schemas.ModifyFloor"
+                            "$ref": "#/definitions/floor.ModifyModel"
                         }
                     }
                 ],
@@ -443,7 +443,7 @@ const docTemplate = `{
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/schemas.MessageModel"
+                            "$ref": "#/definitions/models.MessageModel"
                         }
                     }
                 }
@@ -470,7 +470,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/schemas.DeleteFloor"
+                            "$ref": "#/definitions/floor.DeleteModel"
                         }
                     }
                 ],
@@ -484,7 +484,7 @@ const docTemplate = `{
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/schemas.MessageModel"
+                            "$ref": "#/definitions/models.MessageModel"
                         }
                     }
                 }
@@ -525,7 +525,7 @@ const docTemplate = `{
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/schemas.MessageModel"
+                            "$ref": "#/definitions/models.MessageModel"
                         }
                     }
                 }
@@ -591,7 +591,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/schemas.CreateHoleOld"
+                            "$ref": "#/definitions/hole.CreateOldModel"
                         }
                     }
                 ],
@@ -685,7 +685,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/schemas.CreateFloor"
+                            "$ref": "#/definitions/floor.CreateModel"
                         }
                     }
                 ],
@@ -727,7 +727,7 @@ const docTemplate = `{
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/schemas.MessageModel"
+                            "$ref": "#/definitions/models.MessageModel"
                         }
                     }
                 }
@@ -754,7 +754,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/schemas.ModifyHole"
+                            "$ref": "#/definitions/hole.ModifyModel"
                         }
                     }
                 ],
@@ -768,7 +768,7 @@ const docTemplate = `{
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/schemas.MessageModel"
+                            "$ref": "#/definitions/models.MessageModel"
                         }
                     }
                 }
@@ -798,7 +798,7 @@ const docTemplate = `{
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/schemas.MessageModel"
+                            "$ref": "#/definitions/models.MessageModel"
                         }
                     }
                 }
@@ -828,7 +828,7 @@ const docTemplate = `{
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/schemas.MessageModel"
+                            "$ref": "#/definitions/models.MessageModel"
                         }
                     }
                 }
@@ -870,7 +870,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/schemas.CreateTag"
+                            "$ref": "#/definitions/tag.CreateModel"
                         }
                     }
                 ],
@@ -918,7 +918,7 @@ const docTemplate = `{
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/schemas.MessageModel"
+                            "$ref": "#/definitions/models.MessageModel"
                         }
                     }
                 }
@@ -945,7 +945,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/schemas.ModifyTag"
+                            "$ref": "#/definitions/tag.ModifyModel"
                         }
                     }
                 ],
@@ -959,7 +959,7 @@ const docTemplate = `{
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/schemas.MessageModel"
+                            "$ref": "#/definitions/models.MessageModel"
                         }
                     }
                 }
@@ -987,7 +987,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/schemas.DeleteTag"
+                            "$ref": "#/definitions/tag.DeleteModel"
                         }
                     }
                 ],
@@ -1001,7 +1001,7 @@ const docTemplate = `{
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/schemas.MessageModel"
+                            "$ref": "#/definitions/models.MessageModel"
                         }
                     }
                 }
@@ -1051,7 +1051,7 @@ const docTemplate = `{
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/schemas.MessageModel"
+                            "$ref": "#/definitions/models.MessageModel"
                         }
                     }
                 }
@@ -1059,6 +1059,150 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "division.CreateModel": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "division.DeleteModel": {
+            "type": "object",
+            "properties": {
+                "to": {
+                    "description": "Admin only\nID of the target division that all the deleted division's holes will be moved to",
+                    "type": "integer",
+                    "default": 1
+                }
+            }
+        },
+        "division.ModifyModel": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "pinned": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                }
+            }
+        },
+        "floor.CreateModel": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "reply_to": {
+                    "description": "id of the floor to which replied",
+                    "type": "integer"
+                }
+            }
+        },
+        "floor.CreateOldModel": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "hole_id": {
+                    "type": "integer"
+                },
+                "reply_to": {
+                    "description": "id of the floor to which replied",
+                    "type": "integer"
+                }
+            }
+        },
+        "floor.DeleteModel": {
+            "type": "object",
+            "properties": {
+                "delete_reason": {
+                    "type": "string"
+                }
+            }
+        },
+        "floor.ModifyModel": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "description": "Owner or admin, the original content should be moved to  floor_history",
+                    "type": "string"
+                },
+                "fold": {
+                    "description": "Admin only",
+                    "type": "string"
+                },
+                "like": {
+                    "description": "All user, deprecated, \"add\" is like, \"cancel\" is reset",
+                    "type": "string"
+                },
+                "special_tag": {
+                    "description": "Admin only",
+                    "type": "string"
+                }
+            }
+        },
+        "hole.CreateModel": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "tags": {
+                    "description": "All users",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/tag.CreateModel"
+                    }
+                }
+            }
+        },
+        "hole.CreateOldModel": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "division_id": {
+                    "description": "Admin only",
+                    "type": "integer"
+                },
+                "tags": {
+                    "description": "All users",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/tag.CreateModel"
+                    }
+                }
+            }
+        },
+        "hole.ModifyModel": {
+            "type": "object",
+            "properties": {
+                "division_id": {
+                    "description": "Admin only",
+                    "type": "integer"
+                },
+                "tags": {
+                    "description": "All users",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/tag.CreateModel"
+                    }
+                }
+            }
+        },
         "models.Division": {
             "type": "object",
             "properties": {
@@ -1202,6 +1346,14 @@ const docTemplate = `{
                 }
             }
         },
+        "models.MessageModel": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
         "models.Tag": {
             "type": "object",
             "properties": {
@@ -1222,79 +1374,7 @@ const docTemplate = `{
                 }
             }
         },
-        "schemas.AddDivision": {
-            "type": "object",
-            "properties": {
-                "description": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                }
-            }
-        },
-        "schemas.CreateFloor": {
-            "type": "object",
-            "properties": {
-                "content": {
-                    "type": "string"
-                },
-                "reply_to": {
-                    "description": "id of the floor to which replied",
-                    "type": "integer"
-                }
-            }
-        },
-        "schemas.CreateFloorOld": {
-            "type": "object",
-            "properties": {
-                "content": {
-                    "type": "string"
-                },
-                "hole_id": {
-                    "type": "integer"
-                },
-                "reply_to": {
-                    "description": "id of the floor to which replied",
-                    "type": "integer"
-                }
-            }
-        },
-        "schemas.CreateHole": {
-            "type": "object",
-            "properties": {
-                "content": {
-                    "type": "string"
-                },
-                "tags": {
-                    "description": "All users",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/schemas.CreateTag"
-                    }
-                }
-            }
-        },
-        "schemas.CreateHoleOld": {
-            "type": "object",
-            "properties": {
-                "content": {
-                    "type": "string"
-                },
-                "division_id": {
-                    "description": "Admin only",
-                    "type": "integer"
-                },
-                "tags": {
-                    "description": "All users",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/schemas.CreateTag"
-                    }
-                }
-            }
-        },
-        "schemas.CreateTag": {
+        "tag.CreateModel": {
             "type": "object",
             "properties": {
                 "name": {
@@ -1303,25 +1383,7 @@ const docTemplate = `{
                 }
             }
         },
-        "schemas.DeleteDivision": {
-            "type": "object",
-            "properties": {
-                "to": {
-                    "description": "Admin only\nID of the target division that all the deleted division's holes will be moved to",
-                    "type": "integer",
-                    "default": 1
-                }
-            }
-        },
-        "schemas.DeleteFloor": {
-            "type": "object",
-            "properties": {
-                "delete_reason": {
-                    "type": "string"
-                }
-            }
-        },
-        "schemas.DeleteTag": {
+        "tag.DeleteModel": {
             "type": "object",
             "properties": {
                 "to": {
@@ -1330,69 +1392,7 @@ const docTemplate = `{
                 }
             }
         },
-        "schemas.MessageModel": {
-            "type": "object",
-            "properties": {
-                "message": {
-                    "type": "string"
-                }
-            }
-        },
-        "schemas.ModifyDivision": {
-            "type": "object",
-            "properties": {
-                "description": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "pinned": {
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
-                }
-            }
-        },
-        "schemas.ModifyFloor": {
-            "type": "object",
-            "properties": {
-                "content": {
-                    "description": "Owner or admin, the original content should be moved to  floor_history",
-                    "type": "string"
-                },
-                "fold": {
-                    "description": "Admin only",
-                    "type": "string"
-                },
-                "like": {
-                    "description": "All user, deprecated, \"add\" is like, \"cancel\" is reset",
-                    "type": "string"
-                },
-                "special_tag": {
-                    "description": "Admin only",
-                    "type": "string"
-                }
-            }
-        },
-        "schemas.ModifyHole": {
-            "type": "object",
-            "properties": {
-                "division_id": {
-                    "description": "Admin only",
-                    "type": "integer"
-                },
-                "tags": {
-                    "description": "All users",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/schemas.CreateTag"
-                    }
-                }
-            }
-        },
-        "schemas.ModifyTag": {
+        "tag.ModifyModel": {
             "type": "object",
             "properties": {
                 "name": {

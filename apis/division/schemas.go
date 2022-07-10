@@ -1,19 +1,19 @@
-package schemas
+package division
 
 import "treehole_next/models"
 
-type DeleteDivision struct {
+type DeleteModel struct {
 	// Admin only
 	// ID of the target division that all the deleted division's holes will be moved to
 	To int `json:"to" default:"1"`
 }
 
-type AddDivision struct {
+type CreateModel struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
 }
 
-type ModifyDivision struct {
-	AddDivision
+type ModifyModel struct {
+	CreateModel
 	Pinned models.IntArray `json:"pinned"`
 }

@@ -1,9 +1,8 @@
-package apis
+package hole
 
 import (
 	"time"
 	. "treehole_next/models"
-	"treehole_next/schemas"
 	. "treehole_next/utils"
 
 	"github.com/gofiber/fiber/v2"
@@ -16,12 +15,12 @@ import (
 // @Produce application/json
 // @Router /divisions/{division_id}/holes [get]
 // @Param division_id path int true "division_id"
-// @Param object query schemas.QueryTime false "query"
+// @Param object query QueryTime false "query"
 // @Success 200 {array} Hole
-// @Failure 404 {object} schemas.MessageModel
-// @Failure 500 {object} schemas.MessageModel
+// @Failure 404 {object} MessageModel
+// @Failure 500 {object} MessageModel
 func ListHolesByDivision(c *fiber.Ctx) error {
-	var query schemas.QueryTime
+	var query QueryTime
 	err := c.QueryParser(&query)
 	if err != nil {
 		return err
@@ -51,11 +50,11 @@ func ListHolesByDivision(c *fiber.Ctx) error {
 // @Produce application/json
 // @Router /tags/{tag_name}/holes [get]
 // @Param tag_name path string true "tag_name"
-// @Param object query schemas.QueryTime false "query"
+// @Param object query QueryTime false "query"
 // @Success 200 {array} Hole
-// @Failure 404 {object} schemas.MessageModel
+// @Failure 404 {object} MessageModel
 func ListHolesByTag(c *fiber.Ctx) error {
-	var query schemas.QueryTime
+	var query QueryTime
 	err := c.QueryParser(&query)
 	if err != nil {
 		return err
@@ -90,10 +89,10 @@ func ListHolesByTag(c *fiber.Ctx) error {
 // @Tags Hole
 // @Produce application/json
 // @Router /holes [get]
-// @Param object query schemas.GetHoleOld false "query"
+// @Param object query ListOldModel false "query"
 // @Success 200 {array} Hole
 func ListHolesOld(c *fiber.Ctx) error {
-	var query schemas.GetHoleOld
+	var query ListOldModel
 	err := c.QueryParser(&query)
 	if err != nil {
 		return err
@@ -132,7 +131,7 @@ func ListHolesOld(c *fiber.Ctx) error {
 // @Router /holes/{id} [get]
 // @Param id path int true "id"
 // @Success 200 {object} Hole
-// @Failure 404 {object} schemas.MessageModel
+// @Failure 404 {object} MessageModel
 func GetHole(c *fiber.Ctx) error {
 	id, _ := c.ParamsInt("id")
 
@@ -154,10 +153,10 @@ func GetHole(c *fiber.Ctx) error {
 // @Produce application/json
 // @Router /divisions/{division_id}/holes [post]
 // @Param division_id path int true "division id"
-// @Param json body schemas.CreateHole true "json"
+// @Param json body CreateModel true "json"
 // @Success 201 {object} Hole
 func CreateHole(c *fiber.Ctx) error {
-	var body schemas.CreateHole
+	var body CreateModel
 	err := c.BodyParser(&body)
 	if err != nil {
 		return err
@@ -184,10 +183,10 @@ func CreateHole(c *fiber.Ctx) error {
 // @Tags Hole
 // @Produce application/json
 // @Router /holes [post]
-// @Param json body schemas.CreateHoleOld true "json"
+// @Param json body CreateOldModel true "json"
 // @Success 201 {object} Hole
 func CreateHoleOld(c *fiber.Ctx) error {
-	var body schemas.CreateHoleOld
+	var body CreateOldModel
 	err := c.BodyParser(&body)
 	if err != nil {
 		return err
@@ -213,12 +212,12 @@ func CreateHoleOld(c *fiber.Ctx) error {
 // @Produce application/json
 // @Router /holes/{id} [put]
 // @Param id path int true "id"
-// @Param json body schemas.ModifyHole true "json"
+// @Param json body ModifyModel true "json"
 // @Success 200 {object} Hole
-// @Failure 404 {object} schemas.MessageModel
+// @Failure 404 {object} MessageModel
 func ModifyHole(c *fiber.Ctx) error {
 	// validate
-	var body schemas.ModifyHole
+	var body ModifyModel
 	err := c.BodyParser(&body)
 	if err != nil {
 		return err
@@ -267,7 +266,7 @@ func ModifyHole(c *fiber.Ctx) error {
 // @Router /holes/{id} [delete]
 // @Param id path int true "id"
 // @Success 204
-// @Failure 404 {object} schemas.MessageModel
+// @Failure 404 {object} MessageModel
 func DeleteHole(c *fiber.Ctx) error {
 	holeID, _ := c.ParamsInt("id")
 	var hole Hole
@@ -287,7 +286,7 @@ func DeleteHole(c *fiber.Ctx) error {
 // @Router /holes/{id} [patch]
 // @Param id path int true "id"
 // @Success 204
-// @Failure 404 {object} schemas.MessageModel
+// @Failure 404 {object} MessageModel
 func PatchHole(c *fiber.Ctx) error {
 	holeID, _ := c.ParamsInt("id")
 	result := DB.Exec("UPDATE hole SET view = view + 1 WHERE id = ?", holeID)

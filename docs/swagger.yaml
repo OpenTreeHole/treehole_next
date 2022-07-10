@@ -1,5 +1,104 @@
 basePath: /
 definitions:
+  division.CreateModel:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+    type: object
+  division.DeleteModel:
+    properties:
+      to:
+        default: 1
+        description: |-
+          Admin only
+          ID of the target division that all the deleted division's holes will be moved to
+        type: integer
+    type: object
+  division.ModifyModel:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+      pinned:
+        items:
+          type: integer
+        type: array
+    type: object
+  floor.CreateModel:
+    properties:
+      content:
+        type: string
+      reply_to:
+        description: id of the floor to which replied
+        type: integer
+    type: object
+  floor.CreateOldModel:
+    properties:
+      content:
+        type: string
+      hole_id:
+        type: integer
+      reply_to:
+        description: id of the floor to which replied
+        type: integer
+    type: object
+  floor.DeleteModel:
+    properties:
+      delete_reason:
+        type: string
+    type: object
+  floor.ModifyModel:
+    properties:
+      content:
+        description: Owner or admin, the original content should be moved to  floor_history
+        type: string
+      fold:
+        description: Admin only
+        type: string
+      like:
+        description: All user, deprecated, "add" is like, "cancel" is reset
+        type: string
+      special_tag:
+        description: Admin only
+        type: string
+    type: object
+  hole.CreateModel:
+    properties:
+      content:
+        type: string
+      tags:
+        description: All users
+        items:
+          $ref: '#/definitions/tag.CreateModel'
+        type: array
+    type: object
+  hole.CreateOldModel:
+    properties:
+      content:
+        type: string
+      division_id:
+        description: Admin only
+        type: integer
+      tags:
+        description: All users
+        items:
+          $ref: '#/definitions/tag.CreateModel'
+        type: array
+    type: object
+  hole.ModifyModel:
+    properties:
+      division_id:
+        description: Admin only
+        type: integer
+      tags:
+        description: All users
+        items:
+          $ref: '#/definitions/tag.CreateModel'
+        type: array
+    type: object
   models.Division:
     properties:
       description:
@@ -98,6 +197,11 @@ definitions:
       last_floor:
         $ref: '#/definitions/models.Floor'
     type: object
+  models.MessageModel:
+    properties:
+      message:
+        type: string
+    type: object
   models.Tag:
     properties:
       id:
@@ -111,75 +215,13 @@ definitions:
       time_updated:
         type: string
     type: object
-  schemas.AddDivision:
-    properties:
-      description:
-        type: string
-      name:
-        type: string
-    type: object
-  schemas.CreateFloor:
-    properties:
-      content:
-        type: string
-      reply_to:
-        description: id of the floor to which replied
-        type: integer
-    type: object
-  schemas.CreateFloorOld:
-    properties:
-      content:
-        type: string
-      hole_id:
-        type: integer
-      reply_to:
-        description: id of the floor to which replied
-        type: integer
-    type: object
-  schemas.CreateHole:
-    properties:
-      content:
-        type: string
-      tags:
-        description: All users
-        items:
-          $ref: '#/definitions/schemas.CreateTag'
-        type: array
-    type: object
-  schemas.CreateHoleOld:
-    properties:
-      content:
-        type: string
-      division_id:
-        description: Admin only
-        type: integer
-      tags:
-        description: All users
-        items:
-          $ref: '#/definitions/schemas.CreateTag'
-        type: array
-    type: object
-  schemas.CreateTag:
+  tag.CreateModel:
     properties:
       name:
         description: Admin only
         type: string
     type: object
-  schemas.DeleteDivision:
-    properties:
-      to:
-        default: 1
-        description: |-
-          Admin only
-          ID of the target division that all the deleted division's holes will be moved to
-        type: integer
-    type: object
-  schemas.DeleteFloor:
-    properties:
-      delete_reason:
-        type: string
-    type: object
-  schemas.DeleteTag:
+  tag.DeleteModel:
     properties:
       to:
         description: |-
@@ -187,49 +229,7 @@ definitions:
           Name of the target tag that all the deleted tag's holes will be connected to
         type: string
     type: object
-  schemas.MessageModel:
-    properties:
-      message:
-        type: string
-    type: object
-  schemas.ModifyDivision:
-    properties:
-      description:
-        type: string
-      name:
-        type: string
-      pinned:
-        items:
-          type: integer
-        type: array
-    type: object
-  schemas.ModifyFloor:
-    properties:
-      content:
-        description: Owner or admin, the original content should be moved to  floor_history
-        type: string
-      fold:
-        description: Admin only
-        type: string
-      like:
-        description: All user, deprecated, "add" is like, "cancel" is reset
-        type: string
-      special_tag:
-        description: Admin only
-        type: string
-    type: object
-  schemas.ModifyHole:
-    properties:
-      division_id:
-        description: Admin only
-        type: integer
-      tags:
-        description: All users
-        items:
-          $ref: '#/definitions/schemas.CreateTag'
-        type: array
-    type: object
-  schemas.ModifyTag:
+  tag.ModifyModel:
     properties:
       name:
         description: Admin only
@@ -258,7 +258,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/schemas.MessageModel'
+            $ref: '#/definitions/models.MessageModel'
   /divisions:
     get:
       produces:
@@ -282,7 +282,7 @@ paths:
         name: json
         required: true
         schema:
-          $ref: '#/definitions/schemas.AddDivision'
+          $ref: '#/definitions/division.CreateModel'
       produces:
       - application/json
       responses:
@@ -326,11 +326,11 @@ paths:
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/schemas.MessageModel'
+            $ref: '#/definitions/models.MessageModel'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/schemas.MessageModel'
+            $ref: '#/definitions/models.MessageModel'
       summary: List Holes In A Division
       tags:
       - Hole
@@ -348,7 +348,7 @@ paths:
         name: json
         required: true
         schema:
-          $ref: '#/definitions/schemas.CreateHole'
+          $ref: '#/definitions/hole.CreateModel'
       produces:
       - application/json
       responses:
@@ -373,7 +373,7 @@ paths:
         name: json
         required: true
         schema:
-          $ref: '#/definitions/schemas.DeleteDivision'
+          $ref: '#/definitions/division.DeleteModel'
       produces:
       - application/json
       responses:
@@ -382,7 +382,7 @@ paths:
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/schemas.MessageModel'
+            $ref: '#/definitions/models.MessageModel'
       summary: Delete A Division
       tags:
       - Division
@@ -403,7 +403,7 @@ paths:
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/schemas.MessageModel'
+            $ref: '#/definitions/models.MessageModel'
       summary: Get Division
       tags:
       - Division
@@ -419,7 +419,7 @@ paths:
         name: json
         required: true
         schema:
-          $ref: '#/definitions/schemas.ModifyDivision'
+          $ref: '#/definitions/division.ModifyModel'
       produces:
       - application/json
       responses:
@@ -430,7 +430,7 @@ paths:
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/schemas.MessageModel'
+            $ref: '#/definitions/models.MessageModel'
       summary: Modify A Division
       tags:
       - Division
@@ -469,7 +469,7 @@ paths:
         name: json
         required: true
         schema:
-          $ref: '#/definitions/schemas.CreateFloorOld'
+          $ref: '#/definitions/floor.CreateOldModel'
       produces:
       - application/json
       responses:
@@ -493,7 +493,7 @@ paths:
         name: json
         required: true
         schema:
-          $ref: '#/definitions/schemas.DeleteFloor'
+          $ref: '#/definitions/floor.DeleteModel'
       produces:
       - application/json
       responses:
@@ -504,7 +504,7 @@ paths:
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/schemas.MessageModel'
+            $ref: '#/definitions/models.MessageModel'
       summary: Delete A Floor
       tags:
       - Floor
@@ -525,7 +525,7 @@ paths:
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/schemas.MessageModel'
+            $ref: '#/definitions/models.MessageModel'
       summary: Get A Floor
       tags:
       - Floor
@@ -541,7 +541,7 @@ paths:
         name: json
         required: true
         schema:
-          $ref: '#/definitions/schemas.ModifyFloor'
+          $ref: '#/definitions/floor.ModifyModel'
       produces:
       - application/json
       responses:
@@ -552,7 +552,7 @@ paths:
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/schemas.MessageModel'
+            $ref: '#/definitions/models.MessageModel'
       summary: Modify A Floor
       tags:
       - Floor
@@ -579,7 +579,7 @@ paths:
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/schemas.MessageModel'
+            $ref: '#/definitions/models.MessageModel'
       summary: Modify A Floor's like
       tags:
       - Floor
@@ -619,7 +619,7 @@ paths:
         name: json
         required: true
         schema:
-          $ref: '#/definitions/schemas.CreateHoleOld'
+          $ref: '#/definitions/hole.CreateOldModel'
       produces:
       - application/json
       responses:
@@ -682,7 +682,7 @@ paths:
         name: json
         required: true
         schema:
-          $ref: '#/definitions/schemas.CreateFloor'
+          $ref: '#/definitions/floor.CreateModel'
       produces:
       - application/json
       responses:
@@ -711,7 +711,7 @@ paths:
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/schemas.MessageModel'
+            $ref: '#/definitions/models.MessageModel'
       summary: Delete A Hole
       tags:
       - Hole
@@ -732,7 +732,7 @@ paths:
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/schemas.MessageModel'
+            $ref: '#/definitions/models.MessageModel'
       summary: Get A Hole
       tags:
       - Hole
@@ -752,7 +752,7 @@ paths:
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/schemas.MessageModel'
+            $ref: '#/definitions/models.MessageModel'
       summary: Patch A Hole
       tags:
       - Hole
@@ -768,7 +768,7 @@ paths:
         name: json
         required: true
         schema:
-          $ref: '#/definitions/schemas.ModifyHole'
+          $ref: '#/definitions/hole.ModifyModel'
       produces:
       - application/json
       responses:
@@ -779,7 +779,7 @@ paths:
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/schemas.MessageModel'
+            $ref: '#/definitions/models.MessageModel'
       summary: Modify A Hole
       tags:
       - Hole
@@ -804,7 +804,7 @@ paths:
         name: json
         required: true
         schema:
-          $ref: '#/definitions/schemas.CreateTag'
+          $ref: '#/definitions/tag.CreateModel'
       produces:
       - application/json
       responses:
@@ -833,7 +833,7 @@ paths:
         name: json
         required: true
         schema:
-          $ref: '#/definitions/schemas.DeleteTag'
+          $ref: '#/definitions/tag.DeleteModel'
       produces:
       - application/json
       responses:
@@ -844,7 +844,7 @@ paths:
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/schemas.MessageModel'
+            $ref: '#/definitions/models.MessageModel'
       summary: Delete A Tag
       tags:
       - Tag
@@ -865,7 +865,7 @@ paths:
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/schemas.MessageModel'
+            $ref: '#/definitions/models.MessageModel'
       summary: Get A Tag
       tags:
       - Tag
@@ -881,7 +881,7 @@ paths:
         name: json
         required: true
         schema:
-          $ref: '#/definitions/schemas.ModifyTag'
+          $ref: '#/definitions/tag.ModifyModel'
       produces:
       - application/json
       responses:
@@ -892,7 +892,7 @@ paths:
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/schemas.MessageModel'
+            $ref: '#/definitions/models.MessageModel'
       summary: Modify A Tag
       tags:
       - Tag
@@ -925,7 +925,7 @@ paths:
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/schemas.MessageModel'
+            $ref: '#/definitions/models.MessageModel'
       summary: List Holes By Tag
       tags:
       - Hole

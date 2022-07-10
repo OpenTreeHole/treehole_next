@@ -1,9 +1,8 @@
-package apis
+package floor
 
 import (
 	. "treehole_next/config"
 	. "treehole_next/models"
-	"treehole_next/schemas"
 	. "treehole_next/utils"
 
 	"github.com/gofiber/fiber/v2"
@@ -15,10 +14,10 @@ import (
 // @Produce application/json
 // @Router /holes/{hole_id}/floors [get]
 // @Param hole_id path int true "hole id"
-// @Param object query schemas.Query false "query"
+// @Param object query Query false "query"
 // @Success 200 {array} Floor
 func ListFloorsInAHole(c *fiber.Ctx) error {
-	var query schemas.Query
+	var query Query
 	err := c.QueryParser(&query)
 	if err != nil {
 		return err
@@ -53,10 +52,10 @@ func ListFloorsInAHole(c *fiber.Ctx) error {
 // @Tags Floor
 // @Produce application/json
 // @Router /floors [get]
-// @Param object query schemas.ListFloorOld false "query"
+// @Param object query ListOldModel false "query"
 // @Success 200 {array} Floor
 func ListFloorsOld(c *fiber.Ctx) error {
-	var query schemas.ListFloorOld
+	var query ListOldModel
 	err := c.QueryParser(&query)
 	if err != nil {
 		return err
@@ -79,7 +78,7 @@ func ListFloorsOld(c *fiber.Ctx) error {
 // @Router /floors/{id} [get]
 // @Param id path int true "id"
 // @Success 200 {object} Floor
-// @Failure 404 {object} schemas.MessageModel
+// @Failure 404 {object} MessageModel
 func GetFloor(c *fiber.Ctx) error {
 	floorID, err := c.ParamsInt("id")
 	if err != nil {
@@ -99,10 +98,10 @@ func GetFloor(c *fiber.Ctx) error {
 // @Produce application/json
 // @Router /holes/{hole_id}/floors [post]
 // @Param hole_id path int true "hole id"
-// @Param json body schemas.CreateFloor true "json"
+// @Param json body CreateModel true "json"
 // @Success 201 {object} Floor
 func CreateFloor(c *fiber.Ctx) error {
-	var body schemas.CreateFloor
+	var body CreateModel
 	err := c.BodyParser(&body)
 	if err != nil {
 		return err
@@ -132,10 +131,10 @@ func CreateFloor(c *fiber.Ctx) error {
 // @Tags Floor
 // @Produce application/json
 // @Router /floors [post]
-// @Param json body schemas.CreateFloorOld true "json"
+// @Param json body CreateOldModel true "json"
 // @Success 201 {object} Floor
 func CreateFloorOld(c *fiber.Ctx) error {
-	var body schemas.CreateFloorOld
+	var body CreateOldModel
 	err := c.BodyParser(&body)
 	if err != nil {
 		return err
@@ -160,12 +159,12 @@ func CreateFloorOld(c *fiber.Ctx) error {
 // @Produce application/json
 // @Router /floors/{id} [put]
 // @Param id path int true "id"
-// @Param json body schemas.ModifyFloor true "json"
+// @Param json body ModifyModel true "json"
 // @Success 200 {object} Floor
-// @Failure 404 {object} schemas.MessageModel
+// @Failure 404 {object} MessageModel
 func ModifyFloor(c *fiber.Ctx) error {
 	// validate request body
-	var body schemas.ModifyFloor
+	var body ModifyModel
 	err := c.BodyParser(&body)
 	if err != nil {
 		return err
@@ -243,7 +242,7 @@ func ModifyFloor(c *fiber.Ctx) error {
 // @Param id path int true "id"
 // @Param like path int true "1 is like, 0 is reset, -1 is dislike"
 // @Success 200 {object} Floor
-// @Failure 404 {object} schemas.MessageModel
+// @Failure 404 {object} MessageModel
 func ModifyFloorLike(c *fiber.Ctx) error {
 	// validate like option
 	likeOption, err := c.ParamsInt("like")
@@ -280,11 +279,11 @@ func ModifyFloorLike(c *fiber.Ctx) error {
 // @Produce application/json
 // @Router /floors/{id} [delete]
 // @Param id path int true "id"
-// @Param json body schemas.DeleteFloor true "json"
+// @Param json body DeleteModel true "json"
 // @Success 200 {object} Floor
-// @Failure 404 {object} schemas.MessageModel
+// @Failure 404 {object} MessageModel
 func DeleteFloor(c *fiber.Ctx) error {
-	var body schemas.DeleteFloor
+	var body DeleteModel
 	err := c.BodyParser(&body)
 	if err != nil {
 		return err

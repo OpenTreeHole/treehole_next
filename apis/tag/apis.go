@@ -1,11 +1,9 @@
-package apis
+package tag
 
 import (
-	. "treehole_next/models"
-	"treehole_next/schemas"
-
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
+	. "treehole_next/models"
 )
 
 // ListTags
@@ -27,7 +25,7 @@ func ListTags(c *fiber.Ctx) error {
 // @Router /tags/{id} [get]
 // @Param id path int true "id"
 // @Success 200 {object} Tag
-// @Failure 404 {object} schemas.MessageModel
+// @Failure 404 {object} MessageModel
 func GetTag(c *fiber.Ctx) error {
 	id, _ := c.ParamsInt("id")
 	var tag Tag
@@ -44,12 +42,12 @@ func GetTag(c *fiber.Ctx) error {
 // @Tags Tag
 // @Produce application/json
 // @Router /tags [post]
-// @Param json body schemas.CreateTag true "json"
+// @Param json body CreateModel true "json"
 // @Success 200 {object} Tag
 // @Success 201 {object} Tag
 func CreateTag(c *fiber.Ctx) error {
 	var tag Tag
-	var body schemas.CreateTag
+	var body CreateModel
 	if err := c.BodyParser(&body); err != nil {
 		return err
 	}
@@ -69,13 +67,13 @@ func CreateTag(c *fiber.Ctx) error {
 // @Produce application/json
 // @Router /tags/{id} [put]
 // @Param id path int true "id"
-// @Param json body schemas.ModifyTag true "json"
+// @Param json body ModifyModel true "json"
 // @Success 200 {object} Tag
-// @Failure 404 {object} schemas.MessageModel
+// @Failure 404 {object} MessageModel
 func ModifyTag(c *fiber.Ctx) error {
 	id, _ := c.ParamsInt("id")
 	var tag Tag
-	var body schemas.ModifyTag
+	var body ModifyModel
 	err := c.BodyParser(&body)
 	if err != nil {
 		return err
@@ -94,12 +92,12 @@ func ModifyTag(c *fiber.Ctx) error {
 // @Produce application/json
 // @Router /tags/{id} [delete]
 // @Param id path int true "id"
-// @Param json body schemas.DeleteTag true "json"
+// @Param json body DeleteModel true "json"
 // @Success 200 {object} Tag
-// @Failure 404 {object} schemas.MessageModel
+// @Failure 404 {object} MessageModel
 func DeleteTag(c *fiber.Ctx) error {
 	id, _ := c.ParamsInt("id")
-	var body schemas.DeleteTag
+	var body DeleteModel
 	err := c.BodyParser(&body)
 	if err != nil {
 		return err
@@ -111,30 +109,30 @@ func DeleteTag(c *fiber.Ctx) error {
 		return result.Error
 	}
 
-	var newtag Tag
-	result = DB.Where("name = ?", body.To).First(&newtag)
+	var newTag Tag
+	result = DB.Where("name = ?", body.To).First(&newTag)
 	if result.Error != nil {
 		return result.Error
 	}
 
-	newtag.Temperature += tag.Temperature
+	newTag.Temperature += tag.Temperature
 
 	err = DB.Transaction(func(tx *gorm.DB) error {
-		result := tx.Exec(`
+		result = tx.Exec(`
 			DELETE FROM hole_tags WHERE tag_id = ? AND hole_id IN
 				(SELECT a.hole_id FROM
 					(SELECT hole_id FROM hole_tags WHERE tag_id = ?)a
-			)`, id, newtag.ID)
+			)`, id, newTag.ID)
 		if result.Error != nil {
 			return result.Error
 		}
 
-		result = tx.Exec(`UPDATE hole_tags SET tag_id = ? WHERE tag_id = ?`, newtag.ID, id)
+		result = tx.Exec(`UPDATE hole_tags SET tag_id = ? WHERE tag_id = ?`, newTag.ID, id)
 		if result.Error != nil {
 			return result.Error
 		}
 
-		result = tx.Updates(&newtag)
+		result = tx.Updates(&newTag)
 		if result.Error != nil {
 			return result.Error
 		}
@@ -149,5 +147,5 @@ func DeleteTag(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	return c.JSON(&newtag)
+	return c.JSON(&newTag)
 }
