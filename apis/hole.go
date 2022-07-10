@@ -278,3 +278,21 @@ func DeleteHole(c *fiber.Ctx) error {
 	}
 	return c.Status(204).JSON(nil)
 }
+
+// PatchHole
+// @Summary Patch A Hole
+// @Description Add hole.view
+// @Tags Hole
+// @Produce application/json
+// @Router /holes/{id} [patch]
+// @Param id path int true "id"
+// @Success 204
+// @Failure 404 {object} schemas.MessageModel
+func PatchHole(c *fiber.Ctx) error {
+	holeID, _ := c.ParamsInt("id")
+	result := DB.Exec("UPDATE hole SET view = view + 1 WHERE id = ?", holeID)
+	if result.Error != nil {
+		return result.Error
+	}
+	return c.Status(204).JSON(nil)
+}

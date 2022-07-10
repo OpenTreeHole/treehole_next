@@ -794,6 +794,36 @@
                         }
                     }
                 }
+            },
+            "patch": {
+                "description": "Add hole.view",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Hole"
+                ],
+                "summary": "Patch A Hole",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": ""
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.MessageModel"
+                        }
+                    }
+                }
             }
         },
         "/tags": {

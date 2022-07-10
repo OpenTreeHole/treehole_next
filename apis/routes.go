@@ -36,6 +36,7 @@ func RegisterRoutes(app *fiber.App) {
 	app.Get("/holes", ListHolesOld)
 	app.Post("/divisions/:id/holes", CreateHole)
 	app.Post("/holes", CreateHoleOld)
+	app.Patch("/holes/:id", PatchHole)
 	app.Put("/holes/:id", ModifyHole)
 	app.Delete("/holes/:id", DeleteHole)
 
