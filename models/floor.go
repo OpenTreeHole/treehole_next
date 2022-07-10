@@ -146,11 +146,20 @@ func (floor *Floor) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 		return err
 	}
 
+	// create floor
 	result := tx.Create(floor)
 	if result.Error != nil {
 		return result.Error
 	}
 
+	return nil
+}
+
+func (floor *Floor) AfterCreate(tx *gorm.DB) (err error) {
+	result := tx.Exec("UPDATE hole SET reply = reply + 1 WHERE id = ?", floor.HoleID)
+	if result.Error != nil {
+		return result.Error
+	}
 	return nil
 }
 
