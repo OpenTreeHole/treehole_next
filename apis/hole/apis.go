@@ -31,7 +31,7 @@ func ListHolesByDivision(c *fiber.Ctx) error {
 
 	// get holes
 	var holes Holes
-	querySet := Hole{}.MakeQuerySet(query.Offset, query.Size, false)
+	querySet := holes.MakeQuerySet(query.Offset, query.Size, c)
 	if id != 0 {
 		querySet = querySet.Where("division_id = ?", id)
 	}
@@ -66,7 +66,7 @@ func ListHolesByTag(c *fiber.Ctx) error {
 
 	// get holes
 	var holes Holes
-	querySet := Hole{}.MakeQuerySet(query.Offset, query.Size, false)
+	querySet := holes.MakeQuerySet(query.Offset, query.Size, c)
 	err = querySet.Model(&tag).
 		Association("Holes").Find(&holes)
 	if err != nil {
@@ -92,7 +92,7 @@ func ListHolesOld(c *fiber.Ctx) error {
 	}
 
 	var holes Holes
-	querySet := Hole{}.MakeQuerySet(query.Offset, query.Size, false)
+	querySet := holes.MakeQuerySet(query.Offset, query.Size, c)
 	if query.Tag != "" {
 		var tag Tag
 		result := DB.Where("name = ?", query.Tag).First(&tag)
@@ -127,8 +127,7 @@ func GetHole(c *fiber.Ctx) error {
 
 	// get hole
 	var hole Hole
-	querySet := Hole{}.MakeHiddenQuerySet(false)
-	result := querySet.First(&hole, id)
+	result := MakeQuerySet(c).First(&hole, id)
 	if result.Error != nil {
 		return result.Error
 	}

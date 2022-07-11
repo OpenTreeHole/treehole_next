@@ -92,17 +92,18 @@ func (holes Holes) Preprocess() error {
 	return nil
 }
 
-func (hole Hole) MakeHiddenQuerySet(isAdmin bool) (tx *gorm.DB) {
-	if isAdmin {
+func MakeQuerySet(c *fiber.Ctx) *gorm.DB {
+	var user User
+	_ = user.GetUser(c)
+	if user.IsAdmin {
 		return DB
 	} else {
 		return DB.Where("hidden = ?", false)
 	}
 }
 
-func (hole Hole) MakeQuerySet(offset time.Time, size int, isadmin bool) (tx *gorm.DB) {
-	return hole.
-		MakeHiddenQuerySet(isadmin).
+func (holes *Holes) MakeQuerySet(offset time.Time, size int, c *fiber.Ctx) (tx *gorm.DB) {
+	return MakeQuerySet(c).
 		Where("updated_at < ?", offset).
 		Order("updated_at desc").Limit(size)
 }
