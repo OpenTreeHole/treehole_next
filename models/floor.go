@@ -1,6 +1,7 @@
 package models
 
 import (
+	"regexp"
 	"treehole_next/utils"
 
 	"github.com/gofiber/fiber/v2"
@@ -92,6 +93,39 @@ func (floor Floor) MakeQuerySet(
 		Order(clause.OrderByColumn{Column: clause.Column{Name: orderBy}, Desc: ifDesc})
 }
 
+func (floor *Floor) FindMention() error {
+	re := regexp.MustCompile(`[^#]#(\d+)`)
+	holeIDsText := re.FindAllStringSubmatch(" "+floor.Content, -1)
+	holeIds, err := utils.ReText2IntArray(holeIDsText)
+	if err != nil {
+		return err
+	}
+	for _, id := range holeIds {
+		var floor Floor
+		result := DB.Where("hole_id = ?", id).First(&floor)
+		if result.Error != nil {
+			return err
+		}
+		floor.Mention = append(floor.Mention, floor)
+	}
+
+	re = regexp.MustCompile(`##(\d+)`)
+	floorIDsText := re.FindAllStringSubmatch(" "+floor.Content, -1)
+	floorIDs, err := utils.ReText2IntArray(floorIDsText)
+	if err != nil {
+		return err
+	}
+
+	var floors []Floor
+	result := DB.Where("floor_id IN ?", floorIDs).Find(&floors)
+	if result.Error != nil {
+		return err
+	}
+	floor.Mention = append(floor.Mention, floors...)
+
+	return nil
+}
+
 func (floor *Floor) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 	var tx *gorm.DB
 	if len(db) > 0 {
@@ -144,6 +178,12 @@ func (floor *Floor) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 		}
 		return nil
 	})
+	if err != nil {
+		return err
+	}
+
+	// find mention
+	err = floor.FindMention()
 	if err != nil {
 		return err
 	}

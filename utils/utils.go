@@ -2,6 +2,8 @@ package utils
 
 import (
 	"encoding/json"
+	"strconv"
+
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -48,4 +50,20 @@ func DiffrenceSet[T comparable](mainSet []T, subSet []T) (ansSet []T) {
 		}
 	}
 	return ansSet
+}
+
+func ReText2IntArray(IDs [][]string) ([]int, error) {
+	ansIDMapping := make(map[int]bool)
+	for _, v := range IDs {
+		id, err := strconv.Atoi(v[1])
+		if err != nil {
+			return nil, err
+		}
+		ansIDMapping[id] = true
+	}
+	keys := []int{}
+	for key := range ansIDMapping {
+		keys = append(keys, key)
+	}
+	return keys, nil
 }
