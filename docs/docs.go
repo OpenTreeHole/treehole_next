@@ -321,13 +321,14 @@ const docTemplate = `{
                     },
                     {
                         "type": "integer",
-                        "default": 0,
                         "name": "offset",
                         "in": "query"
                     },
                     {
+                        "maximum": 30,
+                        "minimum": 0,
                         "type": "integer",
-                        "default": 20,
+                        "default": 10,
                         "name": "size",
                         "in": "query"
                     }
@@ -623,13 +624,7 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "type": "boolean",
-                        "default": false,
-                        "description": "Is descending order",
-                        "name": "desc",
-                        "in": "query"
-                    },
-                    {
+                        "minimum": 0,
                         "type": "integer",
                         "default": 0,
                         "description": "offset of object array",
@@ -637,17 +632,35 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "enum": [
+                            "storey",
+                            "id",
+                            "like"
+                        ],
                         "type": "string",
-                        "default": "id",
-                        "description": "Now only supports id",
+                        "default": "storey",
+                        "description": "SQL ORDER BY field",
                         "name": "orderBy",
                         "in": "query"
                     },
                     {
+                        "maximum": 30,
+                        "minimum": 0,
                         "type": "integer",
                         "default": 10,
                         "description": "length of object array",
                         "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "asc",
+                            "desc"
+                        ],
+                        "type": "string",
+                        "default": "asc",
+                        "description": "Sort order",
+                        "name": "sort",
                         "in": "query"
                     }
                 ],
@@ -1099,28 +1112,39 @@ const docTemplate = `{
         },
         "floor.CreateModel": {
             "type": "object",
+            "required": [
+                "content"
+            ],
             "properties": {
                 "content": {
+                    "description": "Owner or admin, the original content should be moved to  floor_history",
                     "type": "string"
                 },
                 "reply_to": {
                     "description": "id of the floor to which replied",
-                    "type": "integer"
+                    "type": "integer",
+                    "minimum": 0
                 }
             }
         },
         "floor.CreateOldModel": {
             "type": "object",
+            "required": [
+                "content"
+            ],
             "properties": {
                 "content": {
+                    "description": "Owner or admin, the original content should be moved to  floor_history",
                     "type": "string"
                 },
                 "hole_id": {
-                    "type": "integer"
+                    "type": "integer",
+                    "minimum": 1
                 },
                 "reply_to": {
                     "description": "id of the floor to which replied",
-                    "type": "integer"
+                    "type": "integer",
+                    "minimum": 0
                 }
             }
         },
@@ -1128,12 +1152,16 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "delete_reason": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 32
                 }
             }
         },
         "floor.ModifyModel": {
             "type": "object",
+            "required": [
+                "content"
+            ],
             "properties": {
                 "content": {
                     "description": "Owner or admin, the original content should be moved to  floor_history",
@@ -1141,15 +1169,21 @@ const docTemplate = `{
                 },
                 "fold": {
                     "description": "Admin only",
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 16
                 },
                 "like": {
                     "description": "All user, deprecated, \"add\" is like, \"cancel\" is reset",
-                    "type": "string"
+                    "type": "string",
+                    "enum": [
+                        "add",
+                        "cancel"
+                    ]
                 },
                 "special_tag": {
                     "description": "Admin only",
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 16
                 }
             }
         },

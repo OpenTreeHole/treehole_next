@@ -4,6 +4,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
 	. "treehole_next/models"
+	. "treehole_next/utils"
 )
 
 // ListTags
@@ -48,7 +49,7 @@ func GetTag(c *fiber.Ctx) error {
 func CreateTag(c *fiber.Ctx) error {
 	var tag Tag
 	var body CreateModel
-	if err := c.BodyParser(&body); err != nil {
+	if err := ValidateBody(c, &body); err != nil {
 		return err
 	}
 	tag.Name = body.Name
@@ -74,7 +75,7 @@ func ModifyTag(c *fiber.Ctx) error {
 	id, _ := c.ParamsInt("id")
 	var tag Tag
 	var body ModifyModel
-	err := c.BodyParser(&body)
+	err := ValidateBody(c, &body)
 	if err != nil {
 		return err
 	}
@@ -98,7 +99,7 @@ func ModifyTag(c *fiber.Ctx) error {
 func DeleteTag(c *fiber.Ctx) error {
 	id, _ := c.ParamsInt("id")
 	var body DeleteModel
-	err := c.BodyParser(&body)
+	err := ValidateBody(c, &body)
 	if err != nil {
 		return err
 	}

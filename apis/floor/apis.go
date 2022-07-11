@@ -1,7 +1,6 @@
 package floor
 
 import (
-	. "treehole_next/config"
 	. "treehole_next/models"
 	. "treehole_next/utils"
 
@@ -17,32 +16,25 @@ import (
 // @Param object query Query false "query"
 // @Success 200 {array} Floor
 func ListFloorsInAHole(c *fiber.Ctx) error {
-	var query Query
-	err := c.QueryParser(&query)
-	if err != nil {
-		return err
-	}
+	// validate
 	holeID, err := c.ParamsInt("id")
 	if err != nil {
 		return err
 	}
-	if query.Size == 0 {
-		query.Size = Config.Size
-	} else if query.Size > Config.MaxSize {
-		query.Size = Config.MaxSize
-	}
-	if query.OrderBy == "" {
-		query.OrderBy = "id"
+
+	var query Query
+	err = ValidateQuery(c, &query)
+	if err != nil {
+		return err
 	}
 
+	// get floors
 	var floors Floors
-	result := Floor{}.MakeQuerySet(
-		query.Size, query.Offset, holeID,
-		query.OrderBy, query.Desc,
-	).Find(&floors)
+	result := BaseQuery(&query).Where("hole_id = ?", holeID).Find(&floors)
 	if result.Error != nil {
 		return result.Error
 	}
+
 	return Serialize(c, &floors)
 }
 
@@ -55,19 +47,24 @@ func ListFloorsInAHole(c *fiber.Ctx) error {
 // @Param object query ListOldModel false "query"
 // @Success 200 {array} Floor
 func ListFloorsOld(c *fiber.Ctx) error {
+	// validate
 	var query ListOldModel
-	err := c.QueryParser(&query)
+	err := ValidateQuery(c, &query)
 	if err != nil {
 		return err
 	}
+
+	// get floors
 	var floors Floors
-	result := Floor{}.MakeQuerySet(
-		query.Size, query.Offset, query.HoleID,
-		"id", false,
-	).Find(&floors)
+	result := BaseQuery(&Query{
+		Size:    query.Size,
+		Offset:  query.Offset,
+		OrderBy: "storey",
+	}).Where("hole_id = ?", query.HoleID).Find(&floors)
 	if result.Error != nil {
 		return result.Error
 	}
+
 	return Serialize(c, &floors)
 }
 
@@ -80,15 +77,19 @@ func ListFloorsOld(c *fiber.Ctx) error {
 // @Success 200 {object} Floor
 // @Failure 404 {object} MessageModel
 func GetFloor(c *fiber.Ctx) error {
+	// validate floor id
 	floorID, err := c.ParamsInt("id")
 	if err != nil {
 		return err
 	}
+
+	// get floor
 	var floor Floor
 	result := DB.Preload("Mention").First(&floor, floorID)
 	if result.Error != nil {
 		return result.Error
 	}
+
 	return Serialize(c, &floor)
 }
 
@@ -102,7 +103,7 @@ func GetFloor(c *fiber.Ctx) error {
 // @Success 201 {object} Floor
 func CreateFloor(c *fiber.Ctx) error {
 	var body CreateModel
-	err := c.BodyParser(&body)
+	err := ValidateBody(c, &body)
 	if err != nil {
 		return err
 	}
@@ -135,7 +136,7 @@ func CreateFloor(c *fiber.Ctx) error {
 // @Success 201 {object} Floor
 func CreateFloorOld(c *fiber.Ctx) error {
 	var body CreateOldModel
-	err := c.BodyParser(&body)
+	err := ValidateBody(c, &body)
 	if err != nil {
 		return err
 	}
@@ -165,7 +166,7 @@ func CreateFloorOld(c *fiber.Ctx) error {
 func ModifyFloor(c *fiber.Ctx) error {
 	// validate request body
 	var body ModifyModel
-	err := c.BodyParser(&body)
+	err := ValidateBody(c, &body)
 	if err != nil {
 		return err
 	}
@@ -284,7 +285,7 @@ func ModifyFloorLike(c *fiber.Ctx) error {
 // @Failure 404 {object} MessageModel
 func DeleteFloor(c *fiber.Ctx) error {
 	var body DeleteModel
-	err := c.BodyParser(&body)
+	err := ValidateBody(c, &body)
 	if err != nil {
 		return err
 	}

@@ -7,8 +7,9 @@ import (
 )
 
 type HttpError struct {
-	Code    int
-	Message string
+	Code    int          `json:"code,omitempty"`
+	Message string       `json:"message,omitempty"`
+	Detail  *ErrorDetail `json:"detail,omitempty"`
 }
 
 func (e *HttpError) Error() string {
@@ -42,16 +43,22 @@ func MyErrorHandler(ctx *fiber.Ctx, err error) error {
 		return nil
 	}
 
-	code := 500
-	message := err.Error()
-
-	if e, ok := err.(*HttpError); ok {
-		code = e.Code
-	} else if e, ok := err.(*fiber.Error); ok {
-		code = e.Code
-	} else if errors.Is(err, gorm.ErrRecordNotFound) {
-		code = 404
+	httpError := HttpError{
+		Code:    500,
+		Message: err.Error(),
 	}
 
-	return ctx.Status(code).JSON(fiber.Map{"message": message})
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		httpError.Code = 404
+	} else {
+		switch e := err.(type) {
+		case *fiber.Error:
+			httpError.Code = e.Code
+		case *ErrorDetail:
+			httpError.Code = 400
+			httpError.Detail = e
+		}
+	}
+
+	return ctx.Status(httpError.Code).JSON(&httpError)
 }

@@ -19,6 +19,9 @@ func (user *User) GetUser(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
+	if config.Config.Debug {
+		user.IsAdmin = true
+	}
 	// TODO: jwt
 	user.ID = id
 	return nil
