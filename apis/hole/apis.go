@@ -1,7 +1,6 @@
 package hole
 
 import (
-	"time"
 	. "treehole_next/models"
 	. "treehole_next/utils"
 
@@ -24,9 +23,6 @@ func ListHolesByDivision(c *fiber.Ctx) error {
 	err := ValidateQuery(c, &query)
 	if err != nil {
 		return err
-	}
-	if query.Offset.IsZero() {
-		query.Offset = time.Now()
 	}
 	id, err := c.ParamsInt("id")
 	if err != nil {
@@ -58,9 +54,6 @@ func ListHolesByTag(c *fiber.Ctx) error {
 	err := ValidateQuery(c, &query)
 	if err != nil {
 		return err
-	}
-	if query.Offset.IsZero() {
-		query.Offset = time.Now()
 	}
 
 	// get tag
@@ -96,9 +89,6 @@ func ListHolesOld(c *fiber.Ctx) error {
 	err := ValidateQuery(c, &query)
 	if err != nil {
 		return err
-	}
-	if query.Offset.IsZero() {
-		query.Offset = time.Now()
 	}
 
 	var holes Holes
@@ -161,7 +151,10 @@ func CreateHole(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	divisionID, _ := c.ParamsInt("id")
+	divisionID, err := c.ParamsInt("id")
+	if err != nil {
+		return err
+	}
 
 	hole := Hole{
 		DivisionID: divisionID,

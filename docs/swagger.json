@@ -113,9 +113,9 @@
                         "in": "query"
                     },
                     {
+                        "maximum": 10,
                         "type": "integer",
                         "default": 10,
-                        "description": "length of object array",
                         "name": "size",
                         "in": "query"
                     }
@@ -537,17 +537,19 @@
                 "parameters": [
                     {
                         "type": "integer",
-                        "name": "divisionID",
+                        "name": "division_id",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 10,
+                        "type": "integer",
+                        "default": 10,
+                        "name": "length",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "name": "offset",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "name": "size",
+                        "name": "start_time",
                         "in": "query"
                     },
                     {
@@ -1036,9 +1038,9 @@
                         "in": "query"
                     },
                     {
+                        "maximum": 10,
                         "type": "integer",
                         "default": 10,
-                        "description": "length of object array",
                         "name": "size",
                         "in": "query"
                     }
@@ -1181,6 +1183,9 @@
         },
         "hole.CreateModel": {
             "type": "object",
+            "required": [
+                "content"
+            ],
             "properties": {
                 "content": {
                     "type": "string"
@@ -1196,13 +1201,17 @@
         },
         "hole.CreateOldModel": {
             "type": "object",
+            "required": [
+                "content"
+            ],
             "properties": {
                 "content": {
                     "type": "string"
                 },
                 "division_id": {
                     "description": "Admin only",
-                    "type": "integer"
+                    "type": "integer",
+                    "minimum": 1
                 },
                 "tags": {
                     "description": "All users",
@@ -1218,7 +1227,8 @@
             "properties": {
                 "division_id": {
                     "description": "Admin only",
-                    "type": "integer"
+                    "type": "integer",
+                    "minimum": 1
                 },
                 "tags": {
                     "description": "All users",

@@ -91,6 +91,8 @@ definitions:
         items:
           $ref: '#/definitions/tag.CreateModel'
         type: array
+    required:
+    - content
     type: object
   hole.CreateOldModel:
     properties:
@@ -98,17 +100,21 @@ definitions:
         type: string
       division_id:
         description: Admin only
+        minimum: 1
         type: integer
       tags:
         description: All users
         items:
           $ref: '#/definitions/tag.CreateModel'
         type: array
+    required:
+    - content
     type: object
   hole.ModifyModel:
     properties:
       division_id:
         description: Admin only
+        minimum: 1
         type: integer
       tags:
         description: All users
@@ -327,8 +333,8 @@ paths:
         name: offset
         type: string
       - default: 10
-        description: length of object array
         in: query
+        maximum: 10
         name: size
         type: integer
       produces:
@@ -606,14 +612,16 @@ paths:
       deprecated: true
       parameters:
       - in: query
-        name: divisionID
+        name: division_id
+        type: integer
+      - default: 10
+        in: query
+        maximum: 10
+        name: length
         type: integer
       - in: query
-        name: offset
+        name: start_time
         type: string
-      - in: query
-        name: size
-        type: integer
       - in: query
         name: tag
         type: string
@@ -937,8 +945,8 @@ paths:
         name: offset
         type: string
       - default: 10
-        description: length of object array
         in: query
+        maximum: 10
         name: size
         type: integer
       produces:

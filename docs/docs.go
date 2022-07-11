@@ -121,9 +121,9 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "maximum": 10,
                         "type": "integer",
                         "default": 10,
-                        "description": "length of object array",
                         "name": "size",
                         "in": "query"
                     }
@@ -545,17 +545,19 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "integer",
-                        "name": "divisionID",
+                        "name": "division_id",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 10,
+                        "type": "integer",
+                        "default": 10,
+                        "name": "length",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "name": "offset",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "name": "size",
+                        "name": "start_time",
                         "in": "query"
                     },
                     {
@@ -1044,9 +1046,9 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "maximum": 10,
                         "type": "integer",
                         "default": 10,
-                        "description": "length of object array",
                         "name": "size",
                         "in": "query"
                     }
@@ -1189,6 +1191,9 @@ const docTemplate = `{
         },
         "hole.CreateModel": {
             "type": "object",
+            "required": [
+                "content"
+            ],
             "properties": {
                 "content": {
                     "type": "string"
@@ -1204,13 +1209,17 @@ const docTemplate = `{
         },
         "hole.CreateOldModel": {
             "type": "object",
+            "required": [
+                "content"
+            ],
             "properties": {
                 "content": {
                     "type": "string"
                 },
                 "division_id": {
                     "description": "Admin only",
-                    "type": "integer"
+                    "type": "integer",
+                    "minimum": 1
                 },
                 "tags": {
                     "description": "All users",
@@ -1226,7 +1235,8 @@ const docTemplate = `{
             "properties": {
                 "division_id": {
                     "description": "Admin only",
-                    "type": "integer"
+                    "type": "integer",
+                    "minimum": 1
                 },
                 "tags": {
                     "description": "All users",
