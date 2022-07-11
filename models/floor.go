@@ -26,7 +26,7 @@ type Floor struct {
 	ReplyTo    int     `json:"reply_to"`                               // Floor id that it replies to (must be in the same hole)
 	Mention    []Floor `json:"mention" gorm:"many2many:floor_mention"` // Many to many mentions (in different holes)
 	Like       int     `json:"like" gorm:"index"`                      // like - dislike
-	Liked      bool    `json:"liked" gorm:"-:all"`                     // whether the user has liked the floor, dynamically generated
+	Liked      int8    `json:"liked" gorm:"-:all"`                     // whether the user has liked or disliked the floor, dynamically generated
 	IsMe       bool    `json:"is_me" gorm:"-:all"`                     // whether the user is the author of the floor, dynamically generated
 	Deleted    bool    `json:"deleted"`                                // whether the floor is deleted
 	Fold       string  `json:"fold"`                                   // fold reason
@@ -104,6 +104,8 @@ func (floor *Floor) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 	if err != nil {
 		return err
 	}
+	floor.UserID = userID
+	floor.IsMe = true
 
 	// get anonymous name
 	var mapping AnonynameMapping
@@ -189,6 +191,7 @@ func (floor *Floor) ModifyLike(c *fiber.Ctx, likeOption int8) error {
 	if err != nil {
 		return err
 	}
+	floor.IsMe = true
 
 	return DB.Transaction(func(tx *gorm.DB) error {
 
@@ -220,6 +223,58 @@ func (floor *Floor) ModifyLike(c *fiber.Ctx, likeOption int8) error {
 		}
 
 		floor.Like = like
+		floor.Liked = likeOption
 		return nil
 	})
+}
+
+func (floor *Floor) LoadDyField(c *fiber.Ctx) error {
+	userID, err := GetUserID(c)
+	if err != nil {
+		return err
+	}
+	if userID == floor.UserID {
+		floor.IsMe = true
+	}
+
+	var floorLike FloorLike
+	result := DB.
+		Where("floor_id = ?", floor.ID).
+		Where("user_id = ?", userID).
+		Take(&floorLike)
+	if result.Error == nil {
+		floor.Liked = floorLike.LikeData
+	}
+	return nil
+}
+
+func (floors Floors) LoadDyField(c *fiber.Ctx) error {
+	userID, err := GetUserID(c)
+	if err != nil {
+		return err
+	}
+	var floorIDs []int
+	IDFloorMapping := make(map[int]*Floor)
+	for i, v := range floors {
+		if userID == v.UserID {
+			floors[i].IsMe = true
+		}
+		floorIDs = append(floorIDs, v.ID)
+		IDFloorMapping[v.ID] = &floors[i]
+	}
+
+	var floorLikes []FloorLike
+	result := DB.
+		Where("floor_id IN ?", &floorIDs).
+		Where("user_id = ?", userID).
+		Find(&floorLikes)
+	if result.Error != nil {
+		return err
+	}
+	for _, v := range floorLikes {
+		if floor, ok := IDFloorMapping[v.FloorID]; ok {
+			floor.Liked = v.LikeData
+		}
+	}
+	return nil
 }
