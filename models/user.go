@@ -8,10 +8,10 @@ import (
 
 type User struct {
 	BaseModel
-	Favorites []Hole    `json:"favorites" gorm:"many2many:user_favorites"`
-	Nickname  string    `json:"nickname" gorm:"-:all"`
-	Config    StringMap `json:"config" gorm:"-:all"`
-	IsAdmin   bool      `json:"is_admin" gorm:"-:all"`
+	Favorites []Hole                 `json:"favorites" gorm:"many2many:user_favorites"`
+	Nickname  string                 `json:"nickname" gorm:"-:all"`
+	Config    map[string]interface{} `json:"config" gorm:"-:all"`
+	IsAdmin   bool                   `json:"is_admin" gorm:"-:all"`
 }
 
 func (user *User) GetUser(c *fiber.Ctx) error {

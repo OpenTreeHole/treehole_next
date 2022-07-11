@@ -10,7 +10,7 @@ type Query struct {
 }
 
 type MessageModel struct {
-	Message string `json:"message,omitempty"`
+	Message string `json:"message"`
 }
 
 func BaseQuery(q *Query) *gorm.DB {
