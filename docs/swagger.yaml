@@ -30,24 +30,34 @@ definitions:
   floor.CreateModel:
     properties:
       content:
+        description: Owner or admin, the original content should be moved to  floor_history
         type: string
       reply_to:
         description: id of the floor to which replied
+        minimum: 0
         type: integer
+    required:
+    - content
     type: object
   floor.CreateOldModel:
     properties:
       content:
+        description: Owner or admin, the original content should be moved to  floor_history
         type: string
       hole_id:
+        minimum: 1
         type: integer
       reply_to:
         description: id of the floor to which replied
+        minimum: 0
         type: integer
+    required:
+    - content
     type: object
   floor.DeleteModel:
     properties:
       delete_reason:
+        maxLength: 32
         type: string
     type: object
   floor.ModifyModel:
@@ -57,13 +67,20 @@ definitions:
         type: string
       fold:
         description: Admin only
+        maxLength: 16
         type: string
       like:
         description: All user, deprecated, "add" is like, "cancel" is reset
+        enum:
+        - add
+        - cancel
         type: string
       special_tag:
         description: Admin only
+        maxLength: 16
         type: string
+    required:
+    - content
     type: object
   hole.CreateModel:
     properties:
@@ -74,6 +91,8 @@ definitions:
         items:
           $ref: '#/definitions/tag.CreateModel'
         type: array
+    required:
+    - content
     type: object
   hole.CreateOldModel:
     properties:
@@ -81,17 +100,21 @@ definitions:
         type: string
       division_id:
         description: Admin only
+        minimum: 1
         type: integer
       tags:
         description: All users
         items:
           $ref: '#/definitions/tag.CreateModel'
         type: array
+    required:
+    - content
     type: object
   hole.ModifyModel:
     properties:
       division_id:
         description: Admin only
+        minimum: 1
         type: integer
       tags:
         description: All users
@@ -310,8 +333,8 @@ paths:
         name: offset
         type: string
       - default: 10
-        description: length of object array
         in: query
+        maximum: 10
         name: size
         type: integer
       produces:
@@ -441,12 +464,13 @@ paths:
       - in: query
         name: holeID
         type: integer
-      - default: 0
-        in: query
+      - in: query
         name: offset
         type: integer
-      - default: 20
+      - default: 10
         in: query
+        maximum: 30
+        minimum: 0
         name: size
         type: integer
       produces:
@@ -588,14 +612,16 @@ paths:
       deprecated: true
       parameters:
       - in: query
-        name: divisionID
+        name: division_id
+        type: integer
+      - default: 10
+        in: query
+        maximum: 10
+        name: length
         type: integer
       - in: query
-        name: offset
+        name: start_time
         type: string
-      - in: query
-        name: size
-        type: integer
       - in: query
         name: tag
         type: string
@@ -638,26 +664,36 @@ paths:
         name: hole_id
         required: true
         type: integer
-      - default: false
-        description: Is descending order
-        in: query
-        name: desc
-        type: boolean
       - default: 0
         description: offset of object array
         in: query
+        minimum: 0
         name: offset
         type: integer
-      - default: id
-        description: Now only supports id
+      - default: storey
+        description: SQL ORDER BY field
+        enum:
+        - storey
+        - id
+        - like
         in: query
         name: orderBy
         type: string
       - default: 10
         description: length of object array
         in: query
+        maximum: 30
+        minimum: 0
         name: size
         type: integer
+      - default: asc
+        description: Sort order
+        enum:
+        - asc
+        - desc
+        in: query
+        name: sort
+        type: string
       produces:
       - application/json
       responses:
@@ -909,8 +945,8 @@ paths:
         name: offset
         type: string
       - default: 10
-        description: length of object array
         in: query
+        maximum: 10
         name: size
         type: integer
       produces:

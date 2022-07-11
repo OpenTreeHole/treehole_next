@@ -1,7 +1,6 @@
 package hole
 
 import (
-	"time"
 	. "treehole_next/models"
 	. "treehole_next/utils"
 
@@ -21,12 +20,9 @@ import (
 // @Failure 500 {object} MessageModel
 func ListHolesByDivision(c *fiber.Ctx) error {
 	var query QueryTime
-	err := c.QueryParser(&query)
+	err := ValidateQuery(c, &query)
 	if err != nil {
 		return err
-	}
-	if query.Offset.IsZero() {
-		query.Offset = time.Now()
 	}
 	id, err := c.ParamsInt("id")
 	if err != nil {
@@ -35,7 +31,7 @@ func ListHolesByDivision(c *fiber.Ctx) error {
 
 	// get holes
 	var holes Holes
-	querySet := Hole{}.MakeQuerySet(query.Offset, query.Size, false)
+	querySet := holes.MakeQuerySet(query.Offset, query.Size, c)
 	if id != 0 {
 		querySet = querySet.Where("division_id = ?", id)
 	}
@@ -55,12 +51,9 @@ func ListHolesByDivision(c *fiber.Ctx) error {
 // @Failure 404 {object} MessageModel
 func ListHolesByTag(c *fiber.Ctx) error {
 	var query QueryTime
-	err := c.QueryParser(&query)
+	err := ValidateQuery(c, &query)
 	if err != nil {
 		return err
-	}
-	if query.Offset.IsZero() {
-		query.Offset = time.Now()
 	}
 
 	// get tag
@@ -73,7 +66,7 @@ func ListHolesByTag(c *fiber.Ctx) error {
 
 	// get holes
 	var holes Holes
-	querySet := Hole{}.MakeQuerySet(query.Offset, query.Size, false)
+	querySet := holes.MakeQuerySet(query.Offset, query.Size, c)
 	err = querySet.Model(&tag).
 		Association("Holes").Find(&holes)
 	if err != nil {
@@ -93,16 +86,13 @@ func ListHolesByTag(c *fiber.Ctx) error {
 // @Success 200 {array} Hole
 func ListHolesOld(c *fiber.Ctx) error {
 	var query ListOldModel
-	err := c.QueryParser(&query)
+	err := ValidateQuery(c, &query)
 	if err != nil {
 		return err
 	}
-	if query.Offset.IsZero() {
-		query.Offset = time.Now()
-	}
 
 	var holes Holes
-	querySet := Hole{}.MakeQuerySet(query.Offset, query.Size, false)
+	querySet := holes.MakeQuerySet(query.Offset, query.Size, c)
 	if query.Tag != "" {
 		var tag Tag
 		result := DB.Where("name = ?", query.Tag).First(&tag)
@@ -137,8 +127,7 @@ func GetHole(c *fiber.Ctx) error {
 
 	// get hole
 	var hole Hole
-	querySet := Hole{}.MakeHiddenQuerySet(false)
-	result := querySet.First(&hole, id)
+	result := MakeQuerySet(c).First(&hole, id)
 	if result.Error != nil {
 		return result.Error
 	}
@@ -157,11 +146,14 @@ func GetHole(c *fiber.Ctx) error {
 // @Success 201 {object} Hole
 func CreateHole(c *fiber.Ctx) error {
 	var body CreateModel
-	err := c.BodyParser(&body)
+	err := ValidateBody(c, &body)
 	if err != nil {
 		return err
 	}
-	divisionID, _ := c.ParamsInt("id")
+	divisionID, err := c.ParamsInt("id")
+	if err != nil {
+		return err
+	}
 
 	hole := Hole{
 		DivisionID: divisionID,
@@ -187,7 +179,7 @@ func CreateHole(c *fiber.Ctx) error {
 // @Success 201 {object} Hole
 func CreateHoleOld(c *fiber.Ctx) error {
 	var body CreateOldModel
-	err := c.BodyParser(&body)
+	err := ValidateBody(c, &body)
 	if err != nil {
 		return err
 	}
@@ -218,7 +210,7 @@ func CreateHoleOld(c *fiber.Ctx) error {
 func ModifyHole(c *fiber.Ctx) error {
 	// validate
 	var body ModifyModel
-	err := c.BodyParser(&body)
+	err := ValidateBody(c, &body)
 	if err != nil {
 		return err
 	}

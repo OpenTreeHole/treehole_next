@@ -18,17 +18,17 @@ import (
 // @Success 201 {object} models.Division
 // @Success 200 {object} models.Division
 func AddDivision(c *fiber.Ctx) error {
-	var query CreateModel
-	err := c.BodyParser(&query)
+	var body CreateModel
+	err := ValidateBody(c, &body)
 	if err != nil {
 		return err
 	}
 
 	// bind division
 	var division Division
-	division.Name = query.Name
-	division.Description = query.Description
-	result := DB.FirstOrCreate(&division, Division{Name: query.Name})
+	division.Name = body.Name
+	division.Description = body.Description
+	result := DB.FirstOrCreate(&division, Division{Name: body.Name})
 	if result.RowsAffected == 0 {
 		c.Status(200)
 	} else {
@@ -85,7 +85,7 @@ func GetDivision(c *fiber.Ctx) error {
 func ModifyDivision(c *fiber.Ctx) error {
 	var division Division
 	var body ModifyModel
-	err := c.BodyParser(&body)
+	err := ValidateBody(c, &body)
 	if err != nil {
 		return err
 	}
@@ -113,7 +113,7 @@ func ModifyDivision(c *fiber.Ctx) error {
 func DeleteDivision(c *fiber.Ctx) error {
 	id, _ := c.ParamsInt("id")
 	var body DeleteModel
-	err := BindJSON(c, &body)
+	err := ValidateBody(c, &body)
 	if err != nil {
 		return err
 	}
