@@ -7,15 +7,6 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-//func InArray[T comparable](item *T, container *[]T) bool {
-//	for _, i := range *container {
-//		if *item == i {
-//			return true
-//		}
-//	}
-//	return false
-//}
-
 // BindJSON is a safe method to bind request body to struct
 func BindJSON(c *fiber.Ctx, obj interface{}) error {
 	body := c.Body()

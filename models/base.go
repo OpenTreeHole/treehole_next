@@ -25,22 +25,11 @@ func (p *IntArray) Scan(data interface{}) error {
 	return json.Unmarshal(data.([]byte), &p)
 }
 
-type StringMap map[string]interface{}
-
-func (p StringMap) Value() (driver.Value, error) {
-	return json.Marshal(p)
+type Models interface {
+	Division | Hole | Floor | Tag | User |
+		[]Division | []Hole | []Floor | []Tag | []User
 }
 
-func (p *StringMap) Scan(data interface{}) error {
-	return json.Unmarshal(data.([]byte), &p)
-}
-
-type IntStringMap map[int]string
-
-func (p IntStringMap) Value() (driver.Value, error) {
-	return json.Marshal(p)
-}
-
-func (p *IntStringMap) Scan(data interface{}) error {
-	return json.Unmarshal(data.([]byte), &p)
+type Model interface {
+	Division | Hole | Floor | Tag | User
 }

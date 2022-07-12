@@ -23,7 +23,7 @@ type Floor struct {
 	UserID     int     `json:"-"`
 	Content    string  `json:"content"`                                // not empty
 	Anonyname  string  `json:"anonyname" gorm:"size:32"`               // random username, not empty
-	Storey     int     `json:"storey" gorm:"index"`                    // The sequence of floors in a hole
+	Storey     int64   `json:"storey" gorm:"index"`                    // The sequence of floors in a hole
 	ReplyTo    int     `json:"reply_to"`                               // Floor id that it replies to (must be in the same hole)
 	Mention    []Floor `json:"mention" gorm:"many2many:floor_mention"` // Many to many mentions (in different holes)
 	Like       int     `json:"like" gorm:"index"`                      // like - dislike
@@ -184,6 +184,22 @@ func (floor *Floor) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 
 	// find mention
 	err = floor.FindMention()
+	if err != nil {
+		return err
+	}
+
+	// set storey
+	err = DB.Transaction(func(tx *gorm.DB) error {
+		if floor.ReplyTo == 0 {
+			var count int64
+			result := tx.Model(&Floor{}).Where("hole_id = ?", floor.HoleID).Count(&count)
+			if result.Error != nil {
+				return err
+			}
+			floor.Storey = count + 1
+		}
+		return nil
+	})
 	if err != nil {
 		return err
 	}

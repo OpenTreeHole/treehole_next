@@ -32,6 +32,7 @@ func InitDB() {
 	if err != nil {
 		panic(err)
 	}
+	// models must be registered here to migrate into the database
 	err = DB.AutoMigrate(
 		&Division{},
 		&Tag{},
