@@ -188,7 +188,10 @@ func (floor *Floor) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 		// set storey and path
 		if floor.ReplyTo == 0 {
 			var count int64
-			result := tx.Model(&Floor{}).Where("hole_id = ?", floor.HoleID).Count(&count)
+			result := tx.Clauses(clause.Locking{
+				Strength: "UPDATE",
+			}).Model(&Floor{}).Where("hole_id = ?", floor.HoleID).
+				Count(&count)
 			if result.Error != nil {
 				return err
 			}
