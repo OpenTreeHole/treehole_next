@@ -12,6 +12,7 @@ type MyConfig struct {
 	Mode    string `default:"dev"`
 	Size    int    `default:"10"`
 	MaxSize int    `default:"30"`
+	TagSize int    `default:"5"`
 	Debug   bool   `default:"false"`
 	// example: user:pass@tcp(127.0.0.1:3306)/dbname
 	// for more detail, see https://github.com/go-sql-driver/mysql#dsn-data-source-name

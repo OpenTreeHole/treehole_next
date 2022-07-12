@@ -3,18 +3,17 @@ package models
 import (
 	"fmt"
 	"github.com/gofiber/fiber/v2"
+	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"strings"
 	"time"
 	"treehole_next/config"
-
-	"gorm.io/gorm"
 )
 
 type HoleFloor struct {
 	FirstFloor *Floor   `json:"first_floor"`
 	LastFloor  *Floor   `json:"last_floor"`
-	Floors     *[]Floor `json:"floors"`
+	Floors     []*Floor `json:"floors"`
 }
 
 type Hole struct {
@@ -30,51 +29,133 @@ type Hole struct {
 }
 type Holes []Hole
 
-func (hole *Hole) LoadTags() error {
-	var tags []*Tag
-	err := DB.Model(hole).Association("Tags").Find(&tags)
-	if err != nil {
-		return err
-	}
-	if tags == nil {
-		hole.Tags = []*Tag{}
-	} else {
-		hole.Tags = tags
-	}
-	return nil
+type HoleTag struct {
+	HoleID int `json:"hole_id"`
+	TagID  int `json:"tag_id"`
 }
 
-func (hole *Hole) LoadFloors() error {
-	// floors
-	var floors []Floor
-	result := DB.Where("hole_id = ?", hole.ID).Limit(config.Config.Size).Find(&floors)
-	hole.HoleFloor.Floors = &floors
-	if result.RowsAffected == 0 {
+func loadTags(holes []*Hole) error {
+	holeIDs := make([]int, len(holes))
+	for i, hole := range holes {
+		holeIDs[i] = hole.ID
+		hole.Tags = make([]*Tag, 0, config.Config.TagSize)
+	}
+
+	var holeTags []*HoleTag
+	result := DB.Raw(`
+		SELECT * FROM hole_tags
+		WHERE hole_id IN (?)`, holeIDs,
+	).Scan(&holeTags)
+	if result.Error != nil {
+		return result.Error
+	}
+
+	mapping := make(map[int][]int)
+	tagIDs := make([]int, len(holeTags))
+	for i, holeTag := range holeTags {
+		mapping[holeTag.HoleID] = append(mapping[holeTag.HoleID], holeTag.TagID)
+		tagIDs[i] = holeTag.TagID
+	}
+
+	var tags []*Tag
+	result = DB.Raw(`
+		SELECT * FROM tag
+		WHERE id IN (?)`, tagIDs,
+	).Scan(&tags)
+	if result.Error != nil {
+		return result.Error
+	}
+	if len(tags) == 0 {
 		return nil
 	}
 
-	// first floor
-	hole.HoleFloor.FirstFloor = &floors[0]
+	tagMap := make(map[int]*Tag)
+	for _, tag := range tags {
+		tagMap[tag.ID] = tag
+	}
 
-	// last floor
-	if hole.Reply <= config.Config.Size {
-		hole.HoleFloor.LastFloor = &floors[result.RowsAffected-1]
-	} else {
-		var floor Floor
-		DB.Where("hole_id = ?", hole.ID).Last(&floor)
-		hole.HoleFloor.LastFloor = &floor
+	for _, hole := range holes {
+		for _, tagID := range mapping[hole.ID] {
+			hole.Tags = append(hole.Tags, tagMap[tagID])
+		}
+	}
+
+	return nil
+}
+
+func loadFloors(holes []*Hole) error {
+	holeIDs := make([]int, len(holes))
+	for i, hole := range holes {
+		holeIDs[i] = hole.ID
+		hole.HoleFloor.Floors = make([]*Floor, 0, config.Config.Size)
+	}
+
+	var floors []*Floor
+	result := DB.Raw(`
+		SELECT *
+		FROM (
+			SELECT *, rank() over
+			(PARTITION BY hole_id ORDER BY id ASC) AS ranking
+			FROM floor
+		) AS a 
+		WHERE hole_id IN (?) AND ranking <= ?`,
+		holeIDs, config.Config.Size,
+	).Scan(&floors)
+	if result.Error != nil {
+		return result.Error
+	}
+	if len(floors) == 0 {
+		return nil
+	}
+
+	var index, left, right int
+	for _, floor := range floors {
+		if floor.HoleID != holes[index].ID {
+			if index != 0 { // set floors
+				holes[index].HoleFloor.Floors = floors[left:right]
+				left = right
+			}
+			for i, hole := range holes { // update index
+				if hole.ID == floor.HoleID {
+					index = i
+					break
+				}
+			}
+		}
+		right++
+	}
+	holes[index].HoleFloor.Floors = floors[left:right]
+
+	for _, hole := range holes {
+		if len(hole.HoleFloor.Floors) == 0 {
+			return nil
+		}
+
+		// first floor
+		hole.HoleFloor.FirstFloor = hole.HoleFloor.Floors[0]
+
+		// last floor
+		if hole.Reply <= config.Config.Size {
+			hole.HoleFloor.LastFloor = hole.HoleFloor.Floors[len(hole.HoleFloor.Floors)-1]
+		} else {
+			var floor Floor
+			DB.Where("hole_id = ?", hole.ID).Last(&floor)
+			hole.HoleFloor.LastFloor = &floor
+		}
 	}
 
 	return nil
 }
 
 func (hole *Hole) Preprocess() error {
-	err := hole.LoadTags()
+	holes := []*Hole{hole}
+
+	err := loadFloors(holes)
 	if err != nil {
 		return err
 	}
 
-	err = hole.LoadFloors()
+	err = loadTags(holes)
 	if err != nil {
 		return err
 	}
@@ -82,13 +163,34 @@ func (hole *Hole) Preprocess() error {
 	return nil
 }
 
-func (holes Holes) Preprocess() error {
+func getCache(key string) (*Hole, error) {
 	// TODO: cache
+	return nil, nil
+}
+func (holes Holes) Preprocess() error {
+	notInCache := make([]*Hole, 0, len(holes))
+
 	for i := 0; i < len(holes); i++ {
-		if err := holes[i].Preprocess(); err != nil {
+		hole, err := getCache("key")
+		if err != nil {
 			return err
 		}
+		if hole == nil {
+			notInCache = append(notInCache, &holes[i])
+		} else {
+			holes[i] = *hole
+		}
 	}
+	err := loadFloors(notInCache)
+	if err != nil {
+		return err
+	}
+
+	err = loadTags(notInCache)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
