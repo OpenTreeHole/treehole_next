@@ -1,6 +1,8 @@
 package models
 
 import (
+	"regexp"
+	"strconv"
 	"treehole_next/utils"
 
 	"github.com/gofiber/fiber/v2"
@@ -22,11 +24,12 @@ type Floor struct {
 	UserID     int     `json:"-"`
 	Content    string  `json:"content"`                                // not empty
 	Anonyname  string  `json:"anonyname" gorm:"size:32"`               // random username, not empty
-	Storey     int     `json:"storey" gorm:"index"`                    // The sequence of floors in a hole
-	ReplyTo    int     `json:"reply_to"`                               // Floor id that it replies to (must be in the same hole)
+	Storey     int     `json:"storey"`                                 // The sequence of floors in a hole
+	Path       string  `json:"path" gorm:"default:/"`                  // storey path
+	ReplyTo    int     `json:"-" gorm:"-:all"`                         // Floor id that it replies to (must be in the same hole)
 	Mention    []Floor `json:"mention" gorm:"many2many:floor_mention"` // Many to many mentions (in different holes)
-	Like       int     `json:"like" gorm:"index"`                      // like - dislike
-	Liked      bool    `json:"liked" gorm:"-:all"`                     // whether the user has liked the floor, dynamically generated
+	Like       int     `json:"like"`                                   // like - dislike
+	Liked      int8    `json:"liked" gorm:"-:all"`                     // whether the user has liked or disliked the floor, dynamically generated
 	IsMe       bool    `json:"is_me" gorm:"-:all"`                     // whether the user is the author of the floor, dynamically generated
 	Deleted    bool    `json:"deleted"`                                // whether the floor is deleted
 	Fold       string  `json:"fold"`                                   // fold reason
@@ -92,6 +95,45 @@ func (floor Floor) MakeQuerySet(
 		Order(clause.OrderByColumn{Column: clause.Column{Name: orderBy}, Desc: ifDesc})
 }
 
+var reHole = regexp.MustCompile(`[^#]#(\d+)`)
+var reFloor = regexp.MustCompile(`##(\d+)`)
+
+func (floor *Floor) FindMention(tx *gorm.DB) error {
+	holeIDsText := reHole.FindAllStringSubmatch(" "+floor.Content, -1)
+	holeIds, err := utils.ReText2IntArray(holeIDsText)
+	if err != nil {
+		return err
+	}
+
+	var floorIDs []int
+	if len(holeIds) != 0 {
+		err := tx.
+			Raw("SELECT MIN(id) FROM floor WHERE hole_id IN ? GROUP BY hole_id", holeIds).
+			Scan(&floorIDs).Error
+		if err != nil {
+			return err
+		}
+	}
+
+	floorIDsText := reFloor.FindAllStringSubmatch(" "+floor.Content, -1)
+	floorIDs2, err := utils.ReText2IntArray(floorIDsText)
+	if err != nil {
+		return err
+	}
+
+	floorIDs = append(floorIDs, floorIDs2...)
+	var floors []Floor
+	if len(floorIDs) != 0 {
+		err := tx.Find(&floors, floorIDs).Error
+		if err != nil {
+			return err
+		}
+	}
+	floor.Mention = floors
+
+	return nil
+}
+
 func (floor *Floor) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 	var tx *gorm.DB
 	if len(db) > 0 {
@@ -104,11 +146,13 @@ func (floor *Floor) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 	if err != nil {
 		return err
 	}
-
-	// get anonymous name
-	var mapping AnonynameMapping
+	floor.UserID = userID
+	floor.IsMe = true
 
 	err = tx.Transaction(func(tx *gorm.DB) error {
+		// get anonymous name
+		var mapping AnonynameMapping
+
 		result := tx.
 			Where("hole_id = ?", floor.HoleID).
 			Where("user_id = ?", userID).
@@ -140,18 +184,70 @@ func (floor *Floor) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 		} else {
 			floor.Anonyname = mapping.Anonyname
 		}
+
+		// set storey and path
+		if floor.ReplyTo == 0 {
+			var count int64
+			result := tx.Clauses(clause.Locking{
+				Strength: "UPDATE",
+			}).Model(&Floor{}).Where("hole_id = ?", floor.HoleID).
+				Count(&count)
+			if result.Error != nil {
+				return err
+			}
+			floor.Storey = int(count) + 1
+			floor.Path = "/"
+		} else {
+			var storey int
+			result := tx.Clauses(clause.Locking{
+				Strength: "UPDATE",
+			}).Raw(`SELECT storey FROM floor 
+					WHERE hole_id = ? AND path LIKE '%/?/%' 
+					ORDER BY storey DESC LIMIT 1`,
+				floor.HoleID, floor.ReplyTo).
+				Scan(&storey)
+			if result.Error != nil {
+				return err
+			}
+			result = tx.
+				Exec(`UPDATE floor SET storey = storey + 1
+					WHERE hole_id = ? AND storey > ?`,
+					floor.HoleID, storey)
+			if result.Error != nil {
+				return err
+			}
+			floor.Storey = storey + 1
+			var replyPath string
+			result = tx.
+				Raw(`SELECT path FROM floor WHERE ID = ?`,
+					floor.ReplyTo).
+				Scan(&replyPath)
+			if result.Error != nil {
+				return err
+			}
+			floor.Path = replyPath + strconv.Itoa(floor.ReplyTo) + "/"
+		}
+
+		// create floor
+		result = tx.Create(floor)
+		if result.Error != nil {
+			return result.Error
+		}
 		return nil
 	})
 	if err != nil {
 		return err
 	}
 
-	// create floor
-	result := tx.Create(floor)
-	if result.Error != nil {
-		return result.Error
-	}
+	return nil
+}
 
+func (floor *Floor) BeforeCreate(tx *gorm.DB) (err error) {
+	// find mention
+	err = floor.FindMention(tx)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -189,6 +285,7 @@ func (floor *Floor) ModifyLike(c *fiber.Ctx, likeOption int8) error {
 	if err != nil {
 		return err
 	}
+	floor.IsMe = true
 
 	return DB.Transaction(func(tx *gorm.DB) error {
 
@@ -220,6 +317,58 @@ func (floor *Floor) ModifyLike(c *fiber.Ctx, likeOption int8) error {
 		}
 
 		floor.Like = like
+		floor.Liked = likeOption
 		return nil
 	})
+}
+
+func (floor *Floor) LoadDyField(c *fiber.Ctx) error {
+	userID, err := GetUserID(c)
+	if err != nil {
+		return err
+	}
+	if userID == floor.UserID {
+		floor.IsMe = true
+	}
+
+	var floorLike FloorLike
+	result := DB.
+		Where("floor_id = ?", floor.ID).
+		Where("user_id = ?", userID).
+		Take(&floorLike)
+	if result.Error == nil {
+		floor.Liked = floorLike.LikeData
+	}
+	return nil
+}
+
+func (floors Floors) LoadDyField(c *fiber.Ctx) error {
+	userID, err := GetUserID(c)
+	if err != nil {
+		return err
+	}
+	var floorIDs []int
+	IDFloorMapping := make(map[int]*Floor)
+	for i, v := range floors {
+		if userID == v.UserID {
+			floors[i].IsMe = true
+		}
+		floorIDs = append(floorIDs, v.ID)
+		IDFloorMapping[v.ID] = &floors[i]
+	}
+
+	var floorLikes []FloorLike
+	result := DB.
+		Where("floor_id IN ?", &floorIDs).
+		Where("user_id = ?", userID).
+		Find(&floorLikes)
+	if result.Error != nil {
+		return err
+	}
+	for _, v := range floorLikes {
+		if floor, ok := IDFloorMapping[v.FloorID]; ok {
+			floor.Liked = v.LikeData
+		}
+	}
+	return nil
 }
