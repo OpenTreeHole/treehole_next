@@ -25,8 +25,8 @@ type Floor struct {
 	Content    string  `json:"content"`                                // not empty
 	Anonyname  string  `json:"anonyname" gorm:"size:32"`               // random username, not empty
 	Storey     int     `json:"storey"`                                 // The sequence of floors in a hole
-	Path       string  `json:"path"`                                   // storey path
-	ReplyTo    int     `json:"reply_to"`                               // Floor id that it replies to (must be in the same hole)
+	Path       string  `json:"path" default:"/"`                       // storey path
+	ReplyTo    int     `json:"-"`                                      // Floor id that it replies to (must be in the same hole)
 	Mention    []Floor `json:"mention" gorm:"many2many:floor_mention"` // Many to many mentions (in different holes)
 	Like       int     `json:"like"`                                   // like - dislike
 	Liked      int8    `json:"liked" gorm:"-:all"`                     // whether the user has liked or disliked the floor, dynamically generated
@@ -196,11 +196,12 @@ func (floor *Floor) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 			floor.Path = "/"
 		} else {
 			var storey int
-			result := tx.
-				Raw(`SELECT storey FROM floor 
+			result := tx.Clauses(clause.Locking{
+				Strength: "UPDATE",
+			}).Raw(`SELECT storey FROM floor 
 					WHERE hole_id = ? AND path LIKE '%/?/%' 
 					ORDER BY storey DESC LIMIT 1`,
-					floor.HoleID, floor.ReplyTo).
+				floor.HoleID, floor.ReplyTo).
 				Scan(&storey)
 			if result.Error != nil {
 				return err
@@ -223,16 +224,16 @@ func (floor *Floor) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 			}
 			floor.Path = replyPath + strconv.Itoa(floor.ReplyTo) + "/"
 		}
+
+		// create floor
+		result = tx.Create(floor)
+		if result.Error != nil {
+			return result.Error
+		}
 		return nil
 	})
 	if err != nil {
 		return err
-	}
-
-	// create floor
-	result := tx.Create(floor)
-	if result.Error != nil {
-		return result.Error
 	}
 
 	return nil
