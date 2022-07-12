@@ -24,11 +24,11 @@ type Floor struct {
 	UserID     int     `json:"-"`
 	Content    string  `json:"content"`                                // not empty
 	Anonyname  string  `json:"anonyname" gorm:"size:32"`               // random username, not empty
-	Storey     int     `json:"storey" gorm:"index"`                    // The sequence of floors in a hole
-	Path       string  `json:"-"`                                      // storey path
+	Storey     int     `json:"storey"`                                 // The sequence of floors in a hole
+	Path       string  `json:"path"`                                   // storey path
 	ReplyTo    int     `json:"reply_to"`                               // Floor id that it replies to (must be in the same hole)
 	Mention    []Floor `json:"mention" gorm:"many2many:floor_mention"` // Many to many mentions (in different holes)
-	Like       int     `json:"like" gorm:"index"`                      // like - dislike
+	Like       int     `json:"like"`                                   // like - dislike
 	Liked      int8    `json:"liked" gorm:"-:all"`                     // whether the user has liked or disliked the floor, dynamically generated
 	IsMe       bool    `json:"is_me" gorm:"-:all"`                     // whether the user is the author of the floor, dynamically generated
 	Deleted    bool    `json:"deleted"`                                // whether the floor is deleted
@@ -149,10 +149,10 @@ func (floor *Floor) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 	floor.UserID = userID
 	floor.IsMe = true
 
-	// get anonymous name
-	var mapping AnonynameMapping
-
 	err = tx.Transaction(func(tx *gorm.DB) error {
+		// get anonymous name
+		var mapping AnonynameMapping
+
 		result := tx.
 			Where("hole_id = ?", floor.HoleID).
 			Where("user_id = ?", userID).
@@ -184,14 +184,8 @@ func (floor *Floor) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 		} else {
 			floor.Anonyname = mapping.Anonyname
 		}
-		return nil
-	})
-	if err != nil {
-		return err
-	}
 
-	// set storey and path
-	err = DB.Transaction(func(tx *gorm.DB) error {
+		// set storey and path
 		if floor.ReplyTo == 0 {
 			var count int64
 			result := tx.Model(&Floor{}).Where("hole_id = ?", floor.HoleID).Count(&count)
