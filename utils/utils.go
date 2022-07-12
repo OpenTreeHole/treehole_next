@@ -28,21 +28,6 @@ func Serialize(c *fiber.Ctx, obj CanPreprocess) error {
 	return c.JSON(obj)
 }
 
-func DiffrenceSet[T comparable](mainSet []T, subSet []T) (ansSet []T) {
-	tmp := map[T]bool{}
-	for _, val := range subSet {
-		if _, ok := tmp[val]; !ok {
-			tmp[val] = true
-		}
-	}
-	for _, val := range mainSet {
-		if _, ok := tmp[val]; !ok {
-			ansSet = append(ansSet, val)
-		}
-	}
-	return ansSet
-}
-
 func ReText2IntArray(IDs [][]string) ([]int, error) {
 	ansIDs := make([]int, 0)
 	for _, v := range IDs {
