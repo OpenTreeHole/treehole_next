@@ -11,4 +11,6 @@ func RegisterRoutes(app *fiber.App) {
 	app.Put("/floors/:id", ModifyFloor)
 	app.Post("/floors/:id/like/:like", ModifyFloorLike)
 	app.Delete("/floors/:id", DeleteFloor)
+
+	app.Get("/floors/:id/history", GetFloorHistory)
 }

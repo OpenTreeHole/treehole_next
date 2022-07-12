@@ -93,7 +93,7 @@ func GetFloor(c *fiber.Ctx) error {
 
 	// get floor
 	var floor Floor
-	result := DB.Preload("Mention").First(&floor, floorID)
+	result := DB.First(&floor, floorID)
 	if result.Error != nil {
 		return result.Error
 	}
@@ -336,4 +336,25 @@ func DeleteFloor(c *fiber.Ctx) error {
 		return err
 	}
 	return Serialize(c, &floor)
+}
+
+// GetFloorHistory
+// @Summary Get A Floor's History
+// @Tags Floor
+// @Produce application/json
+// @Router /floors/{id}/history [get]
+// @Param id path int true "id"
+// @Success 200 {array} FloorHistory
+// @Failure 404 {object} MessageModel
+func GetFloorHistory(c *fiber.Ctx) error {
+	floorID, err := c.ParamsInt("id")
+	if err != nil {
+		return err
+	}
+	var historys []FloorHistory
+	result := DB.Where("floor_id = ?", floorID).Find(&historys)
+	if result.Error != nil {
+		return result.Error
+	}
+	return c.JSON(&historys)
 }
