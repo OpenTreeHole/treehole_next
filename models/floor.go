@@ -2,6 +2,7 @@ package models
 
 import (
 	"regexp"
+	"strconv"
 	"treehole_next/utils"
 
 	"github.com/gofiber/fiber/v2"
@@ -24,6 +25,7 @@ type Floor struct {
 	Content    string  `json:"content"`                                // not empty
 	Anonyname  string  `json:"anonyname" gorm:"size:32"`               // random username, not empty
 	Storey     int     `json:"storey" gorm:"index"`                    // The sequence of floors in a hole
+	Path       string  `json:"-"`                                      // storey path
 	ReplyTo    int     `json:"reply_to"`                               // Floor id that it replies to (must be in the same hole)
 	Mention    []Floor `json:"mention" gorm:"many2many:floor_mention"` // Many to many mentions (in different holes)
 	Like       int     `json:"like" gorm:"index"`                      // like - dislike
@@ -96,7 +98,7 @@ func (floor Floor) MakeQuerySet(
 var reHole = regexp.MustCompile(`[^#]#(\d+)`)
 var reFloor = regexp.MustCompile(`##(\d+)`)
 
-func (floor *Floor) FindMention() error {
+func (floor *Floor) FindMention(tx *gorm.DB) error {
 	holeIDsText := reHole.FindAllStringSubmatch(" "+floor.Content, -1)
 	holeIds, err := utils.ReText2IntArray(holeIDsText)
 	if err != nil {
@@ -104,11 +106,13 @@ func (floor *Floor) FindMention() error {
 	}
 
 	var floorIDs []int
-	err = DB.
-		Raw("SELECT MIN(id) FROM floor WHERE hole_id IN ? GROUP BY hole_id", holeIds).
-		Scan(&floorIDs).Error
-	if err != nil {
-		return err
+	if len(holeIds) != 0 {
+		err := tx.
+			Raw("SELECT MIN(id) FROM floor WHERE hole_id IN ? GROUP BY hole_id", holeIds).
+			Scan(&floorIDs).Error
+		if err != nil {
+			return err
+		}
 	}
 
 	floorIDsText := reFloor.FindAllStringSubmatch(" "+floor.Content, -1)
@@ -119,9 +123,11 @@ func (floor *Floor) FindMention() error {
 
 	floorIDs = append(floorIDs, floorIDs2...)
 	var floors []Floor
-	err = DB.Find(&floors, floorIDs).Error
-	if err != nil {
-		return err
+	if len(floorIDs) != 0 {
+		err := tx.Find(&floors, floorIDs).Error
+		if err != nil {
+			return err
+		}
 	}
 	floor.Mention = floors
 
@@ -184,7 +190,7 @@ func (floor *Floor) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 		return err
 	}
 
-	// set storey
+	// set storey and path
 	err = DB.Transaction(func(tx *gorm.DB) error {
 		if floor.ReplyTo == 0 {
 			var count int64
@@ -193,6 +199,35 @@ func (floor *Floor) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 				return err
 			}
 			floor.Storey = int(count) + 1
+			floor.Path = "/"
+		} else {
+			var storey int
+			result := tx.
+				Raw(`SELECT storey FROM floor 
+					WHERE hole_id = ? AND path LIKE '%/?/%' 
+					ORDER BY storey DESC LIMIT 1`,
+					floor.HoleID, floor.ReplyTo).
+				Scan(&storey)
+			if result.Error != nil {
+				return err
+			}
+			result = tx.
+				Exec(`UPDATE floor SET storey = storey + 1
+					WHERE hole_id = ? AND storey > ?`,
+					floor.HoleID, storey)
+			if result.Error != nil {
+				return err
+			}
+			floor.Storey = storey + 1
+			var replyPath string
+			result = tx.
+				Raw(`SELECT path FROM floor WHERE ID = ?`,
+					floor.ReplyTo).
+				Scan(&replyPath)
+			if result.Error != nil {
+				return err
+			}
+			floor.Path = replyPath + strconv.Itoa(floor.ReplyTo) + "/"
 		}
 		return nil
 	})
@@ -211,7 +246,7 @@ func (floor *Floor) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 
 func (floor *Floor) BeforeCreate(tx *gorm.DB) (err error) {
 	// find mention
-	err = floor.FindMention()
+	err = floor.FindMention(tx)
 	if err != nil {
 		return err
 	}
