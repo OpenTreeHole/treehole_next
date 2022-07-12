@@ -68,14 +68,11 @@ func ListFloorsOld(c *fiber.Ctx) error {
 	if result.Error != nil {
 		return result.Error
 	}
-<<<<<<< HEAD
 	err = floors.LoadDyField(c)
 	if err != nil {
 		return err
 	}
-=======
 
->>>>>>> dcfdc3b83cc2cae05716ca4f699d6d343c01847a
 	return Serialize(c, &floors)
 }
 
@@ -100,14 +97,11 @@ func GetFloor(c *fiber.Ctx) error {
 	if result.Error != nil {
 		return result.Error
 	}
-<<<<<<< HEAD
 	err = floor.LoadDyField(c)
 	if err != nil {
 		return err
 	}
-=======
 
->>>>>>> dcfdc3b83cc2cae05716ca4f699d6d343c01847a
 	return Serialize(c, &floor)
 }
 

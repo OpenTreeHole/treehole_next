@@ -23,7 +23,7 @@ type Floor struct {
 	UserID     int     `json:"-"`
 	Content    string  `json:"content"`                                // not empty
 	Anonyname  string  `json:"anonyname" gorm:"size:32"`               // random username, not empty
-	Storey     int64   `json:"storey" gorm:"index"`                    // The sequence of floors in a hole
+	Storey     int     `json:"storey" gorm:"index"`                    // The sequence of floors in a hole
 	ReplyTo    int     `json:"reply_to"`                               // Floor id that it replies to (must be in the same hole)
 	Mention    []Floor `json:"mention" gorm:"many2many:floor_mention"` // Many to many mentions (in different holes)
 	Like       int     `json:"like" gorm:"index"`                      // like - dislike
@@ -93,35 +93,37 @@ func (floor Floor) MakeQuerySet(
 		Order(clause.OrderByColumn{Column: clause.Column{Name: orderBy}, Desc: ifDesc})
 }
 
+var reHole = regexp.MustCompile(`[^#]#(\d+)`)
+var reFloor = regexp.MustCompile(`##(\d+)`)
+
 func (floor *Floor) FindMention() error {
-	re := regexp.MustCompile(`[^#]#(\d+)`)
-	holeIDsText := re.FindAllStringSubmatch(" "+floor.Content, -1)
+	holeIDsText := reHole.FindAllStringSubmatch(" "+floor.Content, -1)
 	holeIds, err := utils.ReText2IntArray(holeIDsText)
 	if err != nil {
 		return err
 	}
-	for _, id := range holeIds {
-		var floor Floor
-		result := DB.Where("hole_id = ?", id).First(&floor)
-		if result.Error != nil {
-			return err
-		}
-		floor.Mention = append(floor.Mention, floor)
-	}
 
-	re = regexp.MustCompile(`##(\d+)`)
-	floorIDsText := re.FindAllStringSubmatch(" "+floor.Content, -1)
-	floorIDs, err := utils.ReText2IntArray(floorIDsText)
+	var floorIDs []int
+	err = DB.
+		Raw("SELECT MIN(id) FROM floor WHERE hole_id IN ? GROUP BY hole_id", holeIds).
+		Scan(&floorIDs).Error
 	if err != nil {
 		return err
 	}
 
-	var floors []Floor
-	result := DB.Where("floor_id IN ?", floorIDs).Find(&floors)
-	if result.Error != nil {
+	floorIDsText := reFloor.FindAllStringSubmatch(" "+floor.Content, -1)
+	floorIDs2, err := utils.ReText2IntArray(floorIDsText)
+	if err != nil {
 		return err
 	}
-	floor.Mention = append(floor.Mention, floors...)
+
+	floorIDs = append(floorIDs, floorIDs2...)
+	var floors []Floor
+	err = DB.Find(&floors, floorIDs).Error
+	if err != nil {
+		return err
+	}
+	floor.Mention = floors
 
 	return nil
 }
@@ -182,12 +184,6 @@ func (floor *Floor) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 		return err
 	}
 
-	// find mention
-	err = floor.FindMention()
-	if err != nil {
-		return err
-	}
-
 	// set storey
 	err = DB.Transaction(func(tx *gorm.DB) error {
 		if floor.ReplyTo == 0 {
@@ -196,7 +192,7 @@ func (floor *Floor) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 			if result.Error != nil {
 				return err
 			}
-			floor.Storey = count + 1
+			floor.Storey = int(count) + 1
 		}
 		return nil
 	})
@@ -210,6 +206,15 @@ func (floor *Floor) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 		return result.Error
 	}
 
+	return nil
+}
+
+func (floor *Floor) BeforeCreate(tx *gorm.DB) (err error) {
+	// find mention
+	err = floor.FindMention()
+	if err != nil {
+		return err
+	}
 	return nil
 }
 

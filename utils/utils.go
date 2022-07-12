@@ -44,17 +44,13 @@ func DiffrenceSet[T comparable](mainSet []T, subSet []T) (ansSet []T) {
 }
 
 func ReText2IntArray(IDs [][]string) ([]int, error) {
-	ansIDMapping := make(map[int]bool)
+	ansIDs := make([]int, 0)
 	for _, v := range IDs {
 		id, err := strconv.Atoi(v[1])
 		if err != nil {
 			return nil, err
 		}
-		ansIDMapping[id] = true
+		ansIDs = append(ansIDs, id)
 	}
-	keys := []int{}
-	for key := range ansIDMapping {
-		keys = append(keys, key)
-	}
-	return keys, nil
+	return ansIDs, nil
 }
