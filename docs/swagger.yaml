@@ -164,16 +164,17 @@ definitions:
         description: like - dislike
         type: integer
       liked:
-        description: whether the user has liked the floor, dynamically generated
-        type: boolean
+        description: whether the user has liked or disliked the floor, dynamically
+          generated
+        type: integer
       mention:
         description: Many to many mentions (in different holes)
         items:
           $ref: '#/definitions/models.Floor'
         type: array
-      reply_to:
-        description: Floor id that it replies to (must be in the same hole)
-        type: integer
+      path:
+        description: storey path
+        type: string
       special_tag:
         description: Additional info
         type: string
@@ -184,6 +185,24 @@ definitions:
         type: string
       time_updated:
         type: string
+    type: object
+  models.FloorHistory:
+    properties:
+      content:
+        type: string
+      floor_id:
+        type: integer
+      id:
+        type: integer
+      reason:
+        type: string
+      time_created:
+        type: string
+      time_updated:
+        type: string
+      user_id:
+        description: The one who modified the floor
+        type: integer
     type: object
   models.Hole:
     properties:
@@ -578,6 +597,30 @@ paths:
           schema:
             $ref: '#/definitions/models.MessageModel'
       summary: Modify A Floor
+      tags:
+      - Floor
+  /floors/{id}/history:
+    get:
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.FloorHistory'
+            type: array
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.MessageModel'
+      summary: Get A Floor's History
       tags:
       - Floor
   /floors/{id}/like/{like}:

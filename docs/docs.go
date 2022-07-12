@@ -491,6 +491,43 @@ const docTemplate = `{
                 }
             }
         },
+        "/floors/{id}/history": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Floor"
+                ],
+                "summary": "Get A Floor's History",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.FloorHistory"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.MessageModel"
+                        }
+                    }
+                }
+            }
+        },
         "/floors/{id}/like/{like}": {
             "post": {
                 "produces": [
@@ -1307,8 +1344,8 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "liked": {
-                    "description": "whether the user has liked the floor, dynamically generated",
-                    "type": "boolean"
+                    "description": "whether the user has liked or disliked the floor, dynamically generated",
+                    "type": "integer"
                 },
                 "mention": {
                     "description": "Many to many mentions (in different holes)",
@@ -1317,9 +1354,9 @@ const docTemplate = `{
                         "$ref": "#/definitions/models.Floor"
                     }
                 },
-                "reply_to": {
-                    "description": "Floor id that it replies to (must be in the same hole)",
-                    "type": "integer"
+                "path": {
+                    "description": "storey path",
+                    "type": "string"
                 },
                 "special_tag": {
                     "description": "Additional info",
@@ -1334,6 +1371,33 @@ const docTemplate = `{
                 },
                 "time_updated": {
                     "type": "string"
+                }
+            }
+        },
+        "models.FloorHistory": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "floor_id": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "reason": {
+                    "type": "string"
+                },
+                "time_created": {
+                    "type": "string"
+                },
+                "time_updated": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "description": "The one who modified the floor",
+                    "type": "integer"
                 }
             }
         },
