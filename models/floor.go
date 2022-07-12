@@ -25,8 +25,8 @@ type Floor struct {
 	Content    string  `json:"content"`                                // not empty
 	Anonyname  string  `json:"anonyname" gorm:"size:32"`               // random username, not empty
 	Storey     int     `json:"storey"`                                 // The sequence of floors in a hole
-	Path       string  `json:"path" default:"/"`                       // storey path
-	ReplyTo    int     `json:"-"`                                      // Floor id that it replies to (must be in the same hole)
+	Path       string  `json:"path" gorm:"default:/"`                  // storey path
+	ReplyTo    int     `json:"-" gorm:"-:all"`                         // Floor id that it replies to (must be in the same hole)
 	Mention    []Floor `json:"mention" gorm:"many2many:floor_mention"` // Many to many mentions (in different holes)
 	Like       int     `json:"like"`                                   // like - dislike
 	Liked      int8    `json:"liked" gorm:"-:all"`                     // whether the user has liked or disliked the floor, dynamically generated
