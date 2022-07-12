@@ -351,10 +351,10 @@ func GetFloorHistory(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	var historys []FloorHistory
-	result := DB.Where("floor_id = ?", floorID).Find(&historys)
+	var histories []FloorHistory
+	result := DB.Where("floor_id = ?", floorID).Find(&histories)
 	if result.Error != nil {
 		return result.Error
 	}
-	return c.JSON(&historys)
+	return c.JSON(&histories)
 }
