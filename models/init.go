@@ -16,18 +16,37 @@ var gormConfig = &gorm.Config{
 	},
 }
 
+func mysqlDB() (*gorm.DB, error) {
+	return gorm.Open(mysql.Open(config.Config.DbUrl), gormConfig)
+}
+
+func sqliteDB() (*gorm.DB, error) {
+	err := os.MkdirAll("data", 0750)
+	if err != nil {
+		panic(err)
+	}
+	return gorm.Open(sqlite.Open("data/sqlite.db"), gormConfig)
+}
+
+func memoryDB() (*gorm.DB, error) {
+	return gorm.Open(sqlite.Open("file::memory:?cache=shared"), gormConfig)
+}
+
 func InitDB() {
 	var err error
-	if config.Config.Mode == "dev" {
-		err = os.MkdirAll("data", 0750)
-		if err != nil {
-			panic(err)
-		}
-		DB, err = gorm.Open(sqlite.Open("data/sqlite.db"), gormConfig)
-	} else if config.Config.Mode == "test" {
-		DB, err = gorm.Open(sqlite.Open("file::memory:?cache=shared"), gormConfig)
-	} else {
-		DB, err = gorm.Open(mysql.Open(config.Config.DbUrl), gormConfig)
+	switch config.Config.Mode {
+	case "production":
+		DB, err = mysqlDB()
+	case "test":
+		DB, err = memoryDB()
+		DB = DB.Debug()
+	case "dev":
+		DB, err = sqliteDB()
+		DB = DB.Debug()
+	case "perf":
+		DB, err = sqliteDB()
+	default: // sqlite as default
+		panic("unknown mode")
 	}
 	if err != nil {
 		panic(err)
@@ -45,8 +64,5 @@ func InitDB() {
 	)
 	if err != nil {
 		panic(err)
-	}
-	if config.Config.Debug {
-		DB = DB.Debug()
 	}
 }
