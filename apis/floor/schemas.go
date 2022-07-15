@@ -1,14 +1,32 @@
 package floor
 
+import (
+	"gorm.io/gorm"
+	"treehole_next/models"
+)
+
 type content struct {
 	// Owner or admin, the original content should be moved to  floor_history
 	Content string `json:"content" validate:"required"`
+}
+
+type ListModel struct {
+	models.Query
+	OrderBy string `query:"order_by" default:"storey" validate:"oneof=storey id like"` // SQL ORDER BY field
+}
+
+func (q *ListModel) BaseQuery() *gorm.DB {
+	return models.DB.Limit(q.Size).Offset(q.Offset).Order(q.OrderBy + " " + q.Sort)
 }
 
 type ListOldModel struct {
 	HoleID int `query:"hole_id"`
 	Size   int `query:"length" default:"10" validate:"min=0,max=30"`
 	Offset int `query:"start_floor"`
+}
+
+func (q *ListOldModel) BaseQuery() *gorm.DB {
+	return models.DB.Limit(q.Size).Offset(q.Offset).Order("storey")
 }
 
 type CreateModel struct {

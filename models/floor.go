@@ -60,7 +60,7 @@ type FloorHistory struct {
 }
 
 func (floor *Floor) Preprocess() error {
-	return floor.LoadMention()
+	return nil
 }
 
 func (floors Floors) Preprocess() error {
@@ -83,16 +83,6 @@ func (floor *Floor) LoadMention() error {
 		floor.Mention = Mention
 	}
 	return nil
-}
-
-func (floor Floor) MakeQuerySet(
-	limit int, offset int,
-	holeID int, orderBy string,
-	ifDesc bool) (tx *gorm.DB) {
-	return DB.
-		Limit(limit).Offset(offset).
-		Where("hole_id = ?", holeID).
-		Order(clause.OrderByColumn{Column: clause.Column{Name: orderBy}, Desc: ifDesc})
 }
 
 var reHole = regexp.MustCompile(`[^#]#(\d+)`)
@@ -359,7 +349,7 @@ func (floors Floors) LoadDyField(c *fiber.Ctx) error {
 
 	var floorLikes []FloorLike
 	result := DB.
-		Where("floor_id IN ?", &floorIDs).
+		Where("floor_id IN (?)", floorIDs).
 		Where("user_id = ?", userID).
 		Find(&floorLikes)
 	if result.Error != nil {
