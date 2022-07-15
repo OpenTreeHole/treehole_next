@@ -1,12 +1,13 @@
 package models
 
 import (
+	"os"
+	"treehole_next/config"
+
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/schema"
-	"os"
-	"treehole_next/config"
 )
 
 var DB *gorm.DB
@@ -61,6 +62,7 @@ func InitDB() {
 		&FloorHistory{},
 		&FloorLike{},
 		&User{},
+		&Report{},
 	)
 	if err != nil {
 		panic(err)

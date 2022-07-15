@@ -1,11 +1,12 @@
 package report
 
 import (
-	"github.com/gofiber/fiber/v2"
 	. "treehole_next/models"
-)
+	. "treehole_next/utils"
 
-var _ Report
+	"github.com/gofiber/fiber/v2"
+	"gorm.io/gorm"
+)
 
 // GetReport
 // @Summary Get A Report
@@ -16,7 +17,19 @@ var _ Report
 // @Success 200 {object} Report
 // @Failure 404 {object} MessageModel
 func GetReport(c *fiber.Ctx) error {
-	return nil
+	// validate query
+	reportID, err := c.ParamsInt("id")
+	if err != nil {
+		return err
+	}
+
+	// find report
+	var report Report
+	result := DB.Joins("Floor").First(&report, reportID)
+	if result.Error != nil {
+		return result.Error
+	}
+	return c.JSON(&report)
 }
 
 // ListReports
@@ -28,7 +41,29 @@ func GetReport(c *fiber.Ctx) error {
 // @Success 200 {array} Report
 // @Failure 404 {object} MessageModel
 func ListReports(c *fiber.Ctx) error {
-	return nil
+	// validate query
+	var query ListModel
+	err := ValidateQuery(c, &query)
+	if err != nil {
+		return err
+	}
+	query.OrderBy = "`report`.`" + query.OrderBy + "`"
+
+	// find reports
+	var reports []Report
+	BaseQuerySet := BaseQuery(&query.Query).Joins("Floor")
+	var result *gorm.DB
+	if query.Range == RangeNotDealt {
+		result = BaseQuerySet.Find(&reports, "dealt = ?", false)
+	} else if query.Range == RangeDealt {
+		result = BaseQuerySet.Find(&reports, "dealt = ?", true)
+	} else if query.Range == RangeAll {
+		result = BaseQuerySet.Find(&reports)
+	}
+	if result.Error != nil {
+		return result.Error
+	}
+	return c.JSON(&reports)
 }
 
 // AddReport
@@ -41,7 +76,31 @@ func ListReports(c *fiber.Ctx) error {
 // @Success 200 {object} Report
 // @Failure 400 {object} utils.HttpError
 func AddReport(c *fiber.Ctx) error {
-	return nil
+	// validate body
+	var body AddModel
+	err := ValidateBody(c, &body)
+	if err != nil {
+		return err
+	}
+
+	// add report
+	report := Report{
+		FloorID: body.FloorID,
+		Reason:  body.Reason,
+		Dealt:   false,
+	}
+	err = report.Create(c)
+	if err != nil {
+		return err
+	}
+
+	// load floor
+	result := DB.First(&report.Floor, report.FloorID)
+	if result.Error != nil {
+		return result.Error
+	}
+
+	return c.JSON(&report)
 }
 
 // DeleteReport
@@ -55,5 +114,21 @@ func AddReport(c *fiber.Ctx) error {
 // @Success 200 {object} Report
 // @Failure 400 {object} utils.HttpError
 func DeleteReport(c *fiber.Ctx) error {
-	return nil
+	// validate query
+	reportID, err := c.ParamsInt("id")
+	if err != nil {
+		return err
+	}
+
+	// modify report
+	var report Report
+	result := DB.Joins("Floor").First(&report, reportID)
+	if result.Error != nil {
+		return result.Error
+	}
+	report.Dealt = true
+
+	// save report
+	DB.Omit("Floor").Save(&report)
+	return c.JSON(&report)
 }
