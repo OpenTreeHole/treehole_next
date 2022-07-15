@@ -147,7 +147,7 @@ func loadFloors(holes []*Hole) error {
 	return nil
 }
 
-func (hole *Hole) Preprocess() error {
+func (hole *Hole) Preprocess(c *fiber.Ctx) error {
 	holes := []*Hole{hole}
 
 	err := loadFloors(holes)
@@ -167,7 +167,7 @@ func getCache(key string) (*Hole, error) {
 	// TODO: cache
 	return nil, nil
 }
-func (holes Holes) Preprocess() error {
+func (holes Holes) Preprocess(c *fiber.Ctx) error {
 	notInCache := make([]*Hole, 0, len(holes))
 
 	for i := 0; i < len(holes); i++ {
