@@ -51,13 +51,14 @@ func ListReports(c *fiber.Ctx) error {
 
 	// find reports
 	var reports []Report
-	BaseQuerySet := BaseQuery(&query.Query).Joins("Floor")
+	BaseQuerySet := query.BaseQuery().Joins("Floor")
 	var result *gorm.DB
-	if query.Range == RangeNotDealt {
+	switch query.Range {
+	case RangeNotDealt:
 		result = BaseQuerySet.Find(&reports, "dealt = ?", false)
-	} else if query.Range == RangeDealt {
+	case RangeDealt:
 		result = BaseQuerySet.Find(&reports, "dealt = ?", true)
-	} else if query.Range == RangeAll {
+	case RangeAll:
 		result = BaseQuerySet.Find(&reports)
 	}
 	if result.Error != nil {
@@ -73,7 +74,7 @@ func ListReports(c *fiber.Ctx) error {
 // @Produce application/json
 // @Router /reports [post]
 // @Param json body AddModel true "json"
-// @Success 200 {object} Report
+// @Success 204
 // @Failure 400 {object} utils.HttpError
 func AddReport(c *fiber.Ctx) error {
 	// validate body
@@ -94,13 +95,7 @@ func AddReport(c *fiber.Ctx) error {
 		return err
 	}
 
-	// load floor
-	result := DB.First(&report.Floor, report.FloorID)
-	if result.Error != nil {
-		return result.Error
-	}
-
-	return c.JSON(&report)
+	return c.Status(204).JSON(nil)
 }
 
 // DeleteReport

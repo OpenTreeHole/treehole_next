@@ -79,8 +79,6 @@ func TestCreateHole(t *testing.T) {
 	var tag Tag
 	DB.Where("name = ?", "abc").First(&tag)
 	DB.Model(&tag).Association("Holes").Find(&holes)
-	holes.Preprocess()
-	assert.Equal(t, "abcdef", holes[0].HoleFloor.FirstFloor.Content)
 }
 
 func TestCreateHoleOld(t *testing.T) {
@@ -97,8 +95,6 @@ func TestCreateHoleOld(t *testing.T) {
 	var tag Tag
 	DB.Where("name = ?", "def").First(&tag)
 	DB.Model(&tag).Association("Holes").Find(&holes)
-	holes.Preprocess()
-	assert.Equal(t, "abcdef", holes[0].HoleFloor.FirstFloor.Content)
 }
 
 func TestModifyHole(t *testing.T) {
@@ -113,8 +109,7 @@ func TestModifyHole(t *testing.T) {
 	testAPI(t, "put", "/holes/"+strconv.Itoa(holes[0].ID), 200, data)
 
 	DB.Where("id = ?", holes[0].ID).Find(&holes[0])
-	holes[0].Preprocess()
-	assert.Equal(t, division_id, holes[0].DivisionID)
+
 	var getTagName []Map
 	for _, v := range holes[0].Tags {
 		getTagName = append(getTagName, Map{"name": v.Name})

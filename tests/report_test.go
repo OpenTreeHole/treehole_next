@@ -1,7 +1,7 @@
 package tests
 
 import (
-	"fmt"
+	"log"
 	"strconv"
 	"testing"
 	. "treehole_next/models"
@@ -9,15 +9,20 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const (
+	REPORT_BASE_ID       = 1
+	REPORT_FLOOR_BASE_ID = 1001
+)
+
 func init() {
 	floors := make([]Floor, 20)
 	for i := range floors {
-		floors[i].ID = 101 + i
+		floors[i].ID = REPORT_FLOOR_BASE_ID + i
 	}
 	reports := make([]Report, 10)
 	for i := range reports {
-		reports[i].ID = i + 1
-		reports[i].FloorID = 101 + i
+		reports[i].ID = REPORT_BASE_ID + i
+		reports[i].FloorID = REPORT_FLOOR_BASE_ID + i
 		if i < 5 {
 			reports[i].Dealt = true
 		}
@@ -28,7 +33,7 @@ func init() {
 }
 
 func TestGetReport(t *testing.T) {
-	reportID := 1
+	reportID := REPORT_BASE_ID
 	var report Report
 	DB.First(&report, reportID)
 
@@ -38,31 +43,29 @@ func TestGetReport(t *testing.T) {
 }
 
 func TestListReport(t *testing.T) {
-	data := Map{"order_by": "id"}
+	data := Map{}
 
 	var getReports []Report
 	testAPIModelWithQuery(t, "get", "/reports", 200, &getReports, data)
-	fmt.Printf("getReports: %+v\n", getReports)
+	log.Printf("getReports: %+v\n", getReports)
 
-	data = Map{"order_by": "id", "range": 1}
+	data = Map{"range": 1}
 	testAPIModelWithQuery(t, "get", "/reports", 200, &getReports, data)
-	fmt.Printf("getReports: %+v\n", getReports)
+	log.Printf("getReports: %+v\n", getReports)
 
-	data = Map{"order_by": "id", "range": 2}
+	data = Map{"range": 2}
 	testAPIModelWithQuery(t, "get", "/reports", 200, &getReports, data)
-	fmt.Printf("getReports: %+v\n", getReports)
+	log.Printf("getReports: %+v\n", getReports)
 }
 
 func TestAddReport(t *testing.T) {
-	data := Map{"floor_id": 115, "reason": "123456789"}
+	data := Map{"floor_id": REPORT_FLOOR_BASE_ID + 14, "reason": "123456789"}
 
-	var getReport Report
-	testAPIModel(t, "post", "/reports", 200, &getReport, data)
-	assert.EqualValues(t, 115, getReport.FloorID)
+	testAPI(t, "post", "/reports", 204, data)
 }
 
 func TestDeleteReport(t *testing.T) {
-	reportID := 8
+	reportID := REPORT_BASE_ID + 7
 	var getReport Report
 	testAPI(t, "delete", "/reports/"+strconv.Itoa(reportID), 200)
 
