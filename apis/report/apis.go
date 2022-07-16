@@ -95,6 +95,8 @@ func AddReport(c *fiber.Ctx) error {
 		return err
 	}
 
+	// TODO: notification to admin
+
 	return c.Status(204).JSON(nil)
 }
 
@@ -125,5 +127,8 @@ func DeleteReport(c *fiber.Ctx) error {
 
 	// save report
 	DB.Omit("Floor").Save(&report)
+
+	// TODO: notification to reporter
+
 	return c.JSON(&report)
 }
