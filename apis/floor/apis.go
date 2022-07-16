@@ -13,7 +13,7 @@ import (
 // @Produce application/json
 // @Router /holes/{hole_id}/floors [get]
 // @Param hole_id path int true "hole id"
-// @Param object query Query false "query"
+// @Param object query ListModel false "query"
 // @Success 200 {array} Floor
 func ListFloorsInAHole(c *fiber.Ctx) error {
 	// validate
@@ -22,7 +22,7 @@ func ListFloorsInAHole(c *fiber.Ctx) error {
 		return err
 	}
 
-	var query Query
+	var query ListModel
 	err = ValidateQuery(c, &query)
 	if err != nil {
 		return err
@@ -30,13 +30,12 @@ func ListFloorsInAHole(c *fiber.Ctx) error {
 
 	// get floors
 	var floors Floors
-	result := BaseQuery(&query).Where("hole_id = ?", holeID).Find(&floors)
+	result := query.BaseQuery().
+		Where("hole_id = ?", holeID).
+		Preload("Mention").
+		Find(&floors)
 	if result.Error != nil {
 		return result.Error
-	}
-	err = floors.LoadDyField(c)
-	if err != nil {
-		return err
 	}
 
 	return Serialize(c, &floors)
@@ -60,17 +59,12 @@ func ListFloorsOld(c *fiber.Ctx) error {
 
 	// get floors
 	var floors Floors
-	result := BaseQuery(&Query{
-		Size:    query.Size,
-		Offset:  query.Offset,
-		OrderBy: "storey",
-	}).Where("hole_id = ?", query.HoleID).Find(&floors)
+	result := query.BaseQuery().
+		Where("hole_id = ?", query.HoleID).
+		Preload("Mention").
+		Find(&floors)
 	if result.Error != nil {
 		return result.Error
-	}
-	err = floors.LoadDyField(c)
-	if err != nil {
-		return err
 	}
 
 	return Serialize(c, &floors)
@@ -93,13 +87,9 @@ func GetFloor(c *fiber.Ctx) error {
 
 	// get floor
 	var floor Floor
-	result := DB.First(&floor, floorID)
+	result := DB.Preload("Mention").First(&floor, floorID)
 	if result.Error != nil {
 		return result.Error
-	}
-	err = floor.LoadDyField(c)
-	if err != nil {
-		return err
 	}
 
 	return Serialize(c, &floor)
@@ -249,10 +239,6 @@ func ModifyFloor(c *fiber.Ctx) error {
 	}
 
 	DB.Save(&floor)
-	err = floor.LoadDyField(c)
-	if err != nil {
-		return err
-	}
 
 	return Serialize(c, &floor)
 }
@@ -331,10 +317,6 @@ func DeleteFloor(c *fiber.Ctx) error {
 	floor.Deleted = true
 	DB.Save(&floor)
 
-	err = floor.LoadDyField(c)
-	if err != nil {
-		return err
-	}
 	return Serialize(c, &floor)
 }
 

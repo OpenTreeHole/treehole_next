@@ -17,11 +17,11 @@ func BindJSON(c *fiber.Ctx, obj interface{}) error {
 }
 
 type CanPreprocess interface {
-	Preprocess() error
+	Preprocess(c *fiber.Ctx) error
 }
 
 func Serialize(c *fiber.Ctx, obj CanPreprocess) error {
-	err := obj.Preprocess()
+	err := obj.Preprocess(c)
 	if err != nil {
 		return err
 	}

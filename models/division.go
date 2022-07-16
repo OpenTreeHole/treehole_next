@@ -1,5 +1,7 @@
 package models
 
+import "github.com/gofiber/fiber/v2"
+
 type Division struct {
 	BaseModel
 	Name        string   `json:"name" gorm:"unique" `
@@ -8,7 +10,19 @@ type Division struct {
 	Holes       []Hole   `json:"pinned"     `
 }
 
-func (division *Division) Preprocess() error {
+type Divisions []*Division
+
+func (divisions Divisions) Preprocess(c *fiber.Ctx) error {
+	for _, d := range divisions {
+		err := d.Preprocess(c)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (division *Division) Preprocess(c *fiber.Ctx) error {
 	var pinned = []int(division.Pinned)
 	if len(pinned) == 0 {
 		division.Holes = []Hole{}

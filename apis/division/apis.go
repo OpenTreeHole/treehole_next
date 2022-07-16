@@ -44,15 +44,9 @@ func AddDivision(c *fiber.Ctx) error {
 // @Router /divisions [get]
 // @Success 200 {array} models.Division
 func ListDivisions(c *fiber.Ctx) error {
-	var divisions []*Division
+	var divisions Divisions
 	DB.Find(&divisions)
-	for _, d := range divisions {
-		err := d.Preprocess()
-		if err != nil {
-			return err
-		}
-	}
-	return c.JSON(divisions)
+	return Serialize(c, divisions)
 }
 
 // GetDivision

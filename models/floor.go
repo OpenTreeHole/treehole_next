@@ -59,15 +59,39 @@ type FloorHistory struct {
 	UserID  int    `json:"user_id"` // The one who modified the floor
 }
 
-func (floor *Floor) Preprocess() error {
-	return floor.LoadMention()
+func (floor *Floor) Preprocess(c *fiber.Ctx) error {
+	var floors Floors
+	floors = append(floors, *floor)
+	return floors.Preprocess(c)
 }
 
-func (floors Floors) Preprocess() error {
-	for i := 0; i < len(floors); i++ {
-		err := floors[i].Preprocess()
-		if err != nil {
-			return err
+func (floors Floors) Preprocess(c *fiber.Ctx) error {
+	userID, err := GetUserID(c)
+	if err != nil {
+		return err
+	}
+
+	floorIDs := make([]int, len(floors))
+	IDFloorMapping := make(map[int]*Floor)
+	for i, v := range floors {
+		if userID == v.UserID {
+			floors[i].IsMe = true
+		}
+		floorIDs[i] = v.ID
+		IDFloorMapping[v.ID] = &floors[i]
+	}
+
+	var floorLikes []FloorLike
+	result := DB.
+		Where("floor_id IN (?)", floorIDs).
+		Where("user_id = ?", userID).
+		Find(&floorLikes)
+	if result.Error != nil {
+		return err
+	}
+	for _, v := range floorLikes {
+		if floor, ok := IDFloorMapping[v.FloorID]; ok {
+			floor.Liked = v.LikeData
 		}
 	}
 	return nil
@@ -83,16 +107,6 @@ func (floor *Floor) LoadMention() error {
 		floor.Mention = Mention
 	}
 	return nil
-}
-
-func (floor Floor) MakeQuerySet(
-	limit int, offset int,
-	holeID int, orderBy string,
-	ifDesc bool) (tx *gorm.DB) {
-	return DB.
-		Limit(limit).Offset(offset).
-		Where("hole_id = ?", holeID).
-		Order(clause.OrderByColumn{Column: clause.Column{Name: orderBy}, Desc: ifDesc})
 }
 
 var reHole = regexp.MustCompile(`[^#]#(\d+)`)
@@ -320,55 +334,4 @@ func (floor *Floor) ModifyLike(c *fiber.Ctx, likeOption int8) error {
 		floor.Liked = likeOption
 		return nil
 	})
-}
-
-func (floor *Floor) LoadDyField(c *fiber.Ctx) error {
-	userID, err := GetUserID(c)
-	if err != nil {
-		return err
-	}
-	if userID == floor.UserID {
-		floor.IsMe = true
-	}
-
-	var floorLike FloorLike
-	result := DB.
-		Where("floor_id = ?", floor.ID).
-		Where("user_id = ?", userID).
-		Take(&floorLike)
-	if result.Error == nil {
-		floor.Liked = floorLike.LikeData
-	}
-	return nil
-}
-
-func (floors Floors) LoadDyField(c *fiber.Ctx) error {
-	userID, err := GetUserID(c)
-	if err != nil {
-		return err
-	}
-	var floorIDs []int
-	IDFloorMapping := make(map[int]*Floor)
-	for i, v := range floors {
-		if userID == v.UserID {
-			floors[i].IsMe = true
-		}
-		floorIDs = append(floorIDs, v.ID)
-		IDFloorMapping[v.ID] = &floors[i]
-	}
-
-	var floorLikes []FloorLike
-	result := DB.
-		Where("floor_id IN ?", &floorIDs).
-		Where("user_id = ?", userID).
-		Find(&floorLikes)
-	if result.Error != nil {
-		return err
-	}
-	for _, v := range floorLikes {
-		if floor, ok := IDFloorMapping[v.FloorID]; ok {
-			floor.Liked = v.LikeData
-		}
-	}
-	return nil
 }
