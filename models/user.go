@@ -1,9 +1,12 @@
 package models
 
 import (
-	"github.com/gofiber/fiber/v2"
+	"log"
 	"strconv"
 	"treehole_next/config"
+
+	"github.com/gofiber/fiber/v2"
+	"github.com/golang-jwt/jwt/v4"
 )
 
 type User struct {
@@ -23,6 +26,11 @@ func (user *User) GetUser(c *fiber.Ctx) error {
 		user.IsAdmin = true
 	}
 	// TODO: jwt
+	userToken := c.Locals("user").(*jwt.Token)
+	claims := userToken.Claims.(jwt.MapClaims)
+	roles := claims["role"].([]string)
+	log.Println(roles)
+
 	user.ID = id
 	return nil
 }
