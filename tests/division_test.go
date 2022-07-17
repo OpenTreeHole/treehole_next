@@ -1,12 +1,31 @@
 package tests
 
 import (
-	"fmt"
-	"github.com/stretchr/testify/assert"
 	"strconv"
 	"testing"
 	. "treehole_next/models"
+
+	"github.com/stretchr/testify/assert"
 )
+
+func init() {
+	for i := 1; i <= 10; i++ {
+		division := Division{
+			Name:        strconv.Itoa(i),
+			Description: strconv.Itoa(i),
+		}
+		division.ID = i
+		DB.Create(&division)
+	}
+	holes := make([]Hole, 5)
+	for i := 0; i < 5; i++ {
+		holes[i] = Hole{
+			DivisionID: 1,
+		}
+	}
+	holes[2].Hidden = true
+	DB.Create(&holes)
+}
 
 func TestGetDivision(t *testing.T) {
 	var divisionPinned = []int{0, 2, 3, 1, largeInt}
@@ -16,11 +35,11 @@ func TestGetDivision(t *testing.T) {
 	d.Pinned = divisionPinned
 	DB.Save(&d)
 
-	var division DivisionResponse
+	var division Division
 	testAPIModel(t, "get", "/divisions/1", 200, &division)
 	// test pinned order
 	respPinned := make([]int, 3)
-	for i, p := range division.Pinned {
+	for i, p := range division.Holes {
 		respPinned[i] = p.ID
 	}
 	assert.Equal(t, []int{2, 3, 1}, respPinned)
@@ -35,21 +54,20 @@ func TestListDivision(t *testing.T) {
 }
 
 func TestAddDivision(t *testing.T) {
-	data := Map{"name": "name", "description": "description"}
+	data := Map{"name": "TestAddDivision", "description": "TestAddDivisionDescription"}
 	testAPI(t, "post", "/divisions", 201, data)
 
 	// duplicate post, return 200 and change nothing
 	data["description"] = "another"
 	resp := testAPI(t, "post", "/divisions", 200, data)
-	fmt.Println(resp)
-	assert.Equal(t, "description", resp["description"])
+	assert.Equal(t, "TestAddDivisionDescription", resp["description"])
 }
 
 func TestModifyDivision(t *testing.T) {
 	pinned := []int{3, 2, 5, 1, 4}
 	data := Map{"name": "modify", "description": "modify", "pinned": pinned}
 
-	var division DivisionResponse
+	var division Division
 	testAPIModel(t, "put", "/divisions/1", 200, &division, data)
 
 	// test modify
@@ -58,7 +76,7 @@ func TestModifyDivision(t *testing.T) {
 
 	// test pinned order
 	respPinned := make([]int, 5)
-	for i, d := range division.Pinned {
+	for i, d := range division.Holes {
 		respPinned[i] = d.ID
 	}
 	assert.Equal(t, pinned, respPinned)

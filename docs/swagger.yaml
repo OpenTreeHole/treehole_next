@@ -1,6 +1,128 @@
 basePath: /
 definitions:
-  models.DivisionResponse:
+  division.CreateModel:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+    type: object
+  division.DeleteModel:
+    properties:
+      to:
+        default: 1
+        description: |-
+          Admin only
+          ID of the target division that all the deleted division's holes will be moved to
+        type: integer
+    type: object
+  division.ModifyModel:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+      pinned:
+        items:
+          type: integer
+        type: array
+    type: object
+  floor.CreateModel:
+    properties:
+      content:
+        description: Owner or admin, the original content should be moved to  floor_history
+        type: string
+      reply_to:
+        description: id of the floor to which replied
+        minimum: 0
+        type: integer
+    required:
+    - content
+    type: object
+  floor.CreateOldModel:
+    properties:
+      content:
+        description: Owner or admin, the original content should be moved to  floor_history
+        type: string
+      hole_id:
+        minimum: 1
+        type: integer
+      reply_to:
+        description: id of the floor to which replied
+        minimum: 0
+        type: integer
+    required:
+    - content
+    type: object
+  floor.DeleteModel:
+    properties:
+      delete_reason:
+        maxLength: 32
+        type: string
+    type: object
+  floor.ModifyModel:
+    properties:
+      content:
+        description: Owner or admin, the original content should be moved to  floor_history
+        type: string
+      fold:
+        description: Admin only
+        maxLength: 16
+        type: string
+      like:
+        description: All user, deprecated, "add" is like, "cancel" is reset
+        enum:
+        - add
+        - cancel
+        type: string
+      special_tag:
+        description: Admin only
+        maxLength: 16
+        type: string
+    required:
+    - content
+    type: object
+  hole.CreateModel:
+    properties:
+      content:
+        type: string
+      tags:
+        description: All users
+        items:
+          $ref: '#/definitions/tag.CreateModel'
+        type: array
+    required:
+    - content
+    type: object
+  hole.CreateOldModel:
+    properties:
+      content:
+        type: string
+      division_id:
+        description: Admin only
+        minimum: 1
+        type: integer
+      tags:
+        description: All users
+        items:
+          $ref: '#/definitions/tag.CreateModel'
+        type: array
+    required:
+    - content
+    type: object
+  hole.ModifyModel:
+    properties:
+      division_id:
+        description: Admin only
+        minimum: 1
+        type: integer
+      tags:
+        description: All users
+        items:
+          $ref: '#/definitions/tag.CreateModel'
+        type: array
+    type: object
+  models.Division:
     properties:
       description:
         type: string
@@ -20,10 +142,13 @@ definitions:
   models.Floor:
     properties:
       anonyname:
+        description: random username, not empty
         type: string
       content:
+        description: not empty
         type: string
       deleted:
+        description: whether the floor is deleted
         type: boolean
       fold:
         description: fold reason
@@ -32,42 +157,64 @@ definitions:
         type: integer
       id:
         type: integer
+      is_me:
+        description: whether the user is the author of the floor, dynamically generated
+        type: boolean
       like:
         description: like - dislike
+        type: integer
+      liked:
+        description: whether the user has liked or disliked the floor, dynamically
+          generated
         type: integer
       mention:
         description: Many to many mentions (in different holes)
         items:
           $ref: '#/definitions/models.Floor'
         type: array
-      reply_to:
-        description: Floor id that it replies to (must be in the same hole)
-        type: integer
+      path:
+        description: storey path
+        type: string
       special_tag:
         description: Additional info
         type: string
       storey:
-        description: The sequence of the root nodes
+        description: The sequence of floors in a hole
         type: integer
       time_created:
         type: string
       time_updated:
         type: string
     type: object
+  models.FloorHistory:
+    properties:
+      content:
+        type: string
+      floor_id:
+        type: integer
+      id:
+        type: integer
+      reason:
+        type: string
+      time_created:
+        type: string
+      time_updated:
+        type: string
+      user_id:
+        description: The one who modified the floor
+        type: integer
+    type: object
   models.Hole:
     properties:
       division_id:
         type: integer
       floors:
-        items:
-          $ref: '#/definitions/models.Floor'
-        type: array
+        $ref: '#/definitions/models.HoleFloor'
+        description: return floors
       hidden:
         type: boolean
       id:
         type: integer
-      mapping:
-        $ref: '#/definitions/models.IntStringMap'
       reply:
         type: integer
       tags:
@@ -81,16 +228,42 @@ definitions:
       view:
         type: integer
     type: object
-  models.IntStringMap:
-    additionalProperties:
-      type: string
+  models.HoleFloor:
+    properties:
+      first_floor:
+        $ref: '#/definitions/models.Floor'
+      floors:
+        items:
+          $ref: '#/definitions/models.Floor'
+        type: array
+      last_floor:
+        $ref: '#/definitions/models.Floor'
+    type: object
+  models.MessageModel:
+    properties:
+      message:
+        type: string
+    type: object
+  models.Report:
+    properties:
+      dealt:
+        description: the report has been dealt
+        type: boolean
+      floor:
+        $ref: '#/definitions/models.Floor'
+      floor_id:
+        type: integer
+      id:
+        type: integer
+      reason:
+        type: string
+      time_created:
+        type: string
+      time_updated:
+        type: string
     type: object
   models.Tag:
     properties:
-      holes:
-        items:
-          $ref: '#/definitions/models.Hole'
-        type: array
       id:
         type: integer
       name:
@@ -102,84 +275,33 @@ definitions:
       time_updated:
         type: string
     type: object
-  schemas.AddDivisionModel:
+  report.AddModel:
     properties:
-      description:
-        type: string
-      name:
-        type: string
-    type: object
-  schemas.CreateFloor:
-    properties:
-      content:
-        description: Owner or admin, if it's modified or deleted, the original content
-          should be moved to  floor_history
-        type: string
-      special_tag:
-        description: Admin only
-        type: string
-    type: object
-  schemas.CreateFloorOld:
-    properties:
-      content:
-        description: Owner or admin, if it's modified or deleted, the original content
-          should be moved to  floor_history
-        type: string
-      hole_id:
+      floor_id:
         type: integer
-      special_tag:
-        description: Admin only
+      reason:
+        maxLength: 128
         type: string
+    required:
+    - floor_id
+    - reason
     type: object
-  schemas.CreateHole:
+  report.DeleteModel:
     properties:
-      content:
-        description: Owner or admin, if it's modified or deleted, the original content
-          should be moved to  floor_history
+      result:
+        description: The deal result, send it to reporter
+        maxLength: 128
         type: string
-      special_tag:
-        description: Admin only
-        type: string
-      tags:
-        description: All users
-        items:
-          $ref: '#/definitions/schemas.CreateTag'
-        type: array
+    required:
+    - result
     type: object
-  schemas.CreateHoleOld:
-    properties:
-      content:
-        description: Owner or admin, if it's modified or deleted, the original content
-          should be moved to  floor_history
-        type: string
-      division_id:
-        description: Admin only
-        type: integer
-      special_tag:
-        description: Admin only
-        type: string
-      tags:
-        description: All users
-        items:
-          $ref: '#/definitions/schemas.CreateTag'
-        type: array
-    type: object
-  schemas.CreateTag:
+  tag.CreateModel:
     properties:
       name:
         description: Admin only
         type: string
     type: object
-  schemas.DeleteDivisionModel:
-    properties:
-      to:
-        default: 1
-        description: |-
-          Admin only
-          ID of the target division that all the deleted division's holes will be moved to
-        type: integer
-    type: object
-  schemas.DeleteTag:
+  tag.DeleteModel:
     properties:
       to:
         description: |-
@@ -187,54 +309,7 @@ definitions:
           Name of the target tag that all the deleted tag's holes will be connected to
         type: string
     type: object
-  schemas.MessageModel:
-    properties:
-      message:
-        type: string
-    type: object
-  schemas.ModifyDivisionModel:
-    properties:
-      description:
-        type: string
-      name:
-        type: string
-      pinned:
-        items:
-          type: integer
-        type: array
-    type: object
-  schemas.ModifyFloor:
-    properties:
-      content:
-        description: Owner or admin, if it's modified or deleted, the original content
-          should be moved to  floor_history
-        type: string
-      fold:
-        description: Admin only
-        type: string
-      like:
-        description: To be compatible with the deprecated API, "add" is like, "cancel"
-          is reset
-        type: string
-      like_int:
-        description: All users, 1 is like, -1 is dislike, 0 is reset
-        type: integer
-      special_tag:
-        description: Admin only
-        type: string
-    type: object
-  schemas.ModifyHole:
-    properties:
-      division_id:
-        description: Admin only
-        type: integer
-      tags:
-        description: All users
-        items:
-          $ref: '#/definitions/schemas.CreateTag'
-        type: array
-    type: object
-  schemas.ModifyTag:
+  tag.ModifyModel:
     properties:
       name:
         description: Admin only
@@ -242,6 +317,26 @@ definitions:
       temperature:
         description: Admin only
         type: integer
+    type: object
+  utils.ErrorDetailElement:
+    properties:
+      field:
+        type: string
+      tag:
+        type: string
+      value:
+        type: string
+    type: object
+  utils.HttpError:
+    properties:
+      code:
+        type: integer
+      detail:
+        items:
+          $ref: '#/definitions/utils.ErrorDetailElement'
+        type: array
+      message:
+        type: string
     type: object
 info:
   contact:
@@ -263,7 +358,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/schemas.MessageModel'
+            $ref: '#/definitions/models.MessageModel'
   /divisions:
     get:
       produces:
@@ -273,7 +368,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/models.DivisionResponse'
+              $ref: '#/definitions/models.Division'
             type: array
       summary: List All Divisions
       tags:
@@ -287,18 +382,18 @@ paths:
         name: json
         required: true
         schema:
-          $ref: '#/definitions/schemas.AddDivisionModel'
+          $ref: '#/definitions/division.CreateModel'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.DivisionResponse'
+            $ref: '#/definitions/models.Division'
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/models.DivisionResponse'
+            $ref: '#/definitions/models.Division'
       summary: Add A Division
       tags:
       - Division
@@ -310,27 +405,13 @@ paths:
         name: division_id
         required: true
         type: integer
-      - default: true
-        description: Is descending order
-        in: query
-        name: desc
-        type: boolean
-      - default: "0"
-        description: |-
-          Either a time (ISO formatted) or an int
-          If a time, order by updated time (for created time, ordering by id is better)
-          Otherwise, the int is passed after sql "offset"
+      - description: updated time < offset (default is now)
         in: query
         name: offset
         type: string
-      - default: id
-        description: Now only supports id
-        in: query
-        name: order_by
-        type: string
       - default: 10
-        description: length of object array
         in: query
+        maximum: 10
         name: size
         type: integer
       produces:
@@ -342,6 +423,14 @@ paths:
             items:
               $ref: '#/definitions/models.Hole'
             type: array
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.MessageModel'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.MessageModel'
       summary: List Holes In A Division
       tags:
       - Hole
@@ -359,7 +448,7 @@ paths:
         name: json
         required: true
         schema:
-          $ref: '#/definitions/schemas.CreateHole'
+          $ref: '#/definitions/hole.CreateModel'
       produces:
       - application/json
       responses:
@@ -384,7 +473,7 @@ paths:
         name: json
         required: true
         schema:
-          $ref: '#/definitions/schemas.DeleteDivisionModel'
+          $ref: '#/definitions/division.DeleteModel'
       produces:
       - application/json
       responses:
@@ -393,7 +482,7 @@ paths:
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/schemas.MessageModel'
+            $ref: '#/definitions/models.MessageModel'
       summary: Delete A Division
       tags:
       - Division
@@ -410,11 +499,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.DivisionResponse'
+            $ref: '#/definitions/models.Division'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/schemas.MessageModel'
+            $ref: '#/definitions/models.MessageModel'
       summary: Get Division
       tags:
       - Division
@@ -430,18 +519,18 @@ paths:
         name: json
         required: true
         schema:
-          $ref: '#/definitions/schemas.ModifyDivisionModel'
+          $ref: '#/definitions/division.ModifyModel'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.DivisionResponse'
+            $ref: '#/definitions/models.Division'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/schemas.MessageModel'
+            $ref: '#/definitions/models.MessageModel'
       summary: Modify A Division
       tags:
       - Division
@@ -450,15 +539,16 @@ paths:
       deprecated: true
       parameters:
       - in: query
-        name: hole_id
+        name: holeID
         type: integer
-      - default: 20
-        in: query
-        name: length
+      - in: query
+        name: offset
         type: integer
-      - default: 0
+      - default: 10
         in: query
-        name: start_floor
+        maximum: 30
+        minimum: 0
+        name: size
         type: integer
       produces:
       - application/json
@@ -480,7 +570,7 @@ paths:
         name: json
         required: true
         schema:
-          $ref: '#/definitions/schemas.CreateFloorOld'
+          $ref: '#/definitions/floor.CreateOldModel'
       produces:
       - application/json
       responses:
@@ -499,6 +589,12 @@ paths:
         name: id
         required: true
         type: integer
+      - description: json
+        in: body
+        name: json
+        required: true
+        schema:
+          $ref: '#/definitions/floor.DeleteModel'
       produces:
       - application/json
       responses:
@@ -509,7 +605,7 @@ paths:
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/schemas.MessageModel'
+            $ref: '#/definitions/models.MessageModel'
       summary: Delete A Floor
       tags:
       - Floor
@@ -530,7 +626,7 @@ paths:
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/schemas.MessageModel'
+            $ref: '#/definitions/models.MessageModel'
       summary: Get A Floor
       tags:
       - Floor
@@ -546,7 +642,7 @@ paths:
         name: json
         required: true
         schema:
-          $ref: '#/definitions/schemas.ModifyFloor'
+          $ref: '#/definitions/floor.ModifyModel'
       produces:
       - application/json
       responses:
@@ -557,8 +653,59 @@ paths:
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/schemas.MessageModel'
+            $ref: '#/definitions/models.MessageModel'
       summary: Modify A Floor
+      tags:
+      - Floor
+  /floors/{id}/history:
+    get:
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.FloorHistory'
+            type: array
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.MessageModel'
+      summary: Get A Floor's History
+      tags:
+      - Floor
+  /floors/{id}/like/{like}:
+    post:
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 1 is like, 0 is reset, -1 is dislike
+        in: path
+        name: like
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Floor'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.MessageModel'
+      summary: Modify A Floor's like
       tags:
       - Floor
   /holes:
@@ -568,7 +715,9 @@ paths:
       - in: query
         name: division_id
         type: integer
-      - in: query
+      - default: 10
+        in: query
+        maximum: 10
         name: length
         type: integer
       - in: query
@@ -597,7 +746,7 @@ paths:
         name: json
         required: true
         schema:
-          $ref: '#/definitions/schemas.CreateHoleOld'
+          $ref: '#/definitions/hole.CreateOldModel'
       produces:
       - application/json
       responses:
@@ -616,29 +765,36 @@ paths:
         name: hole_id
         required: true
         type: integer
-      - default: true
-        description: Is descending order
+      - default: 0
+        description: offset of object array
         in: query
-        name: desc
-        type: boolean
-      - default: "0"
-        description: |-
-          Either a time (ISO formatted) or an int
-          If a time, order by updated time (for created time, ordering by id is better)
-          Otherwise, the int is passed after sql "offset"
-        in: query
+        minimum: 0
         name: offset
-        type: string
-      - default: id
-        description: Now only supports id
+        type: integer
+      - default: storey
+        description: SQL ORDER BY field
+        enum:
+        - storey
+        - id
+        - like
         in: query
-        name: order_by
+        name: orderBy
         type: string
       - default: 10
         description: length of object array
         in: query
+        maximum: 30
+        minimum: 0
         name: size
         type: integer
+      - default: asc
+        description: Sort order
+        enum:
+        - asc
+        - desc
+        in: query
+        name: sort
+        type: string
       produces:
       - application/json
       responses:
@@ -663,7 +819,7 @@ paths:
         name: json
         required: true
         schema:
-          $ref: '#/definitions/schemas.CreateFloor'
+          $ref: '#/definitions/floor.CreateModel'
       produces:
       - application/json
       responses:
@@ -692,7 +848,7 @@ paths:
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/schemas.MessageModel'
+            $ref: '#/definitions/models.MessageModel'
       summary: Delete A Hole
       tags:
       - Hole
@@ -713,8 +869,28 @@ paths:
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/schemas.MessageModel'
+            $ref: '#/definitions/models.MessageModel'
       summary: Get A Hole
+      tags:
+      - Hole
+    patch:
+      description: Add hole.view
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: ""
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.MessageModel'
+      summary: Patch A Hole
       tags:
       - Hole
     put:
@@ -729,7 +905,7 @@ paths:
         name: json
         required: true
         schema:
-          $ref: '#/definitions/schemas.ModifyHole'
+          $ref: '#/definitions/hole.ModifyModel'
       produces:
       - application/json
       responses:
@@ -740,10 +916,129 @@ paths:
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/schemas.MessageModel'
+            $ref: '#/definitions/models.MessageModel'
       summary: Modify A Hole
       tags:
       - Hole
+  /reports:
+    get:
+      parameters:
+      - default: 0
+        description: offset of object array
+        in: query
+        minimum: 0
+        name: offset
+        type: integer
+      - default: id
+        description: SQL ORDER BY field
+        in: query
+        name: orderBy
+        type: string
+      - in: query
+        name: range
+        type: integer
+      - default: 10
+        description: length of object array
+        in: query
+        maximum: 30
+        minimum: 0
+        name: size
+        type: integer
+      - default: asc
+        description: Sort order
+        enum:
+        - asc
+        - desc
+        in: query
+        name: sort
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Report'
+            type: array
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.MessageModel'
+      summary: List All Reports
+      tags:
+      - Report
+    post:
+      description: Add a report and send notification to admins
+      parameters:
+      - description: json
+        in: body
+        name: json
+        required: true
+        schema:
+          $ref: '#/definitions/report.AddModel'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: ""
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.HttpError'
+      summary: Add a report
+      tags:
+      - Report
+  /reports/{id}:
+    delete:
+      description: Mark a report as "dealt" and send notification to reporter
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: json
+        in: body
+        name: json
+        required: true
+        schema:
+          $ref: '#/definitions/report.DeleteModel'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Report'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.HttpError'
+      summary: Deal a report
+      tags:
+      - Report
+    get:
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Report'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.MessageModel'
+      summary: Get A Report
+      tags:
+      - Report
   /tags:
     get:
       produces:
@@ -765,7 +1060,7 @@ paths:
         name: json
         required: true
         schema:
-          $ref: '#/definitions/schemas.CreateTag'
+          $ref: '#/definitions/tag.CreateModel'
       produces:
       - application/json
       responses:
@@ -794,7 +1089,7 @@ paths:
         name: json
         required: true
         schema:
-          $ref: '#/definitions/schemas.DeleteTag'
+          $ref: '#/definitions/tag.DeleteModel'
       produces:
       - application/json
       responses:
@@ -805,7 +1100,7 @@ paths:
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/schemas.MessageModel'
+            $ref: '#/definitions/models.MessageModel'
       summary: Delete A Tag
       tags:
       - Tag
@@ -826,7 +1121,7 @@ paths:
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/schemas.MessageModel'
+            $ref: '#/definitions/models.MessageModel'
       summary: Get A Tag
       tags:
       - Tag
@@ -842,7 +1137,7 @@ paths:
         name: json
         required: true
         schema:
-          $ref: '#/definitions/schemas.ModifyTag'
+          $ref: '#/definitions/tag.ModifyModel'
       produces:
       - application/json
       responses:
@@ -853,7 +1148,7 @@ paths:
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/schemas.MessageModel'
+            $ref: '#/definitions/models.MessageModel'
       summary: Modify A Tag
       tags:
       - Tag
@@ -865,27 +1160,13 @@ paths:
         name: tag_name
         required: true
         type: string
-      - default: true
-        description: Is descending order
-        in: query
-        name: desc
-        type: boolean
-      - default: "0"
-        description: |-
-          Either a time (ISO formatted) or an int
-          If a time, order by updated time (for created time, ordering by id is better)
-          Otherwise, the int is passed after sql "offset"
+      - description: updated time < offset (default is now)
         in: query
         name: offset
         type: string
-      - default: id
-        description: Now only supports id
-        in: query
-        name: order_by
-        type: string
       - default: 10
-        description: length of object array
         in: query
+        maximum: 10
         name: size
         type: integer
       produces:
@@ -897,6 +1178,10 @@ paths:
             items:
               $ref: '#/definitions/models.Hole'
             type: array
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.MessageModel'
       summary: List Holes By Tag
       tags:
       - Hole

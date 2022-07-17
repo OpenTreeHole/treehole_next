@@ -1,6 +1,8 @@
 package main
 
-import "treehole_next/bootstrap"
+import (
+	"treehole_next/bootstrap"
+)
 
 // @title Open Tree Hole
 // @version 2.0.0

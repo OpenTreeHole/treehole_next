@@ -3,4 +3,5 @@
 *.env
 *.exe
 *.db
-*.bat
+*.ps1
+*.log

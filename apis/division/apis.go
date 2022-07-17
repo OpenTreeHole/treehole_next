@@ -1,11 +1,11 @@
-package apis
+package division
 
 import (
+	. "treehole_next/models"
+	. "treehole_next/utils"
+
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
-	. "treehole_next/models"
-	"treehole_next/schemas"
-	. "treehole_next/utils"
 )
 
 // AddDivision
@@ -14,18 +14,21 @@ import (
 // @Accept application/json
 // @Produce application/json
 // @Router /divisions [post]
-// @Param json body schemas.AddDivisionModel true "json"
-// @Success 201 {object} models.DivisionResponse
-// @Success 200 {object} models.DivisionResponse
+// @Param json body CreateModel true "json"
+// @Success 201 {object} models.Division
+// @Success 200 {object} models.Division
 func AddDivision(c *fiber.Ctx) error {
-	var division Division
-	var body schemas.AddDivisionModel
-	if err := c.BodyParser(&body); err != nil {
+	var body CreateModel
+	err := ValidateBody(c, &body)
+	if err != nil {
 		return err
 	}
+
+	// bind division
+	var division Division
 	division.Name = body.Name
 	division.Description = body.Description
-	result := DB.Where("name = ?", body.Name).FirstOrCreate(&division)
+	result := DB.FirstOrCreate(&division, Division{Name: body.Name})
 	if result.RowsAffected == 0 {
 		c.Status(200)
 	} else {
@@ -39,17 +42,11 @@ func AddDivision(c *fiber.Ctx) error {
 // @Tags Division
 // @Produce application/json
 // @Router /divisions [get]
-// @Success 200 {array} models.DivisionResponse
+// @Success 200 {array} models.Division
 func ListDivisions(c *fiber.Ctx) error {
-	var divisions []*Division
+	var divisions Divisions
 	DB.Find(&divisions)
-	for _, d := range divisions {
-		err := d.Preprocess()
-		if err != nil {
-			return err
-		}
-	}
-	return c.JSON(divisions)
+	return Serialize(c, divisions)
 }
 
 // GetDivision
@@ -58,12 +55,13 @@ func ListDivisions(c *fiber.Ctx) error {
 // @Produce application/json
 // @Router /divisions/{id} [get]
 // @Param id path int true "id"
-// @Success 200 {object} models.DivisionResponse
-// @Failure 404 {object} schemas.MessageModel
+// @Success 200 {object} models.Division
+// @Failure 404 {object} MessageModel
 func GetDivision(c *fiber.Ctx) error {
 	id, _ := c.ParamsInt("id")
 	var division Division
-	if result := DB.First(&division, id); result.Error != nil {
+	result := DB.First(&division, id)
+	if result.Error != nil {
 		return result.Error
 	}
 	return Serialize(c, &division)
@@ -75,13 +73,14 @@ func GetDivision(c *fiber.Ctx) error {
 // @Produce application/json
 // @Router /divisions/{id} [put]
 // @Param id path int true "id"
-// @Param json body schemas.ModifyDivisionModel true "json"
-// @Success 200 {object} models.DivisionResponse
-// @Failure 404 {object} schemas.MessageModel
+// @Param json body ModifyModel true "json"
+// @Success 200 {object} models.Division
+// @Failure 404 {object} MessageModel
 func ModifyDivision(c *fiber.Ctx) error {
 	var division Division
-	var body schemas.ModifyDivisionModel
-	if err := c.BodyParser(&body); err != nil {
+	var body ModifyModel
+	err := ValidateBody(c, &body)
+	if err != nil {
 		return err
 	}
 	id, _ := c.ParamsInt("id")
@@ -89,8 +88,7 @@ func ModifyDivision(c *fiber.Ctx) error {
 	division.Name = body.Name
 	division.Description = body.Description
 	division.Pinned = body.Pinned
-	result := DB.Model(&division).Updates(division)
-	if result.RowsAffected == 0 { // nothing updated, means that the record does not exist
+	if result := DB.Model(&division).Updates(division); result.RowsAffected == 0 { // nothing updated, means that the record does not exist
 		return gorm.ErrRecordNotFound
 	}
 	return Serialize(c, &division)
@@ -103,13 +101,14 @@ func ModifyDivision(c *fiber.Ctx) error {
 // @Produce application/json
 // @Router /divisions/{id} [delete]
 // @Param id path int true "id"
-// @Param json body schemas.DeleteDivisionModel true "json"
+// @Param json body DeleteModel true "json"
 // @Success 204
-// @Failure 404 {object} schemas.MessageModel
+// @Failure 404 {object} MessageModel
 func DeleteDivision(c *fiber.Ctx) error {
 	id, _ := c.ParamsInt("id")
-	var body schemas.DeleteDivisionModel
-	if err := BindJSON(c, &body); err != nil {
+	var body DeleteModel
+	err := ValidateBody(c, &body)
+	if err != nil {
 		return err
 	}
 	if body.To == 0 { // default 1

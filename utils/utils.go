@@ -2,48 +2,40 @@ package utils
 
 import (
 	"encoding/json"
+	"strconv"
+
 	"github.com/gofiber/fiber/v2"
-	"treehole_next/models"
 )
-
-//func InArray[T comparable](item *T, container *[]T) bool {
-//	for _, i := range *container {
-//		if *item == i {
-//			return true
-//		}
-//	}
-//	return false
-//}
-
-var emptyMap = models.Map{}
 
 // BindJSON is a safe method to bind request body to struct
 func BindJSON(c *fiber.Ctx, obj interface{}) error {
 	body := c.Body()
 	if len(body) == 0 {
-		body, _ = json.Marshal(emptyMap)
+		body, _ = json.Marshal(fiber.Map{})
 	}
 	return json.Unmarshal(body, obj)
 }
 
 type CanPreprocess interface {
-	Preprocess() error
+	Preprocess(c *fiber.Ctx) error
 }
 
 func Serialize(c *fiber.Ctx, obj CanPreprocess) error {
-	err := obj.Preprocess()
+	err := obj.Preprocess(c)
 	if err != nil {
 		return err
 	}
 	return c.JSON(obj)
 }
 
-func SerializeArray(c *fiber.Ctx, obj []CanPreprocess) error {
-	for _, model := range obj {
-		err := model.Preprocess()
+func ReText2IntArray(IDs [][]string) ([]int, error) {
+	ansIDs := make([]int, 0)
+	for _, v := range IDs {
+		id, err := strconv.Atoi(v[1])
 		if err != nil {
-			return err
+			return nil, err
 		}
+		ansIDs = append(ansIDs, id)
 	}
-	return c.JSON(obj)
+	return ansIDs, nil
 }
