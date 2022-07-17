@@ -61,7 +61,6 @@ func InitDB() {
 		&Floor{},
 		&FloorHistory{},
 		&FloorLike{},
-		&User{},
 		&Report{},
 	)
 	if err != nil {
