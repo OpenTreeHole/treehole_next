@@ -209,7 +209,7 @@ func ModifyFloor(c *fiber.Ctx) error {
 		floor.Content = body.Content
 
 		// find mention
-		err := floor.LoadMention()
+		err := floor.FindMention(DB)
 		if err != nil {
 			return err
 		}
@@ -292,6 +292,7 @@ func ModifyFloorLike(c *fiber.Ctx) error {
 // @Success 200 {object} Floor
 // @Failure 404 {object} MessageModel
 func DeleteFloor(c *fiber.Ctx) error {
+	// validate body
 	var body DeleteModel
 	err := ValidateBody(c, &body)
 	if err != nil {
@@ -303,10 +304,21 @@ func DeleteFloor(c *fiber.Ctx) error {
 		return err
 	}
 
+	// get user
+	var user User
+	err = user.GetUser(c)
+	if err != nil {
+		return err
+	}
+
 	var floor Floor
 	result := DB.First(&floor, floorID)
 	if result.Error != nil {
 		return result.Error
+	}
+
+	if user.ID != floor.UserID || !user.IsAdmin {
+		return Forbidden()
 	}
 
 	err = floor.Backup(c, body.Reason)
