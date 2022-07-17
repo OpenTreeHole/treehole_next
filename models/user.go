@@ -29,7 +29,7 @@ func (user *User) GetUser(c *fiber.Ctx) error {
 
 	userToken := c.Locals("user").(*jwt.Token)
 	claims := userToken.Claims.(jwt.MapClaims)
-	user.Roles = claims["role"].([]string)
+	user.Roles = claims["roles"].([]string)
 	user.Nickname = claims["nickname"].(string)
 	if slices.Contains(user.Roles, "admin") {
 		user.IsAdmin = true
