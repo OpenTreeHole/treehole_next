@@ -2,12 +2,13 @@ package models
 
 import (
 	"fmt"
-	"github.com/gofiber/fiber/v2"
-	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 	"strings"
 	"time"
 	"treehole_next/config"
+
+	"github.com/gofiber/fiber/v2"
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type HoleFloor struct {
@@ -19,6 +20,7 @@ type HoleFloor struct {
 type Hole struct {
 	BaseModel
 	DivisionID int                `json:"division_id"`
+	UserID     int                `json:"-"` // permission
 	Tags       []*Tag             `json:"tags" gorm:"many2many:hole_tags"`
 	Floors     []Floor            `json:"-"`
 	HoleFloor  HoleFloor          `json:"floors" gorm:"-:all"` // return floors
@@ -294,7 +296,14 @@ func (hole *Hole) Create(c *fiber.Ctx, content *string, db ...*gorm.DB) error {
 		tx = DB
 	}
 
-	err := tx.Transaction(func(tx *gorm.DB) error {
+	// get and bind userID
+	userID, err := GetUserID(c)
+	if err != nil {
+		return err
+	}
+	hole.UserID = userID
+
+	err = tx.Transaction(func(tx *gorm.DB) error {
 		// Create hole
 		result := tx.Omit("Tags").Create(hole) // tags are created in AfterCreate hook
 		if result.Error != nil {

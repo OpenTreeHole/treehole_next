@@ -178,6 +178,7 @@ func CreateHole(c *fiber.Ctx) error {
 // @Param json body CreateOldModel true "json"
 // @Success 201 {object} Hole
 func CreateHoleOld(c *fiber.Ctx) error {
+	// validate body
 	var body CreateOldModel
 	err := ValidateBody(c, &body)
 	if err != nil {
@@ -220,6 +221,13 @@ func ModifyHole(c *fiber.Ctx) error {
 		return err
 	}
 
+	// get user
+	var user User
+	err = user.GetUser(c)
+	if err != nil {
+		return err
+	}
+
 	// Find hole
 	var hole Hole
 	result := DB.First(&hole, holeID)
@@ -227,22 +235,43 @@ func ModifyHole(c *fiber.Ctx) error {
 		return result.Error
 	}
 
-	// update divisionID
-	if body.DivisionID != 0 {
-		hole.DivisionID = body.DivisionID
-	}
+	// permission
+	if user.IsAdmin {
+		// update divisionID
+		if body.DivisionID != 0 {
+			hole.DivisionID = body.DivisionID
+		}
 
-	// update tags
-	if len(body.Tags) != 0 {
-		for _, tag := range body.Tags {
-			hole.Tags = append(hole.Tags, &Tag{Name: tag.Name})
+		// update tags
+		if len(body.Tags) != 0 {
+			for _, tag := range body.Tags {
+				hole.Tags = append(hole.Tags, &Tag{Name: tag.Name})
+			}
+			err = DB.Transaction(func(tx *gorm.DB) error {
+				return hole.SetTags(tx, true)
+			})
+			if err != nil {
+				return err
+			}
 		}
-		err = DB.Transaction(func(tx *gorm.DB) error {
-			return hole.SetTags(tx, true)
-		})
-		if err != nil {
-			return err
+	} else if user.ID == hole.UserID {
+		if body.DivisionID != hole.DivisionID {
+			return Forbidden("非管理员禁止修改分区")
 		}
+		// update tags
+		if len(body.Tags) != 0 {
+			for _, tag := range body.Tags {
+				hole.Tags = append(hole.Tags, &Tag{Name: tag.Name})
+			}
+			err = DB.Transaction(func(tx *gorm.DB) error {
+				return hole.SetTags(tx, true)
+			})
+			if err != nil {
+				return err
+			}
+		}
+	} else {
+		return Forbidden()
 	}
 
 	// save
@@ -260,7 +289,24 @@ func ModifyHole(c *fiber.Ctx) error {
 // @Success 204
 // @Failure 404 {object} MessageModel
 func DeleteHole(c *fiber.Ctx) error {
-	holeID, _ := c.ParamsInt("id")
+	// validate holeID
+	holeID, err := c.ParamsInt("id")
+	if err != nil {
+		return err
+	}
+
+	// get user
+	var user User
+	err = user.GetUser(c)
+	if err != nil {
+		return err
+	}
+
+	// permission
+	if !user.IsAdmin {
+		return Forbidden()
+	}
+
 	var hole Hole
 	hole.ID = holeID
 	result := DB.Model(&hole).Select("Hidden").Updates(Hole{Hidden: true})
