@@ -145,6 +145,7 @@ func GetHole(c *fiber.Ctx) error {
 // @Param json body CreateModel true "json"
 // @Success 201 {object} Hole
 func CreateHole(c *fiber.Ctx) error {
+	// validate body
 	var body CreateModel
 	err := ValidateBody(c, &body)
 	if err != nil {
@@ -153,6 +154,13 @@ func CreateHole(c *fiber.Ctx) error {
 	divisionID, err := c.ParamsInt("id")
 	if err != nil {
 		return err
+	}
+
+	// permission
+	var user User
+	user.GetUser(c)
+	if user.BanDivision[divisionID] {
+		return Forbidden()
 	}
 
 	hole := Hole{
@@ -183,6 +191,13 @@ func CreateHoleOld(c *fiber.Ctx) error {
 	err := ValidateBody(c, &body)
 	if err != nil {
 		return err
+	}
+
+	// permission
+	var user User
+	user.GetUser(c)
+	if user.BanDivision[body.DivisionID] {
+		return Forbidden()
 	}
 
 	hole := Hole{
