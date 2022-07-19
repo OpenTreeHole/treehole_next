@@ -125,17 +125,19 @@ func CreateFloor(c *fiber.Ctx) error {
 	// permission
 	var hole Hole
 	DB.Select("division_id").First(&hole, holeID)
-	if user.BanDivision[hole.DivisionID] {
+	if user.BanDivision[hole.DivisionID] ||
+		body.SpecialTag != "" && (!user.IsAdmin || !user.IsOperator) {
 		return Forbidden()
 	}
 
 	// create floor
 	floor := Floor{
-		HoleID:  holeID,
-		Content: body.Content,
-		ReplyTo: body.ReplyTo,
-		UserID:  user.ID,
-		IsMe:    true,
+		HoleID:     holeID,
+		Content:    body.Content,
+		ReplyTo:    body.ReplyTo,
+		UserID:     user.ID,
+		IsMe:       true,
+		SpecialTag: body.SpecialTag,
 	}
 	err = floor.Create(c)
 	if err != nil {
@@ -170,17 +172,19 @@ func CreateFloorOld(c *fiber.Ctx) error {
 	// permission
 	var hole Hole
 	DB.Select("division_id").First(&hole, body.HoleID)
-	if user.BanDivision[hole.DivisionID] {
+	if user.BanDivision[hole.DivisionID] ||
+		body.SpecialTag != "" && (!user.IsAdmin || !user.IsOperator) {
 		return Forbidden()
 	}
 
 	// create floor
 	floor := Floor{
-		HoleID:  body.HoleID,
-		Content: body.Content,
-		ReplyTo: body.ReplyTo,
-		UserID:  user.ID,
-		IsMe:    true,
+		HoleID:     body.HoleID,
+		Content:    body.Content,
+		ReplyTo:    body.ReplyTo,
+		UserID:     user.ID,
+		IsMe:       true,
+		SpecialTag: body.SpecialTag,
 	}
 	err = floor.Create(c)
 	if err != nil {
@@ -257,7 +261,10 @@ func ModifyFloor(c *fiber.Ctx) error {
 	}
 
 	if body.SpecialTag != "" {
-		if !user.IsAdmin || !user.IsOperation {
+		// admin can modify all specialTag
+		// operator only modify own specialTag
+		if !user.IsAdmin ||
+			(user.IsOperator && user.ID != floor.UserID) {
 			return Forbidden()
 		}
 		floor.SpecialTag = body.SpecialTag

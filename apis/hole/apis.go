@@ -159,7 +159,8 @@ func CreateHole(c *fiber.Ctx) error {
 	// permission
 	var user User
 	user.GetUser(c)
-	if user.BanDivision[divisionID] {
+	if user.BanDivision[divisionID] ||
+		body.SpecialTag != "" && (!user.IsAdmin || !user.IsOperator) {
 		return Forbidden()
 	}
 
@@ -170,7 +171,7 @@ func CreateHole(c *fiber.Ctx) error {
 	for _, tag := range body.Tags {
 		hole.Tags = append(hole.Tags, &Tag{Name: tag.Name})
 	}
-	err = hole.Create(c, &body.Content)
+	err = hole.Create(c, &body.Content, &body.SpecialTag)
 	if err != nil {
 		return err
 	}
@@ -197,17 +198,20 @@ func CreateHoleOld(c *fiber.Ctx) error {
 	// permission
 	var user User
 	user.GetUser(c)
-	if user.BanDivision[body.DivisionID] {
+	if user.BanDivision[body.DivisionID] ||
+		body.SpecialTag != "" && (!user.IsAdmin || !user.IsOperator) {
 		return Forbidden()
 	}
 
+	// create hole
 	hole := Hole{
 		DivisionID: body.DivisionID,
+		UserID:     user.ID,
 	}
 	for _, tag := range body.Tags {
 		hole.Tags = append(hole.Tags, &Tag{Name: tag.Name})
 	}
-	err = hole.Create(c, &body.Content)
+	err = hole.Create(c, &body.Content, &body.SpecialTag)
 	if err != nil {
 		return err
 	}
@@ -271,9 +275,11 @@ func ModifyHole(c *fiber.Ctx) error {
 			}
 		}
 	} else if user.ID == hole.UserID {
+		// forbid to update divisionID
 		if body.DivisionID != hole.DivisionID {
 			return Forbidden("非管理员禁止修改分区")
 		}
+
 		// update tags
 		if len(body.Tags) != 0 {
 			for _, tag := range body.Tags {

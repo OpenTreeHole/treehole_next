@@ -17,7 +17,7 @@ type User struct {
 	Nickname    string                 `json:"nickname" gorm:"-:all"`
 	Config      map[string]interface{} `json:"config" gorm:"-:all"`
 	IsAdmin     bool                   `json:"is_admin" gorm:"-:all"`
-	IsOperation bool                   `json:"is_operation" gorm:"-:all"`
+	IsOperator  bool                   `json:"is_operator" gorm:"-:all"`
 }
 
 func (user *User) GetUser(c *fiber.Ctx) error {
@@ -28,10 +28,11 @@ func (user *User) GetUser(c *fiber.Ctx) error {
 	user.ID = id
 	if config.Config.Debug {
 		user.IsAdmin = true
-		user.IsOperation = true
+		user.IsOperator = true
 		return nil
 	}
 
+	// get userinfo
 	userToken := c.Locals("user").(*jwt.Token)
 	claims := userToken.Claims.(jwt.MapClaims)
 	user.Roles = claims["roles"].([]string)
@@ -39,8 +40,8 @@ func (user *User) GetUser(c *fiber.Ctx) error {
 	for _, v := range user.Roles {
 		if v == "admin" {
 			user.IsAdmin = true
-		} else if v == "operation" {
-			user.IsOperation = true
+		} else if v == "operator" {
+			user.IsOperator = true
 		} else if strings.HasPrefix(v, "ban_treehole") {
 			banInfo := strings.Split(v, "_")
 			banDivisionID, err := strconv.Atoi(banInfo[2])

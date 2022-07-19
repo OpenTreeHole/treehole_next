@@ -288,7 +288,7 @@ func (hole *Hole) SetTags(tx *gorm.DB, clear bool) error {
 	return nil
 }
 
-func (hole *Hole) Create(c *fiber.Ctx, content *string, db ...*gorm.DB) error {
+func (hole *Hole) Create(c *fiber.Ctx, content *string, specialTag *string, db ...*gorm.DB) error {
 	var tx *gorm.DB
 	if len(db) > 0 {
 		tx = db[0]
@@ -305,10 +305,11 @@ func (hole *Hole) Create(c *fiber.Ctx, content *string, db ...*gorm.DB) error {
 
 		// Bind and Create floor
 		floor := Floor{
-			HoleID:  hole.ID,
-			Content: *content,
-			UserID:  hole.UserID,
-			IsMe:    true,
+			HoleID:     hole.ID,
+			Content:    *content,
+			UserID:     hole.UserID,
+			SpecialTag: *specialTag,
+			IsMe:       true,
 		}
 		err := floor.Create(c, tx)
 		if err != nil {
