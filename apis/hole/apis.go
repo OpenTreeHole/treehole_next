@@ -165,6 +165,7 @@ func CreateHole(c *fiber.Ctx) error {
 
 	hole := Hole{
 		DivisionID: divisionID,
+		UserID:     user.ID,
 	}
 	for _, tag := range body.Tags {
 		hole.Tags = append(hole.Tags, &Tag{Name: tag.Name})

@@ -115,10 +115,27 @@ func CreateFloor(c *fiber.Ctx) error {
 		return err
 	}
 
+	// get user
+	var user User
+	err = user.GetUser(c)
+	if err != nil {
+		return err
+	}
+
+	// permission
+	var hole Hole
+	DB.Select("division_id").First(&hole, holeID)
+	if user.BanDivision[hole.DivisionID] {
+		return Forbidden()
+	}
+
+	// create floor
 	floor := Floor{
 		HoleID:  holeID,
 		Content: body.Content,
 		ReplyTo: body.ReplyTo,
+		UserID:  user.ID,
+		IsMe:    true,
 	}
 	err = floor.Create(c)
 	if err != nil {
@@ -143,10 +160,27 @@ func CreateFloorOld(c *fiber.Ctx) error {
 		return err
 	}
 
+	// get user
+	var user User
+	err = user.GetUser(c)
+	if err != nil {
+		return err
+	}
+
+	// permission
+	var hole Hole
+	DB.Select("division_id").First(&hole, body.HoleID)
+	if user.BanDivision[hole.DivisionID] {
+		return Forbidden()
+	}
+
+	// create floor
 	floor := Floor{
 		HoleID:  body.HoleID,
 		Content: body.Content,
 		ReplyTo: body.ReplyTo,
+		UserID:  user.ID,
+		IsMe:    true,
 	}
 	err = floor.Create(c)
 	if err != nil {
@@ -223,7 +257,7 @@ func ModifyFloor(c *fiber.Ctx) error {
 	}
 
 	if body.SpecialTag != "" {
-		if !user.IsAdmin {
+		if !user.IsAdmin || !user.IsOperation {
 			return Forbidden()
 		}
 		floor.SpecialTag = body.SpecialTag

@@ -296,14 +296,7 @@ func (hole *Hole) Create(c *fiber.Ctx, content *string, db ...*gorm.DB) error {
 		tx = DB
 	}
 
-	// get and bind userID
-	userID, err := GetUserID(c)
-	if err != nil {
-		return err
-	}
-	hole.UserID = userID
-
-	err = tx.Transaction(func(tx *gorm.DB) error {
+	err := tx.Transaction(func(tx *gorm.DB) error {
 		// Create hole
 		result := tx.Omit("Tags").Create(hole) // tags are created in AfterCreate hook
 		if result.Error != nil {
@@ -314,12 +307,13 @@ func (hole *Hole) Create(c *fiber.Ctx, content *string, db ...*gorm.DB) error {
 		floor := Floor{
 			HoleID:  hole.ID,
 			Content: *content,
+			UserID:  hole.UserID,
+			IsMe:    true,
 		}
 		err := floor.Create(c, tx)
 		if err != nil {
 			return err
 		}
-
 		return nil
 	})
 
