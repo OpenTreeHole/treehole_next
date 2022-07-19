@@ -4,6 +4,7 @@ import (
 	"strconv"
 	"strings"
 	"treehole_next/config"
+	"treehole_next/utils"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v4"
@@ -16,9 +17,16 @@ type User struct {
 	BanDivision map[int]bool           `json:"-" gorm:"-:all"`
 	Nickname    string                 `json:"nickname" gorm:"-:all"`
 	Config      map[string]interface{} `json:"config" gorm:"-:all"`
-	IsAdmin     bool                   `json:"is_admin" gorm:"-:all"`
-	IsOperator  bool                   `json:"is_operator" gorm:"-:all"`
+	Permission  PermissionType         `json:"permission" gorm:"-:all"`
 }
+
+// PermissionType enum
+const (
+	P_ADMIN = 1 << iota
+	P_OPERATOR
+)
+
+type PermissionType int
 
 func (user *User) GetUser(c *fiber.Ctx) error {
 	id, err := GetUserID(c)
@@ -27,8 +35,7 @@ func (user *User) GetUser(c *fiber.Ctx) error {
 	}
 	user.ID = id
 	if config.Config.Debug {
-		user.IsAdmin = true
-		user.IsOperator = true
+		user.Permission = P_ADMIN + P_OPERATOR
 		return nil
 	}
 
@@ -46,9 +53,9 @@ func (user *User) GetUser(c *fiber.Ctx) error {
 	user.Nickname = claims["nickname"].(string)
 	for _, v := range user.Roles {
 		if v == "admin" {
-			user.IsAdmin = true
+			user.Permission |= P_ADMIN
 		} else if v == "operator" {
-			user.IsOperator = true
+			user.Permission |= P_OPERATOR
 		} else if strings.HasPrefix(v, "ban_treehole") {
 			banDivisionID, err := strconv.Atoi(v[13:])
 			if err != nil {
@@ -71,4 +78,32 @@ func GetUserID(c *fiber.Ctx) (int, error) {
 	}
 
 	return id, nil
+}
+
+// get userInfo and check user permission
+//
+// Example:
+//
+//  GetAndCheckPermission(c, P_ADMIN | P_OPERATOR)
+//
+func (user *User) GetAndCheckPermission(c *fiber.Ctx, t PermissionType) error {
+	err := user.GetUser(c)
+	if err != nil {
+		return err
+	}
+	if !user.CheckPermission(t) {
+		return utils.Forbidden()
+	}
+	return nil
+}
+
+// check user permission
+//
+// Example:
+//
+//  CheckPermission(P_ADMIN)
+//  CheckPermission(P_ADMIN | P_OPERATOR)
+//
+func (user *User) CheckPermission(t PermissionType) bool {
+	return user.Permission&t != 0
 }

@@ -115,28 +115,11 @@ func CreateFloor(c *fiber.Ctx) error {
 		return err
 	}
 
-	// get user
-	var user User
-	err = user.GetUser(c)
-	if err != nil {
-		return err
-	}
-
-	// permission
-	var hole Hole
-	DB.Select("division_id").First(&hole, holeID)
-	if user.BanDivision[hole.DivisionID] ||
-		body.SpecialTag != "" && !user.IsOperator {
-		return Forbidden()
-	}
-
 	// create floor
 	floor := Floor{
 		HoleID:     holeID,
 		Content:    body.Content,
 		ReplyTo:    body.ReplyTo,
-		UserID:     user.ID,
-		IsMe:       true,
 		SpecialTag: body.SpecialTag,
 	}
 	err = floor.Create(c)
@@ -162,28 +145,11 @@ func CreateFloorOld(c *fiber.Ctx) error {
 		return err
 	}
 
-	// get user
-	var user User
-	err = user.GetUser(c)
-	if err != nil {
-		return err
-	}
-
-	// permission
-	var hole Hole
-	DB.Select("division_id").First(&hole, body.HoleID)
-	if user.BanDivision[hole.DivisionID] ||
-		body.SpecialTag != "" && !user.IsOperator {
-		return Forbidden()
-	}
-
 	// create floor
 	floor := Floor{
 		HoleID:     body.HoleID,
 		Content:    body.Content,
 		ReplyTo:    body.ReplyTo,
-		UserID:     user.ID,
-		IsMe:       true,
 		SpecialTag: body.SpecialTag,
 	}
 	err = floor.Create(c)
@@ -235,7 +201,7 @@ func ModifyFloor(c *fiber.Ctx) error {
 		var reason string
 		if user.ID == floor.UserID {
 			reason = "该内容已被作者修改"
-		} else if user.IsAdmin {
+		} else if user.CheckPermission(P_ADMIN) {
 			reason = "该内容已被管理员修改"
 		} else {
 			return Forbidden()
@@ -254,7 +220,7 @@ func ModifyFloor(c *fiber.Ctx) error {
 	}
 
 	if body.Fold != "" {
-		if !user.IsAdmin {
+		if !user.CheckPermission(P_ADMIN) {
 			return Forbidden()
 		}
 		floor.Fold = body.Fold
@@ -262,7 +228,7 @@ func ModifyFloor(c *fiber.Ctx) error {
 
 	if body.SpecialTag != "" {
 		// operator can modify specialTag
-		if !user.IsOperator {
+		if !user.CheckPermission(P_OPERATOR) {
 			return Forbidden()
 		}
 		floor.SpecialTag = body.SpecialTag
@@ -356,7 +322,8 @@ func DeleteFloor(c *fiber.Ctx) error {
 		return result.Error
 	}
 
-	if user.ID != floor.UserID || !user.IsAdmin {
+	// permission
+	if user.ID != floor.UserID || !user.CheckPermission(P_ADMIN) {
 		return Forbidden()
 	}
 

@@ -24,14 +24,11 @@ func AddDivision(c *fiber.Ctx) error {
 		return err
 	}
 
-	// get user
+	// check if admin
 	var user User
-	err = user.GetUser(c)
+	err = user.GetAndCheckPermission(c, P_ADMIN)
 	if err != nil {
 		return err
-	}
-	if !user.IsAdmin {
-		return Forbidden()
 	}
 
 	// bind division
@@ -94,14 +91,11 @@ func ModifyDivision(c *fiber.Ctx) error {
 		return err
 	}
 
-	// get user
+	// check if admin
 	var user User
-	err = user.GetUser(c)
+	err = user.GetAndCheckPermission(c, P_ADMIN)
 	if err != nil {
 		return err
-	}
-	if !user.IsAdmin {
-		return Forbidden()
 	}
 
 	id, _ := c.ParamsInt("id")
@@ -133,14 +127,11 @@ func DeleteDivision(c *fiber.Ctx) error {
 		return err
 	}
 
-	// get user
+	// check if admin
 	var user User
-	err = user.GetUser(c)
+	err = user.GetAndCheckPermission(c, P_ADMIN)
 	if err != nil {
 		return err
-	}
-	if !user.IsAdmin {
-		return Forbidden()
 	}
 
 	if body.To == 0 { // default 1

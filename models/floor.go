@@ -156,7 +156,24 @@ func (floor *Floor) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 		tx = DB
 	}
 
-	err := tx.Transaction(func(tx *gorm.DB) error {
+	// get user
+	var user User
+	err := user.GetUser(c)
+	if err != nil {
+		return err
+	}
+	floor.UserID = user.ID
+	floor.IsMe = true
+
+	// permission
+	var hole Hole
+	DB.Select("division_id").First(&hole, floor.HoleID)
+	if user.BanDivision[hole.DivisionID] ||
+		floor.SpecialTag != "" && !user.CheckPermission(P_OPERATOR) {
+		return utils.Forbidden()
+	}
+
+	err = tx.Transaction(func(tx *gorm.DB) error {
 		// get anonymous name
 		var mapping AnonynameMapping
 

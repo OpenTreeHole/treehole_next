@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 	"treehole_next/config"
+	"treehole_next/utils"
 
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
@@ -199,7 +200,7 @@ func (holes Holes) Preprocess(c *fiber.Ctx) error {
 func MakeQuerySet(c *fiber.Ctx) *gorm.DB {
 	var user User
 	_ = user.GetUser(c)
-	if user.IsAdmin {
+	if user.CheckPermission(P_ADMIN) {
 		return DB
 	} else {
 		return DB.Where("hidden = ?", false)
@@ -296,7 +297,19 @@ func (hole *Hole) Create(c *fiber.Ctx, content *string, specialTag *string, db .
 		tx = DB
 	}
 
-	err := tx.Transaction(func(tx *gorm.DB) error {
+	// permission
+	var user User
+	err := user.GetUser(c)
+	if err != nil {
+		return err
+	}
+	if user.BanDivision[hole.DivisionID] ||
+		*specialTag != "" && !user.CheckPermission(P_OPERATOR) {
+		return utils.Forbidden()
+	}
+	hole.UserID = user.ID
+
+	err = tx.Transaction(func(tx *gorm.DB) error {
 		// Create hole
 		result := tx.Omit("Tags").Create(hole) // tags are created in AfterCreate hook
 		if result.Error != nil {
