@@ -1,10 +1,11 @@
 package middlewares
 
 import (
+	"treehole_next/config"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/recover"
-	"treehole_next/config"
 )
 
 func RegisterMiddlewares(app *fiber.App) {

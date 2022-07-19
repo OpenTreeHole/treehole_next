@@ -32,8 +32,15 @@ func (user *User) GetUser(c *fiber.Ctx) error {
 		return nil
 	}
 
+	// extract and parse token
+	rawToken := c.Get("Authorization")
+	tokenString := rawToken[7:] // extract "Bearer "
+	userToken, _, err := jwt.NewParser().ParseUnverified(tokenString, jwt.MapClaims{})
+	if err != nil {
+		return err
+	}
+
 	// get userinfo
-	userToken := c.Locals("user").(*jwt.Token)
 	claims := userToken.Claims.(jwt.MapClaims)
 	user.Roles = claims["roles"].([]string)
 	user.Nickname = claims["nickname"].(string)
