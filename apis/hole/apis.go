@@ -160,7 +160,7 @@ func CreateHole(c *fiber.Ctx) error {
 	var user User
 	user.GetUser(c)
 	if user.BanDivision[divisionID] ||
-		body.SpecialTag != "" && (!user.IsAdmin || !user.IsOperator) {
+		body.SpecialTag != "" && !user.IsOperator {
 		return Forbidden()
 	}
 
@@ -199,7 +199,7 @@ func CreateHoleOld(c *fiber.Ctx) error {
 	var user User
 	user.GetUser(c)
 	if user.BanDivision[body.DivisionID] ||
-		body.SpecialTag != "" && (!user.IsAdmin || !user.IsOperator) {
+		body.SpecialTag != "" && !user.IsOperator {
 		return Forbidden()
 	}
 

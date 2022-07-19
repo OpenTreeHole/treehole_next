@@ -126,7 +126,7 @@ func CreateFloor(c *fiber.Ctx) error {
 	var hole Hole
 	DB.Select("division_id").First(&hole, holeID)
 	if user.BanDivision[hole.DivisionID] ||
-		body.SpecialTag != "" && (!user.IsAdmin || !user.IsOperator) {
+		body.SpecialTag != "" && !user.IsOperator {
 		return Forbidden()
 	}
 
@@ -173,7 +173,7 @@ func CreateFloorOld(c *fiber.Ctx) error {
 	var hole Hole
 	DB.Select("division_id").First(&hole, body.HoleID)
 	if user.BanDivision[hole.DivisionID] ||
-		body.SpecialTag != "" && (!user.IsAdmin || !user.IsOperator) {
+		body.SpecialTag != "" && !user.IsOperator {
 		return Forbidden()
 	}
 
@@ -261,10 +261,8 @@ func ModifyFloor(c *fiber.Ctx) error {
 	}
 
 	if body.SpecialTag != "" {
-		// admin can modify all specialTag
-		// operator only modify own specialTag
-		if !user.IsAdmin ||
-			(user.IsOperator && user.ID != floor.UserID) {
+		// operator can modify specialTag
+		if !user.IsOperator {
 			return Forbidden()
 		}
 		floor.SpecialTag = body.SpecialTag
