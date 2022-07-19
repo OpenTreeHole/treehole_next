@@ -258,7 +258,7 @@ func ModifyHole(c *fiber.Ctx) error {
 	// permission
 	modifiedDivisionID := false
 	modifiedTag := false
-	if body.DivisionID != 0 || body.DivisionID != hole.DivisionID {
+	if body.DivisionID != 0 && body.DivisionID != hole.DivisionID {
 		if user.IsAdmin {
 			hole.DivisionID = body.DivisionID
 			modifiedDivisionID = true
