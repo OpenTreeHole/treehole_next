@@ -43,8 +43,7 @@ func (user *User) GetUser(c *fiber.Ctx) error {
 		} else if v == "operator" {
 			user.IsOperator = true
 		} else if strings.HasPrefix(v, "ban_treehole") {
-			banInfo := strings.Split(v, "_")
-			banDivisionID, err := strconv.Atoi(banInfo[2])
+			banDivisionID, err := strconv.Atoi(v[13:])
 			if err != nil {
 				return err
 			}
