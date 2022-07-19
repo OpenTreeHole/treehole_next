@@ -256,32 +256,18 @@ func ModifyHole(c *fiber.Ctx) error {
 	}
 
 	// permission
-	if user.IsAdmin {
-		// update divisionID
-		if body.DivisionID != 0 {
+	modifiedDivisionID := false
+	modifiedTag := false
+	if body.DivisionID != 0 || body.DivisionID != hole.DivisionID {
+		if user.IsAdmin {
 			hole.DivisionID = body.DivisionID
-		}
-
-		// update tags
-		if len(body.Tags) != 0 {
-			for _, tag := range body.Tags {
-				hole.Tags = append(hole.Tags, &Tag{Name: tag.Name})
-			}
-			err = DB.Transaction(func(tx *gorm.DB) error {
-				return hole.SetTags(tx, true)
-			})
-			if err != nil {
-				return err
-			}
-		}
-	} else if user.ID == hole.UserID {
-		// forbid to update divisionID
-		if body.DivisionID != hole.DivisionID {
+			modifiedDivisionID = true
+		} else {
 			return Forbidden("非管理员禁止修改分区")
 		}
-
-		// update tags
-		if len(body.Tags) != 0 {
+	}
+	if len(body.Tags) != 0 {
+		if user.IsAdmin || user.ID == hole.UserID {
 			for _, tag := range body.Tags {
 				hole.Tags = append(hole.Tags, &Tag{Name: tag.Name})
 			}
@@ -291,13 +277,17 @@ func ModifyHole(c *fiber.Ctx) error {
 			if err != nil {
 				return err
 			}
+			modifiedTag = true
+		} else {
+			return Forbidden()
 		}
-	} else {
-		return Forbidden()
 	}
 
 	// save
-	DB.Omit("Tags").Save(&hole)
+	if modifiedDivisionID || modifiedTag {
+		DB.Omit("Tags").Save(&hole)
+	}
+
 	return Serialize(c, &hole)
 }
 
