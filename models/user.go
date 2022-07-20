@@ -1,7 +1,8 @@
 package models
 
 import (
-	"errors"
+	"encoding/base64"
+	"encoding/json"
 	"math"
 	"strconv"
 	"strings"
@@ -9,13 +10,12 @@ import (
 	"treehole_next/utils"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/golang-jwt/jwt/v4"
 )
 
 type User struct {
 	BaseModel
 	Favorites   []Hole         `json:"favorites" gorm:"many2many:user_favorites"`
-	Claims      Map            `json:"claims" gorm:"-:all"`
+	PayloadMap  Map            `json:"-" gorm:"-:all"`
 	Config      Map            `json:"config" gorm:"-:all"`
 	BanDivision map[int]bool   `json:"-" gorm:"-:all"`
 	Permission  PermissionType `json:"permission" gorm:"-:all"`
@@ -42,21 +42,21 @@ func (user *User) GetUser(c *fiber.Ctx) error {
 
 	// extract and parse token
 	rawToken := c.Get("Authorization")
-	tokenString := rawToken[7:] // extract "Bearer "
-	userToken, _, err := jwt.NewParser().ParseUnverified(tokenString, jwt.MapClaims{})
+	tokenString := rawToken[7:]                       // extract "Bearer "
+	payload := strings.SplitN(tokenString, ".", 2)[1] // the middle one is payload
+	payloadBytes, err := base64.StdEncoding.DecodeString(payload)
 	if err != nil {
-		return err
+		return utils.BadRequest("invalid jwt token. Fail to decode payload.")
 	}
-
-	// get userinfo
-	claims, ok := userToken.Claims.(jwt.MapClaims)
-	if !ok {
-		return errors.New("jwt parse err")
+	payloadMap := Map{}
+	err = json.Unmarshal(payloadBytes, &payloadMap)
+	if err != nil {
+		return utils.BadRequest("invalid jwt token. Fail to unmarchal payload.")
 	}
-	user.Claims = Map(claims)
-	roles, ok := user.Claims["roles"].([]string)
+	user.PayloadMap = payloadMap
+	roles, ok := user.PayloadMap["roles"].([]string)
 	if !ok {
-		return errors.New("jwt parse err")
+		return utils.BadRequest("invalid jwt token. Fail to parse roles")
 	}
 
 	for _, v := range roles {
