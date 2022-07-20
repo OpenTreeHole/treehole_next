@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	"math"
 	"strconv"
 	"strings"
 	"treehole_next/config"
@@ -13,12 +14,11 @@ import (
 
 type User struct {
 	BaseModel
-	Favorites   []Hole                 `json:"favorites" gorm:"many2many:user_favorites"`
-	Roles       []string               `json:"-" gorm:"-:all"`
-	BanDivision map[int]bool           `json:"-" gorm:"-:all"`
-	Nickname    string                 `json:"nickname" gorm:"-:all"`
-	Config      map[string]interface{} `json:"config" gorm:"-:all"`
-	Permission  PermissionType         `json:"permission" gorm:"-:all"`
+	Favorites   []Hole         `json:"favorites" gorm:"many2many:user_favorites"`
+	Claims      Map            `json:"claims" gorm:"-:all"`
+	Config      Map            `json:"config" gorm:"-:all"`
+	BanDivision map[int]bool   `json:"-" gorm:"-:all"`
+	Permission  PermissionType `json:"permission" gorm:"-:all"`
 }
 
 // PermissionType enum
@@ -27,7 +27,7 @@ const (
 	P_OPERATOR
 )
 
-type PermissionType int
+type PermissionType uint64
 
 func (user *User) GetUser(c *fiber.Ctx) error {
 	id, err := GetUserID(c)
@@ -36,7 +36,7 @@ func (user *User) GetUser(c *fiber.Ctx) error {
 	}
 	user.ID = id
 	if config.Config.Debug {
-		user.Permission = P_ADMIN + P_OPERATOR
+		user.Permission = math.MaxUint64
 		return nil
 	}
 
@@ -49,18 +49,17 @@ func (user *User) GetUser(c *fiber.Ctx) error {
 	}
 
 	// get userinfo
-	claims := userToken.Claims.(jwt.MapClaims)
-	roles, ok := claims["roles"].([]string)
+	claims, ok := userToken.Claims.(jwt.MapClaims)
 	if !ok {
 		return errors.New("jwt parse err")
 	}
-	user.Roles = roles
-	nickname, ok := claims["nickname"].(string)
+	user.Claims = Map(claims)
+	roles, ok := user.Claims["roles"].([]string)
 	if !ok {
 		return errors.New("jwt parse err")
 	}
-	user.Nickname = nickname
-	for _, v := range user.Roles {
+
+	for _, v := range roles {
 		if v == "admin" {
 			user.Permission |= P_ADMIN
 		} else if v == "operator" {
