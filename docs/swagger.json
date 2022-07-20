@@ -968,11 +968,8 @@
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/models.Report"
-                        }
+                    "204": {
+                        "description": ""
                     },
                     "400": {
                         "description": "Bad Request",
@@ -1336,6 +1333,11 @@
                     "description": "id of the floor to which replied",
                     "type": "integer",
                     "minimum": 0
+                },
+                "special_tag": {
+                    "description": "Admin and Operator only",
+                    "type": "string",
+                    "maxLength": 16
                 }
             }
         },
@@ -1357,6 +1359,11 @@
                     "description": "id of the floor to which replied",
                     "type": "integer",
                     "minimum": 0
+                },
+                "special_tag": {
+                    "description": "Admin and Operator only",
+                    "type": "string",
+                    "maxLength": 16
                 }
             }
         },
@@ -1393,7 +1400,7 @@
                     ]
                 },
                 "special_tag": {
-                    "description": "Admin only",
+                    "description": "Admin and Operator only",
                     "type": "string",
                     "maxLength": 16
                 }
@@ -1407,6 +1414,11 @@
             "properties": {
                 "content": {
                     "type": "string"
+                },
+                "special_tag": {
+                    "description": "Admin and Operator only",
+                    "type": "string",
+                    "maxLength": 16
                 },
                 "tags": {
                     "description": "All users",
@@ -1430,6 +1442,11 @@
                     "description": "Admin only",
                     "type": "integer",
                     "minimum": 1
+                },
+                "special_tag": {
+                    "description": "Admin and Operator only",
+                    "type": "string",
+                    "maxLength": 16
                 },
                 "tags": {
                     "description": "All users",

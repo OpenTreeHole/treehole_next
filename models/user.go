@@ -1,20 +1,20 @@
 package models
 
 import (
-	"errors"
+	"encoding/base64"
+	"encoding/json"
 	"strconv"
 	"strings"
 	"treehole_next/config"
 	"treehole_next/utils"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/golang-jwt/jwt/v4"
 )
 
 type User struct {
 	BaseModel
 	Favorites   []Hole                 `json:"favorites" gorm:"many2many:user_favorites"`
-	Roles       []string               `json:"-" gorm:"-:all"`
+	Roles       []string               `json:"roles" gorm:"-:all"`
 	BanDivision map[int]bool           `json:"-" gorm:"-:all"`
 	Nickname    string                 `json:"nickname" gorm:"-:all"`
 	Config      map[string]interface{} `json:"config" gorm:"-:all"`
@@ -22,6 +22,7 @@ type User struct {
 }
 
 // PermissionType enum
+//goland:noinspection GoSnakeCaseUsage
 const (
 	P_ADMIN = 1 << iota
 	P_OPERATOR
@@ -29,44 +30,57 @@ const (
 
 type PermissionType int
 
+// parseJWT extracts and parse token
+func (user *User) parseJWT(token string) bool {
+	if len(token) < 7 {
+		return false
+	}
+
+	payloads := strings.SplitN(token[7:], ".", 3) // extract "Bearer "
+	if len(payloads) < 3 {
+		return false
+	}
+
+	payloadBytes, err := base64.StdEncoding.DecodeString(payloads[1]) // the middle one is payload
+	if err != nil {
+		return false
+	}
+
+	err = json.Unmarshal(payloadBytes, user)
+	if err != nil {
+		return false
+	}
+
+	return true
+}
+
 func (user *User) GetUser(c *fiber.Ctx) error {
+	if config.Config.Debug {
+		user.ID = 1
+		user.Permission = P_ADMIN + P_OPERATOR
+		return nil
+	}
+
+	// get id
 	id, err := GetUserID(c)
 	if err != nil {
 		return err
 	}
 	user.ID = id
-	if config.Config.Debug {
-		user.Permission = P_ADMIN + P_OPERATOR
-		return nil
+
+	// parse JWT
+	tokenString := c.Get("Authorization")
+	if !user.parseJWT(tokenString) {
+		return utils.Unauthorized("Invalid JWT Token")
 	}
 
-	// extract and parse token
-	rawToken := c.Get("Authorization")
-	tokenString := rawToken[7:] // extract "Bearer "
-	userToken, _, err := jwt.NewParser().ParseUnverified(tokenString, jwt.MapClaims{})
-	if err != nil {
-		return err
-	}
-
-	// get userinfo
-	claims := userToken.Claims.(jwt.MapClaims)
-	roles, ok := claims["roles"].([]string)
-	if !ok {
-		return errors.New("jwt parse err")
-	}
-	user.Roles = roles
-	nickname, ok := claims["nickname"].(string)
-	if !ok {
-		return errors.New("jwt parse err")
-	}
-	user.Nickname = nickname
 	for _, v := range user.Roles {
 		if v == "admin" {
 			user.Permission |= P_ADMIN
 		} else if v == "operator" {
 			user.Permission |= P_OPERATOR
 		} else if strings.HasPrefix(v, "ban_treehole") {
-			banDivisionID, err := strconv.Atoi(v[13:])
+			banDivisionID, err := strconv.Atoi(v[13:]) // "ban_treehole_{divisionID}"
 			if err != nil {
 				return err
 			}
@@ -89,7 +103,7 @@ func GetUserID(c *fiber.Ctx) (int, error) {
 	return id, nil
 }
 
-// get userInfo and check user permission
+// GetAndCheckPermission gets userInfo and check user permission
 //
 // Example:
 //
@@ -106,7 +120,7 @@ func (user *User) GetAndCheckPermission(c *fiber.Ctx, t PermissionType) error {
 	return nil
 }
 
-// check user permission
+// CheckPermission checks user permission
 //
 // Example:
 //

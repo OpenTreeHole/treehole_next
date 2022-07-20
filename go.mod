@@ -6,7 +6,6 @@ require (
 	github.com/creasty/defaults v1.6.0
 	github.com/go-playground/validator/v10 v10.11.0
 	github.com/gofiber/fiber/v2 v2.35.0
-	github.com/golang-jwt/jwt/v4 v4.4.2
 	github.com/hetiansu5/urlquery v1.2.7
 	github.com/stretchr/testify v1.8.0
 	github.com/swaggo/fiber-swagger v1.3.0

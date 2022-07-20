@@ -36,6 +36,10 @@ definitions:
         description: id of the floor to which replied
         minimum: 0
         type: integer
+      special_tag:
+        description: Admin and Operator only
+        maxLength: 16
+        type: string
     required:
     - content
     type: object
@@ -51,6 +55,10 @@ definitions:
         description: id of the floor to which replied
         minimum: 0
         type: integer
+      special_tag:
+        description: Admin and Operator only
+        maxLength: 16
+        type: string
     required:
     - content
     type: object
@@ -76,7 +84,7 @@ definitions:
         - cancel
         type: string
       special_tag:
-        description: Admin only
+        description: Admin and Operator only
         maxLength: 16
         type: string
     required:
@@ -85,6 +93,10 @@ definitions:
   hole.CreateModel:
     properties:
       content:
+        type: string
+      special_tag:
+        description: Admin and Operator only
+        maxLength: 16
         type: string
       tags:
         description: All users
@@ -102,6 +114,10 @@ definitions:
         description: Admin only
         minimum: 1
         type: integer
+      special_tag:
+        description: Admin and Operator only
+        maxLength: 16
+        type: string
       tags:
         description: All users
         items:
@@ -980,10 +996,8 @@ paths:
       produces:
       - application/json
       responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/models.Report'
+        "204":
+          description: ""
         "400":
           description: Bad Request
           schema:
