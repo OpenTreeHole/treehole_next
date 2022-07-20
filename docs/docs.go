@@ -1341,6 +1341,11 @@ const docTemplate = `{
                     "description": "id of the floor to which replied",
                     "type": "integer",
                     "minimum": 0
+                },
+                "special_tag": {
+                    "description": "Admin and Operator only",
+                    "type": "string",
+                    "maxLength": 16
                 }
             }
         },
@@ -1362,6 +1367,11 @@ const docTemplate = `{
                     "description": "id of the floor to which replied",
                     "type": "integer",
                     "minimum": 0
+                },
+                "special_tag": {
+                    "description": "Admin and Operator only",
+                    "type": "string",
+                    "maxLength": 16
                 }
             }
         },
@@ -1398,7 +1408,7 @@ const docTemplate = `{
                     ]
                 },
                 "special_tag": {
-                    "description": "Admin only",
+                    "description": "Admin and Operator only",
                     "type": "string",
                     "maxLength": 16
                 }
@@ -1412,6 +1422,11 @@ const docTemplate = `{
             "properties": {
                 "content": {
                     "type": "string"
+                },
+                "special_tag": {
+                    "description": "Admin and Operator only",
+                    "type": "string",
+                    "maxLength": 16
                 },
                 "tags": {
                     "description": "All users",
@@ -1435,6 +1450,11 @@ const docTemplate = `{
                     "description": "Admin only",
                     "type": "integer",
                     "minimum": 1
+                },
+                "special_tag": {
+                    "description": "Admin and Operator only",
+                    "type": "string",
+                    "maxLength": 16
                 },
                 "tags": {
                     "description": "All users",

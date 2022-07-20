@@ -23,6 +23,13 @@ func GetReport(c *fiber.Ctx) error {
 		return err
 	}
 
+	// check if admin
+	var user User
+	err = user.GetAndCheckPermission(c, P_ADMIN)
+	if err != nil {
+		return err
+	}
+
 	// find report
 	var report Report
 	result := DB.Joins("Floor").First(&report, reportID)
@@ -48,6 +55,13 @@ func ListReports(c *fiber.Ctx) error {
 		return err
 	}
 	query.OrderBy = "`report`.`" + query.OrderBy + "`"
+
+	// check if admin
+	var user User
+	err = user.GetAndCheckPermission(c, P_ADMIN)
+	if err != nil {
+		return err
+	}
 
 	// find reports
 	var reports []Report
@@ -113,6 +127,13 @@ func AddReport(c *fiber.Ctx) error {
 func DeleteReport(c *fiber.Ctx) error {
 	// validate query
 	reportID, err := c.ParamsInt("id")
+	if err != nil {
+		return err
+	}
+
+	// check if admin
+	var user User
+	err = user.GetAndCheckPermission(c, P_ADMIN)
 	if err != nil {
 		return err
 	}
