@@ -1,6 +1,7 @@
 package models
 
 import (
+	"errors"
 	"strconv"
 	"strings"
 	"treehole_next/config"
@@ -49,8 +50,16 @@ func (user *User) GetUser(c *fiber.Ctx) error {
 
 	// get userinfo
 	claims := userToken.Claims.(jwt.MapClaims)
-	user.Roles = claims["roles"].([]string)
-	user.Nickname = claims["nickname"].(string)
+	roles, ok := claims["roles"].([]string)
+	if !ok {
+		return errors.New("jwt parse err")
+	}
+	user.Roles = roles
+	nickname, ok := claims["nickname"].(string)
+	if !ok {
+		return errors.New("jwt parse err")
+	}
+	user.Nickname = nickname
 	for _, v := range user.Roles {
 		if v == "admin" {
 			user.Permission |= P_ADMIN
