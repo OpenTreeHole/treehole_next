@@ -1,4 +1,4 @@
-basePath: /
+basePath: /api
 definitions:
   division.CreateModel:
     properties:

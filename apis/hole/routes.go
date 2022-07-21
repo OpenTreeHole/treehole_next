@@ -2,7 +2,7 @@ package hole
 
 import "github.com/gofiber/fiber/v2"
 
-func RegisterRoutes(app *fiber.App) {
+func RegisterRoutes(app fiber.Router) {
 	app.Get("/divisions/:id/holes", ListHolesByDivision)
 	app.Get("/tags/:name/holes", ListHolesByTag)
 	app.Get("/holes/:id", GetHole)

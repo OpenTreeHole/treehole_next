@@ -2,8 +2,6 @@ package apis
 
 import (
 	"github.com/gofiber/fiber/v2"
-	fiberSwagger "github.com/swaggo/fiber-swagger"
-	_ "treehole_next/docs"
 )
 
 // Index
@@ -12,12 +10,4 @@ import (
 // @Router / [get]
 func Index(c *fiber.Ctx) error {
 	return c.SendFile("data/meta.json")
-}
-
-func registerRoutes(app *fiber.App) {
-	app.Get("/", Index)
-	app.Get("/docs", func(c *fiber.Ctx) error {
-		return c.Redirect("/docs/index.html")
-	})
-	app.Get("/docs/*", fiberSwagger.WrapHandler)
 }
