@@ -255,7 +255,6 @@ func ModifyHole(c *fiber.Ctx) error {
 			if err != nil {
 				return err
 			}
-
 		} else {
 			return Forbidden()
 		}
@@ -264,6 +263,8 @@ func ModifyHole(c *fiber.Ctx) error {
 	// save
 	DB.Omit("Tags").Save(&hole)
 
+	// log
+	MyLog("Hole", "Modify", holeID, user.ID)
 	return Serialize(c, &hole)
 }
 
@@ -301,6 +302,9 @@ func DeleteHole(c *fiber.Ctx) error {
 	if result.RowsAffected == 0 {
 		return gorm.ErrRecordNotFound
 	}
+
+	// log
+	MyLog("Hole", "Delete", holeID, user.ID)
 	return c.Status(204).JSON(nil)
 }
 
