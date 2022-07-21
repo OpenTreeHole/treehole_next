@@ -11,16 +11,17 @@ RUN apk add --no-cache --virtual .build-deps \
 
 COPY . .
 
-RUN go build -o go
+RUN go build -o treehole
 
 FROM alpine
 
 WORKDIR /app
 
-COPY --from=builder /app/go /app/
+COPY --from=builder /app/treehole /app/
+COPY --from=builder /app/data /app/
 
 ENV MODE=production
 
 EXPOSE 8000
 
-ENTRYPOINT ["./go"]
+ENTRYPOINT ["./treehole"]
