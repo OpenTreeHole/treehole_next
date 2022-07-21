@@ -156,12 +156,22 @@ func (floor *Floor) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 		tx = DB
 	}
 
-	userID, err := GetUserID(c)
+	// get user
+	var user User
+	err := user.GetUser(c)
 	if err != nil {
 		return err
 	}
-	floor.UserID = userID
+	floor.UserID = user.ID
 	floor.IsMe = true
+
+	// permission
+	var hole Hole
+	DB.Select("division_id").First(&hole, floor.HoleID)
+	if user.BanDivision[hole.DivisionID] ||
+		floor.SpecialTag != "" && !user.CheckPermission(P_OPERATOR) {
+		return utils.Forbidden()
+	}
 
 	err = tx.Transaction(func(tx *gorm.DB) error {
 		// get anonymous name
@@ -169,7 +179,7 @@ func (floor *Floor) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 
 		result := tx.
 			Where("hole_id = ?", floor.HoleID).
-			Where("user_id = ?", userID).
+			Where("user_id = ?", floor.UserID).
 			Take(&mapping)
 
 		if result.Error != nil {
@@ -188,7 +198,7 @@ func (floor *Floor) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 
 			floor.Anonyname = utils.GenerateName(names)
 			result = tx.Create(&AnonynameMapping{
-				UserID:    userID,
+				UserID:    floor.UserID,
 				HoleID:    floor.HoleID,
 				Anonyname: floor.Anonyname,
 			})
@@ -207,7 +217,7 @@ func (floor *Floor) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 			}).Model(&Floor{}).Where("hole_id = ?", floor.HoleID).
 				Count(&count)
 			if result.Error != nil {
-				return err
+				return result.Error
 			}
 			floor.Storey = int(count) + 1
 			floor.Path = "/"
@@ -221,14 +231,14 @@ func (floor *Floor) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 				floor.HoleID, floor.ReplyTo).
 				Scan(&storey)
 			if result.Error != nil {
-				return err
+				return result.Error
 			}
 			result = tx.
 				Exec(`UPDATE floor SET storey = storey + 1
 					WHERE hole_id = ? AND storey > ?`,
 					floor.HoleID, storey)
 			if result.Error != nil {
-				return err
+				return result.Error
 			}
 			floor.Storey = storey + 1
 			var replyPath string
@@ -237,7 +247,7 @@ func (floor *Floor) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 					floor.ReplyTo).
 				Scan(&replyPath)
 			if result.Error != nil {
-				return err
+				return result.Error
 			}
 			floor.Path = replyPath + strconv.Itoa(floor.ReplyTo) + "/"
 		}

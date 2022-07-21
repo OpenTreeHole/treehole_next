@@ -24,6 +24,13 @@ func AddDivision(c *fiber.Ctx) error {
 		return err
 	}
 
+	// check if admin
+	var user User
+	err = user.GetAndCheckPermission(c, P_ADMIN)
+	if err != nil {
+		return err
+	}
+
 	// bind division
 	var division Division
 	division.Name = body.Name
@@ -83,6 +90,14 @@ func ModifyDivision(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
+
+	// check if admin
+	var user User
+	err = user.GetAndCheckPermission(c, P_ADMIN)
+	if err != nil {
+		return err
+	}
+
 	id, _ := c.ParamsInt("id")
 	division.ID = id
 	division.Name = body.Name
@@ -111,6 +126,14 @@ func DeleteDivision(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
+
+	// check if admin
+	var user User
+	err = user.GetAndCheckPermission(c, P_ADMIN)
+	if err != nil {
+		return err
+	}
+
 	if body.To == 0 { // default 1
 		body.To = 1
 	}

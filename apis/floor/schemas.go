@@ -1,13 +1,16 @@
 package floor
 
 import (
-	"gorm.io/gorm"
 	"treehole_next/models"
+
+	"gorm.io/gorm"
 )
 
 type content struct {
 	// Owner or admin, the original content should be moved to  floor_history
 	Content string `json:"content" validate:"required"`
+	// Admin and Operator only
+	SpecialTag string `json:"special_tag" validate:"max=16"`
 }
 
 type ListModel struct {
@@ -46,8 +49,6 @@ type ModifyModel struct {
 	Like string `json:"like" validate:"oneof=add cancel"`
 	// Admin only
 	Fold string `json:"fold" validate:"max=16"`
-	// Admin only
-	SpecialTag string `json:"special_tag" validate:"max=16"`
 }
 
 type DeleteModel struct {

@@ -41,6 +41,8 @@ type divisionID struct {
 type CreateModel struct {
 	Content string `json:"content" validate:"required"`
 	tags
+	// Admin and Operator only
+	SpecialTag string `json:"special_tag" validate:"max=16"`
 }
 
 type CreateOldModel struct {

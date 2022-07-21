@@ -115,10 +115,12 @@ func CreateFloor(c *fiber.Ctx) error {
 		return err
 	}
 
+	// create floor
 	floor := Floor{
-		HoleID:  holeID,
-		Content: body.Content,
-		ReplyTo: body.ReplyTo,
+		HoleID:     holeID,
+		Content:    body.Content,
+		ReplyTo:    body.ReplyTo,
+		SpecialTag: body.SpecialTag,
 	}
 	err = floor.Create(c)
 	if err != nil {
@@ -143,10 +145,12 @@ func CreateFloorOld(c *fiber.Ctx) error {
 		return err
 	}
 
+	// create floor
 	floor := Floor{
-		HoleID:  body.HoleID,
-		Content: body.Content,
-		ReplyTo: body.ReplyTo,
+		HoleID:     body.HoleID,
+		Content:    body.Content,
+		ReplyTo:    body.ReplyTo,
+		SpecialTag: body.SpecialTag,
 	}
 	err = floor.Create(c)
 	if err != nil {
@@ -197,7 +201,7 @@ func ModifyFloor(c *fiber.Ctx) error {
 		var reason string
 		if user.ID == floor.UserID {
 			reason = "该内容已被作者修改"
-		} else if user.IsAdmin {
+		} else if user.CheckPermission(P_ADMIN) {
 			reason = "该内容已被管理员修改"
 		} else {
 			return Forbidden()
@@ -209,21 +213,22 @@ func ModifyFloor(c *fiber.Ctx) error {
 		floor.Content = body.Content
 
 		// find mention
-		err := floor.LoadMention()
+		err := floor.FindMention(DB)
 		if err != nil {
 			return err
 		}
 	}
 
 	if body.Fold != "" {
-		if !user.IsAdmin {
+		if !user.CheckPermission(P_ADMIN) {
 			return Forbidden()
 		}
 		floor.Fold = body.Fold
 	}
 
 	if body.SpecialTag != "" {
-		if !user.IsAdmin {
+		// operator can modify specialTag
+		if !user.CheckPermission(P_OPERATOR) {
 			return Forbidden()
 		}
 		floor.SpecialTag = body.SpecialTag
@@ -292,6 +297,7 @@ func ModifyFloorLike(c *fiber.Ctx) error {
 // @Success 200 {object} Floor
 // @Failure 404 {object} MessageModel
 func DeleteFloor(c *fiber.Ctx) error {
+	// validate body
 	var body DeleteModel
 	err := ValidateBody(c, &body)
 	if err != nil {
@@ -303,10 +309,22 @@ func DeleteFloor(c *fiber.Ctx) error {
 		return err
 	}
 
+	// get user
+	var user User
+	err = user.GetUser(c)
+	if err != nil {
+		return err
+	}
+
 	var floor Floor
 	result := DB.First(&floor, floorID)
 	if result.Error != nil {
 		return result.Error
+	}
+
+	// permission
+	if user.ID != floor.UserID || !user.CheckPermission(P_ADMIN) {
+		return Forbidden()
 	}
 
 	err = floor.Backup(c, body.Reason)

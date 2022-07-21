@@ -2,12 +2,14 @@ package models
 
 import (
 	"fmt"
-	"github.com/gofiber/fiber/v2"
-	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 	"strings"
 	"time"
 	"treehole_next/config"
+	"treehole_next/utils"
+
+	"github.com/gofiber/fiber/v2"
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type HoleFloor struct {
@@ -19,6 +21,7 @@ type HoleFloor struct {
 type Hole struct {
 	BaseModel
 	DivisionID int                `json:"division_id"`
+	UserID     int                `json:"-"` // permission
 	Tags       []*Tag             `json:"tags" gorm:"many2many:hole_tags"`
 	Floors     []Floor            `json:"-"`
 	HoleFloor  HoleFloor          `json:"floors" gorm:"-:all"` // return floors
@@ -197,7 +200,7 @@ func (holes Holes) Preprocess(c *fiber.Ctx) error {
 func MakeQuerySet(c *fiber.Ctx) *gorm.DB {
 	var user User
 	_ = user.GetUser(c)
-	if user.IsAdmin {
+	if user.CheckPermission(P_ADMIN) {
 		return DB
 	} else {
 		return DB.Where("hidden = ?", false)
@@ -286,7 +289,7 @@ func (hole *Hole) SetTags(tx *gorm.DB, clear bool) error {
 	return nil
 }
 
-func (hole *Hole) Create(c *fiber.Ctx, content *string, db ...*gorm.DB) error {
+func (hole *Hole) Create(c *fiber.Ctx, content *string, specialTag *string, db ...*gorm.DB) error {
 	var tx *gorm.DB
 	if len(db) > 0 {
 		tx = db[0]
@@ -294,7 +297,19 @@ func (hole *Hole) Create(c *fiber.Ctx, content *string, db ...*gorm.DB) error {
 		tx = DB
 	}
 
-	err := tx.Transaction(func(tx *gorm.DB) error {
+	// permission
+	var user User
+	err := user.GetUser(c)
+	if err != nil {
+		return err
+	}
+	if user.BanDivision[hole.DivisionID] ||
+		*specialTag != "" && !user.CheckPermission(P_OPERATOR) {
+		return utils.Forbidden()
+	}
+	hole.UserID = user.ID
+
+	err = tx.Transaction(func(tx *gorm.DB) error {
 		// Create hole
 		result := tx.Omit("Tags").Create(hole) // tags are created in AfterCreate hook
 		if result.Error != nil {
@@ -303,14 +318,16 @@ func (hole *Hole) Create(c *fiber.Ctx, content *string, db ...*gorm.DB) error {
 
 		// Bind and Create floor
 		floor := Floor{
-			HoleID:  hole.ID,
-			Content: *content,
+			HoleID:     hole.ID,
+			Content:    *content,
+			UserID:     hole.UserID,
+			SpecialTag: *specialTag,
+			IsMe:       true,
 		}
 		err := floor.Create(c, tx)
 		if err != nil {
 			return err
 		}
-
 		return nil
 	})
 
