@@ -18,7 +18,7 @@ FROM alpine
 WORKDIR /app
 
 COPY --from=builder /app/treehole /app/
-COPY --from=builder /app/data /app/
+COPY data data
 
 ENV MODE=production
 
