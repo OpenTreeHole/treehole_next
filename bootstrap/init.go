@@ -1,6 +1,7 @@
 package bootstrap
 
 import (
+	"github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v2"
 	"treehole_next/apis"
 	"treehole_next/config"
@@ -15,6 +16,8 @@ func Init() *fiber.App {
 
 	app := fiber.New(fiber.Config{
 		ErrorHandler: utils.MyErrorHandler,
+		JSONEncoder:  json.Marshal,
+		JSONDecoder:  json.Unmarshal,
 	})
 	middlewares.RegisterMiddlewares(app)
 	apis.RegisterRoutes(app)
