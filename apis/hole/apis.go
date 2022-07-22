@@ -1,6 +1,8 @@
 package hole
 
 import (
+	"fmt"
+	"strconv"
 	. "treehole_next/models"
 	. "treehole_next/utils"
 
@@ -243,6 +245,8 @@ func ModifyHole(c *fiber.Ctx) error {
 			return Forbidden("非管理员禁止修改分区")
 		}
 		hole.DivisionID = body.DivisionID
+		// log
+		go MyLog("Hole", "Modify", holeID, user.ID, "DivisionID to: ", strconv.Itoa(hole.DivisionID))
 	}
 	if len(body.Tags) != 0 {
 		if user.CheckPermission(P_ADMIN) || user.ID == hole.UserID {
@@ -255,6 +259,14 @@ func ModifyHole(c *fiber.Ctx) error {
 			if err != nil {
 				return err
 			}
+
+			// log
+			if user.CheckPermission(P_ADMIN) {
+				go MyLog("Hole", "Modify", holeID, user.ID, "[admin]NewTags: ", fmt.Sprintf("%v", body.Tags))
+			} else {
+				go MyLog("Hole", "Modify", holeID, user.ID, "[owner]NewTags: ", fmt.Sprintf("%v", body.Tags))
+			}
+
 		} else {
 			return Forbidden()
 		}
@@ -263,8 +275,6 @@ func ModifyHole(c *fiber.Ctx) error {
 	// save
 	DB.Omit("Tags").Save(&hole)
 
-	// log
-	MyLog("Hole", "Modify", holeID, user.ID)
 	return Serialize(c, &hole)
 }
 
@@ -304,7 +314,7 @@ func DeleteHole(c *fiber.Ctx) error {
 	}
 
 	// log
-	MyLog("Hole", "Delete", holeID, user.ID)
+	go MyLog("Hole", "Delete", holeID, user.ID, "[admin]")
 	return c.Status(204).JSON(nil)
 }
 
