@@ -96,7 +96,11 @@ func ModifyTag(c *fiber.Ctx) error {
 	DB.Save(&tag)
 
 	// log
-	MyLog("Tag", "Modify", tag.ID, user.ID)
+	userID, err := GetUserID(c)
+	if err != nil {
+		return err
+	}
+	MyLog("Tag", "Modify", tag.ID, userID)
 	return c.JSON(&tag)
 }
 
@@ -168,6 +172,10 @@ func DeleteTag(c *fiber.Ctx) error {
 	}
 
 	// log
-	MyLog("Tag", "Delete", id, user.ID)
+	userID, err := GetUserID(c)
+	if err != nil {
+		return err
+	}
+	MyLog("Tag", "Delete", id, userID)
 	return c.JSON(&newTag)
 }

@@ -131,6 +131,11 @@ func DeleteReport(c *fiber.Ctx) error {
 	// TODO: notification to reporter
 
 	// log
-	MyLog("Report", "Delete", reportID, user.ID)
+	userID, err := GetUserID(c)
+	if err != nil {
+		return err
+	}
+	MyLog("Report", "Delete", reportID, userID)
+
 	return c.JSON(&report)
 }

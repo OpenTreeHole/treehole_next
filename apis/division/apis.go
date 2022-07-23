@@ -92,18 +92,23 @@ func ModifyDivision(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-
+	division := Division{
+		Name:        body.Name,
+		Description: body.Description,
+		Pinned:      body.Pinned,
+	}
 	division.ID = id
-	division.Name = body.Name
-	division.Description = body.Description
-	division.Pinned = body.Pinned
 	result := DB.Model(&division).Updates(division)
 	// nothing updated, means that the record does not exist
 	if result.RowsAffected == 0 {
 		return gorm.ErrRecordNotFound
 	}
 	// log
-	go MyLog("Division", "Modify", division.ID, user.ID)
+	userID, err := GetUserID(c)
+	if err != nil {
+		return err
+	}
+	go MyLog("Division", "Modify", division.ID, userID)
 	return Serialize(c, &division)
 }
 
@@ -139,6 +144,10 @@ func DeleteDivision(c *fiber.Ctx) error {
 	DB.Delete(&Division{}, id)
 
 	// log
-	MyLog("Division", "Delete", id, user.ID, "To: ", strconv.Itoa(body.To))
+	userID, err := GetUserID(c)
+	if err != nil {
+		return err
+	}
+	MyLog("Division", "Delete", id, userID, "To: ", strconv.Itoa(body.To))
 	return c.Status(204).JSON(nil)
 }
