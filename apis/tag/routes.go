@@ -2,7 +2,7 @@ package tag
 
 import "github.com/gofiber/fiber/v2"
 
-func RegisterRoutes(app *fiber.App) {
+func RegisterRoutes(app fiber.Router) {
 	app.Get("/tags", ListTags)
 	app.Get("/tags/:id", GetTag)
 	app.Post("/tags", CreateTag)

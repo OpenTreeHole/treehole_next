@@ -56,13 +56,6 @@ func CreateTag(c *fiber.Ctx) error {
 		return err
 	}
 
-	// check if admin
-	var user User
-	err = user.GetAndCheckPermission(c, P_ADMIN)
-	if err != nil {
-		return err
-	}
-
 	// bind and create tag
 	tag.Name = body.Name
 	result := DB.Where("name = ?", body.Name).FirstOrCreate(&tag)
@@ -91,13 +84,6 @@ func ModifyTag(c *fiber.Ctx) error {
 		return err
 	}
 	id, err := c.ParamsInt("id")
-	if err != nil {
-		return err
-	}
-
-	// check if admin
-	var user User
-	err = user.GetAndCheckPermission(c, P_ADMIN)
 	if err != nil {
 		return err
 	}
@@ -132,13 +118,6 @@ func DeleteTag(c *fiber.Ctx) error {
 		return err
 	}
 	id, err := c.ParamsInt("id")
-	if err != nil {
-		return err
-	}
-
-	// check if admin
-	var user User
-	err = user.GetAndCheckPermission(c, P_ADMIN)
 	if err != nil {
 		return err
 	}

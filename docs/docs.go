@@ -1812,7 +1812,7 @@ const docTemplate = `{
 var SwaggerInfo = &swag.Spec{
 	Version:          "2.0.0",
 	Host:             "",
-	BasePath:         "/",
+	BasePath:         "/api",
 	Schemes:          []string{},
 	Title:            "Open Tree Hole",
 	Description:      "An Anonymous BBS \\n Note: PUT methods are used to PARTLY update, and we don't use PATCH method.",

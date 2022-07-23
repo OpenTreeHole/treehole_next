@@ -13,7 +13,7 @@
         },
         "version": "2.0.0"
     },
-    "basePath": "/",
+    "basePath": "/api",
     "paths": {
         "/": {
             "get": {
