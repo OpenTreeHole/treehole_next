@@ -94,6 +94,9 @@ func ModifyTag(c *fiber.Ctx) error {
 	tag.Name = body.Name
 	tag.Temperature = body.Temperature
 	DB.Save(&tag)
+
+	// log
+	MyLog("Tag", "Modify", tag.ID, user.ID)
 	return c.JSON(&tag)
 }
 
@@ -163,5 +166,8 @@ func DeleteTag(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
+
+	// log
+	MyLog("Tag", "Delete", id, user.ID)
 	return c.JSON(&newTag)
 }

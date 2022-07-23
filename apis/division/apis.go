@@ -1,6 +1,7 @@
 package division
 
 import (
+	"strconv"
 	. "treehole_next/models"
 	. "treehole_next/utils"
 
@@ -18,6 +19,7 @@ import (
 // @Success 201 {object} models.Division
 // @Success 200 {object} models.Division
 func AddDivision(c *fiber.Ctx) error {
+	// validate body
 	var body CreateModel
 	err := ValidateBody(c, &body)
 	if err != nil {
@@ -58,7 +60,10 @@ func ListDivisions(c *fiber.Ctx) error {
 // @Success 200 {object} models.Division
 // @Failure 404 {object} MessageModel
 func GetDivision(c *fiber.Ctx) error {
-	id, _ := c.ParamsInt("id")
+	id, err := c.ParamsInt("id")
+	if err != nil {
+		return err
+	}
 	var division Division
 	result := DB.First(&division, id)
 	if result.Error != nil {
@@ -77,21 +82,28 @@ func GetDivision(c *fiber.Ctx) error {
 // @Success 200 {object} models.Division
 // @Failure 404 {object} MessageModel
 func ModifyDivision(c *fiber.Ctx) error {
-	var division Division
+	// validate body
 	var body ModifyModel
 	err := ValidateBody(c, &body)
 	if err != nil {
 		return err
 	}
+	id, err := c.ParamsInt("id")
+	if err != nil {
+		return err
+	}
 
-	id, _ := c.ParamsInt("id")
 	division.ID = id
 	division.Name = body.Name
 	division.Description = body.Description
 	division.Pinned = body.Pinned
-	if result := DB.Model(&division).Updates(division); result.RowsAffected == 0 { // nothing updated, means that the record does not exist
+	result := DB.Model(&division).Updates(division)
+	// nothing updated, means that the record does not exist
+	if result.RowsAffected == 0 {
 		return gorm.ErrRecordNotFound
 	}
+	// log
+	go MyLog("Division", "Modify", division.ID, user.ID)
 	return Serialize(c, &division)
 }
 
@@ -106,9 +118,13 @@ func ModifyDivision(c *fiber.Ctx) error {
 // @Success 204
 // @Failure 404 {object} MessageModel
 func DeleteDivision(c *fiber.Ctx) error {
-	id, _ := c.ParamsInt("id")
+	// validate body
+	id, err := c.ParamsInt("id")
+	if err != nil {
+		return err
+	}
 	var body DeleteModel
-	err := ValidateBody(c, &body)
+	err = ValidateBody(c, &body)
 	if err != nil {
 		return err
 	}
@@ -121,5 +137,8 @@ func DeleteDivision(c *fiber.Ctx) error {
 	}
 	DB.Exec("UPDATE hole SET division_id = ? WHERE division_id = ?", body.To, id)
 	DB.Delete(&Division{}, id)
+
+	// log
+	MyLog("Division", "Delete", id, user.ID, "To: ", strconv.Itoa(body.To))
 	return c.Status(204).JSON(nil)
 }

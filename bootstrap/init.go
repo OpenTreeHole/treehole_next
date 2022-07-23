@@ -13,6 +13,7 @@ import (
 func Init() *fiber.App {
 	config.InitConfig()
 	models.InitDB()
+	utils.Logger, _ = utils.InitLog()
 
 	app := fiber.New(fiber.Config{
 		ErrorHandler: utils.MyErrorHandler,

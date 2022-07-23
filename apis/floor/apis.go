@@ -1,6 +1,7 @@
 package floor
 
 import (
+	"fmt"
 	. "treehole_next/models"
 	. "treehole_next/utils"
 
@@ -201,8 +202,10 @@ func ModifyFloor(c *fiber.Ctx) error {
 		var reason string
 		if user.ID == floor.UserID {
 			reason = "该内容已被作者修改"
+			MyLog("Floor", "Modify", floorID, user.ID, "[owner]content")
 		} else if user.CheckPermission(P_ADMIN) {
 			reason = "该内容已被管理员修改"
+			MyLog("Floor", "Modify", floorID, user.ID, "[admin]content")
 		} else {
 			return Forbidden()
 		}
@@ -224,6 +227,7 @@ func ModifyFloor(c *fiber.Ctx) error {
 			return Forbidden()
 		}
 		floor.Fold = body.Fold
+		MyLog("Floor", "Modify", floorID, user.ID, "[admin]fold")
 	}
 
 	if body.SpecialTag != "" {
@@ -232,6 +236,7 @@ func ModifyFloor(c *fiber.Ctx) error {
 			return Forbidden()
 		}
 		floor.SpecialTag = body.SpecialTag
+		MyLog("Floor", "Modify", floorID, user.ID, "[operator]specialTag to: ", fmt.Sprintf("%v", floor.SpecialTag))
 	}
 
 	if body.Like == "add" {
@@ -334,6 +339,13 @@ func DeleteFloor(c *fiber.Ctx) error {
 
 	floor.Deleted = true
 	DB.Save(&floor)
+
+	// log
+	if user.ID == floor.UserID {
+		MyLog("Floor", "Delete", floorID, user.ID, "[owner]reason: ", body.Reason)
+	} else {
+		MyLog("Floor", "Delete", floorID, user.ID, "[admin]reason: ", body.Reason)
+	}
 
 	return Serialize(c, &floor)
 }
