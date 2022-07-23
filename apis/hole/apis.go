@@ -246,7 +246,7 @@ func ModifyHole(c *fiber.Ctx) error {
 		}
 		hole.DivisionID = body.DivisionID
 		// log
-		go MyLog("Hole", "Modify", holeID, user.ID, "DivisionID to: ", strconv.Itoa(hole.DivisionID))
+		MyLog("Hole", "Modify", holeID, user.ID, "DivisionID to: ", strconv.Itoa(hole.DivisionID))
 	}
 	if len(body.Tags) != 0 {
 		if user.CheckPermission(P_ADMIN) || user.ID == hole.UserID {
@@ -262,9 +262,9 @@ func ModifyHole(c *fiber.Ctx) error {
 
 			// log
 			if user.CheckPermission(P_ADMIN) {
-				go MyLog("Hole", "Modify", holeID, user.ID, "[admin]NewTags: ", fmt.Sprintf("%v", body.Tags))
+				MyLog("Hole", "Modify", holeID, user.ID, "[admin]NewTags: ", fmt.Sprintf("%v", body.Tags))
 			} else {
-				go MyLog("Hole", "Modify", holeID, user.ID, "[owner]NewTags: ", fmt.Sprintf("%v", body.Tags))
+				MyLog("Hole", "Modify", holeID, user.ID, "[owner]NewTags: ", fmt.Sprintf("%v", body.Tags))
 			}
 
 		} else {
@@ -314,7 +314,7 @@ func DeleteHole(c *fiber.Ctx) error {
 	}
 
 	// log
-	go MyLog("Hole", "Delete", holeID, user.ID, "[admin]")
+	MyLog("Hole", "Delete", holeID, user.ID)
 	return c.Status(204).JSON(nil)
 }
 

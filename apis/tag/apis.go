@@ -110,7 +110,7 @@ func ModifyTag(c *fiber.Ctx) error {
 	DB.Save(&tag)
 
 	// log
-	go MyLog("Tag", "Modify", tag.ID, user.ID, "[admin]")
+	MyLog("Tag", "Modify", tag.ID, user.ID)
 	return c.JSON(&tag)
 }
 
@@ -189,6 +189,6 @@ func DeleteTag(c *fiber.Ctx) error {
 	}
 
 	// log
-	go MyLog("Tag", "Delete", id, user.ID, "[admin]")
+	MyLog("Tag", "Delete", id, user.ID)
 	return c.JSON(&newTag)
 }

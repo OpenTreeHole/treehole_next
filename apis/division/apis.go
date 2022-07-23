@@ -118,7 +118,7 @@ func ModifyDivision(c *fiber.Ctx) error {
 		return gorm.ErrRecordNotFound
 	}
 	// log
-	go MyLog("Division", "Modify", division.ID, user.ID, "[admin]")
+	go MyLog("Division", "Modify", division.ID, user.ID)
 	return Serialize(c, &division)
 }
 
@@ -161,6 +161,6 @@ func DeleteDivision(c *fiber.Ctx) error {
 	DB.Delete(&Division{}, id)
 
 	// log
-	go MyLog("Division", "Delete", id, user.ID, "[admin]To: ", strconv.Itoa(body.To))
+	MyLog("Division", "Delete", id, user.ID, "To: ", strconv.Itoa(body.To))
 	return c.Status(204).JSON(nil)
 }
