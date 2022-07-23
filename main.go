@@ -2,6 +2,7 @@ package main
 
 import (
 	"treehole_next/bootstrap"
+	"treehole_next/utils"
 )
 
 // @title Open Tree Hole
@@ -22,6 +23,7 @@ import (
 // @name Authorization
 func main() {
 	app := bootstrap.Init()
+	defer utils.Logger.Sync()
 	err := app.Listen("0.0.0.0:8000")
 	if err != nil {
 		panic(err)
