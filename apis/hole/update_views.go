@@ -2,10 +2,12 @@ package hole
 
 import (
 	"fmt"
+	"go.uber.org/zap"
 	"strconv"
 	"strings"
 	"time"
 	. "treehole_next/models"
+	"treehole_next/utils"
 )
 
 var holeViewsChan = make(chan int, 100)
@@ -31,7 +33,6 @@ func updateHoleViews() {
 		END
 		WHERE id IN (1,2,3)
 	*/
-	fmt.Println("updating hole views ...")
 	length := len(holeViews)
 	if length == 0 {
 		return
@@ -52,9 +53,12 @@ func updateHoleViews() {
 
 	result := DB.Exec(builder.String())
 	if result.Error != nil {
-		fmt.Println(result.Error)
+		utils.Logger.Error(result.Error.Error())
 	} else {
-		fmt.Println("update hole views success", result.RowsAffected)
+		utils.Logger.Info(
+			"update hole views success",
+			zap.Strings("updated", keys),
+		)
 	}
 }
 
