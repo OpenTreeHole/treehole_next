@@ -35,7 +35,7 @@ type tags struct {
 }
 
 type divisionID struct {
-	DivisionID int `json:"division_id" validate:"min=1"` // Admin only
+	DivisionID int `json:"division_id" validate:"omitempty,min=1"` // Admin only
 }
 
 type CreateModel struct {
