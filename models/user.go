@@ -97,7 +97,7 @@ func GetUserID(c *fiber.Ctx) (int, error) {
 
 	id, err := strconv.Atoi(c.Get("X-Consumer-Username"))
 	if err != nil {
-		return 0, err
+		return 0, utils.Unauthorized("Unauthorized")
 	}
 
 	return id, nil
