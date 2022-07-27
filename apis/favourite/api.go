@@ -26,8 +26,10 @@ func ListFavorites(c *fiber.Ctx) error {
 	JOIN user_favorites 
 	ON user_favorites.hole_id = hole.id 
 	AND user_favorites.user_id = ?`
-
-	DB.Raw(sql, userID).Scan(&holes)
+	result := DB.Raw(sql, userID).Scan(&holes)
+	if result.Error != nil {
+		return result.Error
+	}
 	return Serialize(c, &holes)
 }
 
