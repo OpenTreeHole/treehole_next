@@ -292,7 +292,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     },
                     "404": {
                         "description": "Not Found",
@@ -845,7 +845,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     },
                     "404": {
                         "description": "Not Found",
@@ -875,7 +875,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     },
                     "404": {
                         "description": "Not Found",
@@ -977,7 +977,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     },
                     "400": {
                         "description": "Bad Request",
@@ -1286,6 +1286,130 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/user/favorites": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Favorite"
+                ],
+                "summary": "List User's Favorites",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Hole"
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Favorite"
+                ],
+                "summary": "Modify User's Favorites",
+                "parameters": [
+                    {
+                        "description": "json",
+                        "name": "json",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/favourite.ModifyModel"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.MessageModel"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.MessageModel"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Favorite"
+                ],
+                "summary": "Add A Favorite",
+                "parameters": [
+                    {
+                        "description": "json",
+                        "name": "json",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/favourite.AddModel"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.MessageModel"
+                        }
+                    },
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/models.MessageModel"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Favorite"
+                ],
+                "summary": "Delete A Favorite",
+                "parameters": [
+                    {
+                        "description": "json",
+                        "name": "json",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/favourite.DeleteModel"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.MessageModel"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -1320,6 +1444,33 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "pinned": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                }
+            }
+        },
+        "favourite.AddModel": {
+            "type": "object",
+            "properties": {
+                "hole_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "favourite.DeleteModel": {
+            "type": "object",
+            "properties": {
+                "hole_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "favourite.ModifyModel": {
+            "type": "object",
+            "properties": {
+                "hole_ids": {
                     "type": "array",
                     "items": {
                         "type": "integer"
