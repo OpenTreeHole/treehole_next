@@ -1400,7 +1400,10 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.MessageModel"
+                        }
                     },
                     "404": {
                         "description": "Not Found",

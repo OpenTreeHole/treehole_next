@@ -1232,6 +1232,8 @@ paths:
       responses:
         "200":
           description: OK
+          schema:
+            $ref: '#/definitions/models.MessageModel'
         "404":
           description: Not Found
           schema:
