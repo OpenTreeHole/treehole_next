@@ -100,7 +100,7 @@ func ModifyFavorite(c *fiber.Ctx) error {
 // @Produce application/json
 // @Router /user/favorites [delete]
 // @Param json body DeleteModel true "json"
-// @Success 200
+// @Success 200 {object} models.MessageModel
 // @Failure 404 {object} models.MessageModel
 func DeleteFavorite(c *fiber.Ctx) error {
 	// validate body
