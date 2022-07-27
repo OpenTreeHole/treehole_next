@@ -1,14 +1,16 @@
 package apis
 
 import (
-	"github.com/gofiber/fiber/v2"
-	fiberSwagger "github.com/swaggo/fiber-swagger"
 	"treehole_next/apis/division"
+	"treehole_next/apis/favourite"
 	"treehole_next/apis/floor"
 	"treehole_next/apis/hole"
 	"treehole_next/apis/report"
 	"treehole_next/apis/tag"
 	_ "treehole_next/docs"
+
+	"github.com/gofiber/fiber/v2"
+	fiberSwagger "github.com/swaggo/fiber-swagger"
 )
 
 func registerRoutes(app *fiber.App) {
@@ -31,4 +33,5 @@ func RegisterRoutes(app *fiber.App) {
 	hole.RegisterRoutes(group)
 	floor.RegisterRoutes(group)
 	report.RegisterRoutes(group)
+	favourite.RegisterRoutes(group)
 }

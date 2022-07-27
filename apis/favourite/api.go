@@ -1,6 +1,11 @@
 package favourite
 
-import "github.com/gofiber/fiber/v2"
+import (
+	. "treehole_next/models"
+	. "treehole_next/utils"
+
+	"github.com/gofiber/fiber/v2"
+)
 
 // ListFavorites
 // @Summary List User's Favorites
@@ -9,7 +14,21 @@ import "github.com/gofiber/fiber/v2"
 // @Router /user/favorites [get]
 // @Success 200 {array} models.Hole
 func ListFavorites(c *fiber.Ctx) error {
-	return nil
+	// get userID
+	userID, err := GetUserID(c)
+	if err != nil {
+		return err
+	}
+
+	// get favorites
+	var holes Holes
+	sql := `SELECT * FROM hole 
+	JOIN user_favorites 
+	ON user_favorites.hole_id = hole.id 
+	AND user_favorites.user_id = ?`
+
+	DB.Raw(sql, userID).Scan(&holes)
+	return Serialize(c, &holes)
 }
 
 // AddFavorite
@@ -22,7 +41,25 @@ func ListFavorites(c *fiber.Ctx) error {
 // @Success 201 {object} models.MessageModel
 // @Success 200 {object} models.MessageModel
 func AddFavorite(c *fiber.Ctx) error {
-	return nil
+	// validate body
+	var body AddModel
+	err := ValidateBody(c, &body)
+	if err != nil {
+		return err
+	}
+
+	// get userID
+	userID, err := GetUserID(c)
+	if err != nil {
+		return err
+	}
+
+	// add favorite
+	err = UserCreateFavourite(c, false, userID, []int{body.HoleID})
+	if err != nil {
+		return err
+	}
+	return c.JSON(MessageModel{Message: "收藏成功"})
 }
 
 // ModifyFavorite
@@ -34,7 +71,25 @@ func AddFavorite(c *fiber.Ctx) error {
 // @Success 200 {object} models.MessageModel
 // @Failure 404 {object} models.MessageModel
 func ModifyFavorite(c *fiber.Ctx) error {
-	return nil
+	// validate body
+	var body ModifyModel
+	err := ValidateBody(c, &body)
+	if err != nil {
+		return err
+	}
+
+	// get userID
+	userID, err := GetUserID(c)
+	if err != nil {
+		return err
+	}
+
+	// modify favorite
+	err = UserCreateFavourite(c, true, userID, body.HoleIDs)
+	if err != nil {
+		return err
+	}
+	return c.JSON(MessageModel{Message: "修改成功"})
 }
 
 // DeleteFavorite
@@ -43,8 +98,26 @@ func ModifyFavorite(c *fiber.Ctx) error {
 // @Produce application/json
 // @Router /user/favorites [delete]
 // @Param json body DeleteModel true "json"
-// @Success 204
+// @Success 200
 // @Failure 404 {object} models.MessageModel
 func DeleteFavorite(c *fiber.Ctx) error {
-	return nil
+	// validate body
+	var body DeleteModel
+	err := ValidateBody(c, &body)
+	if err != nil {
+		return err
+	}
+
+	// get userID
+	userID, err := GetUserID(c)
+	if err != nil {
+		return err
+	}
+
+	// modify favorite
+	err = UserDeleteFavorite(userID, []int{body.HoleID})
+	if err != nil {
+		return err
+	}
+	return c.JSON(MessageModel{Message: "删除成功"})
 }

@@ -3,6 +3,7 @@ package models
 import (
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"strconv"
 	"strings"
 	"treehole_next/config"
@@ -12,13 +13,17 @@ import (
 )
 
 type User struct {
-	BaseModel
-	Favorites   []Hole                 `json:"favorites" gorm:"many2many:user_favorites"`
+	ID          int                    `json:"id" gorm:"primarykey"`
 	Roles       []string               `json:"roles" gorm:"-:all"`
 	BanDivision map[int]bool           `json:"-" gorm:"-:all"`
 	Nickname    string                 `json:"nickname" gorm:"-:all"`
 	Config      map[string]interface{} `json:"config" gorm:"-:all"`
 	Permission  PermissionType         `json:"permission" gorm:"-:all"`
+}
+
+type UserFavorites struct {
+	UserID int `json:"user_id" gorm:"primarykey"`
+	HoleID int `json:"hole_id" gorm:"primarykey"`
 }
 
 // PermissionType enum
@@ -129,4 +134,40 @@ func (user *User) GetAndCheckPermission(c *fiber.Ctx, t PermissionType) error {
 //
 func (user *User) CheckPermission(t PermissionType) bool {
 	return user.Permission&t != 0
+}
+
+func UserCreateFavourite(c *fiber.Ctx, clear bool, userID int, holeIDs []int) error {
+	if clear {
+		DB.Exec("DELETE FROM user_favorites WHERE user_id = ?", userID)
+	}
+	var builder strings.Builder
+	if config.Config.Debug {
+		builder.WriteString("INSERT INTO")
+	} else {
+		builder.WriteString("INSERT IGNORE INTO")
+	}
+	builder.WriteString(" user_favorites (user_id, hole_id) VALUES ")
+	for i, holeID := range holeIDs {
+		builder.WriteString(fmt.Sprintf("(%d, %d)", userID, holeID))
+		if i != len(holeIDs)-1 {
+			builder.WriteString(", ")
+		}
+	}
+	if config.Config.Debug {
+		builder.WriteString(" ON CONFLICT DO NOTHING")
+	}
+	result := DB.Exec(builder.String())
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected != 0 {
+		c.Status(201)
+	}
+	return nil
+}
+
+func UserDeleteFavorite(userID int, holeIDs []int) error {
+	sql := "DELETE FROM user_favorites WHERE user_id = ? AND hole_id IN ?"
+	result := DB.Exec(sql, userID, holeIDs)
+	return result.Error
 }

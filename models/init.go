@@ -62,6 +62,7 @@ func InitDB() {
 		&FloorHistory{},
 		&FloorLike{},
 		&Report{},
+		&UserFavorites{},
 	)
 	if err != nil {
 		panic(err)
