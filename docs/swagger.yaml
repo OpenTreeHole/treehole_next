@@ -27,6 +27,23 @@ definitions:
           type: integer
         type: array
     type: object
+  favourite.AddModel:
+    properties:
+      hole_id:
+        type: integer
+    type: object
+  favourite.DeleteModel:
+    properties:
+      hole_id:
+        type: integer
+    type: object
+  favourite.ModifyModel:
+    properties:
+      hole_ids:
+        items:
+          type: integer
+        type: array
+    type: object
   floor.CreateModel:
     properties:
       content:
@@ -494,7 +511,7 @@ paths:
       - application/json
       responses:
         "204":
-          description: ""
+          description: No Content
         "404":
           description: Not Found
           schema:
@@ -860,7 +877,7 @@ paths:
       - application/json
       responses:
         "204":
-          description: ""
+          description: No Content
         "404":
           description: Not Found
           schema:
@@ -901,7 +918,7 @@ paths:
       - application/json
       responses:
         "204":
-          description: ""
+          description: No Content
         "404":
           description: Not Found
           schema:
@@ -997,7 +1014,7 @@ paths:
       - application/json
       responses:
         "204":
-          description: ""
+          description: No Content
         "400":
           description: Bad Request
           schema:
@@ -1201,6 +1218,88 @@ paths:
       summary: List Holes By Tag
       tags:
       - Hole
+  /user/favorites:
+    delete:
+      parameters:
+      - description: json
+        in: body
+        name: json
+        required: true
+        schema:
+          $ref: '#/definitions/favourite.DeleteModel'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.MessageModel'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.MessageModel'
+      summary: Delete A Favorite
+      tags:
+      - Favorite
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Hole'
+            type: array
+      summary: List User's Favorites
+      tags:
+      - Favorite
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: json
+        in: body
+        name: json
+        required: true
+        schema:
+          $ref: '#/definitions/favourite.AddModel'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.MessageModel'
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.MessageModel'
+      summary: Add A Favorite
+      tags:
+      - Favorite
+    put:
+      parameters:
+      - description: json
+        in: body
+        name: json
+        required: true
+        schema:
+          $ref: '#/definitions/favourite.ModifyModel'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.MessageModel'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.MessageModel'
+      summary: Modify User's Favorites
+      tags:
+      - Favorite
 securityDefinitions:
   ApiKeyAuth:
     in: header
