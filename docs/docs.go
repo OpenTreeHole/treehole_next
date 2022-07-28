@@ -590,6 +590,15 @@ const docTemplate = `{
                         "name": "floor_history_id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "description": "json",
+                        "name": "json",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/floor.RestoreModel"
+                        }
                     }
                 ],
                 "responses": {
@@ -1599,6 +1608,18 @@ const docTemplate = `{
                     "description": "Admin and Operator only",
                     "type": "string",
                     "maxLength": 16
+                }
+            }
+        },
+        "floor.RestoreModel": {
+            "type": "object",
+            "required": [
+                "restore_reason"
+            ],
+            "properties": {
+                "restore_reason": {
+                    "type": "string",
+                    "maxLength": 32
                 }
             }
         },

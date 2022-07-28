@@ -103,6 +103,14 @@ definitions:
         maxLength: 16
         type: string
     type: object
+  floor.RestoreModel:
+    properties:
+      restore_reason:
+        maxLength: 32
+        type: string
+    required:
+    - restore_reason
+    type: object
   hole.CreateModel:
     properties:
       content:
@@ -751,6 +759,12 @@ paths:
         name: floor_history_id
         required: true
         type: integer
+      - description: json
+        in: body
+        name: json
+        required: true
+        schema:
+          $ref: '#/definitions/floor.RestoreModel'
       responses:
         "200":
           description: OK

@@ -52,3 +52,7 @@ type ModifyModel struct {
 type DeleteModel struct {
 	Reason string `json:"delete_reason" validate:"max=32"`
 }
+
+type RestoreModel struct {
+	Reason string `json:"restore_reason" validate:"required,max=32"`
+}

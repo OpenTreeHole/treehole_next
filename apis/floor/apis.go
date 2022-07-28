@@ -378,9 +378,17 @@ func GetFloorHistory(c *fiber.Ctx) error {
 // @Router /floors/{id}/restore/{floor_history_id} [post]
 // @Param id path int true "id"
 // @Param floor_history_id path int true "floor_history_id"
+// @Param json body RestoreModel true "json"
 // @Success 200 {object} Floor
 // @Failure 404 {object} MessageModel
 func RestoreFloor(c *fiber.Ctx) error {
+	// validate body
+	var body RestoreModel
+	err := ValidateBody(c, &body)
+	if err != nil {
+		return err
+	}
+
 	// get id
 	floorID, err := c.ParamsInt("id")
 	if err != nil {
@@ -416,7 +424,7 @@ func RestoreFloor(c *fiber.Ctx) error {
 	if floorHistory.FloorID != floorID {
 		return BadRequest(fmt.Sprintf("%v 不是 #%v 的历史版本", floorHistoryID, floorID))
 	}
-	reason := fmt.Sprintf("Restore From HistoryID: %v", floorHistoryID)
+	reason := body.Reason
 	floor.Backup(c, reason)
 	floor.Deleted = false
 	floor.Content = floorHistory.Content
