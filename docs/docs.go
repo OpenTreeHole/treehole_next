@@ -569,6 +569,54 @@ const docTemplate = `{
                 }
             }
         },
+        "/floors/{id}/restore/{floor_history_id}": {
+            "post": {
+                "description": "Restore A Floor From A History Vertion",
+                "tags": [
+                    "Floor"
+                ],
+                "summary": "Restore A Floor",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "floor_history_id",
+                        "name": "floor_history_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "json",
+                        "name": "json",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/floor.RestoreModel"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Floor"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.MessageModel"
+                        }
+                    }
+                }
+            }
+        },
         "/holes": {
             "get": {
                 "produces": [
@@ -1488,7 +1536,6 @@ const docTemplate = `{
             ],
             "properties": {
                 "content": {
-                    "description": "Owner or admin, the original content should be moved to  floor_history",
                     "type": "string"
                 },
                 "reply_to": {
@@ -1510,7 +1557,6 @@ const docTemplate = `{
             ],
             "properties": {
                 "content": {
-                    "description": "Owner or admin, the original content should be moved to  floor_history",
                     "type": "string"
                 },
                 "hole_id": {
@@ -1540,9 +1586,6 @@ const docTemplate = `{
         },
         "floor.ModifyModel": {
             "type": "object",
-            "required": [
-                "content"
-            ],
             "properties": {
                 "content": {
                     "description": "Owner or admin, the original content should be moved to  floor_history",
@@ -1565,6 +1608,18 @@ const docTemplate = `{
                     "description": "Admin and Operator only",
                     "type": "string",
                     "maxLength": 16
+                }
+            }
+        },
+        "floor.RestoreModel": {
+            "type": "object",
+            "required": [
+                "restore_reason"
+            ],
+            "properties": {
+                "restore_reason": {
+                    "type": "string",
+                    "maxLength": 32
                 }
             }
         },

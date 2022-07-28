@@ -370,3 +370,67 @@ func GetFloorHistory(c *fiber.Ctx) error {
 	}
 	return c.JSON(&histories)
 }
+
+// RestoreFloor
+// @Summary Restore A Floor
+// @Description Restore A Floor From A History Vertion
+// @Tags Floor
+// @Router /floors/{id}/restore/{floor_history_id} [post]
+// @Param id path int true "id"
+// @Param floor_history_id path int true "floor_history_id"
+// @Param json body RestoreModel true "json"
+// @Success 200 {object} Floor
+// @Failure 404 {object} MessageModel
+func RestoreFloor(c *fiber.Ctx) error {
+	// validate body
+	var body RestoreModel
+	err := ValidateBody(c, &body)
+	if err != nil {
+		return err
+	}
+
+	// get id
+	floorID, err := c.ParamsInt("id")
+	if err != nil {
+		return err
+	}
+	floorHistoryID, err := c.ParamsInt("floor_history_id")
+	if err != nil {
+		return err
+	}
+
+	// get user
+	var user User
+	err = user.GetUser(c)
+	if err != nil {
+		return err
+	}
+
+	// permission check
+	if !user.CheckPermission(P_ADMIN) {
+		return Forbidden()
+	}
+
+	var floor Floor
+	result := DB.First(&floor, floorID)
+	if result.Error != nil {
+		return result.Error
+	}
+	var floorHistory FloorHistory
+	result = DB.First(&floorHistory, floorHistoryID)
+	if result.Error != nil {
+		return result.Error
+	}
+	if floorHistory.FloorID != floorID {
+		return BadRequest(fmt.Sprintf("%v 不是 #%v 的历史版本", floorHistoryID, floorID))
+	}
+	reason := body.Reason
+	floor.Backup(c, reason)
+	floor.Deleted = false
+	floor.Content = floorHistory.Content
+	DB.Save(&floor)
+
+	// log
+	MyLog("Floor", "Restore", floorID, user.ID, reason)
+	return Serialize(c, &floor)
+}

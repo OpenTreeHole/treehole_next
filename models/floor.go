@@ -97,18 +97,6 @@ func (floors Floors) Preprocess(c *fiber.Ctx) error {
 	return nil
 }
 
-func (floor *Floor) LoadMention() error {
-	var Mention Floors
-	err := DB.Model(floor).Association("Mention").Find(&Mention)
-	if err != nil {
-		return err
-	}
-	if Mention != nil {
-		floor.Mention = Mention
-	}
-	return nil
-}
-
 var reHole = regexp.MustCompile(`[^#]#(\d+)`)
 var reFloor = regexp.MustCompile(`##(\d+)`)
 
@@ -251,6 +239,11 @@ func (floor *Floor) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 			}
 			floor.Path = replyPath + strconv.Itoa(floor.ReplyTo) + "/"
 		}
+		// find mention
+		err = floor.FindMention(tx)
+		if err != nil {
+			return err
+		}
 
 		// create floor
 		result = tx.Create(floor)
@@ -263,15 +256,6 @@ func (floor *Floor) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 		return err
 	}
 
-	return nil
-}
-
-func (floor *Floor) BeforeCreate(tx *gorm.DB) (err error) {
-	// find mention
-	err = floor.FindMention(tx)
-	if err != nil {
-		return err
-	}
 	return nil
 }
 

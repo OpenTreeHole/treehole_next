@@ -47,7 +47,6 @@ definitions:
   floor.CreateModel:
     properties:
       content:
-        description: Owner or admin, the original content should be moved to  floor_history
         type: string
       reply_to:
         description: id of the floor to which replied
@@ -63,7 +62,6 @@ definitions:
   floor.CreateOldModel:
     properties:
       content:
-        description: Owner or admin, the original content should be moved to  floor_history
         type: string
       hole_id:
         minimum: 1
@@ -104,8 +102,14 @@ definitions:
         description: Admin and Operator only
         maxLength: 16
         type: string
+    type: object
+  floor.RestoreModel:
+    properties:
+      restore_reason:
+        maxLength: 32
+        type: string
     required:
-    - content
+    - restore_reason
     type: object
   hole.CreateModel:
     properties:
@@ -739,6 +743,38 @@ paths:
           schema:
             $ref: '#/definitions/models.MessageModel'
       summary: Modify A Floor's like
+      tags:
+      - Floor
+  /floors/{id}/restore/{floor_history_id}:
+    post:
+      description: Restore A Floor From A History Vertion
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: floor_history_id
+        in: path
+        name: floor_history_id
+        required: true
+        type: integer
+      - description: json
+        in: body
+        name: json
+        required: true
+        schema:
+          $ref: '#/definitions/floor.RestoreModel'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Floor'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.MessageModel'
+      summary: Restore A Floor
       tags:
       - Floor
   /holes:
