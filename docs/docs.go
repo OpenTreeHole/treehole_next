@@ -1527,7 +1527,6 @@ const docTemplate = `{
             ],
             "properties": {
                 "content": {
-                    "description": "Owner or admin, the original content should be moved to  floor_history",
                     "type": "string"
                 },
                 "reply_to": {
@@ -1549,7 +1548,6 @@ const docTemplate = `{
             ],
             "properties": {
                 "content": {
-                    "description": "Owner or admin, the original content should be moved to  floor_history",
                     "type": "string"
                 },
                 "hole_id": {
@@ -1579,9 +1577,6 @@ const docTemplate = `{
         },
         "floor.ModifyModel": {
             "type": "object",
-            "required": [
-                "content"
-            ],
             "properties": {
                 "content": {
                     "description": "Owner or admin, the original content should be moved to  floor_history",

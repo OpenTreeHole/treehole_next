@@ -47,7 +47,6 @@ definitions:
   floor.CreateModel:
     properties:
       content:
-        description: Owner or admin, the original content should be moved to  floor_history
         type: string
       reply_to:
         description: id of the floor to which replied
@@ -63,7 +62,6 @@ definitions:
   floor.CreateOldModel:
     properties:
       content:
-        description: Owner or admin, the original content should be moved to  floor_history
         type: string
       hole_id:
         minimum: 1
@@ -104,8 +102,6 @@ definitions:
         description: Admin and Operator only
         maxLength: 16
         type: string
-    required:
-    - content
     type: object
   hole.CreateModel:
     properties:
