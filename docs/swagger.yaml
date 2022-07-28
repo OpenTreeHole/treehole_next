@@ -741,6 +741,32 @@ paths:
       summary: Modify A Floor's like
       tags:
       - Floor
+  /floors/{id}/restore/{floor_history_id}:
+    post:
+      description: Restore A Floor From A History Vertion
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: floor_history_id
+        in: path
+        name: floor_history_id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Floor'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.MessageModel'
+      summary: Restore A Floor
+      tags:
+      - Floor
   /holes:
     get:
       deprecated: true
