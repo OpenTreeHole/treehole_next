@@ -777,6 +777,27 @@ paths:
       summary: Restore A Floor
       tags:
       - Floor
+  /floors/search:
+    post:
+      parameters:
+      - description: json
+        in: body
+        name: json
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Floor'
+            type: array
+      summary: SearchFloors In ElasticSearch
+      tags:
+      - Search
   /holes:
     get:
       deprecated: true
@@ -1108,27 +1129,6 @@ paths:
       summary: Get A Report
       tags:
       - Report
-  /search:
-    get:
-      parameters:
-      - description: json
-        in: body
-        name: json
-        required: true
-        schema:
-          type: object
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/models.Floor'
-            type: array
-      summary: SearchFloors In Elastic Search
-      tags:
-      - Search
   /tags:
     get:
       produces:

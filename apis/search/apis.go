@@ -3,6 +3,7 @@ package search
 import (
 	"bytes"
 	"encoding/json"
+	. "treehole_next/config"
 	. "treehole_next/models"
 	. "treehole_next/utils"
 

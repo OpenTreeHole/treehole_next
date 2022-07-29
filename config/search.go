@@ -1,8 +1,7 @@
-package models
+package config
 
 import (
 	"log"
-	"treehole_next/config"
 
 	"github.com/elastic/go-elasticsearch/v8"
 )
@@ -11,7 +10,7 @@ var ES *elasticsearch.Client
 
 func InitSearch() {
 	cfg := elasticsearch.Config{
-		Addresses: []string{config.Config.SearchUrl},
+		Addresses: []string{Config.SearchUrl},
 	}
 	es, err := elasticsearch.NewClient(cfg)
 	if err != nil {
