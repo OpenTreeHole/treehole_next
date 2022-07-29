@@ -576,16 +576,19 @@ paths:
       deprecated: true
       parameters:
       - in: query
-        name: holeID
-        type: integer
-      - in: query
-        name: offset
+        name: hole_id
         type: integer
       - default: 10
         in: query
         maximum: 30
         minimum: 0
-        name: size
+        name: length
+        type: integer
+      - in: query
+        name: s
+        type: string
+      - in: query
+        name: start_floor
         type: integer
       produces:
       - application/json

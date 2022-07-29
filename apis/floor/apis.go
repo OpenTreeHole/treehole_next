@@ -58,6 +58,10 @@ func ListFloorsOld(c *fiber.Ctx) error {
 		return err
 	}
 
+	if query.Search != "" {
+		return SearchFloorsOld(c, query)
+	}
+
 	// get floors
 	var floors Floors
 	result := query.BaseQuery().
@@ -425,7 +429,10 @@ func RestoreFloor(c *fiber.Ctx) error {
 		return BadRequest(fmt.Sprintf("%v 不是 #%v 的历史版本", floorHistoryID, floorID))
 	}
 	reason := body.Reason
-	floor.Backup(c, reason)
+	err = floor.Backup(c, reason)
+	if err != nil {
+		return err
+	}
 	floor.Deleted = false
 	floor.Content = floorHistory.Content
 	DB.Save(&floor)

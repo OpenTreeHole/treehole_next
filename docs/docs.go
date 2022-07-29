@@ -316,12 +316,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "integer",
-                        "name": "holeID",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "name": "offset",
+                        "name": "hole_id",
                         "in": "query"
                     },
                     {
@@ -329,7 +324,17 @@ const docTemplate = `{
                         "minimum": 0,
                         "type": "integer",
                         "default": 10,
-                        "name": "size",
+                        "name": "length",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "name": "s",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "name": "start_floor",
                         "in": "query"
                     }
                 ],

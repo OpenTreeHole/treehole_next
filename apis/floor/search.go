@@ -3,6 +3,7 @@ package floor
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"go.uber.org/zap"
 	. "treehole_next/config"
 	. "treehole_next/models"
@@ -48,11 +49,38 @@ type SearchFloorResponse struct {
 // @Success 200 {array} models.Floor
 func SearchFloors(c *fiber.Ctx) error {
 	// forwarding
-	var reqBody bytes.Buffer
-	reqBody.Write(c.Body())
+	var body bytes.Buffer
+	body.Write(c.Body())
+	return search(c, body)
+}
+
+func SearchFloorsOld(c *fiber.Ctx, query ListOldModel) error {
+	var body bytes.Buffer
+	body.WriteString(fmt.Sprintf(`
+	{
+		"query": {
+			"match": {
+				"content": {
+					"query": "%s",
+					"operator": "or"
+				}
+			}
+		},
+		"sort": {
+			"_score": {
+				"order": "desc"
+			}
+		},
+		"size": %d,
+		"from": %d
+	}`, query.Search, query.Size, query.Offset))
+	return search(c, body)
+}
+
+func search(c *fiber.Ctx, body bytes.Buffer) error {
 	res, err := ES.Search(
 		ES.Search.WithIndex("floor"),
-		ES.Search.WithBody(&reqBody),
+		ES.Search.WithBody(&body),
 	)
 	if err != nil {
 		return err
