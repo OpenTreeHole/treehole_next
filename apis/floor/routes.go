@@ -14,4 +14,6 @@ func RegisterRoutes(app fiber.Router) {
 
 	app.Get("/floors/:id/history", GetFloorHistory)
 	app.Post("/floors/:id/restore/:floor_history_id", RestoreFloor)
+
+	app.Post("/floors/search", SearchFloors)
 }

@@ -515,7 +515,7 @@ paths:
       - application/json
       responses:
         "204":
-          description: No Content
+          description: ""
         "404":
           description: Not Found
           schema:
@@ -934,7 +934,7 @@ paths:
       - application/json
       responses:
         "204":
-          description: No Content
+          description: ""
         "404":
           description: Not Found
           schema:
@@ -975,7 +975,7 @@ paths:
       - application/json
       responses:
         "204":
-          description: No Content
+          description: ""
         "404":
           description: Not Found
           schema:
@@ -1071,7 +1071,7 @@ paths:
       - application/json
       responses:
         "204":
-          description: No Content
+          description: ""
         "400":
           description: Bad Request
           schema:

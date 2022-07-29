@@ -42,7 +42,11 @@ func InitDB() {
 		DB, err = memoryDB()
 		DB = DB.Debug()
 	case "dev":
-		DB, err = sqliteDB()
+		if config.Config.DbUrl == "" {
+			DB, err = sqliteDB()
+		} else {
+			DB, err = mysqlDB()
+		}
 		DB = DB.Debug()
 	case "perf":
 		DB, err = sqliteDB()
