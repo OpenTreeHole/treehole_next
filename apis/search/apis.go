@@ -14,7 +14,7 @@ import (
 // @Summary SearchFloors In Elastic Search
 // @Tags Search
 // @Produce application/json
-// @Router /search [get]
+// @Router /floors/search [post]
 // @Param json body any true "json"
 // @Success 200 {array} models.Floor
 func SearchFloors(c *fiber.Ctx) error {
