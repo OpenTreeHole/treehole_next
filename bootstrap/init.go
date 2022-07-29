@@ -1,18 +1,20 @@
 package bootstrap
 
 import (
-	"github.com/goccy/go-json"
-	"github.com/gofiber/fiber/v2"
 	"treehole_next/apis"
 	"treehole_next/config"
 	"treehole_next/middlewares"
 	"treehole_next/models"
 	"treehole_next/utils"
+
+	"github.com/goccy/go-json"
+	"github.com/gofiber/fiber/v2"
 )
 
 func Init() *fiber.App {
 	config.InitConfig()
 	models.InitDB()
+	models.InitSearch()
 	utils.Logger, _ = utils.InitLog()
 
 	app := fiber.New(fiber.Config{

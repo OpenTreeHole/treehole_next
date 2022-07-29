@@ -4,6 +4,7 @@ go 1.18
 
 require (
 	github.com/creasty/defaults v1.6.0
+	github.com/elastic/go-elasticsearch/v8 v8.3.0
 	github.com/go-playground/validator/v10 v10.11.0
 	github.com/goccy/go-json v0.9.10
 	github.com/gofiber/fiber/v2 v2.35.0
@@ -21,6 +22,7 @@ require (
 	github.com/KyleBanks/depth v1.2.1 // indirect
 	github.com/andybalholm/brotli v1.0.4 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/elastic/elastic-transport-go/v8 v8.0.0-20211216131617-bbee439d559c // indirect
 	github.com/go-openapi/jsonpointer v0.19.5 // indirect
 	github.com/go-openapi/jsonreference v0.20.0 // indirect
 	github.com/go-openapi/spec v0.20.6 // indirect
