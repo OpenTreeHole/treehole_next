@@ -11,7 +11,7 @@ import (
 )
 
 // SearchFloors
-// @Summary SearchFloors In Elastic Search
+// @Summary SearchFloors In ElasticSearch
 // @Tags Search
 // @Produce application/json
 // @Router /floors/search [post]
