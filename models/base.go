@@ -15,6 +15,10 @@ type BaseModel struct {
 	UpdatedAt time.Time `json:"time_updated"`
 }
 
+func (model BaseModel) GetID() int {
+	return model.ID
+}
+
 type IntArray []int
 
 func (p IntArray) Value() (driver.Value, error) {
@@ -28,8 +32,4 @@ func (p *IntArray) Scan(data interface{}) error {
 type Models interface {
 	Division | Hole | Floor | Tag | User | Report |
 		[]Division | []Hole | []Floor | []Tag | []User | []Report
-}
-
-type Model interface {
-	Division | Hole | Floor | Tag | User
 }

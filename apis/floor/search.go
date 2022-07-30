@@ -4,12 +4,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/gofiber/fiber/v2"
 	"go.uber.org/zap"
 	. "treehole_next/config"
 	. "treehole_next/models"
 	. "treehole_next/utils"
-
-	"github.com/gofiber/fiber/v2"
 )
 
 type SearchResponse struct {
@@ -90,7 +89,7 @@ func search(c *fiber.Ctx, body bytes.Buffer) error {
 
 	if res.IsError() {
 		e := Map{}
-		err := json.NewDecoder(res.Body).Decode(&e)
+		err = json.NewDecoder(res.Body).Decode(&e)
 		if err != nil {
 			return err
 		} else {
@@ -118,26 +117,6 @@ func search(c *fiber.Ctx, body bytes.Buffer) error {
 	}
 
 	// order
-	var orderedFloors Floors
-	for _, order := range floorIDs {
-		index := func(target int) int {
-			left := 0
-			right := len(floors)
-			for left < right {
-				mid := left + (right-left)>>1
-				if floors[mid].ID < target {
-					left = mid + 1
-				} else if floors[mid].ID > target {
-					right = mid
-				} else {
-					return mid
-				}
-			}
-			return -1
-		}(order)
-		if index >= 0 {
-			orderedFloors = append(orderedFloors, floors[index])
-		}
-	}
-	return Serialize(c, orderedFloors)
+	floors = OrderInGivenOrder(floors, floorIDs)
+	return Serialize(c, floors)
 }
