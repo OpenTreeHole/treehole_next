@@ -1,6 +1,9 @@
 package models
 
-import "github.com/gofiber/fiber/v2"
+import (
+	"github.com/gofiber/fiber/v2"
+	"treehole_next/utils"
+)
 
 type Division struct {
 	BaseModel
@@ -28,30 +31,13 @@ func (division *Division) Preprocess(c *fiber.Ctx) error {
 		division.Holes = []Hole{}
 		return nil
 	}
-	var holes []Hole
+	var holes Holes
 	DB.Find(&holes, pinned)
-	orderedHoles := make([]Hole, 0, len(holes))
-	for _, order := range pinned {
-		// binary search the index
-		index := func(target int) int {
-			left := 0
-			right := len(holes)
-			for left < right {
-				mid := left + (right-left)>>1
-				if holes[mid].ID < target {
-					left = mid + 1
-				} else if holes[mid].ID > target {
-					right = mid
-				} else {
-					return mid
-				}
-			}
-			return -1
-		}(order)
-		if index >= 0 {
-			orderedHoles = append(orderedHoles, holes[index])
-		}
+	holes = utils.OrderInGivenOrder(holes, pinned)
+	err := holes.Preprocess(c)
+	if err != nil {
+		return err
 	}
-	division.Holes = orderedHoles
+	division.Holes = holes
 	return nil
 }

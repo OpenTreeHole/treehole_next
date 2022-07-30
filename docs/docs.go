@@ -292,7 +292,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": "No Content"
+                        "description": ""
                     },
                     "404": {
                         "description": "Not Found",
@@ -316,12 +316,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "integer",
-                        "name": "holeID",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "name": "offset",
+                        "name": "hole_id",
                         "in": "query"
                     },
                     {
@@ -329,7 +324,17 @@ const docTemplate = `{
                         "minimum": 0,
                         "type": "integer",
                         "default": 10,
-                        "name": "size",
+                        "name": "length",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "name": "s",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "name": "start_floor",
                         "in": "query"
                     }
                 ],
@@ -370,6 +375,39 @@ const docTemplate = `{
                         "description": "Created",
                         "schema": {
                             "$ref": "#/definitions/models.Floor"
+                        }
+                    }
+                }
+            }
+        },
+        "/floors/search": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Search"
+                ],
+                "summary": "SearchFloors In ElasticSearch",
+                "parameters": [
+                    {
+                        "description": "json",
+                        "name": "json",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Floor"
+                            }
                         }
                     }
                 }
@@ -893,7 +931,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": "No Content"
+                        "description": ""
                     },
                     "404": {
                         "description": "Not Found",
@@ -923,7 +961,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": "No Content"
+                        "description": ""
                     },
                     "404": {
                         "description": "Not Found",
@@ -1025,7 +1063,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": "No Content"
+                        "description": ""
                     },
                     "400": {
                         "description": "Bad Request",

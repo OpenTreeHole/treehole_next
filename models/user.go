@@ -13,6 +13,7 @@ import (
 )
 
 type User struct {
+	BaseModel
 	ID          int                    `json:"id" gorm:"primarykey"`
 	Roles       []string               `json:"roles" gorm:"-:all"`
 	BanDivision map[int]bool           `json:"-" gorm:"-:all"`

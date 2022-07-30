@@ -515,7 +515,7 @@ paths:
       - application/json
       responses:
         "204":
-          description: No Content
+          description: ""
         "404":
           description: Not Found
           schema:
@@ -576,16 +576,19 @@ paths:
       deprecated: true
       parameters:
       - in: query
-        name: holeID
-        type: integer
-      - in: query
-        name: offset
+        name: hole_id
         type: integer
       - default: 10
         in: query
         maximum: 30
         minimum: 0
-        name: size
+        name: length
+        type: integer
+      - in: query
+        name: s
+        type: string
+      - in: query
+        name: start_floor
         type: integer
       produces:
       - application/json
@@ -777,6 +780,27 @@ paths:
       summary: Restore A Floor
       tags:
       - Floor
+  /floors/search:
+    post:
+      parameters:
+      - description: json
+        in: body
+        name: json
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Floor'
+            type: array
+      summary: SearchFloors In ElasticSearch
+      tags:
+      - Search
   /holes:
     get:
       deprecated: true
@@ -913,7 +937,7 @@ paths:
       - application/json
       responses:
         "204":
-          description: No Content
+          description: ""
         "404":
           description: Not Found
           schema:
@@ -954,7 +978,7 @@ paths:
       - application/json
       responses:
         "204":
-          description: No Content
+          description: ""
         "404":
           description: Not Found
           schema:
@@ -1050,7 +1074,7 @@ paths:
       - application/json
       responses:
         "204":
-          description: No Content
+          description: ""
         "400":
           description: Bad Request
           schema:
