@@ -22,7 +22,7 @@ func (divisions Divisions) Preprocess(c *fiber.Ctx) error {
 			return err
 		}
 	}
-	return nil
+	return utils.SetCache("divisions", divisions, 0)
 }
 
 func (division *Division) Preprocess(c *fiber.Ctx) error {

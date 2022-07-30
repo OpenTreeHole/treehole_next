@@ -18,7 +18,7 @@ var gormConfig = &gorm.Config{
 }
 
 func mysqlDB() (*gorm.DB, error) {
-	return gorm.Open(mysql.Open(config.Config.DbUrl), gormConfig)
+	return gorm.Open(mysql.Open(config.Config.DBURL), gormConfig)
 }
 
 func sqliteDB() (*gorm.DB, error) {
@@ -42,7 +42,7 @@ func InitDB() {
 		DB, err = memoryDB()
 		DB = DB.Debug()
 	case "dev":
-		if config.Config.DbUrl == "" {
+		if config.Config.DBURL == "" {
 			DB, err = sqliteDB()
 		} else {
 			DB, err = mysqlDB()

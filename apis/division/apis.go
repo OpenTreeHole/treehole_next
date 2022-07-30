@@ -47,6 +47,9 @@ func AddDivision(c *fiber.Ctx) error {
 // @Success 200 {array} models.Division
 func ListDivisions(c *fiber.Ctx) error {
 	var divisions Divisions
+	if GetCache("divisions", &divisions) {
+		return c.JSON(divisions)
+	}
 	DB.Find(&divisions)
 	return Serialize(c, divisions)
 }
@@ -108,7 +111,11 @@ func ModifyDivision(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	go MyLog("Division", "Modify", division.ID, userID)
+
+	MyLog("Division", "Modify", division.ID, userID)
+
+	go refreshCache()
+
 	return Serialize(c, &division)
 }
 
@@ -149,5 +156,8 @@ func DeleteDivision(c *fiber.Ctx) error {
 		return err
 	}
 	MyLog("Division", "Delete", id, userID, "To: ", strconv.Itoa(body.To))
+
+	go refreshCache()
+
 	return c.Status(204).JSON(nil)
 }
