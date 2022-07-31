@@ -1,8 +1,10 @@
 package models
 
 import (
+	"fmt"
 	"regexp"
 	"strconv"
+	"treehole_next/config"
 	"treehole_next/utils"
 
 	"github.com/gofiber/fiber/v2"
@@ -155,17 +157,19 @@ func (floor *Floor) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 
 	// permission
 	var hole Hole
-	DB.Select("division_id").First(&hole, floor.HoleID)
+	result := DB.Select("division_id").First(&hole, floor.HoleID)
+	if result.Error != nil {
+		return result.Error
+	}
 	if user.BanDivision[hole.DivisionID] ||
 		floor.SpecialTag != "" && !user.CheckPermission(P_OPERATOR) {
 		return utils.Forbidden()
 	}
 
-	err = tx.Transaction(func(tx *gorm.DB) error {
+	return tx.Transaction(func(tx *gorm.DB) error {
 		// get anonymous name
 		var mapping AnonynameMapping
-
-		result := tx.
+		result = tx.
 			Where("hole_id = ?", floor.HoleID).
 			Where("user_id = ?", floor.UserID).
 			Take(&mapping)
@@ -200,7 +204,7 @@ func (floor *Floor) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 		// set storey and path
 		if floor.ReplyTo == 0 {
 			var count int64
-			result := tx.Clauses(clause.Locking{
+			result = tx.Clauses(clause.Locking{
 				Strength: "UPDATE",
 			}).Model(&Floor{}).Where("hole_id = ?", floor.HoleID).
 				Count(&count)
@@ -211,7 +215,7 @@ func (floor *Floor) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 			floor.Path = "/"
 		} else {
 			var storey int
-			result := tx.Clauses(clause.Locking{
+			result = tx.Clauses(clause.Locking{
 				Strength: "UPDATE",
 			}).Raw(`SELECT storey FROM floor 
 					WHERE hole_id = ? AND path LIKE '%/?/%' 
@@ -250,13 +254,12 @@ func (floor *Floor) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 		if result.Error != nil {
 			return result.Error
 		}
+
+		if hole.Reply < config.Config.HoleFloorSize {
+			return utils.DeleteCache(fmt.Sprintf("hole_%d", floor.HoleID))
+		}
 		return nil
 	})
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func (floor *Floor) AfterCreate(tx *gorm.DB) (err error) {

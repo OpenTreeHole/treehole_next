@@ -164,7 +164,7 @@ func CreateHole(c *fiber.Ctx) error {
 	for _, tag := range body.Tags {
 		hole.Tags = append(hole.Tags, &Tag{Name: tag.Name})
 	}
-	err = hole.Create(c, &body.Content, &body.SpecialTag)
+	err = hole.Create(c, body.Content, body.SpecialTag)
 	if err != nil {
 		return err
 	}
@@ -195,7 +195,7 @@ func CreateHoleOld(c *fiber.Ctx) error {
 	for _, tag := range body.Tags {
 		hole.Tags = append(hole.Tags, &Tag{Name: tag.Name})
 	}
-	err = hole.Create(c, &body.Content, &body.SpecialTag)
+	err = hole.Create(c, body.Content, body.SpecialTag)
 	if err != nil {
 		return err
 	}

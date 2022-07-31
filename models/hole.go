@@ -37,6 +37,8 @@ type HoleTag struct {
 	TagID  int `json:"tag_id"`
 }
 
+const HoleCacheExpire = time.Minute * 10
+
 func loadTags(holes []*Hole) error {
 	holeIDs := make([]int, len(holes))
 	for i, hole := range holes {
@@ -90,7 +92,7 @@ func loadFloors(holes []*Hole) error {
 	holeIDs := make([]int, len(holes))
 	for i, hole := range holes {
 		holeIDs[i] = hole.ID
-		hole.HoleFloor.Floors = make([]*Floor, 0, config.Config.Size)
+		hole.HoleFloor.Floors = make([]*Floor, 0, config.Config.HoleFloorSize)
 	}
 
 	var floors []*Floor
@@ -102,7 +104,7 @@ func loadFloors(holes []*Hole) error {
 			FROM floor
 		) AS a 
 		WHERE hole_id IN (?) AND ranking <= ?`,
-		holeIDs, config.Config.Size,
+		holeIDs, config.Config.HoleFloorSize,
 	).Scan(&floors)
 	if result.Error != nil {
 		return result.Error
@@ -151,47 +153,44 @@ func loadFloors(holes []*Hole) error {
 }
 
 func (hole *Hole) Preprocess(c *fiber.Ctx) error {
-	holes := []*Hole{hole}
-
-	err := loadFloors(holes)
-	if err != nil {
-		return err
-	}
-
-	err = loadTags(holes)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	holes := Holes{*hole}
+	return holes.Preprocess(c)
 }
 
-func getCache(key string) (*Hole, error) {
-	// TODO: cache
-	return nil, nil
-}
 func (holes Holes) Preprocess(c *fiber.Ctx) error {
 	notInCache := make([]*Hole, 0, len(holes))
 
 	for i := 0; i < len(holes); i++ {
-		hole, err := getCache("key")
+		var hole Hole
+		ok := utils.GetCache(fmt.Sprintf("hole_%d", holes[i].ID), &hole)
+		if !ok {
+			notInCache = append(notInCache, &holes[i])
+		} else {
+			holes[i] = hole
+		}
+	}
+
+	if len(notInCache) > 0 {
+		err := loadFloors(notInCache)
 		if err != nil {
 			return err
 		}
-		if hole == nil {
-			notInCache = append(notInCache, &holes[i])
-		} else {
-			holes[i] = *hole
-		}
-	}
-	err := loadFloors(notInCache)
-	if err != nil {
-		return err
-	}
 
-	err = loadTags(notInCache)
-	if err != nil {
-		return err
+		err = loadTags(notInCache)
+		if err != nil {
+			return err
+		}
+
+		for i := 0; i < len(notInCache); i++ {
+			err = utils.SetCache(
+				fmt.Sprintf("hole_%d", notInCache[i].ID),
+				notInCache[i],
+				HoleCacheExpire,
+			)
+			if err != nil {
+				return err
+			}
+		}
 	}
 
 	return nil
@@ -218,7 +217,7 @@ func (hole *Hole) SetTags(tx *gorm.DB, clear bool) error {
 	if clear {
 		// update tag temperature
 		var sql string
-		if config.Config.Debug {
+		if DBType == TypeSqlite {
 			sql = `
 			UPDATE tag
 			SET temperature = temperature - 1 
@@ -255,7 +254,7 @@ func (hole *Hole) SetTags(tx *gorm.DB, clear bool) error {
 
 	// create associations
 	var builder strings.Builder
-	if config.Config.Debug {
+	if DBType == TypeSqlite {
 		builder.WriteString("INSERT INTO")
 	} else {
 		builder.WriteString("INSERT IGNORE INTO")
@@ -267,7 +266,7 @@ func (hole *Hole) SetTags(tx *gorm.DB, clear bool) error {
 			builder.WriteString(",")
 		}
 	}
-	if config.Config.Debug {
+	if DBType == TypeSqlite {
 		builder.WriteString(" ON CONFLICT DO NOTHING")
 	}
 	result := tx.Exec(builder.String())
@@ -289,7 +288,7 @@ func (hole *Hole) SetTags(tx *gorm.DB, clear bool) error {
 	return nil
 }
 
-func (hole *Hole) Create(c *fiber.Ctx, content *string, specialTag *string, db ...*gorm.DB) error {
+func (hole *Hole) Create(c *fiber.Ctx, content string, specialTag string, db ...*gorm.DB) error {
 	var tx *gorm.DB
 	if len(db) > 0 {
 		tx = db[0]
@@ -304,7 +303,7 @@ func (hole *Hole) Create(c *fiber.Ctx, content *string, specialTag *string, db .
 		return err
 	}
 	if user.BanDivision[hole.DivisionID] ||
-		*specialTag != "" && !user.CheckPermission(P_OPERATOR) {
+		specialTag != "" && !user.CheckPermission(P_OPERATOR) {
 		return utils.Forbidden()
 	}
 	hole.UserID = user.ID
@@ -319,12 +318,12 @@ func (hole *Hole) Create(c *fiber.Ctx, content *string, specialTag *string, db .
 		// Bind and Create floor
 		floor := Floor{
 			HoleID:     hole.ID,
-			Content:    *content,
+			Content:    content,
 			UserID:     hole.UserID,
-			SpecialTag: *specialTag,
+			SpecialTag: specialTag,
 			IsMe:       true,
 		}
-		err := floor.Create(c, tx)
+		err = floor.Create(c, tx)
 		if err != nil {
 			return err
 		}
@@ -339,10 +338,15 @@ func (hole *Hole) Create(c *fiber.Ctx, content *string, specialTag *string, db .
 }
 
 func (hole *Hole) AfterCreate(tx *gorm.DB) (err error) {
-	err = hole.SetTags(tx, false)
 	if err != nil {
 		return err
 	}
+	return hole.SetTags(tx, false)
+}
 
-	return nil
+func (hole *Hole) AfterSave(tx *gorm.DB) (err error) {
+	if err != nil {
+		return err
+	}
+	return utils.DeleteCache(fmt.Sprintf("hole_%d", hole.ID))
 }

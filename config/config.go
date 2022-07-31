@@ -9,11 +9,12 @@ import (
 )
 
 type MyConfig struct {
-	Mode    string `default:"dev" env:"MODE"`
-	Size    int    `default:"10" env:"SIZE"`
-	MaxSize int    `default:"30" env:"MAX_SIZE"`
-	TagSize int    `default:"5" env:"TAG_SIZE"`
-	Debug   bool   `default:"false" env:"DEBUG"`
+	Mode          string `default:"dev" env:"MODE"`
+	Size          int    `default:"10" env:"SIZE"`
+	MaxSize       int    `default:"30" env:"MAX_SIZE"`
+	TagSize       int    `default:"5" env:"TAG_SIZE"`
+	HoleFloorSize int    `default:"10" env:"HOLE_FLOOR_SIZE"`
+	Debug         bool   `default:"false" env:"DEBUG"`
 	// example: user:pass@tcp(127.0.0.1:3306)/dbname
 	// for more detail, see https://github.com/go-sql-driver/mysql#dsn-data-source-name
 	DBURL    string `default:"" env:"DB_URL"`

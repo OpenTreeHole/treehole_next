@@ -29,3 +29,7 @@ func GetCache(key string, value any) bool {
 	err = json.Unmarshal(data, value)
 	return err == nil
 }
+
+func DeleteCache(key string) error {
+	return config.Cache.Delete(context.Background(), key)
+}
