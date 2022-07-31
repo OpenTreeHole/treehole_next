@@ -9,10 +9,13 @@ import (
 var ES *elasticsearch.Client
 
 func InitSearch() {
+	if Config.Mode == "test" {
+		return
+	}
+
 	// export ELASTICSEARCH_URL environment variable to set the ElasticSearch URL
 	// example: http://user:pass@127.0.0.1:9200
-	cfg := elasticsearch.Config{}
-	es, err := elasticsearch.NewClient(cfg)
+	es, err := elasticsearch.NewDefaultClient()
 	if err != nil {
 		panic(err)
 	}
