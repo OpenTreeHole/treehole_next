@@ -78,7 +78,7 @@ func testCommonQuery(t *testing.T, method string, route string, statusCode int, 
 func testAPIGeneric[T JsonData](t *testing.T, method string, route string, statusCode int, data ...Map) T {
 	responseBody := testCommon(t, method, route, statusCode, data...)
 
-	if statusCode == 204 { // no content
+	if statusCode == 204 || statusCode == 302 { // no content and redirect
 		return nil
 	}
 	var responseData T
@@ -86,7 +86,7 @@ func testAPIGeneric[T JsonData](t *testing.T, method string, route string, statu
 	assert.Nilf(t, err, "decode response")
 
 	if len(data) > 1 { // data[1] is response data
-		assert.Equalf(t, data[1], responseData, "response data")
+		assert.EqualValuesf(t, data[1], responseData, "response data")
 	}
 
 	return responseData

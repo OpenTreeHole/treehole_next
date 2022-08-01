@@ -243,6 +243,9 @@ func (hole *Hole) SetTags(tx *gorm.DB, clear bool) error {
 		}
 	}
 
+	if len(hole.Tags) == 0 {
+		return nil
+	}
 	// create tags
 	tx.Clauses(clause.OnConflict{
 		Columns: []clause.Column{{Name: "name"}},

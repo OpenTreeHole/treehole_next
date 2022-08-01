@@ -134,9 +134,6 @@ func DeleteDivision(c *fiber.Ctx) error {
 		return err
 	}
 
-	if body.To == 0 { // default 1
-		body.To = 1
-	}
 	if id == body.To {
 		return BadRequest("The deleted division can't be the same as to.")
 	}

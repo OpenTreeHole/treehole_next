@@ -21,7 +21,7 @@ func init() {
 	} // int[tag_id][hole_id]
 
 	for i := range holes {
-		holes[i].DivisionID = 6
+		holes[i].DivisionID = 8
 	}
 
 	for i := range tags {
@@ -40,7 +40,7 @@ func init() {
 func TestListTag(t *testing.T) {
 	var length int64
 	DB.Table("tag").Count(&length)
-	resp := testAPIArray(t, "get", "/tags", 200)
+	resp := testAPIArray(t, "get", "/api/tags", 200)
 	assert.Equal(t, length, int64(len(resp)))
 }
 
@@ -51,23 +51,23 @@ func TestGetTag(t *testing.T) {
 	DB.First(&tag, id)
 
 	var newTag Tag
-	testAPIModel(t, "get", "/tags/"+strconv.Itoa(id), 200, &newTag)
+	testAPIModel(t, "get", "/api/tags/"+strconv.Itoa(id), 200, &newTag)
 	assert.Equalf(t, tag.Name, newTag.Name, "get tag")
 }
 
 func TestCreateTag(t *testing.T) {
 	data := Map{"name": "name"}
-	testAPI(t, "post", "/tags", 201, data)
+	testAPI(t, "post", "/api/tags", 201, data)
 
 	// duplicate post, return 200 and change nothing
-	testAPI(t, "post", "/tags", 200, data)
+	testAPI(t, "post", "/api/tags", 200, data)
 }
 
 func TestModifyTag(t *testing.T) {
 	id := 3
 	data := Map{"name": "another", "temperature": 34}
 
-	testAPI(t, "put", "/tags/"+strconv.Itoa(id), 200, data)
+	testAPI(t, "put", "/api/tags/"+strconv.Itoa(id), 200, data)
 
 	var tag Tag
 	DB.Model(&Tag{}).First(&tag, 3)
@@ -81,7 +81,7 @@ func TestDeleteTag(t *testing.T) {
 	id := 5
 	toName := "6"
 	data := Map{"to": toName}
-	testAPI(t, "delete", "/tags/"+strconv.Itoa(id), 200, data)
+	testAPI(t, "delete", "/api/tags/"+strconv.Itoa(id), 200, data)
 	var tag Tag
 	DB.Where("name = ?", toName).First(&tag)
 	associationHolesLen := DB.Model(&tag).Association("Holes").Count()
@@ -94,10 +94,10 @@ func TestDeleteTag(t *testing.T) {
 	}
 
 	// Duplicated delete holes
-	testAPI(t, "delete", "/tags/"+strconv.Itoa(id), 404, data)
+	testAPI(t, "delete", "/api/tags/"+strconv.Itoa(id), 404, data)
 
 	// Move holes to new tag
 	id = 8
 	data["to"] = "iii555"
-	testAPI(t, "delete", "/tags/"+strconv.Itoa(id), 404, data)
+	testAPI(t, "delete", "/api/tags/"+strconv.Itoa(id), 404, data)
 }

@@ -2,12 +2,15 @@ package tests
 
 import (
 	"testing"
-	. "treehole_next/models"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestIndex(t *testing.T) {
-	testAPI(t, "get", "/", 200, nil, Map{"message": "hello world"})
-	testAPI(t, "get", "/404", 404, nil, Map{"message": "Cannot GET /404"})
+	testAPI(t, "get", "/", 302, nil)
+	testAPI(t, "get", "/api", 200, nil)
+	web404 := testAPI(t, "get", "/404", 404, nil)
+	assert.EqualValues(t, "Cannot GET /404", web404["message"])
 }
 
 func TestDocs(t *testing.T) {

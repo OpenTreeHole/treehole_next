@@ -1,6 +1,8 @@
 package apis
 
 import (
+	"treehole_next/data"
+
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -9,5 +11,5 @@ import (
 // @Success 200 {object} models.MessageModel
 // @Router / [get]
 func Index(c *fiber.Ctx) error {
-	return c.SendFile("data/meta.json")
+	return c.Send(data.MetaFile)
 }

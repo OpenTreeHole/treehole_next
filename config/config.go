@@ -10,8 +10,8 @@ import (
 
 type MyConfig struct {
 	Mode    string `default:"dev"`
-	Size    int    `default:"10"`
-	MaxSize int    `default:"30"`
+	Size    int    `default:"30"`
+	MaxSize int    `default:"50"`
 	TagSize int    `default:"5"`
 	Debug   bool   `default:"false"`
 	// example: user:pass@tcp(127.0.0.1:3306)/dbname
