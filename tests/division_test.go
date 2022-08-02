@@ -9,21 +9,19 @@ import (
 )
 
 func init() {
+	divisions := make([]Division, 10)
 	for i := 1; i <= 10; i++ {
-		division := Division{
-			Name:        strconv.Itoa(i),
-			Description: strconv.Itoa(i),
-		}
-		division.ID = i
-		DB.Create(&division)
+		divisions[i-1].ID = i
+		divisions[i-1].Name = strconv.Itoa(i)
+		divisions[i-1].Description = strconv.Itoa(i)
 	}
-	holes := make([]Hole, 5)
-	for i := 0; i < 5; i++ {
+	holes := make([]Hole, 10)
+	for i := 0; i < 10; i++ {
 		holes[i] = Hole{
 			DivisionID: 1,
 		}
 	}
-	holes[2].Hidden = true
+	DB.Create(&divisions)
 	DB.Create(&holes)
 }
 
@@ -36,7 +34,7 @@ func TestGetDivision(t *testing.T) {
 	DB.Save(&d)
 
 	var division Division
-	testAPIModel(t, "get", "/divisions/1", 200, &division)
+	testAPIModel(t, "get", "/api/divisions/1", 200, &division)
 	// test pinned order
 	respPinned := make([]int, 3)
 	for i, p := range division.Holes {
@@ -49,17 +47,17 @@ func TestListDivision(t *testing.T) {
 	// return all divisions
 	var length int64
 	DB.Table("division").Count(&length)
-	resp := testAPIArray(t, "get", "/divisions", 200)
+	resp := testAPIArray(t, "get", "/api/divisions", 200)
 	assert.Equal(t, length, int64(len(resp)))
 }
 
 func TestAddDivision(t *testing.T) {
 	data := Map{"name": "TestAddDivision", "description": "TestAddDivisionDescription"}
-	testAPI(t, "post", "/divisions", 201, data)
+	testAPI(t, "post", "/api/divisions", 201, data)
 
 	// duplicate post, return 200 and change nothing
 	data["description"] = "another"
-	resp := testAPI(t, "post", "/divisions", 200, data)
+	resp := testAPI(t, "post", "/api/divisions", 200, data)
 	assert.Equal(t, "TestAddDivisionDescription", resp["description"])
 }
 
@@ -68,7 +66,7 @@ func TestModifyDivision(t *testing.T) {
 	data := Map{"name": "modify", "description": "modify", "pinned": pinned}
 
 	var division Division
-	testAPIModel(t, "put", "/divisions/1", 200, &division, data)
+	testAPIModel(t, "put", "/api/divisions/1", 200, &division, data)
 
 	// test modify
 	assert.Equal(t, "modify", division.Name)
@@ -88,8 +86,8 @@ func TestDeleteDivision(t *testing.T) {
 
 	hole := Hole{DivisionID: id}
 	DB.Create(&hole)
-	testAPI(t, "delete", "/divisions/"+strconv.Itoa(id), 204, Map{"to": toID})
-	testAPI(t, "delete", "/divisions/"+strconv.Itoa(id), 204) // repeat delete
+	testAPI(t, "delete", "/api/divisions/"+strconv.Itoa(id), 204, Map{"to": toID})
+	testAPI(t, "delete", "/api/divisions/"+strconv.Itoa(id), 204, Map{}) // repeat delete
 
 	// deleted
 	var d Division
@@ -108,7 +106,7 @@ func TestDeleteDivisionDefaultValue(t *testing.T) {
 
 	hole := Hole{DivisionID: id}
 	DB.Create(&hole)
-	testAPI(t, "delete", "/divisions/"+strconv.Itoa(id), 204)
+	testAPI(t, "delete", "/api/divisions/"+strconv.Itoa(id), 204, Map{})
 
 	// hole moved
 	DB.First(&hole, hole.ID)

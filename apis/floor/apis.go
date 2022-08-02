@@ -245,7 +245,7 @@ func ModifyFloor(c *fiber.Ctx) error {
 
 	if body.Like == "add" {
 		err = floor.ModifyLike(c, 1)
-	} else if body.Like == "reset" {
+	} else if body.Like == "cancel" {
 		err = floor.ModifyLike(c, 0)
 	}
 	if err != nil {
