@@ -11,7 +11,9 @@ type Report struct {
 	Floor   Floor  `json:"floor"`
 	UserID  int    `json:"-"` // the reporter's id, should keep a secret
 	Reason  string `json:"reason" gorm:"size:128"`
-	Dealt   bool   `json:"dealt"` // the report has been dealt
+	Dealt   bool   `json:"dealt"`                  // the report has been dealt
+	DealtBy int    `json:"dealt_by"`               // who dealt the report
+	Result  string `json:"result" gorm:"size:128"` // deal result
 }
 
 func (report *Report) Create(c *fiber.Ctx, db ...*gorm.DB) error {
