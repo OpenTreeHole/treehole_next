@@ -16,7 +16,8 @@ type MyConfig struct {
 	Debug   bool   `default:"false"`
 	// example: user:pass@tcp(127.0.0.1:3306)/dbname
 	// for more detail, see https://github.com/go-sql-driver/mysql#dsn-data-source-name
-	DbUrl string `default:""`
+	DbUrl    string `default:""`
+	MicroUrl string `default:"http://127.0.0.1:8080/api/messages"`
 }
 
 var Config MyConfig

@@ -1,6 +1,9 @@
 package models
 
 import (
+	"fmt"
+	"treehole_next/utils"
+
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
 )
@@ -30,5 +33,65 @@ func (report *Report) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 	}
 	report.UserID = userID
 	tx.Create(&report)
+	return nil
+}
+
+func (report *Report) AfterCreate(tx *gorm.DB) (err error) {
+	err = report.SendCreate(tx)
+	if err != nil {
+		utils.Logger.Error("[notification] SendCreate failed: " + err.Error())
+		// return err // only for test
+	}
+	return nil
+}
+
+func (report *Report) AfterUpdate(tx *gorm.DB) (err error) {
+	err = report.SendModify(tx)
+	if err != nil {
+		utils.Logger.Error("[notification] SendModify failed: " + err.Error())
+		// return err // only for test
+	}
+	return nil
+}
+
+func (report *Report) SendCreate(tx *gorm.DB) error {
+	// get recipents
+	userIDs := []int{report.UserID}
+
+	// construct message
+	message := Message{
+		"data":       report,
+		"recipients": userIDs,
+		"type":       string(MessageTypeReport),
+		"url":        fmt.Sprintf("/api/reports/%d", report.ID),
+	}
+
+	// send
+	err := message.Send()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (report *Report) SendModify(tx *gorm.DB) error {
+	// get recipents
+	userIDs := []int{report.UserID}
+
+	// construct message
+	message := Message{
+		"data":       report,
+		"recipients": userIDs,
+		"type":       string(MessageTypeReportDealt),
+		"url":        fmt.Sprintf("/api/reports/%d", report.ID),
+	}
+
+	// send
+	err := message.Send()
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
