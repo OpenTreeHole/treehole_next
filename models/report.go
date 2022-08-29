@@ -2,6 +2,7 @@ package models
 
 import (
 	"fmt"
+	"sync/atomic"
 	"treehole_next/utils"
 
 	"github.com/gofiber/fiber/v2"
@@ -54,9 +55,22 @@ func (report *Report) AfterUpdate(tx *gorm.DB) (err error) {
 	return nil
 }
 
+var adminCounter *int32 = new(int32)
+
 func (report *Report) SendCreate(tx *gorm.DB) error {
 	// get recipents
-	userIDs := []int{report.UserID}
+	userIDs, err := GetAdmin()
+	if err != nil {
+		return err
+	}
+
+	// get counter
+	currentCounter := atomic.AddInt32(adminCounter, 1)
+	result := atomic.CompareAndSwapInt32(adminCounter, int32(len(userIDs)), 0)
+	if result {
+		utils.Logger.Info("[getadmin] adminCounter Reset")
+	}
+	userIDs = []int{userIDs[currentCounter-1]}
 
 	// construct message
 	message := Message{
@@ -67,7 +81,7 @@ func (report *Report) SendCreate(tx *gorm.DB) error {
 	}
 
 	// send
-	err := message.Send()
+	err = message.Send()
 	if err != nil {
 		return err
 	}
