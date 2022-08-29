@@ -1,6 +1,7 @@
 package models
 
 import (
+	"fmt"
 	"regexp"
 	"strconv"
 	"treehole_next/utils"
@@ -11,6 +12,7 @@ import (
 )
 
 // Floor has a tree structure, example:
+//
 //	id: 1, reply_to: 0, storey: 1
 //		id: 2, reply_to: 1, storey: 2
 //	id: 3, reply_to: 0, storey: 3
@@ -264,6 +266,33 @@ func (floor *Floor) AfterCreate(tx *gorm.DB) (err error) {
 	if result.Error != nil {
 		return result.Error
 	}
+
+	err = floor.SendFavorite(tx)
+	if err != nil {
+		utils.Logger.Error("[notification] SendFavorite failed: " + err.Error())
+		// return err // only for test
+	}
+
+	err = floor.SendReply(tx)
+	if err != nil {
+		utils.Logger.Error("[notification] SendReply failed: " + err.Error())
+		// return err // only for test
+	}
+
+	err = floor.SendMention(tx)
+	if err != nil {
+		utils.Logger.Error("[notification] SendMention failed: " + err.Error())
+		// return err // only for test
+	}
+	return nil
+}
+
+func (floor *Floor) AfterUpdate(tx *gorm.DB) (err error) {
+	err = floor.SendModify(tx)
+	if err != nil {
+		utils.Logger.Error("[notification] SendModify failed: " + err.Error())
+		// return err // only for test
+	}
 	return nil
 }
 
@@ -328,4 +357,116 @@ func (floor *Floor) ModifyLike(c *fiber.Ctx, likeOption int8) error {
 		floor.Liked = likeOption
 		return nil
 	})
+}
+
+func (floor *Floor) SendFavorite(tx *gorm.DB) error {
+	// get recipents
+	var userIDs []int
+	result := tx.Raw("SELECT user_id from user_favorites WHERE hole_id = ?", floor.HoleID).Scan(&userIDs)
+	if result.Error != nil {
+		return result.Error
+	}
+
+	// return if no recipents
+	if userIDs == nil {
+		return nil
+	}
+
+	// Construct Message
+	message := Message{
+		"data":       floor,
+		"recipients": userIDs,
+		"type":       string(MessageTypeFavorite),
+		"url":        fmt.Sprintf("/api/floor/%d", floor.ID),
+	}
+
+	// Send
+	err := message.Send()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (floor *Floor) SendReply(tx *gorm.DB) error {
+	// get recipents
+	userID := 0
+	result := tx.Raw("SELECT user_id from hole WHERE id = ?", floor.HoleID).Scan(&userID)
+	if result.Error != nil {
+		return result.Error
+	}
+
+	// return if no recipents
+	if userID == 0 {
+		return nil
+	}
+
+	userIDs := []int{userID}
+
+	// construct message
+	message := Message{
+		"data":       floor,
+		"recipients": userIDs,
+		"type":       string(MessageTypeReply),
+		"url":        fmt.Sprintf("/api/floors/%d", floor.ID),
+	}
+
+	// send
+	err := message.Send()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (floor *Floor) SendMention(tx *gorm.DB) error {
+	// get recipents
+	var userIDs []int
+	for _, mention := range floor.Mention {
+		userIDs = append(userIDs, mention.UserID)
+	}
+
+	// return if no recipents
+	if userIDs == nil {
+		return nil
+	}
+
+	// construct message
+	message := Message{
+		"data":       floor,
+		"recipients": userIDs,
+		"type":       string(MessageTypeMention),
+		"url":        fmt.Sprintf("/api/floors/%d", floor.ID),
+	}
+
+	// send
+	err := message.Send()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (floor *Floor) SendModify(tx *gorm.DB) error {
+	// get recipents
+	userIDs := []int{floor.UserID}
+
+	// construct message
+	message := Message{
+		"data":       floor,
+		"recipients": userIDs,
+		"type":       string(MessageTypeModify),
+		"url":        fmt.Sprintf("/api/floors/%d", floor.ID),
+	}
+
+	// send
+	err := message.Send()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

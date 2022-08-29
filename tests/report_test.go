@@ -67,7 +67,8 @@ func TestAddReport(t *testing.T) {
 func TestDeleteReport(t *testing.T) {
 	reportID := REPORT_BASE_ID + 7
 	var getReport Report
-	testAPI(t, "delete", "/api/reports/"+strconv.Itoa(reportID), 200)
+	data := Map{"result": "123456789"}
+	testAPI(t, "delete", "/api/reports/"+strconv.Itoa(reportID), 200, data)
 
 	DB.First(&getReport, reportID)
 	assert.EqualValues(t, true, getReport.Dealt)
