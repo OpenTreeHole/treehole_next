@@ -87,7 +87,7 @@ func (message Message) Send() error {
 	// construct http request
 	req, _ := http.NewRequest(
 		"POST",
-		config.Config.NotificationUrl,
+		fmt.Sprintf("%s/messages", config.Config.NotificationUrl),
 		bytes.NewBuffer(form),
 	)
 	req.Header.Add("Content-Type", "application/json")
@@ -155,7 +155,7 @@ func GetAdmin() ([]int, error) {
 	// construct http request
 	req, _ := http.NewRequest(
 		"GET",
-		config.Config.AuthUrl,
+		fmt.Sprintf("%s/users", config.Config.AuthUrl),
 		strings.NewReader(form.Encode()),
 	)
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
