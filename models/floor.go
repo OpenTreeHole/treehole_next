@@ -376,8 +376,8 @@ func (floor *Floor) SendFavorite(tx *gorm.DB) error {
 	message := Message{
 		"data":       floor,
 		"recipients": userIDs,
-		"type":       string(MessageTypeFavorite),
-		"url":        fmt.Sprintf("/api/floor/%d", floor.ID),
+		"type":       MessageTypeFavorite,
+		"url":        fmt.Sprintf("/api/floors/%d", floor.ID),
 	}
 
 	// Send
@@ -408,7 +408,7 @@ func (floor *Floor) SendReply(tx *gorm.DB) error {
 	message := Message{
 		"data":       floor,
 		"recipients": userIDs,
-		"type":       string(MessageTypeReply),
+		"type":       MessageTypeReply,
 		"url":        fmt.Sprintf("/api/floors/%d", floor.ID),
 	}
 
@@ -437,7 +437,7 @@ func (floor *Floor) SendMention(tx *gorm.DB) error {
 	message := Message{
 		"data":       floor,
 		"recipients": userIDs,
-		"type":       string(MessageTypeMention),
+		"type":       MessageTypeMention,
 		"url":        fmt.Sprintf("/api/floors/%d", floor.ID),
 	}
 
@@ -458,7 +458,7 @@ func (floor *Floor) SendModify(tx *gorm.DB) error {
 	message := Message{
 		"data":       floor,
 		"recipients": userIDs,
-		"type":       string(MessageTypeModify),
+		"type":       MessageTypeModify,
 		"url":        fmt.Sprintf("/api/floors/%d", floor.ID),
 	}
 

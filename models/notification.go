@@ -87,7 +87,7 @@ func (message Message) Send() error {
 	// construct http request
 	req, _ := http.NewRequest(
 		"POST",
-		config.Config.MicroUrl,
+		config.Config.NotificationUrl,
 		bytes.NewBuffer(form),
 	)
 	req.Header.Add("Content-Type", "application/json")

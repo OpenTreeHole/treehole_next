@@ -76,7 +76,7 @@ func (report *Report) SendCreate(tx *gorm.DB) error {
 	message := Message{
 		"data":       report,
 		"recipients": userIDs,
-		"type":       string(MessageTypeReport),
+		"type":       MessageTypeReport,
 		"url":        fmt.Sprintf("/api/reports/%d", report.ID),
 	}
 
@@ -97,7 +97,7 @@ func (report *Report) SendModify(tx *gorm.DB) error {
 	message := Message{
 		"data":       report,
 		"recipients": userIDs,
-		"type":       string(MessageTypeReportDealt),
+		"type":       MessageTypeReportDealt,
 		"url":        fmt.Sprintf("/api/reports/%d", report.ID),
 	}
 
