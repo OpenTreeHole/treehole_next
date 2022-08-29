@@ -5,13 +5,14 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/gofiber/fiber/v2"
-	"go.uber.org/zap"
 	"net/http"
 	"time"
 	"treehole_next/config"
 	. "treehole_next/models"
 	. "treehole_next/utils"
+
+	"github.com/gofiber/fiber/v2"
+	"go.uber.org/zap"
 )
 
 type PostBody struct {
@@ -74,7 +75,7 @@ func makeRequest(divisionID int, days int, userID int) {
 	dataBytes, _ := json.Marshal(data)
 	req, _ := http.NewRequest(
 		"POST",
-		fmt.Sprintf("%s/users/%d/permissions", config.Config.AuthBaseURL, userID),
+		fmt.Sprintf("%s/users/%d/permissions", config.Config.AuthUrl, userID),
 		bytes.NewBuffer(dataBytes),
 	)
 	req.Header.Add("Content-Type", "application/json")
