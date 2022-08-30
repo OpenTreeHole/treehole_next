@@ -99,7 +99,7 @@ func (message Message) Send() error {
 		utils.Logger.Error("[notification] error sending notification" + err.Error())
 		return err
 	} else if resp.StatusCode != 201 {
-		utils.Logger.Error("[notification] microservice response failed" + fmt.Sprint(response))
+		utils.Logger.Error("[notification] notification response failed" + fmt.Sprint(response))
 		return errors.New(fmt.Sprint(response))
 	}
 
@@ -120,19 +120,19 @@ func readRespAdmin(body io.ReadCloser) []Admin {
 	defer func(body io.ReadCloser) {
 		err := body.Close()
 		if err != nil {
-			utils.Logger.Error("[notification] Close error: " + err.Error())
+			utils.Logger.Error("[getadmin] Close error: " + err.Error())
 		}
 	}(body)
 
 	data, err := ioutil.ReadAll(body)
 	if err != nil {
-		utils.Logger.Error("[notification] Read body failed: " + err.Error())
+		utils.Logger.Error("[getadmin] Read body failed: " + err.Error())
 		return []Admin{}
 	}
 	var response []Admin
 	err = json.Unmarshal(data, &response)
 	if err != nil {
-		utils.Logger.Error("[notification] Unmarshal body failed: " + err.Error())
+		utils.Logger.Error("[getadmin] Unmarshal body failed: " + err.Error())
 		return []Admin{}
 	}
 	return response
@@ -157,10 +157,10 @@ func GetAdmin() ([]int, error) {
 
 	// handle err
 	if err != nil {
-		utils.Logger.Error("[getadmin] error sending notification" + err.Error())
+		utils.Logger.Error("[getadmin] error sending authserver" + err.Error())
 		return nil, err
 	} else if resp.StatusCode != 200 {
-		utils.Logger.Error("[getadmin] microservice response failed" + fmt.Sprint(response))
+		utils.Logger.Error("[getadmin] authserver response failed" + fmt.Sprint(response))
 		return nil, errors.New(fmt.Sprint(response))
 	}
 
