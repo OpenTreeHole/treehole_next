@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"math/rand"
 	"net/http"
 	"time"
 	"treehole_next/config"
@@ -138,7 +139,9 @@ func readRespAdmin(body io.ReadCloser) []Admin {
 	return response
 }
 
-func GetAdmin() ([]int, error) {
+var adminList []int
+
+func InitAdminList() {
 	// construct http request
 	req, _ := http.NewRequest(
 		"GET",
@@ -157,18 +160,21 @@ func GetAdmin() ([]int, error) {
 
 	// handle err
 	if err != nil {
-		utils.Logger.Error("[getadmin] error sending authserver" + err.Error())
-		return nil, err
-	} else if resp.StatusCode != 200 {
-		utils.Logger.Error("[getadmin] authserver response failed" + fmt.Sprint(response))
-		return nil, errors.New(fmt.Sprint(response))
+		panic("[getadmin] error sending authserver" + err.Error())
+	} else if resp.StatusCode != 200 || len(response) == 0 {
+		panic("[getadmin] authserver response failed" + fmt.Sprint(resp))
 	}
 
 	// get ids
-	var admin []int
 	for _, mention := range response {
-		admin = append(admin, mention.Id)
+		adminList = append(adminList, mention.Id)
 	}
 
-	return admin, nil
+	// shuffle ids
+	for i := range adminList {
+		j := rand.Intn(i + 1)
+		adminList[i], adminList[j] = adminList[j], adminList[i]
+	}
+
+	// panic(fmt.Sprint(adminList)) // Only for Test
 }

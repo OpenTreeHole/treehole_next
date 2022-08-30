@@ -16,6 +16,7 @@ func Init() *fiber.App {
 	models.InitDB()
 	config.InitSearch()
 	utils.Logger, _ = utils.InitLog()
+	models.InitAdminList()
 
 	app := fiber.New(fiber.Config{
 		ErrorHandler: utils.MyErrorHandler,
