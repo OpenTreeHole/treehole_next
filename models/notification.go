@@ -8,8 +8,6 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
-	"net/url"
-	"strings"
 	"time"
 	"treehole_next/config"
 	"treehole_next/utils"
@@ -141,24 +139,17 @@ func readRespAdmin(body io.ReadCloser) []Admin {
 }
 
 func GetAdmin() ([]int, error) {
-	// construct form
-	data := map[string]string{
-		"size":   "0",
-		"offset": "0",
-		"role":   "admin",
-	}
-	form := url.Values{}
-	for k, v := range data {
-		form.Add(k, v)
-	}
-
 	// construct http request
 	req, _ := http.NewRequest(
 		"GET",
 		fmt.Sprintf("%s/users", config.Config.AuthUrl),
-		strings.NewReader(form.Encode()),
+		nil,
 	)
-	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	query := req.URL.Query()
+	query.Add("size", "0")
+	query.Add("offset", "0")
+	query.Add("role", "admin")
+	req.URL.RawQuery = query.Encode()
 
 	// get response
 	resp, err := client.Do(req)

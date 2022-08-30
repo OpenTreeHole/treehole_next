@@ -55,7 +55,7 @@ func (report *Report) AfterUpdate(tx *gorm.DB) (err error) {
 	return nil
 }
 
-var adminCounter *int32 = new(int32)
+var adminCounter = new(int32)
 
 func (report *Report) SendCreate(tx *gorm.DB) error {
 	// get recipents
