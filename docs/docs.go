@@ -292,7 +292,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     },
                     "404": {
                         "description": "Not Found",
@@ -320,10 +320,10 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
-                        "maximum": 30,
+                        "maximum": 50,
                         "minimum": 0,
                         "type": "integer",
-                        "default": 10,
+                        "default": 30,
                         "name": "length",
                         "in": "query"
                     },
@@ -769,10 +769,10 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
-                        "maximum": 30,
+                        "maximum": 50,
                         "minimum": 0,
                         "type": "integer",
-                        "default": 10,
+                        "default": 30,
                         "description": "length of object array",
                         "name": "size",
                         "in": "query"
@@ -931,7 +931,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     },
                     "404": {
                         "description": "Not Found",
@@ -961,12 +961,43 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/models.MessageModel"
+                        }
+                    }
+                }
+            }
+        },
+        "/penalty/{floor_id}": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Penalty"
+                ],
+                "summary": "[Deprecated] Ban publisher of a floor",
+                "deprecated": true,
+                "parameters": [
+                    {
+                        "description": "json",
+                        "name": "json",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/penalty.PostBody"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/models.Hole"
                         }
                     }
                 }
@@ -1003,10 +1034,10 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
-                        "maximum": 30,
+                        "maximum": 50,
                         "minimum": 0,
                         "type": "integer",
-                        "default": 10,
+                        "default": 30,
                         "description": "length of object array",
                         "name": "size",
                         "in": "query"
@@ -1063,7 +1094,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     },
                     "400": {
                         "description": "Bad Request",
@@ -1888,14 +1919,14 @@ const docTemplate = `{
                 "first_floor": {
                     "$ref": "#/definitions/models.Floor"
                 },
-                "floors": {
+                "last_floor": {
+                    "$ref": "#/definitions/models.Floor"
+                },
+                "prefetch": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/models.Floor"
                     }
-                },
-                "last_floor": {
-                    "$ref": "#/definitions/models.Floor"
                 }
             }
         },
@@ -1914,6 +1945,10 @@ const docTemplate = `{
                     "description": "the report has been dealt",
                     "type": "boolean"
                 },
+                "dealt_by": {
+                    "description": "who dealt the report",
+                    "type": "integer"
+                },
                 "floor": {
                     "$ref": "#/definitions/models.Floor"
                 },
@@ -1924,6 +1959,10 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "reason": {
+                    "type": "string"
+                },
+                "result": {
+                    "description": "deal result",
                     "type": "string"
                 },
                 "time_created": {
@@ -1951,6 +1990,17 @@ const docTemplate = `{
                 },
                 "time_updated": {
                     "type": "string"
+                }
+            }
+        },
+        "penalty.PostBody": {
+            "type": "object",
+            "properties": {
+                "division_id": {
+                    "type": "integer"
+                },
+                "penalty_level": {
+                    "type": "integer"
                 }
             }
         },

@@ -269,12 +269,12 @@ definitions:
     properties:
       first_floor:
         $ref: '#/definitions/models.Floor'
-      floors:
+      last_floor:
+        $ref: '#/definitions/models.Floor'
+      prefetch:
         items:
           $ref: '#/definitions/models.Floor'
         type: array
-      last_floor:
-        $ref: '#/definitions/models.Floor'
     type: object
   models.MessageModel:
     properties:
@@ -286,6 +286,9 @@ definitions:
       dealt:
         description: the report has been dealt
         type: boolean
+      dealt_by:
+        description: who dealt the report
+        type: integer
       floor:
         $ref: '#/definitions/models.Floor'
       floor_id:
@@ -293,6 +296,9 @@ definitions:
       id:
         type: integer
       reason:
+        type: string
+      result:
+        description: deal result
         type: string
       time_created:
         type: string
@@ -311,6 +317,13 @@ definitions:
         type: string
       time_updated:
         type: string
+    type: object
+  penalty.PostBody:
+    properties:
+      division_id:
+        type: integer
+      penalty_level:
+        type: integer
     type: object
   report.AddModel:
     properties:
@@ -515,7 +528,7 @@ paths:
       - application/json
       responses:
         "204":
-          description: ""
+          description: No Content
         "404":
           description: Not Found
           schema:
@@ -578,9 +591,9 @@ paths:
       - in: query
         name: hole_id
         type: integer
-      - default: 10
+      - default: 30
         in: query
-        maximum: 30
+        maximum: 50
         minimum: 0
         name: length
         type: integer
@@ -873,10 +886,10 @@ paths:
         in: query
         name: orderBy
         type: string
-      - default: 10
+      - default: 30
         description: length of object array
         in: query
-        maximum: 30
+        maximum: 50
         minimum: 0
         name: size
         type: integer
@@ -937,7 +950,7 @@ paths:
       - application/json
       responses:
         "204":
-          description: ""
+          description: No Content
         "404":
           description: Not Found
           schema:
@@ -978,7 +991,7 @@ paths:
       - application/json
       responses:
         "204":
-          description: ""
+          description: No Content
         "404":
           description: Not Found
           schema:
@@ -1013,6 +1026,26 @@ paths:
       summary: Modify A Hole
       tags:
       - Hole
+  /penalty/{floor_id}:
+    post:
+      deprecated: true
+      parameters:
+      - description: json
+        in: body
+        name: json
+        required: true
+        schema:
+          $ref: '#/definitions/penalty.PostBody'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Hole'
+      summary: '[Deprecated] Ban publisher of a floor'
+      tags:
+      - Penalty
   /reports:
     get:
       parameters:
@@ -1030,10 +1063,10 @@ paths:
       - in: query
         name: range
         type: integer
-      - default: 10
+      - default: 30
         description: length of object array
         in: query
-        maximum: 30
+        maximum: 50
         minimum: 0
         name: size
         type: integer
@@ -1074,7 +1107,7 @@ paths:
       - application/json
       responses:
         "204":
-          description: ""
+          description: No Content
         "400":
           description: Bad Request
           schema:

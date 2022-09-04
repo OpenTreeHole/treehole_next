@@ -22,6 +22,7 @@ import (
 //	id: 7, reply_to: 0, storey: 7
 type Floor struct {
 	BaseModel
+	FloorID    int     `json:"floor_id" gorm:"-:all"`
 	HoleID     int     `json:"hole_id"`
 	UserID     int     `json:"-"`
 	Content    string  `json:"content"`                                // not empty
@@ -468,5 +469,10 @@ func (floor *Floor) SendModify(tx *gorm.DB) error {
 		return err
 	}
 
+	return nil
+}
+
+func (floor *Floor) AfterFind(tx *gorm.DB) (err error) {
+	floor.FloorID = floor.ID
 	return nil
 }

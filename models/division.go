@@ -2,11 +2,13 @@ package models
 
 import (
 	"github.com/gofiber/fiber/v2"
+	"gorm.io/gorm"
 	"treehole_next/utils"
 )
 
 type Division struct {
 	BaseModel
+	DivisionID  int      `json:"division_id" gorm:"-:all"`
 	Name        string   `json:"name" gorm:"unique" `
 	Description string   `json:"description"`
 	Pinned      IntArray `json:"-"     ` // pinned holes in given order
@@ -39,5 +41,10 @@ func (division *Division) Preprocess(c *fiber.Ctx) error {
 		return err
 	}
 	division.Holes = holes
+	return nil
+}
+
+func (division *Division) AfterFind(tx *gorm.DB) (err error) {
+	division.DivisionID = division.ID
 	return nil
 }
