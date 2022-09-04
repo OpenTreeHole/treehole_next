@@ -15,11 +15,12 @@ import (
 type HoleFloor struct {
 	FirstFloor *Floor   `json:"first_floor"`
 	LastFloor  *Floor   `json:"last_floor"`
-	Floors     []*Floor `json:"floors"`
+	Floors     []*Floor `json:"prefetch"`
 }
 
 type Hole struct {
 	BaseModel
+	HoleID     int                `json:"hole_id" gorm:"-:all"`
 	DivisionID int                `json:"division_id"`
 	UserID     int                `json:"-"` // permission
 	Tags       []*Tag             `json:"tags" gorm:"many2many:hole_tags"`
@@ -347,5 +348,10 @@ func (hole *Hole) AfterCreate(tx *gorm.DB) (err error) {
 		return err
 	}
 
+	return nil
+}
+
+func (hole *Hole) AfterFind(tx *gorm.DB) (err error) {
+	hole.HoleID = hole.ID
 	return nil
 }

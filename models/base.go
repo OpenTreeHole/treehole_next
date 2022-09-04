@@ -10,7 +10,7 @@ import (
 type Map = map[string]interface{}
 
 type BaseModel struct {
-	ID        int       `gorm:"primarykey" json:"id"`
+	ID        int       `gorm:"primarykey" json:"-"`
 	CreatedAt time.Time `json:"time_created"`
 	UpdatedAt time.Time `json:"time_updated"`
 }
