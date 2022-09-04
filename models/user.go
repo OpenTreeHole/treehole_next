@@ -61,7 +61,7 @@ func (user *User) parseJWT(token string) bool {
 }
 
 func (user *User) GetUser(c *fiber.Ctx) error {
-	if config.Config.Debug {
+	if config.Debug {
 		user.ID = 1
 		user.Permission = P_ADMIN + P_OPERATOR
 		return nil
@@ -97,7 +97,7 @@ func (user *User) GetUser(c *fiber.Ctx) error {
 }
 
 func GetUserID(c *fiber.Ctx) (int, error) {
-	if config.Config.Debug {
+	if config.Debug {
 		return 1, nil
 	}
 
@@ -142,7 +142,7 @@ func UserCreateFavourite(c *fiber.Ctx, clear bool, userID int, holeIDs []int) er
 		DB.Exec("DELETE FROM user_favorites WHERE user_id = ?", userID)
 	}
 	var builder strings.Builder
-	if config.Config.Debug {
+	if config.Debug {
 		builder.WriteString("INSERT INTO")
 	} else {
 		builder.WriteString("INSERT IGNORE INTO")
@@ -154,7 +154,7 @@ func UserCreateFavourite(c *fiber.Ctx, clear bool, userID int, holeIDs []int) er
 			builder.WriteString(", ")
 		}
 	}
-	if config.Config.Debug {
+	if config.Debug {
 		builder.WriteString(" ON CONFLICT DO NOTHING")
 	}
 	result := DB.Exec(builder.String())
