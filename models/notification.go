@@ -108,13 +108,13 @@ func (message Message) Send() error {
 }
 
 type Admin struct {
-	Id           int    `json:"id"`
-	IsAdmin      bool   `json:"is_admin"`
-	JoinedTime   string `json:"joined_time"`
-	LastLogin    string `json:"last_login"`
-	Nickname     string `json:"nickname"`
-	OffenseCount int    `json:"offense_count"`
-	Roles        string `json:"roles"`
+	Id           int      `json:"id"`
+	IsAdmin      bool     `json:"is_admin"`
+	JoinedTime   string   `json:"joined_time"`
+	LastLogin    string   `json:"last_login"`
+	Nickname     string   `json:"nickname"`
+	OffenseCount int      `json:"offense_count"`
+	Roles        []string `json:"roles"`
 }
 
 func readRespAdmin(body io.ReadCloser) []Admin {
