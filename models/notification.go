@@ -156,12 +156,15 @@ func InitAdminList() {
 
 	// get response
 	resp, err := client.Do(req)
-	response := readRespAdmin(resp.Body)
 
 	// handle err
 	if err != nil {
 		panic("[getadmin] error sending authserver" + err.Error())
-	} else if resp.StatusCode != 200 || len(response) == 0 {
+	}
+
+	response := readRespAdmin(resp.Body)
+
+	if resp.StatusCode != 200 || len(response) == 0 {
 		panic("[getadmin] authserver response failed" + fmt.Sprint(resp))
 	}
 
