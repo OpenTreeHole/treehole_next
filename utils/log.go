@@ -11,7 +11,7 @@ var Logger *zap.Logger
 
 func InitLog() (*zap.Logger, error) {
 	var atomicLevel zapcore.Level
-	if config.Config.Debug {
+	if config.Debug {
 		atomicLevel = zapcore.DebugLevel
 	} else {
 		atomicLevel = zapcore.InfoLevel
