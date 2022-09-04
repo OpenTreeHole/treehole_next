@@ -218,7 +218,7 @@ func (hole *Hole) SetTags(tx *gorm.DB, clear bool) error {
 	if clear {
 		// update tag temperature
 		var sql string
-		if config.Config.Debug {
+		if config.Debug {
 			sql = `
 			UPDATE tag
 			SET temperature = temperature - 1 
@@ -258,7 +258,7 @@ func (hole *Hole) SetTags(tx *gorm.DB, clear bool) error {
 
 	// create associations
 	var builder strings.Builder
-	if config.Config.Debug {
+	if config.Debug {
 		builder.WriteString("INSERT INTO")
 	} else {
 		builder.WriteString("INSERT IGNORE INTO")
@@ -270,7 +270,7 @@ func (hole *Hole) SetTags(tx *gorm.DB, clear bool) error {
 			builder.WriteString(",")
 		}
 	}
-	if config.Config.Debug {
+	if config.Debug {
 		builder.WriteString(" ON CONFLICT DO NOTHING")
 	}
 	result := tx.Exec(builder.String())

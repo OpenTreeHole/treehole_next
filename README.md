@@ -15,8 +15,11 @@ cd treehole_next
 # install swag and generate docs
 go install github.com/swaggo/swag/cmd/swag@latest
 swag init --parseInternal --parseDepth 1 # to generate the latest docs, this should be run before compiling
-# build and run
+# build for debug
 go build -o treehole.exe
+# build for release
+go build -tags "release" -ldflags "-s -w" -o treehole.exe
+# run
 ./treehole.exe
 ```
 For documentation, please open http://localhost:8000/docs after running app

@@ -14,7 +14,7 @@ func RegisterMiddlewares(app *fiber.App) {
 	if config.Config.Mode != "perf" {
 		app.Use(logger.New())
 	}
-	if config.Config.Debug {
+	if config.Debug {
 		app.Use(pprof.New())
 	}
 }

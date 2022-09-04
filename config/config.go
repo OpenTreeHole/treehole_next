@@ -13,7 +13,6 @@ type MyConfig struct {
 	Size    int    `default:"30"`
 	MaxSize int    `default:"50"`
 	TagSize int    `default:"5"`
-	Debug   bool   `default:"false"`
 	// example: user:pass@tcp(127.0.0.1:3306)/dbname
 	// for more detail, see https://github.com/go-sql-driver/mysql#dsn-data-source-name
 	DbUrl           string `default:""`
@@ -23,7 +22,7 @@ type MyConfig struct {
 
 var Config MyConfig
 
-func initConfig() { // load config from environment variables
+func InitConfig() { // load config from environment variables
 	configType := reflect.TypeOf(Config)
 	elem := reflect.ValueOf(&Config).Elem()
 	for i := 0; i < configType.NumField(); i++ {
@@ -60,12 +59,5 @@ func initConfig() { // load config from environment variables
 			panic("Now only supports string, int and bool as config")
 		}
 		elem.FieldByName(field.Name).Set(reflect.ValueOf(value))
-	}
-}
-
-func InitConfig() {
-	initConfig()
-	if Config.Mode != "production" {
-		Config.Debug = true
 	}
 }
