@@ -74,6 +74,7 @@ func (floors Floors) Preprocess(c *fiber.Ctx) error {
 		return err
 	}
 
+	// get floors' like
 	floorIDs := make([]int, len(floors))
 	IDFloorMapping := make(map[int]*Floor)
 	for i, v := range floors {
@@ -95,6 +96,13 @@ func (floors Floors) Preprocess(c *fiber.Ctx) error {
 	for _, v := range floorLikes {
 		if floor, ok := IDFloorMapping[v.FloorID]; ok {
 			floor.Liked = v.LikeData
+		}
+	}
+
+	// set prefetch mention null to []
+	for i := range floors {
+		if floors[i].Mention == nil {
+			floors[i].Mention = []Floor{}
 		}
 	}
 	return nil
