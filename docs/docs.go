@@ -292,7 +292,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": "No Content"
+                        "description": ""
                     },
                     "404": {
                         "description": "Not Found",
@@ -931,7 +931,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": "No Content"
+                        "description": ""
                     },
                     "404": {
                         "description": "Not Found",
@@ -961,7 +961,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": "No Content"
+                        "description": ""
                     },
                     "404": {
                         "description": "Not Found",
@@ -1094,7 +1094,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": "No Content"
+                        "description": ""
                     },
                     "400": {
                         "description": "Bad Request",
@@ -1766,6 +1766,9 @@ const docTemplate = `{
                 "description": {
                     "type": "string"
                 },
+                "division_id": {
+                    "type": "integer"
+                },
                 "id": {
                     "type": "integer"
                 },
@@ -1800,6 +1803,9 @@ const docTemplate = `{
                 "deleted": {
                     "description": "whether the floor is deleted",
                     "type": "boolean"
+                },
+                "floor_id": {
+                    "type": "integer"
                 },
                 "fold": {
                     "description": "fold reason",
@@ -1881,22 +1887,30 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "division_id": {
+                    "description": "所属 division 的 id",
                     "type": "integer"
                 },
                 "floors": {
-                    "description": "return floors",
+                    "description": "返回给前端的楼层列表，包括首楼、尾楼和预加载的楼层",
                     "$ref": "#/definitions/models.HoleFloor"
                 },
                 "hidden": {
+                    "description": "是否隐藏，隐藏的洞用户不可见，管理员可见",
                     "type": "boolean"
+                },
+                "hole_id": {
+                    "description": "兼容旧版 id",
+                    "type": "integer"
                 },
                 "id": {
                     "type": "integer"
                 },
                 "reply": {
+                    "description": "回复量（即该洞下 floor 的数量）",
                     "type": "integer"
                 },
                 "tags": {
+                    "description": "tag list",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/models.Tag"
@@ -1909,6 +1923,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "view": {
+                    "description": "浏览量",
                     "type": "integer"
                 }
             }
@@ -1961,6 +1976,9 @@ const docTemplate = `{
                 "reason": {
                     "type": "string"
                 },
+                "report_id": {
+                    "type": "integer"
+                },
                 "result": {
                     "description": "deal result",
                     "type": "string"
@@ -1981,6 +1999,9 @@ const docTemplate = `{
                 },
                 "name": {
                     "type": "string"
+                },
+                "tag_id": {
+                    "type": "integer"
                 },
                 "temperature": {
                     "type": "integer"

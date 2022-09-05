@@ -23,20 +23,20 @@ import (
 type Floor struct {
 	BaseModel
 	FloorID    int     `json:"floor_id" gorm:"-:all"`
-	HoleID     int     `json:"hole_id"`
-	UserID     int     `json:"-"`
-	Content    string  `json:"content"`                                // not empty
-	Anonyname  string  `json:"anonyname" gorm:"size:32"`               // random username, not empty
-	Storey     int     `json:"storey"`                                 // The sequence of floors in a hole
-	Path       string  `json:"path" gorm:"default:/"`                  // storey path
+	HoleID     int     `json:"hole_id"`                                // the hole it belongs to
+	UserID     int     `json:"-"`                                      // the user who wrote it, hidden to user but available to admin
+	Content    string  `json:"content"`                                // content of the floor
+	Anonyname  string  `json:"anonyname" gorm:"size:32"`               // a random username
+	Storey     int     `json:"storey"`                                 // the sequence of floors in a hole
+	Path       string  `json:"path" gorm:"default:/"`                  // storey path e.g. /1/2/3/
 	ReplyTo    int     `json:"-" gorm:"-:all"`                         // Floor id that it replies to (must be in the same hole)
-	Mention    []Floor `json:"mention" gorm:"many2many:floor_mention"` // Many to many mentions (in different holes)
-	Like       int     `json:"like"`                                   // like - dislike
+	Mention    []Floor `json:"mention" gorm:"many2many:floor_mention"` // many to many mentions (in different holes)
+	Like       int     `json:"like"`                                   // like number - dislike number
 	Liked      int8    `json:"liked" gorm:"-:all"`                     // whether the user has liked or disliked the floor, dynamically generated
 	IsMe       bool    `json:"is_me" gorm:"-:all"`                     // whether the user is the author of the floor, dynamically generated
 	Deleted    bool    `json:"deleted"`                                // whether the floor is deleted
 	Fold       string  `json:"fold"`                                   // fold reason
-	SpecialTag string  `json:"special_tag"`                            // Additional info
+	SpecialTag string  `json:"special_tag"`                            // additional info, like "树洞管理团队"
 }
 
 type Floors []Floor

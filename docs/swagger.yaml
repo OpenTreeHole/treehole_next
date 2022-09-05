@@ -163,6 +163,8 @@ definitions:
     properties:
       description:
         type: string
+      division_id:
+        type: integer
       id:
         type: integer
       name:
@@ -187,6 +189,8 @@ definitions:
       deleted:
         description: whether the floor is deleted
         type: boolean
+      floor_id:
+        type: integer
       fold:
         description: fold reason
         type: string
@@ -244,17 +248,24 @@ definitions:
   models.Hole:
     properties:
       division_id:
+        description: 所属 division 的 id
         type: integer
       floors:
         $ref: '#/definitions/models.HoleFloor'
-        description: return floors
+        description: 返回给前端的楼层列表，包括首楼、尾楼和预加载的楼层
       hidden:
+        description: 是否隐藏，隐藏的洞用户不可见，管理员可见
         type: boolean
+      hole_id:
+        description: 兼容旧版 id
+        type: integer
       id:
         type: integer
       reply:
+        description: 回复量（即该洞下 floor 的数量）
         type: integer
       tags:
+        description: tag list
         items:
           $ref: '#/definitions/models.Tag'
         type: array
@@ -263,6 +274,7 @@ definitions:
       time_updated:
         type: string
       view:
+        description: 浏览量
         type: integer
     type: object
   models.HoleFloor:
@@ -297,6 +309,8 @@ definitions:
         type: integer
       reason:
         type: string
+      report_id:
+        type: integer
       result:
         description: deal result
         type: string
@@ -311,6 +325,8 @@ definitions:
         type: integer
       name:
         type: string
+      tag_id:
+        type: integer
       temperature:
         type: integer
       time_created:
@@ -528,7 +544,7 @@ paths:
       - application/json
       responses:
         "204":
-          description: No Content
+          description: ""
         "404":
           description: Not Found
           schema:
@@ -950,7 +966,7 @@ paths:
       - application/json
       responses:
         "204":
-          description: No Content
+          description: ""
         "404":
           description: Not Found
           schema:
@@ -991,7 +1007,7 @@ paths:
       - application/json
       responses:
         "204":
-          description: No Content
+          description: ""
         "404":
           description: Not Found
           schema:
@@ -1107,7 +1123,7 @@ paths:
       - application/json
       responses:
         "204":
-          description: No Content
+          description: ""
         "400":
           description: Bad Request
           schema:

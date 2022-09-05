@@ -12,26 +12,27 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-type HoleFloor struct {
-	FirstFloor *Floor   `json:"first_floor"`
-	LastFloor  *Floor   `json:"last_floor"`
-	Floors     []*Floor `json:"prefetch"`
-}
-
 type Hole struct {
 	BaseModel
-	HoleID     int                `json:"hole_id" gorm:"-:all"`
-	DivisionID int                `json:"division_id"`
-	UserID     int                `json:"-"` // permission
-	Tags       []*Tag             `json:"tags" gorm:"many2many:hole_tags"`
-	Floors     []Floor            `json:"-"`
-	HoleFloor  HoleFloor          `json:"floors" gorm:"-:all"` // return floors
-	View       int                `json:"view"`
-	Reply      int                `json:"reply"`
-	Hidden     bool               `json:"hidden"`
-	Mapping    []AnonynameMapping `json:"-"`
+	HoleID     int                `json:"hole_id" gorm:"-:all"`            // 兼容旧版 id
+	DivisionID int                `json:"division_id"`                     // 所属 division 的 id
+	UserID     int                `json:"-"`                               // 洞主 id
+	Tags       []*Tag             `json:"tags" gorm:"many2many:hole_tags"` // tag 列表
+	Floors     []Floor            `json:"-"`                               // 楼层列表
+	HoleFloor  HoleFloor          `json:"floors" gorm:"-:all"`             // 返回给前端的楼层列表，包括首楼、尾楼和预加载的前 n 个楼层
+	View       int                `json:"view"`                            // 浏览量
+	Reply      int                `json:"reply"`                           // 回复量（即该洞下 floor 的数量）
+	Hidden     bool               `json:"hidden"`                          // 是否隐藏，隐藏的洞用户不可见，管理员可见
+	Mapping    []AnonynameMapping `json:"-"`                               // 匿名映射表
 }
+
 type Holes []Hole
+
+type HoleFloor struct {
+	FirstFloor *Floor   `json:"first_floor"` // 首楼
+	LastFloor  *Floor   `json:"last_floor"`  // 尾楼
+	Floors     []*Floor `json:"prefetch"`    // 预加载的楼层
+}
 
 type HoleTag struct {
 	HoleID int `json:"hole_id"`
