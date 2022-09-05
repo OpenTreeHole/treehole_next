@@ -159,13 +159,15 @@ func InitAdminList() {
 
 	// handle err
 	if err != nil {
-		panic("[getadmin] error sending authserver" + err.Error())
+		utils.Logger.Error("[getadmin] error sending auth server" + err.Error())
+		return
 	}
 
 	response := readRespAdmin(resp.Body)
 
 	if resp.StatusCode != 200 || len(response) == 0 {
-		panic("[getadmin] authserver response failed" + fmt.Sprint(resp))
+		utils.Logger.Error("[getadmin] auth server response failed" + fmt.Sprint(resp))
+		return
 	}
 
 	// get ids
