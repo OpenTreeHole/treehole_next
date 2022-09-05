@@ -113,8 +113,8 @@ func loadFloors(holes []*Hole) error {
 		return nil
 	}
 
-	var index, left int
-	for right, floor := range floors {
+	var index, left, right int
+	for _, floor := range floors {
 		floors[right].Mention = []Floor{}
 		if floor.HoleID != holes[index].ID {
 			if index != 0 { // set floors
@@ -128,6 +128,7 @@ func loadFloors(holes []*Hole) error {
 				}
 			}
 		}
+		right++
 	}
 	holes[index].HoleFloor.Floors = floors[left:right]
 
