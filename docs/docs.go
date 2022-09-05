@@ -1190,6 +1190,14 @@ const docTemplate = `{
                     "Tag"
                 ],
                 "summary": "List All Tags",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "search tag by name",
+                        "name": "s",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -1793,11 +1801,11 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "anonyname": {
-                    "description": "random username, not empty",
+                    "description": "a random username",
                     "type": "string"
                 },
                 "content": {
-                    "description": "not empty",
+                    "description": "content of the floor",
                     "type": "string"
                 },
                 "deleted": {
@@ -1812,6 +1820,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "hole_id": {
+                    "description": "the hole it belongs to",
                     "type": "integer"
                 },
                 "id": {
@@ -1822,7 +1831,7 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "like": {
-                    "description": "like - dislike",
+                    "description": "like number - dislike number",
                     "type": "integer"
                 },
                 "liked": {
@@ -1830,22 +1839,22 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "mention": {
-                    "description": "Many to many mentions (in different holes)",
+                    "description": "many to many mentions (in different holes)",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/models.Floor"
                     }
                 },
                 "path": {
-                    "description": "storey path",
+                    "description": "storey path e.g. /1/2/3/",
                     "type": "string"
                 },
                 "special_tag": {
-                    "description": "Additional info",
+                    "description": "additional info, like \"树洞管理团队\"",
                     "type": "string"
                 },
                 "storey": {
-                    "description": "The sequence of floors in a hole",
+                    "description": "the sequence of floors in a hole",
                     "type": "integer"
                 },
                 "time_created": {
@@ -1891,7 +1900,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "floors": {
-                    "description": "返回给前端的楼层列表，包括首楼、尾楼和预加载的楼层",
+                    "description": "返回给前端的楼层列表，包括首楼、尾楼和预加载的前 n 个楼层",
                     "$ref": "#/definitions/models.HoleFloor"
                 },
                 "hidden": {
@@ -1910,7 +1919,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "tags": {
-                    "description": "tag list",
+                    "description": "tag 列表",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/models.Tag"
@@ -1932,12 +1941,15 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "first_floor": {
+                    "description": "首楼",
                     "$ref": "#/definitions/models.Floor"
                 },
                 "last_floor": {
+                    "description": "尾楼",
                     "$ref": "#/definitions/models.Floor"
                 },
                 "prefetch": {
+                    "description": "预加载的楼层",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/models.Floor"

@@ -181,10 +181,10 @@ definitions:
   models.Floor:
     properties:
       anonyname:
-        description: random username, not empty
+        description: a random username
         type: string
       content:
-        description: not empty
+        description: content of the floor
         type: string
       deleted:
         description: whether the floor is deleted
@@ -195,6 +195,7 @@ definitions:
         description: fold reason
         type: string
       hole_id:
+        description: the hole it belongs to
         type: integer
       id:
         type: integer
@@ -202,25 +203,25 @@ definitions:
         description: whether the user is the author of the floor, dynamically generated
         type: boolean
       like:
-        description: like - dislike
+        description: like number - dislike number
         type: integer
       liked:
         description: whether the user has liked or disliked the floor, dynamically
           generated
         type: integer
       mention:
-        description: Many to many mentions (in different holes)
+        description: many to many mentions (in different holes)
         items:
           $ref: '#/definitions/models.Floor'
         type: array
       path:
-        description: storey path
+        description: storey path e.g. /1/2/3/
         type: string
       special_tag:
-        description: Additional info
+        description: additional info, like "树洞管理团队"
         type: string
       storey:
-        description: The sequence of floors in a hole
+        description: the sequence of floors in a hole
         type: integer
       time_created:
         type: string
@@ -252,7 +253,7 @@ definitions:
         type: integer
       floors:
         $ref: '#/definitions/models.HoleFloor'
-        description: 返回给前端的楼层列表，包括首楼、尾楼和预加载的楼层
+        description: 返回给前端的楼层列表，包括首楼、尾楼和预加载的前 n 个楼层
       hidden:
         description: 是否隐藏，隐藏的洞用户不可见，管理员可见
         type: boolean
@@ -265,7 +266,7 @@ definitions:
         description: 回复量（即该洞下 floor 的数量）
         type: integer
       tags:
-        description: tag list
+        description: tag 列表
         items:
           $ref: '#/definitions/models.Tag'
         type: array
@@ -281,9 +282,12 @@ definitions:
     properties:
       first_floor:
         $ref: '#/definitions/models.Floor'
+        description: 首楼
       last_floor:
         $ref: '#/definitions/models.Floor'
+        description: 尾楼
       prefetch:
+        description: 预加载的楼层
         items:
           $ref: '#/definitions/models.Floor'
         type: array
@@ -1183,8 +1187,13 @@ paths:
       - Report
   /tags:
     get:
+      parameters:
+        - description: search tag by name
+          in: query
+          name: s
+          type: string
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: OK
