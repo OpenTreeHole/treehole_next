@@ -1820,6 +1820,13 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "fold": {
+                    "description": "fold reason, for v1",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "fold_v2": {
                     "description": "fold reason",
                     "type": "string"
                 },

@@ -195,6 +195,11 @@ definitions:
       floor_id:
         type: integer
       fold:
+        description: fold reason, for v1
+        items:
+          type: string
+        type: array
+      fold_v2:
         description: fold reason
         type: string
       hole_id:
