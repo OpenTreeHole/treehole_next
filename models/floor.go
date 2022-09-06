@@ -22,21 +22,23 @@ import (
 //	id: 7, reply_to: 0, storey: 7
 type Floor struct {
 	BaseModel
-	FloorID    int     `json:"floor_id" gorm:"-:all"`
-	HoleID     int     `json:"hole_id"`                                // the hole it belongs to
-	UserID     int     `json:"-"`                                      // the user who wrote it, hidden to user but available to admin
-	Content    string  `json:"content"`                                // content of the floor
-	Anonyname  string  `json:"anonyname" gorm:"size:32"`               // a random username
-	Storey     int     `json:"storey"`                                 // the sequence of floors in a hole
-	Path       string  `json:"path" gorm:"default:/"`                  // storey path e.g. /1/2/3/
-	ReplyTo    int     `json:"-" gorm:"-:all"`                         // Floor id that it replies to (must be in the same hole)
-	Mention    []Floor `json:"mention" gorm:"many2many:floor_mention"` // many to many mentions (in different holes)
-	Like       int     `json:"like"`                                   // like number - dislike number
-	Liked      int8    `json:"liked" gorm:"-:all"`                     // whether the user has liked or disliked the floor, dynamically generated
-	IsMe       bool    `json:"is_me" gorm:"-:all"`                     // whether the user is the author of the floor, dynamically generated
-	Deleted    bool    `json:"deleted"`                                // whether the floor is deleted
-	Fold       string  `json:"fold"`                                   // fold reason
-	SpecialTag string  `json:"special_tag"`                            // additional info, like "树洞管理团队"
+	FloorID          int     `json:"floor_id" gorm:"-:all"`
+	HoleID           int     `json:"hole_id"`                                // the hole it belongs to
+	UserID           int     `json:"-"`                                      // the user who wrote it, hidden to user but available to admin
+	Content          string  `json:"content"`                                // content of the floor
+	Anonyname        string  `json:"anonyname" gorm:"size:32"`               // a random username
+	Storey           int     `json:"storey"`                                 // the sequence of floors in a hole
+	Path             string  `json:"path" gorm:"default:/"`                  // storey path e.g. /1/2/3/
+	ReplyTo          int     `json:"-" gorm:"-:all"`                         // Floor id that it replies to (must be in the same hole)
+	Mention          []Floor `json:"mention" gorm:"many2many:floor_mention"` // many to many mentions (in different holes)
+	Like             int     `json:"like"`                                   // like number - dislike number
+	Liked            int8    `json:"-" gorm:"-:all"`                         // whether the user has liked or disliked the floor, dynamically generated
+	LikedFrontend    bool    `json:"liked" gorm:"-:all"`                     // whether the user has liked the floor, dynamically generated
+	DislikedFrontend bool    `json:"disliked" gorm:"-:all"`                  // whether the user has disliked the floor, dynamically generated
+	IsMe             bool    `json:"is_me" gorm:"-:all"`                     // whether the user is the author of the floor, dynamically generated
+	Deleted          bool    `json:"deleted"`                                // whether the floor is deleted
+	Fold             string  `json:"fold"`                                   // fold reason
+	SpecialTag       string  `json:"special_tag"`                            // additional info, like "树洞管理团队"
 }
 
 type Floors []Floor
@@ -96,6 +98,12 @@ func (floors Floors) Preprocess(c *fiber.Ctx) error {
 	for _, v := range floorLikes {
 		if floor, ok := IDFloorMapping[v.FloorID]; ok {
 			floor.Liked = v.LikeData
+			switch floor.Liked {
+			case 1:
+				floor.LikedFrontend = true
+			case -1:
+				floor.DislikedFrontend = true
+			}
 		}
 	}
 

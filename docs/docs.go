@@ -1812,6 +1812,10 @@ const docTemplate = `{
                     "description": "whether the floor is deleted",
                     "type": "boolean"
                 },
+                "disliked": {
+                    "description": "whether the user has disliked the floor, dynamically generated",
+                    "type": "boolean"
+                },
                 "floor_id": {
                     "type": "integer"
                 },
@@ -1835,8 +1839,8 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "liked": {
-                    "description": "whether the user has liked or disliked the floor, dynamically generated",
-                    "type": "integer"
+                    "description": "whether the user has liked the floor, dynamically generated",
+                    "type": "boolean"
                 },
                 "mention": {
                     "description": "many to many mentions (in different holes)",
