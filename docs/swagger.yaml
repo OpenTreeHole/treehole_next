@@ -75,7 +75,14 @@ definitions:
         maxLength: 16
         type: string
     required:
-    - content
+      - content
+    type: object
+  floor.CreateOldResponse:
+    properties:
+      data:
+        $ref: '#/definitions/models.Floor'
+      message:
+        type: string
     type: object
   floor.DeleteModel:
     properties:
@@ -145,7 +152,14 @@ definitions:
           $ref: '#/definitions/tag.CreateModel'
         type: array
     required:
-    - content
+      - content
+    type: object
+  hole.CreateOldResponse:
+    properties:
+      data:
+        $ref: '#/definitions/models.Hole'
+      message:
+        type: string
     type: object
   hole.ModifyModel:
     properties:
@@ -657,7 +671,7 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/models.Floor'
+            $ref: '#/definitions/floor.CreateOldResponse'
       summary: Old API for Creating A Floor
       tags:
       - Floor
@@ -886,7 +900,7 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/models.Hole'
+            $ref: '#/definitions/hole.CreateOldResponse'
       summary: Old API for Creating A Hole
       tags:
       - Hole

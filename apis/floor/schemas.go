@@ -39,6 +39,11 @@ type CreateOldModel struct {
 	CreateModel
 }
 
+type CreateOldResponse struct {
+	Data    models.Floor
+	Message string
+}
+
 type ModifyModel struct {
 	// Owner or admin, the original content should be moved to  floor_history
 	Content string `json:"content" validate:"omitempty"`

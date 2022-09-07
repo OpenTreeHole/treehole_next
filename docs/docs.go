@@ -374,7 +374,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/models.Floor"
+                            "$ref": "#/definitions/floor.CreateOldResponse"
                         }
                     }
                 }
@@ -725,7 +725,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/models.Hole"
+                            "$ref": "#/definitions/hole.CreateOldResponse"
                         }
                     }
                 }
@@ -1652,6 +1652,17 @@ const docTemplate = `{
                 }
             }
         },
+        "floor.CreateOldResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/models.Floor"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
         "floor.DeleteModel": {
             "type": "object",
             "properties": {
@@ -1748,6 +1759,17 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/tag.CreateModel"
                     }
+                }
+            }
+        },
+        "hole.CreateOldResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/models.Hole"
+                },
+                "message": {
+                    "type": "string"
                 }
             }
         },
