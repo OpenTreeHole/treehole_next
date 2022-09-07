@@ -491,6 +491,10 @@ func (floor *Floor) SendModify(tx *gorm.DB) error {
 
 func (floor *Floor) AfterFind(tx *gorm.DB) (err error) {
 	floor.FloorID = floor.ID
-	floor.FoldFrontend = []string{floor.Fold}
+	if floor.Fold != "" {
+		floor.FoldFrontend = []string{floor.Fold}
+	} else {
+		floor.FoldFrontend = []string{}
+	}
 	return nil
 }
