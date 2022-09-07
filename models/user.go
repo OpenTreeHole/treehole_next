@@ -3,6 +3,7 @@ package models
 import (
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -37,27 +38,28 @@ const (
 type PermissionType int
 
 // parseJWT extracts and parse token
-func (user *User) parseJWT(token string) bool {
+func (user *User) parseJWT(token string) error {
 	if len(token) < 7 {
-		return false
+		return errors.New("bearer token required")
 	}
 
 	payloads := strings.SplitN(token[7:], ".", 3) // extract "Bearer "
 	if len(payloads) < 3 {
-		return false
+		return errors.New("jwt token required")
 	}
 
-	payloadBytes, err := base64.StdEncoding.DecodeString(payloads[1]) // the middle one is payload
+	// jwt encoding ignores padding, so RawStdEncoding should be used instead of StdEncoding
+	payloadBytes, err := base64.RawStdEncoding.DecodeString(payloads[1]) // the middle one is payload
 	if err != nil {
-		return false
+		return err
 	}
 
 	err = json.Unmarshal(payloadBytes, user)
 	if err != nil {
-		return false
+		return err
 	}
 
-	return true
+	return nil
 }
 
 func (user *User) GetUser(c *fiber.Ctx) error {
@@ -76,8 +78,9 @@ func (user *User) GetUser(c *fiber.Ctx) error {
 
 	// parse JWT
 	tokenString := c.Get("Authorization")
-	if !user.parseJWT(tokenString) {
-		return utils.Unauthorized("Invalid JWT Token")
+	err = user.parseJWT(tokenString)
+	if err != nil {
+		return utils.Unauthorized(err.Error())
 	}
 
 	for _, v := range user.Roles {
