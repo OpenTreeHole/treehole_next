@@ -52,8 +52,8 @@ type CreateOldModel struct {
 }
 
 type CreateOldResponse struct {
-	Data    models.Hole
-	Message string
+	Data    models.Hole `json:"data"`
+	Message string      `json:"message"`
 }
 
 type ModifyModel struct {

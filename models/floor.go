@@ -173,15 +173,15 @@ func (floor *Floor) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 	floor.UserID = user.ID
 	floor.IsMe = true
 
-	// permission
-	var hole Hole
-	DB.Select("division_id").First(&hole, floor.HoleID)
-	if user.BanDivision[hole.DivisionID] ||
-		floor.SpecialTag != "" && !user.CheckPermission(P_OPERATOR) {
-		return utils.Forbidden()
-	}
+	return tx.Transaction(func(tx *gorm.DB) error {
+		// permission
+		var hole Hole
+		tx.Select("division_id").First(&hole, floor.HoleID)
+		if user.BanDivision[hole.DivisionID] ||
+			floor.SpecialTag != "" && !user.CheckPermission(P_OPERATOR) {
+			return utils.Forbidden()
+		}
 
-	err = tx.Transaction(func(tx *gorm.DB) error {
 		// get anonymous name
 		var mapping AnonynameMapping
 
@@ -272,11 +272,6 @@ func (floor *Floor) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 		}
 		return nil
 	})
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func (floor *Floor) AfterCreate(tx *gorm.DB) (err error) {

@@ -295,7 +295,7 @@ func (hole *Hole) SetTags(tx *gorm.DB, clear bool) error {
 	return nil
 }
 
-func (hole *Hole) Create(c *fiber.Ctx, content *string, specialTag *string, db ...*gorm.DB) error {
+func (hole *Hole) Create(c *fiber.Ctx, content string, specialTag string, db ...*gorm.DB) error {
 	var tx *gorm.DB
 	if len(db) > 0 {
 		tx = db[0]
@@ -310,12 +310,12 @@ func (hole *Hole) Create(c *fiber.Ctx, content *string, specialTag *string, db .
 		return err
 	}
 	if user.BanDivision[hole.DivisionID] ||
-		*specialTag != "" && !user.CheckPermission(P_OPERATOR) {
+		specialTag != "" && !user.CheckPermission(P_OPERATOR) {
 		return utils.Forbidden()
 	}
 	hole.UserID = user.ID
 
-	err = tx.Transaction(func(tx *gorm.DB) error {
+	return tx.Transaction(func(tx *gorm.DB) error {
 		// Create hole
 		result := tx.Omit("Tags").Create(hole) // tags are created in AfterCreate hook
 		if result.Error != nil {
@@ -325,23 +325,13 @@ func (hole *Hole) Create(c *fiber.Ctx, content *string, specialTag *string, db .
 		// Bind and Create floor
 		floor := Floor{
 			HoleID:     hole.ID,
-			Content:    *content,
+			Content:    content,
 			UserID:     hole.UserID,
-			SpecialTag: *specialTag,
+			SpecialTag: specialTag,
 			IsMe:       true,
 		}
-		err := floor.Create(c, tx)
-		if err != nil {
-			return err
-		}
-		return nil
+		return floor.Create(c, tx)
 	})
-
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func (hole *Hole) AfterCreate(tx *gorm.DB) (err error) {

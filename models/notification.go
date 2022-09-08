@@ -93,13 +93,13 @@ func (message Message) Send() error {
 
 	// get response
 	resp, err := client.Do(req)
-	response := readRespMessage(resp.Body)
-
-	// handle err
 	if err != nil {
 		utils.Logger.Error("[notification] error sending notification" + err.Error())
 		return err
-	} else if resp.StatusCode != 201 {
+	}
+
+	response := readRespMessage(resp.Body)
+	if resp.StatusCode != 201 {
 		utils.Logger.Error("[notification] notification response failed" + fmt.Sprint(response))
 		return errors.New(fmt.Sprint(response))
 	}

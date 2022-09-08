@@ -40,8 +40,8 @@ type CreateOldModel struct {
 }
 
 type CreateOldResponse struct {
-	Data    models.Floor
-	Message string
+	Data    models.Floor `json:"data"`
+	Message string       `json:"message"`
 }
 
 type ModifyModel struct {
