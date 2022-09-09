@@ -17,7 +17,17 @@ var gormConfig = &gorm.Config{
 	},
 }
 
+type DBTypeEnum int
+
+const (
+	DBTypeMysql DBTypeEnum = iota
+	DBTypeSqlite
+)
+
+var DBType DBTypeEnum
+
 func mysqlDB() (*gorm.DB, error) {
+	DBType = DBTypeMysql
 	return gorm.Open(mysql.Open(config.Config.DbUrl), gormConfig)
 }
 
@@ -26,10 +36,12 @@ func sqliteDB() (*gorm.DB, error) {
 	if err != nil {
 		panic(err)
 	}
+	DBType = DBTypeSqlite
 	return gorm.Open(sqlite.Open("data/sqlite.db"), gormConfig)
 }
 
 func memoryDB() (*gorm.DB, error) {
+	DBType = DBTypeSqlite
 	return gorm.Open(sqlite.Open("file::memory:?cache=shared"), gormConfig)
 }
 

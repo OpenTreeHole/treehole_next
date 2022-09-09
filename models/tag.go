@@ -14,3 +14,8 @@ func (tag *Tag) AfterFind(tx *gorm.DB) (err error) {
 	tag.TagID = tag.ID
 	return nil
 }
+
+func (tag *Tag) AfterCreate(tx *gorm.DB) (err error) {
+	tag.TagID = tag.ID
+	return nil
+}

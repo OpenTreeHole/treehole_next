@@ -275,6 +275,8 @@ func (floor *Floor) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 }
 
 func (floor *Floor) AfterCreate(tx *gorm.DB) (err error) {
+	floor.FloorID = floor.ID
+
 	result := tx.Exec("UPDATE hole SET reply = reply + 1 WHERE id = ?", floor.HoleID)
 	if result.Error != nil {
 		return result.Error
@@ -297,6 +299,7 @@ func (floor *Floor) AfterCreate(tx *gorm.DB) (err error) {
 		utils.Logger.Error("[notification] SendMention failed: " + err.Error())
 		// return err // only for test
 	}
+
 	return nil
 }
 

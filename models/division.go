@@ -48,3 +48,8 @@ func (division *Division) AfterFind(tx *gorm.DB) (err error) {
 	division.DivisionID = division.ID
 	return nil
 }
+
+func (division *Division) AfterCreate(tx *gorm.DB) (err error) {
+	division.DivisionID = division.ID
+	return nil
+}

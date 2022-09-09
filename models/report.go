@@ -39,11 +39,19 @@ func (report *Report) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 }
 
 func (report *Report) AfterCreate(tx *gorm.DB) (err error) {
+	report.ReportID = report.ID
+
 	err = report.SendCreate(tx)
 	if err != nil {
 		utils.Logger.Error("[notification] SendCreate failed: " + err.Error())
 		// return err // only for test
 	}
+	return nil
+}
+
+func (report *Report) AfterFind(tx *gorm.DB) (err error) {
+	report.ReportID = report.ID
+
 	return nil
 }
 

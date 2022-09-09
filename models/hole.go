@@ -221,7 +221,7 @@ func (hole *Hole) SetTags(tx *gorm.DB, clear bool) error {
 	if clear {
 		// update tag temperature
 		var sql string
-		if config.Debug {
+		if DBType == DBTypeSqlite {
 			sql = `
 			UPDATE tag
 			SET temperature = temperature - 1 
@@ -249,19 +249,33 @@ func (hole *Hole) SetTags(tx *gorm.DB, clear bool) error {
 	if len(hole.Tags) == 0 {
 		return nil
 	}
-	// create tags
-	tx.Clauses(clause.OnConflict{
-		Columns: []clause.Column{{Name: "name"}},
-	}).Create(&hole.Tags)
 
+	// create tags
+	result := tx.Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "name"}},
+		DoNothing: true,
+	}).Create(&hole.Tags)
+	if result.Error != nil {
+		return result.Error
+	}
+
+	// find tags
+	tagNames := make([]string, len(hole.Tags))
+	for i, tag := range hole.Tags {
+		tagNames[i] = tag.Name
+	}
+	result = tx.Where("name IN (?)", tagNames).Find(&hole.Tags)
+	if result.Error != nil {
+		return result.Error
+	}
+
+	// create associations
 	tagIDs := make([]int, len(hole.Tags))
 	for i, tag := range hole.Tags {
 		tagIDs[i] = tag.ID
 	}
-
-	// create associations
 	var builder strings.Builder
-	if config.Debug {
+	if DBType == DBTypeSqlite {
 		builder.WriteString("INSERT INTO")
 	} else {
 		builder.WriteString("INSERT IGNORE INTO")
@@ -273,10 +287,10 @@ func (hole *Hole) SetTags(tx *gorm.DB, clear bool) error {
 			builder.WriteString(",")
 		}
 	}
-	if config.Debug {
+	if DBType == DBTypeSqlite {
 		builder.WriteString(" ON CONFLICT DO NOTHING")
 	}
-	result := tx.Exec(builder.String())
+	result = tx.Exec(builder.String())
 	if result.Error != nil {
 		return result.Error
 	}
@@ -335,12 +349,8 @@ func (hole *Hole) Create(c *fiber.Ctx, content string, specialTag string, db ...
 }
 
 func (hole *Hole) AfterCreate(tx *gorm.DB) (err error) {
-	err = hole.SetTags(tx, false)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	hole.HoleID = hole.ID
+	return hole.SetTags(tx, false)
 }
 
 func (hole *Hole) AfterFind(tx *gorm.DB) (err error) {
