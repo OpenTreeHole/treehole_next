@@ -9,7 +9,7 @@ import (
 var ES *elasticsearch.Client
 
 func InitSearch() {
-	if Config.Mode == "test" {
+	if Config.Mode == "test" || Config.Mode == "bench" {
 		return
 	}
 
