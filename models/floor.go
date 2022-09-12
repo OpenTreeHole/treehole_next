@@ -68,7 +68,15 @@ type FloorHistory struct {
 func (floor *Floor) Preprocess(c *fiber.Ctx) error {
 	var floors Floors
 	floors = append(floors, *floor)
-	return floors.Preprocess(c)
+
+	err := floors.Preprocess(c)
+	if err != nil {
+		return err
+	}
+
+	*floor = floors[0]
+
+	return nil
 }
 
 func (floors Floors) Preprocess(c *fiber.Ctx) error {
@@ -108,10 +116,18 @@ func (floors Floors) Preprocess(c *fiber.Ctx) error {
 		}
 	}
 
-	// set prefetch mention null to []
+	// set some default values
 	for i := range floors {
 		if floors[i].Mention == nil {
 			floors[i].Mention = []Floor{}
+		}
+
+		floors[i].FloorID = floors[i].ID
+
+		if floors[i].Fold != "" {
+			floors[i].FoldFrontend = []string{floors[i].Fold}
+		} else {
+			floors[i].FoldFrontend = []string{}
 		}
 	}
 	return nil
@@ -144,7 +160,7 @@ func (floor *Floor) FindMention(tx *gorm.DB) error {
 	}
 
 	floorIDs = append(floorIDs, floorIDs2...)
-	var floors []Floor
+	floors := make([]Floor, 0)
 	if len(floorIDs) != 0 {
 		err := tx.Find(&floors, floorIDs).Error
 		if err != nil {
@@ -220,7 +236,7 @@ func (floor *Floor) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 		// set storey and path
 		if floor.ReplyTo == 0 {
 			var count int64
-			result := tx.Clauses(clause.Locking{
+			result = tx.Clauses(clause.Locking{
 				Strength: "UPDATE",
 			}).Model(&Floor{}).Where("hole_id = ?", floor.HoleID).
 				Count(&count)
@@ -231,7 +247,7 @@ func (floor *Floor) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 			floor.Path = "/"
 		} else {
 			var storey int
-			result := tx.Clauses(clause.Locking{
+			result = tx.Clauses(clause.Locking{
 				Strength: "UPDATE",
 			}).Raw(`SELECT storey FROM floor 
 					WHERE hole_id = ? AND path LIKE '%/?/%' 
@@ -275,7 +291,6 @@ func (floor *Floor) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 }
 
 func (floor *Floor) AfterCreate(tx *gorm.DB) (err error) {
-	floor.FloorID = floor.ID
 
 	result := tx.Exec("UPDATE hole SET reply = reply + 1 WHERE id = ?", floor.HoleID)
 	if result.Error != nil {
@@ -485,15 +500,5 @@ func (floor *Floor) SendModify(tx *gorm.DB) error {
 		return err
 	}
 
-	return nil
-}
-
-func (floor *Floor) AfterFind(tx *gorm.DB) (err error) {
-	floor.FloorID = floor.ID
-	if floor.Fold != "" {
-		floor.FoldFrontend = []string{floor.Fold}
-	} else {
-		floor.FoldFrontend = []string{}
-	}
 	return nil
 }
