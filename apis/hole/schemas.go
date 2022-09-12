@@ -3,6 +3,7 @@ package hole
 import (
 	"time"
 	"treehole_next/apis/tag"
+	"treehole_next/models"
 )
 
 type QueryTime struct {
@@ -48,6 +49,11 @@ type CreateModel struct {
 type CreateOldModel struct {
 	CreateModel
 	divisionID
+}
+
+type CreateOldResponse struct {
+	Data    models.Hole `json:"data"`
+	Message string      `json:"message"`
 }
 
 type ModifyModel struct {

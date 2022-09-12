@@ -75,7 +75,14 @@ definitions:
         maxLength: 16
         type: string
     required:
-    - content
+      - content
+    type: object
+  floor.CreateOldResponse:
+    properties:
+      data:
+        $ref: '#/definitions/models.Floor'
+      message:
+        type: string
     type: object
   floor.DeleteModel:
     properties:
@@ -145,7 +152,14 @@ definitions:
           $ref: '#/definitions/tag.CreateModel'
         type: array
     required:
-    - content
+      - content
+    type: object
+  hole.CreateOldResponse:
+    properties:
+      data:
+        $ref: '#/definitions/models.Hole'
+      message:
+        type: string
     type: object
   hole.ModifyModel:
     properties:
@@ -163,6 +177,8 @@ definitions:
     properties:
       description:
         type: string
+      division_id:
+        type: integer
       id:
         type: integer
       name:
@@ -179,18 +195,29 @@ definitions:
   models.Floor:
     properties:
       anonyname:
-        description: random username, not empty
+        description: a random username
         type: string
       content:
-        description: not empty
+        description: content of the floor
         type: string
       deleted:
         description: whether the floor is deleted
         type: boolean
+      disliked:
+        description: whether the user has disliked the floor, dynamically generated
+        type: boolean
+      floor_id:
+        type: integer
       fold:
+        description: fold reason, for v1
+        items:
+          type: string
+        type: array
+      fold_v2:
         description: fold reason
         type: string
       hole_id:
+        description: the hole it belongs to
         type: integer
       id:
         type: integer
@@ -198,25 +225,24 @@ definitions:
         description: whether the user is the author of the floor, dynamically generated
         type: boolean
       like:
-        description: like - dislike
+        description: like number - dislike number
         type: integer
       liked:
-        description: whether the user has liked or disliked the floor, dynamically
-          generated
-        type: integer
+        description: whether the user has liked the floor, dynamically generated
+        type: boolean
       mention:
-        description: Many to many mentions (in different holes)
+        description: many to many mentions (in different holes)
         items:
           $ref: '#/definitions/models.Floor'
         type: array
       path:
-        description: storey path
+        description: storey path e.g. /1/2/3/
         type: string
       special_tag:
-        description: Additional info
+        description: additional info, like "树洞管理团队"
         type: string
       storey:
-        description: The sequence of floors in a hole
+        description: the sequence of floors in a hole
         type: integer
       time_created:
         type: string
@@ -244,17 +270,24 @@ definitions:
   models.Hole:
     properties:
       division_id:
+        description: 所属 division 的 id
         type: integer
       floors:
         $ref: '#/definitions/models.HoleFloor'
-        description: return floors
+        description: 返回给前端的楼层列表，包括首楼、尾楼和预加载的前 n 个楼层
       hidden:
+        description: 是否隐藏，隐藏的洞用户不可见，管理员可见
         type: boolean
+      hole_id:
+        description: 兼容旧版 id
+        type: integer
       id:
         type: integer
       reply:
+        description: 回复量（即该洞下 floor 的数量）
         type: integer
       tags:
+        description: tag 列表
         items:
           $ref: '#/definitions/models.Tag'
         type: array
@@ -263,18 +296,22 @@ definitions:
       time_updated:
         type: string
       view:
+        description: 浏览量
         type: integer
     type: object
   models.HoleFloor:
     properties:
       first_floor:
         $ref: '#/definitions/models.Floor'
-      floors:
+        description: 首楼
+      last_floor:
+        $ref: '#/definitions/models.Floor'
+        description: 尾楼
+      prefetch:
+        description: 预加载的楼层
         items:
           $ref: '#/definitions/models.Floor'
         type: array
-      last_floor:
-        $ref: '#/definitions/models.Floor'
     type: object
   models.MessageModel:
     properties:
@@ -286,6 +323,9 @@ definitions:
       dealt:
         description: the report has been dealt
         type: boolean
+      dealt_by:
+        description: who dealt the report
+        type: integer
       floor:
         $ref: '#/definitions/models.Floor'
       floor_id:
@@ -293,6 +333,11 @@ definitions:
       id:
         type: integer
       reason:
+        type: string
+      report_id:
+        type: integer
+      result:
+        description: deal result
         type: string
       time_created:
         type: string
@@ -305,12 +350,21 @@ definitions:
         type: integer
       name:
         type: string
+      tag_id:
+        type: integer
       temperature:
         type: integer
       time_created:
         type: string
       time_updated:
         type: string
+    type: object
+  penalty.PostBody:
+    properties:
+      division_id:
+        type: integer
+      penalty_level:
+        type: integer
     type: object
   report.AddModel:
     properties:
@@ -578,9 +632,9 @@ paths:
       - in: query
         name: hole_id
         type: integer
-      - default: 10
+      - default: 30
         in: query
-        maximum: 30
+        maximum: 50
         minimum: 0
         name: length
         type: integer
@@ -617,7 +671,7 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/models.Floor'
+            $ref: '#/definitions/floor.CreateOldResponse'
       summary: Old API for Creating A Floor
       tags:
       - Floor
@@ -846,7 +900,7 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/models.Hole'
+            $ref: '#/definitions/hole.CreateOldResponse'
       summary: Old API for Creating A Hole
       tags:
       - Hole
@@ -873,10 +927,10 @@ paths:
         in: query
         name: orderBy
         type: string
-      - default: 10
+      - default: 30
         description: length of object array
         in: query
-        maximum: 30
+        maximum: 50
         minimum: 0
         name: size
         type: integer
@@ -1013,6 +1067,26 @@ paths:
       summary: Modify A Hole
       tags:
       - Hole
+  /penalty/{floor_id}:
+    post:
+      deprecated: true
+      parameters:
+      - description: json
+        in: body
+        name: json
+        required: true
+        schema:
+          $ref: '#/definitions/penalty.PostBody'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Hole'
+      summary: '[Deprecated] Ban publisher of a floor'
+      tags:
+      - Penalty
   /reports:
     get:
       parameters:
@@ -1030,10 +1104,10 @@ paths:
       - in: query
         name: range
         type: integer
-      - default: 10
+      - default: 30
         description: length of object array
         in: query
-        maximum: 30
+        maximum: 50
         minimum: 0
         name: size
         type: integer
@@ -1134,8 +1208,13 @@ paths:
       - Report
   /tags:
     get:
+      parameters:
+        - description: search tag by name
+          in: query
+          name: s
+          type: string
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: OK

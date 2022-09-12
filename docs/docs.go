@@ -320,10 +320,10 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
-                        "maximum": 30,
+                        "maximum": 50,
                         "minimum": 0,
                         "type": "integer",
-                        "default": 10,
+                        "default": 30,
                         "name": "length",
                         "in": "query"
                     },
@@ -374,7 +374,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/models.Floor"
+                            "$ref": "#/definitions/floor.CreateOldResponse"
                         }
                     }
                 }
@@ -725,7 +725,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/models.Hole"
+                            "$ref": "#/definitions/hole.CreateOldResponse"
                         }
                     }
                 }
@@ -769,10 +769,10 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
-                        "maximum": 30,
+                        "maximum": 50,
                         "minimum": 0,
                         "type": "integer",
-                        "default": 10,
+                        "default": 30,
                         "description": "length of object array",
                         "name": "size",
                         "in": "query"
@@ -972,6 +972,37 @@ const docTemplate = `{
                 }
             }
         },
+        "/penalty/{floor_id}": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Penalty"
+                ],
+                "summary": "[Deprecated] Ban publisher of a floor",
+                "deprecated": true,
+                "parameters": [
+                    {
+                        "description": "json",
+                        "name": "json",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/penalty.PostBody"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/models.Hole"
+                        }
+                    }
+                }
+            }
+        },
         "/reports": {
             "get": {
                 "produces": [
@@ -1003,10 +1034,10 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
-                        "maximum": 30,
+                        "maximum": 50,
                         "minimum": 0,
                         "type": "integer",
-                        "default": 10,
+                        "default": 30,
                         "description": "length of object array",
                         "name": "size",
                         "in": "query"
@@ -1159,6 +1190,14 @@ const docTemplate = `{
                     "Tag"
                 ],
                 "summary": "List All Tags",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "search tag by name",
+                        "name": "s",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -1613,6 +1652,17 @@ const docTemplate = `{
                 }
             }
         },
+        "floor.CreateOldResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/models.Floor"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
         "floor.DeleteModel": {
             "type": "object",
             "properties": {
@@ -1712,6 +1762,17 @@ const docTemplate = `{
                 }
             }
         },
+        "hole.CreateOldResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/models.Hole"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
         "hole.ModifyModel": {
             "type": "object",
             "properties": {
@@ -1734,6 +1795,9 @@ const docTemplate = `{
             "properties": {
                 "description": {
                     "type": "string"
+                },
+                "division_id": {
+                    "type": "integer"
                 },
                 "id": {
                     "type": "integer"
@@ -1759,22 +1823,37 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "anonyname": {
-                    "description": "random username, not empty",
+                    "description": "a random username",
                     "type": "string"
                 },
                 "content": {
-                    "description": "not empty",
+                    "description": "content of the floor",
                     "type": "string"
                 },
                 "deleted": {
                     "description": "whether the floor is deleted",
                     "type": "boolean"
                 },
+                "disliked": {
+                    "description": "whether the user has disliked the floor, dynamically generated",
+                    "type": "boolean"
+                },
+                "floor_id": {
+                    "type": "integer"
+                },
                 "fold": {
+                    "description": "fold reason, for v1",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "fold_v2": {
                     "description": "fold reason",
                     "type": "string"
                 },
                 "hole_id": {
+                    "description": "the hole it belongs to",
                     "type": "integer"
                 },
                 "id": {
@@ -1785,30 +1864,30 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "like": {
-                    "description": "like - dislike",
+                    "description": "like number - dislike number",
                     "type": "integer"
                 },
                 "liked": {
-                    "description": "whether the user has liked or disliked the floor, dynamically generated",
-                    "type": "integer"
+                    "description": "whether the user has liked the floor, dynamically generated",
+                    "type": "boolean"
                 },
                 "mention": {
-                    "description": "Many to many mentions (in different holes)",
+                    "description": "many to many mentions (in different holes)",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/models.Floor"
                     }
                 },
                 "path": {
-                    "description": "storey path",
+                    "description": "storey path e.g. /1/2/3/",
                     "type": "string"
                 },
                 "special_tag": {
-                    "description": "Additional info",
+                    "description": "additional info, like \"树洞管理团队\"",
                     "type": "string"
                 },
                 "storey": {
-                    "description": "The sequence of floors in a hole",
+                    "description": "the sequence of floors in a hole",
                     "type": "integer"
                 },
                 "time_created": {
@@ -1850,22 +1929,30 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "division_id": {
+                    "description": "所属 division 的 id",
                     "type": "integer"
                 },
                 "floors": {
-                    "description": "return floors",
+                    "description": "返回给前端的楼层列表，包括首楼、尾楼和预加载的前 n 个楼层",
                     "$ref": "#/definitions/models.HoleFloor"
                 },
                 "hidden": {
+                    "description": "是否隐藏，隐藏的洞用户不可见，管理员可见",
                     "type": "boolean"
+                },
+                "hole_id": {
+                    "description": "兼容旧版 id",
+                    "type": "integer"
                 },
                 "id": {
                     "type": "integer"
                 },
                 "reply": {
+                    "description": "回复量（即该洞下 floor 的数量）",
                     "type": "integer"
                 },
                 "tags": {
+                    "description": "tag 列表",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/models.Tag"
@@ -1878,6 +1965,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "view": {
+                    "description": "浏览量",
                     "type": "integer"
                 }
             }
@@ -1886,16 +1974,19 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "first_floor": {
+                    "description": "首楼",
                     "$ref": "#/definitions/models.Floor"
                 },
-                "floors": {
+                "last_floor": {
+                    "description": "尾楼",
+                    "$ref": "#/definitions/models.Floor"
+                },
+                "prefetch": {
+                    "description": "预加载的楼层",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/models.Floor"
                     }
-                },
-                "last_floor": {
-                    "$ref": "#/definitions/models.Floor"
                 }
             }
         },
@@ -1914,6 +2005,10 @@ const docTemplate = `{
                     "description": "the report has been dealt",
                     "type": "boolean"
                 },
+                "dealt_by": {
+                    "description": "who dealt the report",
+                    "type": "integer"
+                },
                 "floor": {
                     "$ref": "#/definitions/models.Floor"
                 },
@@ -1924,6 +2019,13 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "reason": {
+                    "type": "string"
+                },
+                "report_id": {
+                    "type": "integer"
+                },
+                "result": {
+                    "description": "deal result",
                     "type": "string"
                 },
                 "time_created": {
@@ -1943,6 +2045,9 @@ const docTemplate = `{
                 "name": {
                     "type": "string"
                 },
+                "tag_id": {
+                    "type": "integer"
+                },
                 "temperature": {
                     "type": "integer"
                 },
@@ -1951,6 +2056,17 @@ const docTemplate = `{
                 },
                 "time_updated": {
                     "type": "string"
+                }
+            }
+        },
+        "penalty.PostBody": {
+            "type": "object",
+            "properties": {
+                "division_id": {
+                    "type": "integer"
+                },
+                "penalty_level": {
+                    "type": "integer"
                 }
             }
         },

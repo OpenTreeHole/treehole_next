@@ -17,13 +17,15 @@ type MyConfig struct {
 	Debug         bool   `default:"false" env:"DEBUG"`
 	// example: user:pass@tcp(127.0.0.1:3306)/dbname
 	// for more detail, see https://github.com/go-sql-driver/mysql#dsn-data-source-name
-	DBURL    string `default:"" env:"DB_URL"`
+	DbUrl    string `default:"" env:"DB_URL"`
 	RedisURL string `default:"redis:6379" env:"REDIS_URL"`
+  NotificationUrl string `default:"" env:"NOTIFICATION_URL"`
+	AuthUrl         string `default:"" env:"AUTH_URL"`
 }
 
 var Config MyConfig
 
-func initConfig() { // load config from environment variables
+func InitConfig() { // load config from environment variables
 	configType := reflect.TypeOf(Config)
 	elem := reflect.ValueOf(&Config).Elem()
 	for i := 0; i < configType.NumField(); i++ {
@@ -68,12 +70,4 @@ func initConfig() { // load config from environment variables
 		}
 		elem.FieldByName(field.Name).Set(reflect.ValueOf(value))
 	}
-}
-
-func InitConfig() {
-	initConfig()
-	if Config.Mode != "production" {
-		Config.Debug = true
-	}
-	initCache()
 }

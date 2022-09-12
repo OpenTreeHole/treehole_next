@@ -179,7 +179,7 @@ func CreateHole(c *fiber.Ctx) error {
 // @Produce application/json
 // @Router /holes [post]
 // @Param json body CreateOldModel true "json"
-// @Success 201 {object} Hole
+// @Success 201 {object} CreateOldResponse
 func CreateHoleOld(c *fiber.Ctx) error {
 	// validate body
 	var body CreateOldModel
@@ -200,7 +200,14 @@ func CreateHoleOld(c *fiber.Ctx) error {
 		return err
 	}
 
-	return Serialize(c.Status(201), &hole)
+	err = hole.Preprocess(c)
+	if err != nil {
+		return err
+	}
+	return c.Status(201).JSON(&CreateOldResponse{
+		Data:    hole,
+		Message: "发表成功",
+	})
 }
 
 // ModifyHole

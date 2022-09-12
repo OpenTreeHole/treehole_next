@@ -31,5 +31,5 @@ func (p *IntArray) Scan(data interface{}) error {
 
 type Models interface {
 	Division | Hole | Floor | Tag | User | Report |
-		[]Division | []Hole | []Floor | []Tag | []User | []Report
+	[]Division | []Hole | []Floor | []Tag | []User | []Report
 }

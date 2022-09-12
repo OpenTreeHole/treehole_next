@@ -9,15 +9,34 @@ To be done
 
 ## Usage
 
+### build and run
+
 ```shell
 git clone https://github.com/OpenTreeHole/treehole_next.git
 cd treehole_next
 # install swag and generate docs
 go install github.com/swaggo/swag/cmd/swag@latest
 swag init --parseInternal --parseDepth 1 # to generate the latest docs, this should be run before compiling
-# build and run
+# build for debug
 go build -o treehole.exe
+# build for release
+go build -tags "release" -ldflags "-s -w" -o treehole.exe
+# run
 ./treehole.exe
+```
+
+### test
+
+```shell
+export MODE=test
+go test -v ./tests/...
+```
+
+### benchmark
+
+```shell
+export MODE=bench
+go test -v -benchmem -cpuprofile=cpu.out -benchtime=1s ./benchmarks/... -bench .
 ```
 For documentation, please open http://localhost:8000/docs after running app
 ## Badge

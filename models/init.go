@@ -25,9 +25,18 @@ var gormConfig = &gorm.Config{
 	},
 }
 
+type DBTypeEnum int
+
+const (
+	DBTypeMysql DBTypeEnum = iota
+	DBTypeSqlite
+)
+
+var DBType DBTypeEnum
+
 func mysqlDB() (*gorm.DB, error) {
-	DBType = TypeMysql
-	return gorm.Open(mysql.Open(config.Config.DBURL), gormConfig)
+	DBType = DBTypeMysql
+	return gorm.Open(mysql.Open(config.Config.DbUrl), gormConfig)
 }
 
 func sqliteDB() (*gorm.DB, error) {
@@ -36,11 +45,12 @@ func sqliteDB() (*gorm.DB, error) {
 	if err != nil {
 		panic(err)
 	}
+	DBType = DBTypeSqlite
 	return gorm.Open(sqlite.Open("data/sqlite.db"), gormConfig)
 }
 
 func memoryDB() (*gorm.DB, error) {
-	DBType = TypeSqlite
+	DBType = DBTypeSqlite
 	return gorm.Open(sqlite.Open("file::memory:?cache=shared"), gormConfig)
 }
 
@@ -52,6 +62,8 @@ func InitDB() {
 	case "test":
 		DB, err = memoryDB()
 		DB = DB.Debug()
+	case "bench":
+		DB, err = memoryDB()
 	case "dev":
 		if config.Config.DBURL == "" {
 			DB, err = sqliteDB()
@@ -59,8 +71,6 @@ func InitDB() {
 			DB, err = mysqlDB()
 		}
 		DB = DB.Debug()
-	case "perf":
-		DB, err = sqliteDB()
 	default: // sqlite as default
 		panic("unknown mode")
 	}

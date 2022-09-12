@@ -4,22 +4,19 @@ import (
 	"encoding/base64"
 	"encoding/binary"
 	"encoding/json"
-	"golang.org/x/exp/slices"
-	"io/ioutil"
 	"math/rand"
 	"sort"
 	"time"
+	"treehole_next/data"
+
+	"golang.org/x/exp/slices"
 )
 
 var names []string
 var length int
 
 func init() {
-	file, err := ioutil.ReadFile("data/names.json")
-	if err != nil {
-		panic(err)
-	}
-	err = json.Unmarshal(file, &names)
+	err := json.Unmarshal(data.NamesFile, &names)
 	if err != nil {
 		panic(err)
 	}

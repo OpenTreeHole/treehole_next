@@ -13,6 +13,7 @@ import (
 )
 
 // Floor has a tree structure, example:
+//
 //	id: 1, reply_to: 0, storey: 1
 //		id: 2, reply_to: 1, storey: 2
 //	id: 3, reply_to: 0, storey: 3
@@ -22,20 +23,24 @@ import (
 //	id: 7, reply_to: 0, storey: 7
 type Floor struct {
 	BaseModel
-	HoleID     int     `json:"hole_id"`
-	UserID     int     `json:"-"`
-	Content    string  `json:"content"`                                // not empty
-	Anonyname  string  `json:"anonyname" gorm:"size:32"`               // random username, not empty
-	Storey     int     `json:"storey"`                                 // The sequence of floors in a hole
-	Path       string  `json:"path" gorm:"default:/"`                  // storey path
-	ReplyTo    int     `json:"-" gorm:"-:all"`                         // Floor id that it replies to (must be in the same hole)
-	Mention    []Floor `json:"mention" gorm:"many2many:floor_mention"` // Many to many mentions (in different holes)
-	Like       int     `json:"like"`                                   // like - dislike
-	Liked      int8    `json:"liked" gorm:"-:all"`                     // whether the user has liked or disliked the floor, dynamically generated
-	IsMe       bool    `json:"is_me" gorm:"-:all"`                     // whether the user is the author of the floor, dynamically generated
-	Deleted    bool    `json:"deleted"`                                // whether the floor is deleted
-	Fold       string  `json:"fold"`                                   // fold reason
-	SpecialTag string  `json:"special_tag"`                            // Additional info
+	FloorID          int      `json:"floor_id" gorm:"-:all"`
+	HoleID           int      `json:"hole_id"`                                // the hole it belongs to
+	UserID           int      `json:"-"`                                      // the user who wrote it, hidden to user but available to admin
+	Content          string   `json:"content"`                                // content of the floor
+	Anonyname        string   `json:"anonyname" gorm:"size:32"`               // a random username
+	Storey           int      `json:"storey"`                                 // the sequence of floors in a hole
+	Path             string   `json:"path" gorm:"default:/"`                  // storey path e.g. /1/2/3/
+	ReplyTo          int      `json:"-" gorm:"-:all"`                         // Floor id that it replies to (must be in the same hole)
+	Mention          []Floor  `json:"mention" gorm:"many2many:floor_mention"` // many to many mentions (in different holes)
+	Like             int      `json:"like"`                                   // like number - dislike number
+	Liked            int8     `json:"-" gorm:"-:all"`                         // whether the user has liked or disliked the floor, dynamically generated
+	LikedFrontend    bool     `json:"liked" gorm:"-:all"`                     // whether the user has liked the floor, dynamically generated
+	DislikedFrontend bool     `json:"disliked" gorm:"-:all"`                  // whether the user has disliked the floor, dynamically generated
+	IsMe             bool     `json:"is_me" gorm:"-:all"`                     // whether the user is the author of the floor, dynamically generated
+	Deleted          bool     `json:"deleted"`                                // whether the floor is deleted
+	Fold             string   `json:"fold_v2"`                                // fold reason
+	FoldFrontend     []string `json:"fold" gorm:"-:all"`                      // fold reason, for v1
+	SpecialTag       string   `json:"special_tag"`                            // additional info, like "树洞管理团队"
 }
 
 type Floors []Floor
@@ -64,7 +69,15 @@ type FloorHistory struct {
 func (floor *Floor) Preprocess(c *fiber.Ctx) error {
 	var floors Floors
 	floors = append(floors, *floor)
-	return floors.Preprocess(c)
+
+	err := floors.Preprocess(c)
+	if err != nil {
+		return err
+	}
+
+	*floor = floors[0]
+
+	return nil
 }
 
 func (floors Floors) Preprocess(c *fiber.Ctx) error {
@@ -73,6 +86,7 @@ func (floors Floors) Preprocess(c *fiber.Ctx) error {
 		return err
 	}
 
+	// get floors' like
 	floorIDs := make([]int, len(floors))
 	IDFloorMapping := make(map[int]*Floor)
 	for i, v := range floors {
@@ -94,6 +108,27 @@ func (floors Floors) Preprocess(c *fiber.Ctx) error {
 	for _, v := range floorLikes {
 		if floor, ok := IDFloorMapping[v.FloorID]; ok {
 			floor.Liked = v.LikeData
+			switch floor.Liked {
+			case 1:
+				floor.LikedFrontend = true
+			case -1:
+				floor.DislikedFrontend = true
+			}
+		}
+	}
+
+	// set some default values
+	for i := range floors {
+		if floors[i].Mention == nil {
+			floors[i].Mention = []Floor{}
+		}
+
+		floors[i].FloorID = floors[i].ID
+
+		if floors[i].Fold != "" {
+			floors[i].FoldFrontend = []string{floors[i].Fold}
+		} else {
+			floors[i].FoldFrontend = []string{}
 		}
 	}
 	return nil
@@ -126,7 +161,7 @@ func (floor *Floor) FindMention(tx *gorm.DB) error {
 	}
 
 	floorIDs = append(floorIDs, floorIDs2...)
-	var floors []Floor
+	floors := make([]Floor, 0)
 	if len(floorIDs) != 0 {
 		err := tx.Find(&floors, floorIDs).Error
 		if err != nil {
@@ -155,18 +190,16 @@ func (floor *Floor) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 	floor.UserID = user.ID
 	floor.IsMe = true
 
-	// permission
-	var hole Hole
-	result := DB.Select("division_id").First(&hole, floor.HoleID)
-	if result.Error != nil {
-		return result.Error
-	}
-	if user.BanDivision[hole.DivisionID] ||
-		floor.SpecialTag != "" && !user.CheckPermission(P_OPERATOR) {
-		return utils.Forbidden()
-	}
 
 	return tx.Transaction(func(tx *gorm.DB) error {
+		// permission
+		var hole Hole
+		tx.Select("division_id").First(&hole, floor.HoleID)
+		if user.BanDivision[hole.DivisionID] ||
+			floor.SpecialTag != "" && !user.CheckPermission(P_OPERATOR) {
+			return utils.Forbidden()
+		}
+
 		// get anonymous name
 		var mapping AnonynameMapping
 		result = tx.
@@ -263,9 +296,39 @@ func (floor *Floor) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 }
 
 func (floor *Floor) AfterCreate(tx *gorm.DB) (err error) {
+
 	result := tx.Exec("UPDATE hole SET reply = reply + 1 WHERE id = ?", floor.HoleID)
 	if result.Error != nil {
 		return result.Error
+	}
+
+	err = floor.SendFavorite(tx)
+	if err != nil {
+		utils.Logger.Error("[notification] SendFavorite failed: " + err.Error())
+		// return err // only for test
+	}
+
+	err = floor.SendReply(tx)
+	if err != nil {
+		utils.Logger.Error("[notification] SendReply failed: " + err.Error())
+		// return err // only for test
+	}
+
+	err = floor.SendMention(tx)
+	if err != nil {
+		utils.Logger.Error("[notification] SendMention failed: " + err.Error())
+		// return err // only for test
+	}
+
+	return nil
+}
+
+func (floor *Floor) AfterUpdate(tx *gorm.DB) (err error) {
+
+	err = floor.SendModify(tx)
+	if err != nil {
+		utils.Logger.Error("[notification] SendModify failed: " + err.Error())
+		// return err // only for test
 	}
 	return nil
 }
@@ -331,4 +394,116 @@ func (floor *Floor) ModifyLike(c *fiber.Ctx, likeOption int8) error {
 		floor.Liked = likeOption
 		return nil
 	})
+}
+
+func (floor *Floor) SendFavorite(tx *gorm.DB) error {
+	// get recipents
+	var userIDs []int
+	result := tx.Raw("SELECT user_id from user_favorites WHERE hole_id = ?", floor.HoleID).Scan(&userIDs)
+	if result.Error != nil {
+		return result.Error
+	}
+
+	// return if no recipents
+	if userIDs == nil {
+		return nil
+	}
+
+	// Construct Message
+	message := Message{
+		"data":       floor,
+		"recipients": userIDs,
+		"type":       MessageTypeFavorite,
+		"url":        fmt.Sprintf("/api/floors/%d", floor.ID),
+	}
+
+	// Send
+	err := message.Send()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (floor *Floor) SendReply(tx *gorm.DB) error {
+	// get recipents
+	userID := 0
+	result := tx.Raw("SELECT user_id from hole WHERE id = ?", floor.HoleID).Scan(&userID)
+	if result.Error != nil {
+		return result.Error
+	}
+
+	// return if no recipents
+	if userID == 0 {
+		return nil
+	}
+
+	userIDs := []int{userID}
+
+	// construct message
+	message := Message{
+		"data":       floor,
+		"recipients": userIDs,
+		"type":       MessageTypeReply,
+		"url":        fmt.Sprintf("/api/floors/%d", floor.ID),
+	}
+
+	// send
+	err := message.Send()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (floor *Floor) SendMention(tx *gorm.DB) error {
+	// get recipents
+	var userIDs []int
+	for _, mention := range floor.Mention {
+		userIDs = append(userIDs, mention.UserID)
+	}
+
+	// return if no recipents
+	if userIDs == nil {
+		return nil
+	}
+
+	// construct message
+	message := Message{
+		"data":       floor,
+		"recipients": userIDs,
+		"type":       MessageTypeMention,
+		"url":        fmt.Sprintf("/api/floors/%d", floor.ID),
+	}
+
+	// send
+	err := message.Send()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (floor *Floor) SendModify(tx *gorm.DB) error {
+	// get recipents
+	userIDs := []int{floor.UserID}
+
+	// construct message
+	message := Message{
+		"data":       floor,
+		"recipients": userIDs,
+		"type":       MessageTypeModify,
+		"url":        fmt.Sprintf("/api/floors/%d", floor.ID),
+	}
+
+	// send
+	err := message.Send()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

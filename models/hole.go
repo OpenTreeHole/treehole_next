@@ -12,25 +12,27 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-type HoleFloor struct {
-	FirstFloor *Floor   `json:"first_floor"`
-	LastFloor  *Floor   `json:"last_floor"`
-	Floors     []*Floor `json:"floors"`
-}
-
 type Hole struct {
 	BaseModel
-	DivisionID int                `json:"division_id"`
-	UserID     int                `json:"-"` // permission
-	Tags       []*Tag             `json:"tags" gorm:"many2many:hole_tags"`
-	Floors     []Floor            `json:"-"`
-	HoleFloor  HoleFloor          `json:"floors" gorm:"-:all"` // return floors
-	View       int                `json:"view"`
-	Reply      int                `json:"reply"`
-	Hidden     bool               `json:"hidden"`
-	Mapping    []AnonynameMapping `json:"-"`
+	HoleID     int                `json:"hole_id" gorm:"-:all"`            // 兼容旧版 id
+	DivisionID int                `json:"division_id"`                     // 所属 division 的 id
+	UserID     int                `json:"-"`                               // 洞主 id
+	Tags       []*Tag             `json:"tags" gorm:"many2many:hole_tags"` // tag 列表
+	Floors     []Floor            `json:"-"`                               // 楼层列表
+	HoleFloor  HoleFloor          `json:"floors" gorm:"-:all"`             // 返回给前端的楼层列表，包括首楼、尾楼和预加载的前 n 个楼层
+	View       int                `json:"view"`                            // 浏览量
+	Reply      int                `json:"reply"`                           // 回复量（即该洞下 floor 的数量）
+	Hidden     bool               `json:"hidden"`                          // 是否隐藏，隐藏的洞用户不可见，管理员可见
+	Mapping    []AnonynameMapping `json:"-"`                               // 匿名映射表
 }
+
 type Holes []Hole
+
+type HoleFloor struct {
+	FirstFloor *Floor   `json:"first_floor"` // 首楼
+	LastFloor  *Floor   `json:"last_floor"`  // 尾楼
+	Floors     []*Floor `json:"prefetch"`    // 预加载的楼层
+}
 
 type HoleTag struct {
 	HoleID int `json:"hole_id"`
@@ -115,6 +117,7 @@ func loadFloors(holes []*Hole) error {
 
 	var index, left, right int
 	for _, floor := range floors {
+		floors[right].Mention = []Floor{}
 		if floor.HoleID != holes[index].ID {
 			if index != 0 { // set floors
 				holes[index].HoleFloor.Floors = floors[left:right]
@@ -217,7 +220,8 @@ func (hole *Hole) SetTags(tx *gorm.DB, clear bool) error {
 	if clear {
 		// update tag temperature
 		var sql string
-		if DBType == TypeSqlite {
+
+		if DBType == DBTypeSqlite {
 			sql = `
 			UPDATE tag
 			SET temperature = temperature - 1 
@@ -242,19 +246,37 @@ func (hole *Hole) SetTags(tx *gorm.DB, clear bool) error {
 		}
 	}
 
-	// create tags
-	tx.Clauses(clause.OnConflict{
-		Columns: []clause.Column{{Name: "name"}},
-	}).Create(&hole.Tags)
+	if len(hole.Tags) == 0 {
+		return nil
+	}
 
+	// create tags
+	result := tx.Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "name"}},
+		DoNothing: true,
+	}).Create(&hole.Tags)
+	if result.Error != nil {
+		return result.Error
+	}
+
+	// find tags
+	tagNames := make([]string, len(hole.Tags))
+	for i, tag := range hole.Tags {
+		tagNames[i] = tag.Name
+	}
+	result = tx.Where("name IN (?)", tagNames).Find(&hole.Tags)
+	if result.Error != nil {
+		return result.Error
+	}
+
+	// create associations
 	tagIDs := make([]int, len(hole.Tags))
 	for i, tag := range hole.Tags {
 		tagIDs[i] = tag.ID
 	}
-
-	// create associations
 	var builder strings.Builder
-	if DBType == TypeSqlite {
+
+	if DBType == DBTypeSqlite {
 		builder.WriteString("INSERT INTO")
 	} else {
 		builder.WriteString("INSERT IGNORE INTO")
@@ -266,10 +288,11 @@ func (hole *Hole) SetTags(tx *gorm.DB, clear bool) error {
 			builder.WriteString(",")
 		}
 	}
-	if DBType == TypeSqlite {
+
+	if DBType == DBTypeSqlite {
 		builder.WriteString(" ON CONFLICT DO NOTHING")
 	}
-	result := tx.Exec(builder.String())
+	result = tx.Exec(builder.String())
 	if result.Error != nil {
 		return result.Error
 	}
@@ -308,7 +331,7 @@ func (hole *Hole) Create(c *fiber.Ctx, content string, specialTag string, db ...
 	}
 	hole.UserID = user.ID
 
-	err = tx.Transaction(func(tx *gorm.DB) error {
+	return tx.Transaction(func(tx *gorm.DB) error {
 		// Create hole
 		result := tx.Omit("Tags").Create(hole) // tags are created in AfterCreate hook
 		if result.Error != nil {
@@ -323,30 +346,17 @@ func (hole *Hole) Create(c *fiber.Ctx, content string, specialTag string, db ...
 			SpecialTag: specialTag,
 			IsMe:       true,
 		}
-		err = floor.Create(c, tx)
-		if err != nil {
-			return err
-		}
-		return nil
+
+		return floor.Create(c, tx)
 	})
-
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func (hole *Hole) AfterCreate(tx *gorm.DB) (err error) {
-	if err != nil {
-		return err
-	}
+	hole.HoleID = hole.ID
 	return hole.SetTags(tx, false)
 }
 
-func (hole *Hole) AfterSave(tx *gorm.DB) (err error) {
-	if err != nil {
-		return err
-	}
-	return utils.DeleteCache(fmt.Sprintf("hole_%d", hole.ID))
+func (hole *Hole) AfterFind(tx *gorm.DB) (err error) {
+	hole.HoleID = hole.ID
+	return nil
 }

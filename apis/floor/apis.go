@@ -142,7 +142,7 @@ func CreateFloor(c *fiber.Ctx) error {
 // @Produce application/json
 // @Router /floors [post]
 // @Param json body CreateOldModel true "json"
-// @Success 201 {object} Floor
+// @Success 201 {object} CreateOldResponse
 func CreateFloorOld(c *fiber.Ctx) error {
 	var body CreateOldModel
 	err := ValidateBody(c, &body)
@@ -162,7 +162,15 @@ func CreateFloorOld(c *fiber.Ctx) error {
 		return err
 	}
 
-	return Serialize(c.Status(201), &floor)
+	err = floor.Preprocess(c)
+	if err != nil {
+		return err
+	}
+
+	return c.Status(201).JSON(&CreateOldResponse{
+		Data:    floor,
+		Message: "发表成功",
+	})
 }
 
 // ModifyFloor
@@ -245,7 +253,7 @@ func ModifyFloor(c *fiber.Ctx) error {
 
 	if body.Like == "add" {
 		err = floor.ModifyLike(c, 1)
-	} else if body.Like == "reset" {
+	} else if body.Like == "cancel" {
 		err = floor.ModifyLike(c, 0)
 	}
 	if err != nil {

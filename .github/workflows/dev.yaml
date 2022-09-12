@@ -30,4 +30,6 @@ jobs:
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.APP_NAME }}:${{ steps.tag.outputs.tag }}
             ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.APP_NAME }}:latest
+      - name: Deploy
+        run: curl -X POST ${{ secrets.DEPLOY_WEBHOOK_DEV}}
 

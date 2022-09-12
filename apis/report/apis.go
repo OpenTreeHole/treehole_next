@@ -95,8 +95,6 @@ func AddReport(c *fiber.Ctx) error {
 		return err
 	}
 
-	// TODO: notification to admin
-
 	return c.Status(204).JSON(nil)
 }
 
@@ -117,6 +115,19 @@ func DeleteReport(c *fiber.Ctx) error {
 		return err
 	}
 
+	// validate body
+	var body DeleteModel
+	err = ValidateBody(c, &body)
+	if err != nil {
+		return err
+	}
+
+	// get user id
+	userID, err := GetUserID(c)
+	if err != nil {
+		return err
+	}
+
 	// modify report
 	var report Report
 	result := DB.Joins("Floor").First(&report, reportID)
@@ -124,17 +135,10 @@ func DeleteReport(c *fiber.Ctx) error {
 		return result.Error
 	}
 	report.Dealt = true
-
-	// save report
+	report.DealtBy = userID
+	report.Result = body.Result
 	DB.Omit("Floor").Save(&report)
 
-	// TODO: notification to reporter
-
-	// log
-	userID, err := GetUserID(c)
-	if err != nil {
-		return err
-	}
 	MyLog("Report", "Delete", reportID, userID)
 
 	return c.JSON(&report)

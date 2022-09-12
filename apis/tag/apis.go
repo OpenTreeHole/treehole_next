@@ -12,11 +12,22 @@ import (
 // @Summary List All Tags
 // @Tags Tag
 // @Produce application/json
+// @Param object query SearchModel false "query"
 // @Router /tags [get]
 // @Success 200 {array} Tag
 func ListTags(c *fiber.Ctx) error {
-	var tags []*Tag
-	DB.Find(&tags)
+	var query SearchModel
+	err := ValidateQuery(c, &query)
+	if err != nil {
+		return err
+	}
+
+	var tags []Tag
+	querySet := DB.Order("temperature DESC")
+	if query.Search != "" {
+		querySet = querySet.Where("name LIKE ?", "%"+query.Search+"%")
+	}
+	querySet = querySet.Find(&tags)
 	return c.JSON(&tags)
 }
 
