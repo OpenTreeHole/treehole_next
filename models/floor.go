@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
-	"treehole_next/config"
 	"treehole_next/utils"
 
 	"github.com/gofiber/fiber/v2"
@@ -283,10 +282,6 @@ func (floor *Floor) AfterCreate(tx *gorm.DB) (err error) {
 		return result.Error
 	}
 
-	if config.Config.Mode == "bench" {
-		return nil
-	}
-
 	err = floor.SendFavorite(tx)
 	if err != nil {
 		utils.Logger.Error("[notification] SendFavorite failed: " + err.Error())
@@ -309,9 +304,6 @@ func (floor *Floor) AfterCreate(tx *gorm.DB) (err error) {
 }
 
 func (floor *Floor) AfterUpdate(tx *gorm.DB) (err error) {
-	if config.Config.Mode == "bench" {
-		return nil
-	}
 
 	err = floor.SendModify(tx)
 	if err != nil {

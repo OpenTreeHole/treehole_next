@@ -16,9 +16,7 @@ func Init() *fiber.App {
 	models.InitDB()
 	config.InitSearch()
 	utils.Logger, _ = utils.InitLog()
-	if config.Config.Mode != "bench" {
-		models.InitAdminList()
-	}
+	models.InitAdminList()
 
 	app := fiber.New(fiber.Config{
 		ErrorHandler: utils.MyErrorHandler,

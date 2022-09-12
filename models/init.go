@@ -62,8 +62,6 @@ func InitDB() {
 			DB, err = mysqlDB()
 		}
 		DB = DB.Debug()
-	case "perf":
-		DB, err = sqliteDB()
 	default: // sqlite as default
 		panic("unknown mode")
 	}

@@ -11,7 +11,7 @@ import (
 
 func RegisterMiddlewares(app *fiber.App) {
 	app.Use(recover.New())
-	if config.Config.Mode != "perf" && config.Config.Mode != "bench" {
+	if config.Config.Mode != "bench" {
 		app.Use(logger.New())
 	}
 	if config.Debug {
