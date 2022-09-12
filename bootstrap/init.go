@@ -14,7 +14,6 @@ import (
 func Init() *fiber.App {
 	config.InitConfig()
 	models.InitDB()
-	config.InitSearch()
 	utils.Logger, _ = utils.InitLog()
 	models.InitAdminList()
 

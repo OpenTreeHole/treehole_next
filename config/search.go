@@ -8,7 +8,7 @@ import (
 
 var ES *elasticsearch.Client
 
-func InitSearch() {
+func initSearch() {
 	if Config.Mode == "test" || Config.Mode == "bench" {
 		return
 	}
