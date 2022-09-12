@@ -9,6 +9,8 @@ To be done
 
 ## Usage
 
+### build and run
+
 ```shell
 git clone https://github.com/OpenTreeHole/treehole_next.git
 cd treehole_next
@@ -21,6 +23,20 @@ go build -o treehole.exe
 go build -tags "release" -ldflags "-s -w" -o treehole.exe
 # run
 ./treehole.exe
+```
+
+### test
+
+```shell
+export MODE=test
+go test -v ./tests/...
+```
+
+### benchmark
+
+```shell
+export MODE=bench
+go test -v -benchmem -cpuprofile=cpu.out -benchtime=1s ./benchmarks/... -bench .
 ```
 For documentation, please open http://localhost:8000/docs after running app
 ## Badge

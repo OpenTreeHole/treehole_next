@@ -29,6 +29,11 @@ type PostBody struct {
 // @Param json body PostBody true "json"
 // @Success 201 {object} Hole
 func BanUser(c *fiber.Ctx) error {
+	// check AuthURL
+	if config.Config.AuthUrl == "" {
+		return BadRequest("No AuthURL")
+	}
+
 	// validate body
 	var body PostBody
 	err := ValidateBody(c, &body)

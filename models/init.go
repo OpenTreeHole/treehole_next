@@ -53,6 +53,8 @@ func InitDB() {
 	case "test":
 		DB, err = memoryDB()
 		DB = DB.Debug()
+	case "bench":
+		DB, err = memoryDB()
 	case "dev":
 		if config.Config.DbUrl == "" {
 			DB, err = sqliteDB()
@@ -60,8 +62,6 @@ func InitDB() {
 			DB, err = mysqlDB()
 		}
 		DB = DB.Debug()
-	case "perf":
-		DB, err = sqliteDB()
 	default: // sqlite as default
 		panic("unknown mode")
 	}

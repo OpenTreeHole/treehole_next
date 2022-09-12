@@ -91,6 +91,12 @@ func (message Message) Send() error {
 	)
 	req.Header.Add("Content-Type", "application/json")
 
+	// bench and simulation
+	if config.Config.Mode == "bench" {
+		time.Sleep(time.Millisecond)
+		return nil
+	}
+
 	// get response
 	resp, err := client.Do(req)
 	if err != nil {
@@ -142,6 +148,11 @@ func readRespAdmin(body io.ReadCloser) []Admin {
 var adminList []int
 
 func InitAdminList() {
+	// skip when bench
+	if config.Config.Mode == "bench" {
+		return
+	}
+
 	// construct http request
 	req, _ := http.NewRequest(
 		"GET",

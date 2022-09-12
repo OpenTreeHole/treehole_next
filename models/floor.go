@@ -304,6 +304,7 @@ func (floor *Floor) AfterCreate(tx *gorm.DB) (err error) {
 }
 
 func (floor *Floor) AfterUpdate(tx *gorm.DB) (err error) {
+
 	err = floor.SendModify(tx)
 	if err != nil {
 		utils.Logger.Error("[notification] SendModify failed: " + err.Error())

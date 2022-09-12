@@ -3,6 +3,7 @@ package models
 import (
 	"fmt"
 	"sync/atomic"
+	"treehole_next/config"
 	"treehole_next/utils"
 
 	"github.com/gofiber/fiber/v2"
@@ -40,6 +41,9 @@ func (report *Report) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 
 func (report *Report) AfterCreate(tx *gorm.DB) (err error) {
 	report.ReportID = report.ID
+	if config.Config.NotificationUrl == "" {
+		return nil
+	}
 
 	err = report.SendCreate(tx)
 	if err != nil {
@@ -56,6 +60,10 @@ func (report *Report) AfterFind(tx *gorm.DB) (err error) {
 }
 
 func (report *Report) AfterUpdate(tx *gorm.DB) (err error) {
+	if config.Config.NotificationUrl == "" {
+		return nil
+	}
+
 	err = report.SendModify(tx)
 	if err != nil {
 		utils.Logger.Error("[notification] SendModify failed: " + err.Error())
@@ -93,7 +101,7 @@ func (report *Report) SendCreate(tx *gorm.DB) error {
 }
 
 func (report *Report) SendModify(tx *gorm.DB) error {
-	// get recipents
+	// get recipients
 	userIDs := []int{report.UserID}
 
 	// construct message
