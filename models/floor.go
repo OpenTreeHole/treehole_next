@@ -144,7 +144,7 @@ func (floor *Floor) FindMention(tx *gorm.DB) error {
 	}
 
 	floorIDs = append(floorIDs, floorIDs2...)
-	var floors []Floor
+	floors := make([]Floor, 0)
 	if len(floorIDs) != 0 {
 		err := tx.Find(&floors, floorIDs).Error
 		if err != nil {
@@ -172,6 +172,7 @@ func (floor *Floor) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 	}
 	floor.UserID = user.ID
 	floor.IsMe = true
+	floor.FoldFrontend = make([]string, 0)
 
 	return tx.Transaction(func(tx *gorm.DB) error {
 		// permission
