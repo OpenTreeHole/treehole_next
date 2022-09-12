@@ -145,6 +145,7 @@ func UserCreateFavourite(c *fiber.Ctx, clear bool, userID int, holeIDs []int) er
 		DB.Exec("DELETE FROM user_favorites WHERE user_id = ?", userID)
 	}
 	var builder strings.Builder
+
 	if DBType == DBTypeSqlite {
 		builder.WriteString("INSERT INTO")
 	} else {
@@ -157,6 +158,7 @@ func UserCreateFavourite(c *fiber.Ctx, clear bool, userID int, holeIDs []int) er
 			builder.WriteString(", ")
 		}
 	}
+
 	if DBType == DBTypeSqlite {
 		builder.WriteString(" ON CONFLICT DO NOTHING")
 	}

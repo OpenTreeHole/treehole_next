@@ -9,15 +9,18 @@ import (
 )
 
 type MyConfig struct {
-	Mode    string `default:"dev"`
-	Size    int    `default:"30"`
-	MaxSize int    `default:"50"`
-	TagSize int    `default:"5"`
+	Mode          string `default:"dev" env:"MODE"`
+	Size          int    `default:"10" env:"SIZE"`
+	MaxSize       int    `default:"30" env:"MAX_SIZE"`
+	TagSize       int    `default:"5" env:"TAG_SIZE"`
+	HoleFloorSize int    `default:"10" env:"HOLE_FLOOR_SIZE"`
+	Debug         bool   `default:"false" env:"DEBUG"`
 	// example: user:pass@tcp(127.0.0.1:3306)/dbname
 	// for more detail, see https://github.com/go-sql-driver/mysql#dsn-data-source-name
-	DbUrl           string `default:""`
-	NotificationUrl string `default:""`
-	AuthUrl         string `default:""`
+	DbUrl    string `default:"" env:"DB_URL"`
+	RedisURL string `default:"redis:6379" env:"REDIS_URL"`
+  NotificationUrl string `default:"" env:"NOTIFICATION_URL"`
+	AuthUrl         string `default:"" env:"AUTH_URL"`
 }
 
 var Config MyConfig
@@ -27,8 +30,15 @@ func InitConfig() { // load config from environment variables
 	elem := reflect.ValueOf(&Config).Elem()
 	for i := 0; i < configType.NumField(); i++ {
 		field := configType.Field(i)
+		// get default value
 		defaultValue, defaultValueExists := field.Tag.Lookup("default")
-		env := os.Getenv(strings.ToUpper(field.Name))
+		// get env variable name
+		envName, ok := field.Tag.Lookup("env")
+		if !ok {
+			envName = strings.ToUpper(field.Name)
+		}
+		// get env variable value
+		env := os.Getenv(envName)
 		envExists := env != ""
 		if !envExists {
 			if !defaultValueExists {
@@ -36,7 +46,7 @@ func InitConfig() { // load config from environment variables
 			}
 			env = defaultValue
 		}
-		var value interface{}
+		var value any
 		var err error
 		switch field.Type.Kind() {
 		case reflect.String:

@@ -11,6 +11,14 @@ import (
 )
 
 var DB *gorm.DB
+
+const (
+	TypeMysql = iota
+	TypeSqlite
+)
+
+var DBType uint
+
 var gormConfig = &gorm.Config{
 	NamingStrategy: schema.NamingStrategy{
 		SingularTable: true, // use singular table name, table for `User` would be `user` with this option enabled
@@ -32,6 +40,7 @@ func mysqlDB() (*gorm.DB, error) {
 }
 
 func sqliteDB() (*gorm.DB, error) {
+	DBType = TypeSqlite
 	err := os.MkdirAll("data", 0750)
 	if err != nil {
 		panic(err)
@@ -56,7 +65,7 @@ func InitDB() {
 	case "bench":
 		DB, err = memoryDB()
 	case "dev":
-		if config.Config.DbUrl == "" {
+		if config.Config.DBURL == "" {
 			DB, err = sqliteDB()
 		} else {
 			DB, err = mysqlDB()

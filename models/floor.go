@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
+	"treehole_next/config"
 	"treehole_next/utils"
 
 	"github.com/gofiber/fiber/v2"
@@ -189,6 +190,7 @@ func (floor *Floor) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 	floor.UserID = user.ID
 	floor.IsMe = true
 
+
 	return tx.Transaction(func(tx *gorm.DB) error {
 		// permission
 		var hole Hole
@@ -200,8 +202,7 @@ func (floor *Floor) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 
 		// get anonymous name
 		var mapping AnonynameMapping
-
-		result := tx.
+		result = tx.
 			Where("hole_id = ?", floor.HoleID).
 			Where("user_id = ?", floor.UserID).
 			Take(&mapping)
@@ -285,6 +286,10 @@ func (floor *Floor) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 		result = tx.Create(floor)
 		if result.Error != nil {
 			return result.Error
+		}
+
+		if hole.Reply < config.Config.HoleFloorSize {
+			return utils.DeleteCache(fmt.Sprintf("hole_%d", floor.HoleID))
 		}
 		return nil
 	})
