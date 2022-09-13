@@ -63,7 +63,7 @@ func (user *User) parseJWT(token string) error {
 }
 
 func (user *User) GetUser(c *fiber.Ctx) error {
-	if config.Debug {
+	if config.Config.Mode == "dev" {
 		user.ID = 1
 		user.Permission = P_ADMIN + P_OPERATOR
 		return nil
@@ -100,7 +100,7 @@ func (user *User) GetUser(c *fiber.Ctx) error {
 }
 
 func GetUserID(c *fiber.Ctx) (int, error) {
-	if config.Debug {
+	if config.Config.Mode == "dev" {
 		return 1, nil
 	}
 
