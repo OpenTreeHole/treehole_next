@@ -67,8 +67,7 @@ type FloorHistory struct {
 }
 
 func (floor *Floor) Preprocess(c *fiber.Ctx) error {
-	var floors Floors
-	floors = append(floors, *floor)
+	floors := Floors{*floor}
 
 	err := floors.Preprocess(c)
 	if err != nil {
@@ -119,19 +118,23 @@ func (floors Floors) Preprocess(c *fiber.Ctx) error {
 
 	// set some default values
 	for i := range floors {
-		if floors[i].Mention == nil {
-			floors[i].Mention = []Floor{}
-		}
-
-		floors[i].FloorID = floors[i].ID
-
-		if floors[i].Fold != "" {
-			floors[i].FoldFrontend = []string{floors[i].Fold}
-		} else {
-			floors[i].FoldFrontend = []string{}
-		}
+		floors[i].SetDefaults()
 	}
 	return nil
+}
+
+func (floor *Floor) SetDefaults() {
+	if floor.Mention == nil {
+		floor.Mention = []Floor{}
+	}
+
+	floor.FloorID = floor.ID
+
+	if floor.Fold != "" {
+		floor.FoldFrontend = []string{floor.Fold}
+	} else {
+		floor.FoldFrontend = []string{}
+	}
 }
 
 var reHole = regexp.MustCompile(`[^#]#(\d+)`)

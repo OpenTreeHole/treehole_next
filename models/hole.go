@@ -117,7 +117,7 @@ func loadFloors(holes []*Hole) error {
 
 	var index, left, right int
 	for _, floor := range floors {
-		floors[right].Mention = []Floor{}
+		floor.SetDefaults()
 		if floor.HoleID != holes[index].ID {
 			if index != 0 { // set floors
 				holes[index].HoleFloor.Floors = floors[left:right]
@@ -157,7 +157,15 @@ func loadFloors(holes []*Hole) error {
 
 func (hole *Hole) Preprocess(c *fiber.Ctx) error {
 	holes := Holes{*hole}
-	return holes.Preprocess(c)
+
+	err := holes.Preprocess(c)
+	if err != nil {
+		return err
+	}
+
+	*hole = holes[0]
+
+	return nil
 }
 
 func (holes Holes) Preprocess(c *fiber.Ctx) error {
