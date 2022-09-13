@@ -4,6 +4,8 @@ import (
 	"errors"
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
+	"runtime/debug"
+	"treehole_next/config"
 )
 
 type HttpError struct {
@@ -75,6 +77,10 @@ func MyErrorHandler(ctx *fiber.Ctx, err error) error {
 				httpError.Message += err.Error() + "\n"
 			}
 		}
+	}
+
+	if config.Debug {
+		debug.PrintStack()
 	}
 
 	return ctx.Status(httpError.Code).JSON(&httpError)
