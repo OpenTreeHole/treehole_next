@@ -10,7 +10,7 @@ import (
 )
 
 func RegisterMiddlewares(app *fiber.App) {
-	app.Use(recover.New())
+	app.Use(recover.New(recover.Config{EnableStackTrace: true}))
 	if config.Config.Mode != "bench" {
 		app.Use(logger.New())
 	}
