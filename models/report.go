@@ -22,6 +22,20 @@ type Report struct {
 	Result   string `json:"result" gorm:"size:128"` // deal result
 }
 
+type Reports []Report
+
+func (report *Report) Preprocess(c *fiber.Ctx) error {
+	report.Floor.SetDefaults()
+	return nil
+}
+
+func (reports Reports) Preprocess(c *fiber.Ctx) error {
+	for _, report := range reports {
+		_ = report.Preprocess(c)
+	}
+	return nil
+}
+
 func (report *Report) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 	var tx *gorm.DB
 	if len(db) > 0 {

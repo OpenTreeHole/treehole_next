@@ -29,7 +29,7 @@ func GetReport(c *fiber.Ctx) error {
 	if result.Error != nil {
 		return result.Error
 	}
-	return c.JSON(&report)
+	return Serialize(c, &report)
 }
 
 // ListReports
@@ -50,7 +50,7 @@ func ListReports(c *fiber.Ctx) error {
 	query.OrderBy = "`report`.`" + query.OrderBy + "`"
 
 	// find reports
-	var reports []Report
+	var reports Reports
 	BaseQuerySet := query.BaseQuery().Joins("Floor")
 	var result *gorm.DB
 	switch query.Range {
@@ -64,7 +64,7 @@ func ListReports(c *fiber.Ctx) error {
 	if result.Error != nil {
 		return result.Error
 	}
-	return c.JSON(&reports)
+	return Serialize(c, reports)
 }
 
 // AddReport
@@ -141,5 +141,5 @@ func DeleteReport(c *fiber.Ctx) error {
 
 	MyLog("Report", "Delete", reportID, userID)
 
-	return c.JSON(&report)
+	return Serialize(c, &report)
 }
