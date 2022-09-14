@@ -11,14 +11,14 @@ import (
 var Cache *cache.Cache[[]byte]
 
 func initCache() {
-	var bigcacheClient, _ = bigcache.NewBigCache(bigcache.DefaultConfig(5 * time.Minute))
-	var bigcacheStore = store.NewBigcache(bigcacheClient)
-	var redisStore = store.NewRedis(redis.NewClient(&redis.Options{
-		Addr: Config.RedisURL,
-	}))
-	if Config.Mode == "production" {
+	if Config.RedisURL != "" {
+		var redisStore = store.NewRedis(redis.NewClient(&redis.Options{
+			Addr: Config.RedisURL,
+		}))
 		Cache = cache.New[[]byte](redisStore)
 	} else {
+		var bigcacheClient, _ = bigcache.NewBigCache(bigcache.DefaultConfig(5 * time.Minute))
+		var bigcacheStore = store.NewBigcache(bigcacheClient)
 		Cache = cache.New[[]byte](bigcacheStore)
 	}
 }

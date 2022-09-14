@@ -18,7 +18,7 @@ type MyConfig struct {
 	// example: user:pass@tcp(127.0.0.1:3306)/dbname
 	// for more detail, see https://github.com/go-sql-driver/mysql#dsn-data-source-name
 	DbUrl           string `default:"" env:"DB_URL"`
-	RedisURL        string `default:"redis:6379" env:"REDIS_URL"`
+	RedisURL        string `default:"" env:"REDIS_URL"` // redis:6379
 	NotificationUrl string `default:"" env:"NOTIFICATION_URL"`
 	AuthUrl         string `default:"" env:"AUTH_URL"`
 }

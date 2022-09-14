@@ -11,7 +11,7 @@ RUN apk add --no-cache --virtual .build-deps \
 
 COPY . .
 
-RUN go build -tags="debug" -ldflags "-s -w" -o treehole
+RUN go build -tags="release" -ldflags "-s -w" -o treehole
 
 FROM alpine
 
