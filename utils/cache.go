@@ -32,6 +32,9 @@ func GetCache(key string, value any) bool {
 
 func DeleteCache(key string) error {
 	err := config.Cache.Delete(context.Background(), key)
+	if err == nil {
+		return nil
+	}
 	if err.Error() == "Entry not found" {
 		return nil
 	}
