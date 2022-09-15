@@ -340,7 +340,7 @@ func DeleteFloor(c *fiber.Ctx) error {
 	}
 
 	// permission
-	if user.ID != floor.UserID || !user.CheckPermission(P_ADMIN) {
+	if !(user.ID == floor.UserID || user.CheckPermission(P_ADMIN)) {
 		return Forbidden()
 	}
 
@@ -350,6 +350,7 @@ func DeleteFloor(c *fiber.Ctx) error {
 	}
 
 	floor.Deleted = true
+	floor.Content = generateDeleteReason(body.Reason, user.ID == floor.UserID)
 	DB.Save(&floor)
 
 	// log
