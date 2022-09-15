@@ -115,20 +115,28 @@ func loadFloors(holes []*Hole) error {
 		return nil
 	}
 
-	var index, left, right int
+	/*
+			Bind floors to hole.
+			Note that floor is grouped by hole_id in hole_id asc order
+		and hole is in random order, so we have to find hole_id those floors
+		belong to both at the beginning and after floor group has changed.
+		We use a map to store the index of the hole that floors belong to.
+			To bind, we use two pointers. Binding occurs when the floor's hole_id
+		has changed, or when the floor is the last floor.
+			The complexity is O(n), where n is the number of floors.
+	*/
+	floorBelonging := make(map[int]int)
 	for _, floor := range floors {
 		floor.SetDefaults()
+		floorBelonging[floor.ID] = floor.HoleID
+	}
+	var left, right int
+	index := floorBelonging[floors[0].ID]
+	for _, floor := range floors {
 		if floor.HoleID != holes[index].ID {
-			if index != 0 { // set floors
-				holes[index].HoleFloor.Floors = floors[left:right]
-				left = right
-			}
-			for i, hole := range holes { // update index
-				if hole.ID == floor.HoleID {
-					index = i
-					break
-				}
-			}
+			holes[index].HoleFloor.Floors = floors[left:right]
+			left = right
+			index = floorBelonging[floor.ID]
 		}
 		right++
 	}
