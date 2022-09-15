@@ -78,6 +78,9 @@ func (user *User) GetUser(c *fiber.Ctx) error {
 
 	// parse JWT
 	tokenString := c.Get("Authorization")
+	if tokenString == "" { // token can be in either header or cookie
+		tokenString = c.Cookies("access")
+	}
 	err = user.parseJWT(tokenString)
 	if err != nil {
 		return utils.Unauthorized(err.Error())
