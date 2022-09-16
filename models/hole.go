@@ -2,6 +2,7 @@ package models
 
 import (
 	"fmt"
+	"golang.org/x/exp/slices"
 	"strings"
 	"time"
 	"treehole_next/config"
@@ -120,23 +121,24 @@ func loadFloors(holes []*Hole) error {
 			Note that floor is grouped by hole_id in hole_id asc order
 		and hole is in random order, so we have to find hole_id those floors
 		belong to both at the beginning and after floor group has changed.
-		We use a map to store the index of the hole that floors belong to.
 			To bind, we use two pointers. Binding occurs when the floor's hole_id
 		has changed, or when the floor is the last floor.
-			The complexity is O(n), where n is the number of floors.
+			The complexity is O(m*n), where m is the number of holes and
+		n is the number of floors. Given that m is relatively small,
+		the complexity is acceptable.
 	*/
-	floorBelonging := make(map[int]int)
+	var left, right int
+	index := slices.IndexFunc(holes, func(hole *Hole) bool {
+		return hole.ID == floors[0].HoleID
+	})
 	for _, floor := range floors {
 		floor.SetDefaults()
-		floorBelonging[floor.ID] = floor.HoleID
-	}
-	var left, right int
-	index := floorBelonging[floors[0].ID]
-	for _, floor := range floors {
 		if floor.HoleID != holes[index].ID {
 			holes[index].HoleFloor.Floors = floors[left:right]
 			left = right
-			index = floorBelonging[floor.ID]
+			index = slices.IndexFunc(holes, func(hole *Hole) bool {
+				return hole.ID == floor.HoleID
+			})
 		}
 		right++
 	}
