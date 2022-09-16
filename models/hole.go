@@ -227,9 +227,9 @@ func MakeQuerySet(c *fiber.Ctx) *gorm.DB {
 	}
 }
 
-func (holes *Holes) MakeQuerySet(offset time.Time, size int, c *fiber.Ctx) (tx *gorm.DB) {
+func (holes *Holes) MakeQuerySet(offset utils.CustomTime, size int, c *fiber.Ctx) (tx *gorm.DB) {
 	return MakeQuerySet(c).
-		Where("updated_at < ?", offset).
+		Where("updated_at < ?", offset.Time).
 		Order("updated_at desc").Limit(size)
 }
 

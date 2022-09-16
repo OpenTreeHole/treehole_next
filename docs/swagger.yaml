@@ -409,6 +409,11 @@ definitions:
         description: Admin only
         type: integer
     type: object
+  utils.CustomTime:
+    properties:
+      time.Time:
+        type: string
+    type: object
   utils.ErrorDetailElement:
     properties:
       field:
@@ -496,10 +501,6 @@ paths:
         name: division_id
         required: true
         type: integer
-      - description: updated time < offset (default is now)
-        in: query
-        name: offset
-        type: string
       - default: 10
         in: query
         maximum: 10
@@ -867,9 +868,6 @@ paths:
         maximum: 10
         name: length
         type: integer
-      - in: query
-        name: start_time
-        type: string
       - in: query
         name: tag
         type: string
@@ -1331,10 +1329,6 @@ paths:
         in: path
         name: tag_name
         required: true
-        type: string
-      - description: updated time < offset (default is now)
-        in: query
-        name: offset
         type: string
       - default: 10
         in: query

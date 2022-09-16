@@ -115,12 +115,6 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "type": "string",
-                        "description": "updated time \u003c offset (default is now)",
-                        "name": "offset",
-                        "in": "query"
-                    },
-                    {
                         "maximum": 10,
                         "type": "integer",
                         "default": 10,
@@ -676,11 +670,6 @@ const docTemplate = `{
                         "type": "integer",
                         "default": 10,
                         "name": "length",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "name": "start_time",
                         "in": "query"
                     },
                     {
@@ -1378,12 +1367,6 @@ const docTemplate = `{
                         "name": "tag_name",
                         "in": "path",
                         "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "updated time \u003c offset (default is now)",
-                        "name": "offset",
-                        "in": "query"
                     },
                     {
                         "maximum": 10,
@@ -2127,6 +2110,14 @@ const docTemplate = `{
                 "temperature": {
                     "description": "Admin only",
                     "type": "integer"
+                }
+            }
+        },
+        "utils.CustomTime": {
+            "type": "object",
+            "properties": {
+                "time.Time": {
+                    "type": "string"
                 }
             }
         },

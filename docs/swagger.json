@@ -107,12 +107,6 @@
                         "required": true
                     },
                     {
-                        "type": "string",
-                        "description": "updated time \u003c offset (default is now)",
-                        "name": "offset",
-                        "in": "query"
-                    },
-                    {
                         "maximum": 10,
                         "type": "integer",
                         "default": 10,
@@ -668,11 +662,6 @@
                         "type": "integer",
                         "default": 10,
                         "name": "length",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "name": "start_time",
                         "in": "query"
                     },
                     {
@@ -1370,12 +1359,6 @@
                         "name": "tag_name",
                         "in": "path",
                         "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "updated time \u003c offset (default is now)",
-                        "name": "offset",
-                        "in": "query"
                     },
                     {
                         "maximum": 10,
@@ -2119,6 +2102,14 @@
                 "temperature": {
                     "description": "Admin only",
                     "type": "integer"
+                }
+            }
+        },
+        "utils.CustomTime": {
+            "type": "object",
+            "properties": {
+                "time.Time": {
+                    "type": "string"
                 }
             }
         },
