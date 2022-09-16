@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"github.com/goccy/go-json"
 	"reflect"
 	"strings"
 	"time"
@@ -73,8 +74,13 @@ func ValidateQuery(c *fiber.Ctx, model any) error {
 	return Validate(model)
 }
 
+// ValidateBody supports json only
 func ValidateBody(c *fiber.Ctx, model any) error {
-	err := c.BodyParser(model)
+	body := c.Body()
+	if len(body) == 0 {
+		body = []byte("{}")
+	}
+	err := json.Unmarshal(body, model)
 	if err != nil {
 		return err
 	}
