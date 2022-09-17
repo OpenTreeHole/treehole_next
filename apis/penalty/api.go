@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"time"
 	"treehole_next/config"
@@ -64,14 +65,16 @@ func BanUser(c *fiber.Ctx) error {
 		days = 1
 	}
 
-	makeRequest(body.DivisionID, days, floor.UserID)
+	banUser(body.DivisionID, days, floor.UserID)
 
-	return c.Status(200).JSON(nil)
+	userData := getUser(floor.UserID)
+
+	return c.Send(userData)
 }
 
 var client = http.Client{Timeout: time.Second * 10}
 
-func makeRequest(divisionID int, days int, userID int) {
+func banUser(divisionID int, days int, userID int) {
 	data := map[string]any{
 		"name":   fmt.Sprintf("ban_treehole_%d", divisionID),
 		"days":   days,
@@ -97,6 +100,40 @@ func makeRequest(divisionID int, days int, userID int) {
 			zap.Int("user id", userID),
 		)
 	}
+}
+
+func getUser(userID int) []byte {
+	response, err := client.Get(fmt.Sprintf("%s/users/%d", config.Config.AuthUrl, userID))
+	if err != nil {
+		Logger.Error(
+			"auth get user error, request error",
+			zap.Int("user id", userID),
+		)
+	}
+	defer func(Body io.ReadCloser) {
+		err = Body.Close()
+		if err != nil {
+			Logger.Error("close body error", zap.Error(err))
+		}
+	}(response.Body)
+
+	data, err := io.ReadAll(response.Body)
+	if err != nil {
+		Logger.Error(
+			"auth get user error, read body error",
+			zap.Int("user id", userID),
+		)
+	}
+
+	if response.StatusCode != 200 {
+		Logger.Error(
+			"auth get user error, response error",
+			zap.Int("user id", userID),
+			zap.String("response body", string(data)),
+		)
+	}
+
+	return data
 }
 
 func RegisterRoutes(app fiber.Router) {
