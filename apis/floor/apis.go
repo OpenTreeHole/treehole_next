@@ -4,6 +4,7 @@ import (
 	"fmt"
 	. "treehole_next/models"
 	. "treehole_next/utils"
+	"treehole_next/utils/perm"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -215,7 +216,7 @@ func ModifyFloor(c *fiber.Ctx) error {
 		if user.ID == floor.UserID {
 			reason = "该内容已被作者修改"
 			MyLog("Floor", "Modify", floorID, user.ID, "[owner]content")
-		} else if user.CheckPermission(P_ADMIN) {
+		} else if perm.CheckPermission(user, perm.Admin) {
 			reason = "该内容已被管理员修改"
 			MyLog("Floor", "Modify", floorID, user.ID, "[admin]content")
 		} else {
@@ -235,7 +236,7 @@ func ModifyFloor(c *fiber.Ctx) error {
 	}
 
 	if body.Fold != "" {
-		if !user.CheckPermission(P_ADMIN) {
+		if !perm.CheckPermission(user, perm.Admin) {
 			return Forbidden()
 		}
 		floor.Fold = body.Fold
@@ -244,7 +245,7 @@ func ModifyFloor(c *fiber.Ctx) error {
 
 	if body.SpecialTag != "" {
 		// operator can modify specialTag
-		if !user.CheckPermission(P_OPERATOR) {
+		if !perm.CheckPermission(user, perm.Admin|perm.Operator) {
 			return Forbidden()
 		}
 		floor.SpecialTag = body.SpecialTag
@@ -340,7 +341,7 @@ func DeleteFloor(c *fiber.Ctx) error {
 	}
 
 	// permission
-	if !(user.ID == floor.UserID || user.CheckPermission(P_ADMIN)) {
+	if !(user.ID == floor.UserID || perm.CheckPermission(user, perm.Admin)) {
 		return Forbidden()
 	}
 
@@ -420,7 +421,7 @@ func RestoreFloor(c *fiber.Ctx) error {
 	}
 
 	// permission check
-	if !user.CheckPermission(P_ADMIN) {
+	if !perm.CheckPermission(user, perm.Admin) {
 		return Forbidden()
 	}
 

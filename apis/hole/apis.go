@@ -5,6 +5,7 @@ import (
 	"strconv"
 	. "treehole_next/models"
 	. "treehole_next/utils"
+	"treehole_next/utils/perm"
 
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
@@ -248,7 +249,7 @@ func ModifyHole(c *fiber.Ctx) error {
 
 	// permission
 	if body.DivisionID != 0 && body.DivisionID != hole.DivisionID {
-		if !user.CheckPermission(P_ADMIN) {
+		if !perm.CheckPermission(user, perm.Admin) {
 			return Forbidden("非管理员禁止修改分区")
 		}
 		hole.DivisionID = body.DivisionID
@@ -256,7 +257,7 @@ func ModifyHole(c *fiber.Ctx) error {
 		MyLog("Hole", "Modify", holeID, user.ID, "DivisionID to: ", strconv.Itoa(hole.DivisionID))
 	}
 	if len(body.Tags) != 0 {
-		if user.CheckPermission(P_ADMIN) || user.ID == hole.UserID {
+		if perm.CheckPermission(user, perm.Admin) || user.ID == hole.UserID {
 			for _, tag := range body.Tags {
 				hole.Tags = append(hole.Tags, &Tag{Name: tag.Name})
 			}
@@ -268,7 +269,7 @@ func ModifyHole(c *fiber.Ctx) error {
 			}
 
 			// log
-			if user.CheckPermission(P_ADMIN) {
+			if perm.CheckPermission(user, perm.Admin) {
 				MyLog("Hole", "Modify", holeID, user.ID, "[admin]NewTags: ", fmt.Sprintf("%v", body.Tags))
 			} else {
 				MyLog("Hole", "Modify", holeID, user.ID, "[owner]NewTags: ", fmt.Sprintf("%v", body.Tags))
@@ -309,7 +310,7 @@ func DeleteHole(c *fiber.Ctx) error {
 	}
 
 	// permission
-	if !user.CheckPermission(P_ADMIN) {
+	if !perm.CheckPermission(user, perm.Admin) {
 		return Forbidden()
 	}
 
