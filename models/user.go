@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"strings"
 	"treehole_next/config"
-	"treehole_next/perm"
 	"treehole_next/utils"
+	"treehole_next/utils/perm"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -21,7 +21,7 @@ type User struct {
 	BanDivision map[int]bool           `json:"-" gorm:"-:all"`
 	Nickname    string                 `json:"nickname" gorm:"-:all"`
 	Config      map[string]interface{} `json:"config" gorm:"-:all"`
-	Permission  perm.PermissionType    `json:"permission" gorm:"-:all"`
+	Permission  perm.Permission        `json:"permission" gorm:"-:all"`
 }
 
 type UserFavorites struct {
@@ -107,32 +107,8 @@ func GetUserID(c *fiber.Ctx) (int, error) {
 	return id, nil
 }
 
-// GetAndCheckPermission gets userInfo and check user permission
-//
-// Example:
-//
-//  GetAndCheckPermission(c, perm.Admin | perm.Operator)
-//
-func (user *User) GetAndCheckPermission(c *fiber.Ctx, t perm.PermissionType) error {
-	err := user.GetUser(c)
-	if err != nil {
-		return err
-	}
-	if !user.CheckPermission(t) {
-		return utils.Forbidden()
-	}
-	return nil
-}
-
-// CheckPermission checks user permission
-//
-// Example:
-//
-//  CheckPermission(perm.Admin)
-//  CheckPermission(perm.Admin | perm.Operator)
-//
-func (user *User) CheckPermission(t perm.PermissionType) bool {
-	return user.Permission&t != 0
+func (user User) GetPermission() perm.Permission {
+	return user.Permission
 }
 
 func UserCreateFavourite(c *fiber.Ctx, clear bool, userID int, holeIDs []int) error {

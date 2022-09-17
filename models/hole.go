@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 	"treehole_next/config"
-	"treehole_next/perm"
 	"treehole_next/utils"
+	"treehole_next/utils/perm"
 
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
@@ -221,7 +221,7 @@ func (holes Holes) Preprocess(c *fiber.Ctx) error {
 func MakeQuerySet(c *fiber.Ctx) *gorm.DB {
 	var user User
 	_ = user.GetUser(c)
-	if user.CheckPermission(perm.Admin) {
+	if perm.CheckPermission(user, perm.Admin) {
 		return DB
 	} else {
 		return DB.Where("hidden = ?", false)
@@ -345,7 +345,7 @@ func (hole *Hole) Create(c *fiber.Ctx, content string, specialTag string, db ...
 		return err
 	}
 	if user.BanDivision[hole.DivisionID] ||
-		specialTag != "" && !(user.CheckPermission(perm.Operator) || user.CheckPermission(perm.Admin)) {
+		specialTag != "" && !perm.CheckPermission(user, perm.Admin|perm.Operator) {
 		return utils.Forbidden()
 	}
 	hole.UserID = user.ID
