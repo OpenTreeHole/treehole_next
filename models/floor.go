@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"strconv"
 	"treehole_next/config"
+	"treehole_next/perm"
 	"treehole_next/utils"
 
 	"github.com/gofiber/fiber/v2"
@@ -198,7 +199,7 @@ func (floor *Floor) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 		var hole Hole
 		tx.Select("division_id").First(&hole, floor.HoleID)
 		if user.BanDivision[hole.DivisionID] ||
-			floor.SpecialTag != "" && !user.CheckPermission(P_OPERATOR) {
+			floor.SpecialTag != "" && !(user.CheckPermission(perm.Operator) || user.CheckPermission(perm.Admin)) {
 			return utils.Forbidden()
 		}
 

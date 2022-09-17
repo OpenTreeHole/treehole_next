@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 	"treehole_next/config"
+	"treehole_next/perm"
 	"treehole_next/utils"
 
 	"github.com/gofiber/fiber/v2"
@@ -20,22 +21,13 @@ type User struct {
 	BanDivision map[int]bool           `json:"-" gorm:"-:all"`
 	Nickname    string                 `json:"nickname" gorm:"-:all"`
 	Config      map[string]interface{} `json:"config" gorm:"-:all"`
-	Permission  PermissionType         `json:"permission" gorm:"-:all"`
+	Permission  perm.PermissionType    `json:"permission" gorm:"-:all"`
 }
 
 type UserFavorites struct {
 	UserID int `json:"user_id" gorm:"primarykey"`
 	HoleID int `json:"hole_id" gorm:"primarykey"`
 }
-
-// PermissionType enum
-//goland:noinspection GoSnakeCaseUsage
-const (
-	P_ADMIN = 1 << iota
-	P_OPERATOR
-)
-
-type PermissionType int
 
 // parseJWT extracts and parse token
 func (user *User) parseJWT(token string) error {
@@ -65,7 +57,7 @@ func (user *User) parseJWT(token string) error {
 func (user *User) GetUser(c *fiber.Ctx) error {
 	if config.Config.Mode == "dev" {
 		user.ID = 1
-		user.Permission = P_ADMIN + P_OPERATOR
+		user.Permission = perm.Admin + perm.Operator
 		return nil
 	}
 
@@ -88,9 +80,9 @@ func (user *User) GetUser(c *fiber.Ctx) error {
 
 	for _, v := range user.Roles {
 		if v == "admin" {
-			user.Permission |= P_ADMIN
+			user.Permission |= perm.Admin
 		} else if v == "operator" {
-			user.Permission |= P_OPERATOR
+			user.Permission |= perm.Operator
 		} else if strings.HasPrefix(v, "ban_treehole") {
 			banDivisionID, err := strconv.Atoi(v[13:]) // "ban_treehole_{divisionID}"
 			if err != nil {
@@ -119,9 +111,9 @@ func GetUserID(c *fiber.Ctx) (int, error) {
 //
 // Example:
 //
-//  GetAndCheckPermission(c, P_ADMIN | P_OPERATOR)
+//  GetAndCheckPermission(c, perm.Admin | perm.Operator)
 //
-func (user *User) GetAndCheckPermission(c *fiber.Ctx, t PermissionType) error {
+func (user *User) GetAndCheckPermission(c *fiber.Ctx, t perm.PermissionType) error {
 	err := user.GetUser(c)
 	if err != nil {
 		return err
@@ -136,10 +128,10 @@ func (user *User) GetAndCheckPermission(c *fiber.Ctx, t PermissionType) error {
 //
 // Example:
 //
-//  CheckPermission(P_ADMIN)
-//  CheckPermission(P_ADMIN | P_OPERATOR)
+//  CheckPermission(perm.Admin)
+//  CheckPermission(perm.Admin | perm.Operator)
 //
-func (user *User) CheckPermission(t PermissionType) bool {
+func (user *User) CheckPermission(t perm.PermissionType) bool {
 	return user.Permission&t != 0
 }
 
