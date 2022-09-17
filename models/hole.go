@@ -338,17 +338,7 @@ func (hole *Hole) Create(c *fiber.Ctx, content string, specialTag string, db ...
 		tx = DB
 	}
 
-	// permission
-	var user User
-	err := user.GetUser(c)
-	if err != nil {
-		return err
-	}
-	if user.BanDivision[hole.DivisionID] ||
-		specialTag != "" && !perm.CheckPermission(user, perm.Admin|perm.Operator) {
-		return utils.Forbidden()
-	}
-	hole.UserID = user.ID
+	hole.UserID, _ = GetUserID(c)
 
 	return tx.Transaction(func(tx *gorm.DB) error {
 		// Create hole
