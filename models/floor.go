@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
-	"time"
 	"treehole_next/config"
 	"treehole_next/utils"
 	"treehole_next/utils/perm"
@@ -255,21 +254,23 @@ func (floor *Floor) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 			var replyPath string
 			lastFloorID := 0
 
+			// get the position of floor to insert
+			// if no reply to floor.ReplyTo, get floor.ReplyTo itself
+			// else get the latest floor reply to floor.ReplyTo
 			err = tx.Clauses(clause.Locking{
 				Strength: "UPDATE",
 			}).Raw(
 				fmt.Sprintf(
 					"SELECT id, storey, path FROM floor "+
-						"WHERE hole_id = %d AND (path LIKE '%%/%d/%%' OR id = %d)"+
+						"WHERE hole_id = %d AND (path LIKE '%%/%d/%%' OR id = %d) "+
 						"ORDER BY storey DESC LIMIT 1",
-					floor.HoleID,
-					floor.ReplyTo,
-					floor.ReplyTo),
+					floor.HoleID, floor.ReplyTo, floor.ReplyTo),
 			).Row().Scan(&lastFloorID, &storey, &replyPath)
 			if err != nil {
 				return err
 			}
 
+			// storey++ under this floor
 			result = tx.
 				Exec(`
 				UPDATE floor SET storey = storey + 1
@@ -280,6 +281,7 @@ func (floor *Floor) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 			}
 			floor.Storey = storey + 1
 
+			// update path
 			if lastFloorID == floor.ReplyTo {
 				floor.Path = replyPath + strconv.Itoa(floor.ReplyTo) + "/"
 			} else {
@@ -298,11 +300,6 @@ func (floor *Floor) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 			return result.Error
 		}
 
-		result = tx.Model(&Hole{}).Where("id = ?", floor.HoleID).Update("updated_at", time.Now())
-		if result.Error != nil {
-			return result.Error
-		}
-
 		if hole.Reply < config.Config.HoleFloorSize {
 			return utils.DeleteCache(fmt.Sprintf("hole_%d", floor.HoleID))
 		}
@@ -311,8 +308,8 @@ func (floor *Floor) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 }
 
 func (floor *Floor) AfterCreate(tx *gorm.DB) (err error) {
-
-	result := tx.Exec("UPDATE hole SET reply = reply + 1 WHERE id = ?", floor.HoleID)
+	// update reply and update_at
+	result := tx.Exec("UPDATE hole SET reply = reply + 1, updated_at = NOW(3) WHERE id = ?", floor.HoleID)
 	if result.Error != nil {
 		return result.Error
 	}
