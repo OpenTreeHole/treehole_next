@@ -251,20 +251,23 @@ func (floor *Floor) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 			floor.Storey = int(count) + 1
 			floor.Path = "/"
 		} else {
-			var storey int
-			result = tx.Clauses(clause.Locking{
+			storey := 0
+			var replyPath string
+			lastFloorID := 0
+
+			err = tx.Clauses(clause.Locking{
 				Strength: "UPDATE",
 			}).Raw(
 				fmt.Sprintf(
-					"SELECT storey FROM floor "+
+					"SELECT id, storey, path FROM floor "+
 						"WHERE hole_id = %d AND (path LIKE '%%/%d/%%' OR id = %d)"+
 						"ORDER BY storey DESC LIMIT 1",
 					floor.HoleID,
 					floor.ReplyTo,
 					floor.ReplyTo),
-			).Scan(&storey)
-			if result.Error != nil {
-				return result.Error
+			).Row().Scan(&lastFloorID, &storey, &replyPath)
+			if err != nil {
+				return err
 			}
 
 			result = tx.
@@ -277,15 +280,11 @@ func (floor *Floor) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 			}
 			floor.Storey = storey + 1
 
-			var replyPath string
-			result = tx.
-				Raw(`SELECT path FROM floor WHERE ID = ?`,
-					floor.ReplyTo).
-				Scan(&replyPath)
-			if result.Error != nil {
-				return result.Error
+			if lastFloorID == floor.ReplyTo {
+				floor.Path = replyPath + strconv.Itoa(floor.ReplyTo) + "/"
+			} else {
+				floor.Path = replyPath
 			}
-			floor.Path = replyPath + strconv.Itoa(floor.ReplyTo) + "/"
 		}
 		// find mention
 		err = floor.FindMention(tx)
