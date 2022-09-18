@@ -254,16 +254,20 @@ func (floor *Floor) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 			var replyPath string
 			lastFloorID := 0
 
-			// get the position of floor to insert
-			// if no reply to floor.ReplyTo, get floor.ReplyTo itself
-			// else get the latest floor reply to floor.ReplyTo
+			/*
+				get the position(id, storey, path) of last floor where to insert behind.
+				if no floor replied to floor.ReplyTo, get floor.ReplyTo itself,
+				floor.path should be path + floor.ReplyTo id.
+				else get the latest floor replied to floor.ReplyTo,
+				floor.path is exactly the latest floor's path.
+			*/
 			err = tx.Clauses(clause.Locking{
 				Strength: "UPDATE",
 			}).Raw(
 				fmt.Sprintf(
-					"SELECT id, storey, path FROM floor "+
-						"WHERE hole_id = %d AND (path LIKE '%%/%d/%%' OR id = %d) "+
-						"ORDER BY storey DESC LIMIT 1",
+					`SELECT id, storey, path FROM floor 
+                        WHERE hole_id = %d AND (path LIKE '%%/%d/%%' OR id = %d) 
+                        ORDER BY storey DESC LIMIT 1`,
 					floor.HoleID, floor.ReplyTo, floor.ReplyTo),
 			).Row().Scan(&lastFloorID, &storey, &replyPath)
 			if err != nil {
