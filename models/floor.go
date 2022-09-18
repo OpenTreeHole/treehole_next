@@ -250,34 +250,47 @@ func (floor *Floor) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 			floor.Storey = int(count) + 1
 			floor.Path = "/"
 		} else {
-			var storey int
-			result = tx.Clauses(clause.Locking{
+			storey := 0
+			var replyPath string
+			lastFloorID := 0
+
+			/*
+				get the position(id, storey, path) of last floor where to insert behind.
+				if no floor replied to floor.ReplyTo, get floor.ReplyTo itself,
+				floor.path should be path + floor.ReplyTo id.
+				else get the latest floor replied to floor.ReplyTo,
+				floor.path is exactly the latest floor's path.
+			*/
+			err = tx.Clauses(clause.Locking{
 				Strength: "UPDATE",
-			}).Raw(`SELECT storey FROM floor 
-					WHERE hole_id = ? AND path LIKE '%/?/%' 
-					ORDER BY storey DESC LIMIT 1`,
-				floor.HoleID, floor.ReplyTo).
-				Scan(&storey)
-			if result.Error != nil {
-				return result.Error
+			}).Raw(
+				fmt.Sprintf(
+					`SELECT id, storey, path FROM floor 
+                        WHERE hole_id = %d AND (path LIKE '%%/%d/%%' OR id = %d) 
+                        ORDER BY storey DESC LIMIT 1`,
+					floor.HoleID, floor.ReplyTo, floor.ReplyTo),
+			).Row().Scan(&lastFloorID, &storey, &replyPath)
+			if err != nil {
+				return err
 			}
+
+			// storey++ under this floor
 			result = tx.
-				Exec(`UPDATE floor SET storey = storey + 1
-					WHERE hole_id = ? AND storey > ?`,
+				Exec(`
+				UPDATE floor SET storey = storey + 1
+				WHERE hole_id = ? AND storey > ?`,
 					floor.HoleID, storey)
 			if result.Error != nil {
 				return result.Error
 			}
 			floor.Storey = storey + 1
-			var replyPath string
-			result = tx.
-				Raw(`SELECT path FROM floor WHERE ID = ?`,
-					floor.ReplyTo).
-				Scan(&replyPath)
-			if result.Error != nil {
-				return result.Error
+
+			// update path
+			if lastFloorID == floor.ReplyTo {
+				floor.Path = replyPath + strconv.Itoa(floor.ReplyTo) + "/"
+			} else {
+				floor.Path = replyPath
 			}
-			floor.Path = replyPath + strconv.Itoa(floor.ReplyTo) + "/"
 		}
 		// find mention
 		err = floor.FindMention(tx)
@@ -299,8 +312,8 @@ func (floor *Floor) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 }
 
 func (floor *Floor) AfterCreate(tx *gorm.DB) (err error) {
-
-	result := tx.Exec("UPDATE hole SET reply = reply + 1 WHERE id = ?", floor.HoleID)
+	// update reply and update_at
+	result := tx.Exec("UPDATE hole SET reply = reply + 1, updated_at = NOW(3) WHERE id = ?", floor.HoleID)
 	if result.Error != nil {
 		return result.Error
 	}
