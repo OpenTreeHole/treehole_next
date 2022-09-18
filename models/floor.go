@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
+	"time"
 	"treehole_next/config"
 	"treehole_next/utils"
 	"treehole_next/utils/perm"
@@ -287,6 +288,11 @@ func (floor *Floor) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 
 		// create floor
 		result = tx.Create(floor)
+		if result.Error != nil {
+			return result.Error
+		}
+
+		result = tx.Model(&Hole{}).Where("id = ?", floor.HoleID).Update("updated_at", time.Now())
 		if result.Error != nil {
 			return result.Error
 		}
