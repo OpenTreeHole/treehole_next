@@ -254,22 +254,29 @@ func (floor *Floor) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 			var storey int
 			result = tx.Clauses(clause.Locking{
 				Strength: "UPDATE",
-			}).Raw(`SELECT storey FROM floor 
-					WHERE hole_id = ? AND path LIKE '%/?/%' 
-					ORDER BY storey DESC LIMIT 1`,
-				floor.HoleID, floor.ReplyTo).
-				Scan(&storey)
+			}).Raw(
+				fmt.Sprintf(
+					"SELECT storey FROM floor "+
+						"WHERE hole_id = %d AND (path LIKE '%%/%d/%%' OR id = %d)"+
+						"ORDER BY storey DESC LIMIT 1",
+					floor.HoleID,
+					floor.ReplyTo,
+					floor.ReplyTo),
+			).Scan(&storey)
 			if result.Error != nil {
 				return result.Error
 			}
+
 			result = tx.
-				Exec(`UPDATE floor SET storey = storey + 1
-					WHERE hole_id = ? AND storey > ?`,
+				Exec(`
+				UPDATE floor SET storey = storey + 1
+				WHERE hole_id = ? AND storey > ?`,
 					floor.HoleID, storey)
 			if result.Error != nil {
 				return result.Error
 			}
 			floor.Storey = storey + 1
+
 			var replyPath string
 			result = tx.
 				Raw(`SELECT path FROM floor WHERE ID = ?`,
