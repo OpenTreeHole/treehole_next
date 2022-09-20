@@ -295,6 +295,13 @@ func ModifyHole(c *fiber.Ctx) error {
 	// save
 	DB.Omit("Tags").Save(&hole)
 
+	// update cache
+	updateHoles := []*Hole{&hole}
+	err = UpdateHoleCache(updateHoles)
+	if err != nil {
+		return err
+	}
+
 	return Serialize(c, &hole)
 }
 
@@ -335,6 +342,19 @@ func DeleteHole(c *fiber.Ctx) error {
 
 	// log
 	MyLog("Hole", "Delete", holeID, user.ID)
+
+	// find hole and update cache
+	result = DB.First(&hole, holeID)
+	if result.Error != nil {
+		return result.Error
+	}
+
+	updateHoles := []*Hole{&hole}
+	err = UpdateHoleCache(updateHoles)
+	if err != nil {
+		return err
+	}
+
 	return c.Status(204).JSON(nil)
 }
 

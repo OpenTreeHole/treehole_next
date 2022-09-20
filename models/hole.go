@@ -41,6 +41,10 @@ type HoleTag struct {
 	TagID  int `json:"tag_id"`
 }
 
+/**************
+	get hole methods
+ *******************/
+
 const HoleCacheExpire = time.Minute * 10
 
 func loadTags(holes []*Hole) error {
@@ -193,28 +197,41 @@ func (holes Holes) Preprocess(c *fiber.Ctx) error {
 	}
 
 	if len(notInCache) > 0 {
-		err := loadFloors(notInCache)
+		err := UpdateHoleCache(notInCache)
 		if err != nil {
 			return err
-		}
-
-		err = loadTags(notInCache)
-		if err != nil {
-			return err
-		}
-
-		for i := 0; i < len(notInCache); i++ {
-			err = utils.SetCache(
-				fmt.Sprintf("hole_%d", notInCache[i].ID),
-				notInCache[i],
-				HoleCacheExpire,
-			)
-			if err != nil {
-				return err
-			}
 		}
 	}
 
+	return nil
+}
+
+func UpdateHoleCache(notInCache []*Hole) error {
+	err := loadFloors(notInCache)
+	if err != nil {
+		return err
+	}
+
+	err = loadTags(notInCache)
+	if err != nil {
+		return err
+	}
+
+	for i := 0; i < len(notInCache); i++ {
+		err = utils.SetCache(
+			fmt.Sprintf("hole_%d", notInCache[i].ID),
+			notInCache[i],
+			HoleCacheExpire,
+		)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (hole *Hole) AfterFind(tx *gorm.DB) (err error) {
+	hole.HoleID = hole.ID
 	return nil
 }
 
@@ -233,6 +250,10 @@ func (holes *Holes) MakeQuerySet(offset utils.CustomTime, size int, c *fiber.Ctx
 		Where("updated_at < ?", offset.Time).
 		Order("updated_at desc").Limit(size)
 }
+
+/************************
+	create and modify hole methods
+ ************************/
 
 // SetTags sets tags for a hole
 func (hole *Hole) SetTags(tx *gorm.DB, clear bool) error {
@@ -363,9 +384,4 @@ func (hole *Hole) Create(c *fiber.Ctx, content string, specialTag string, db ...
 func (hole *Hole) AfterCreate(tx *gorm.DB) (err error) {
 	hole.HoleID = hole.ID
 	return hole.SetTags(tx, false)
-}
-
-func (hole *Hole) AfterFind(tx *gorm.DB) (err error) {
-	hole.HoleID = hole.ID
-	return nil
 }
