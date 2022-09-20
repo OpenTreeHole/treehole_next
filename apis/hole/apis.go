@@ -247,7 +247,7 @@ func ModifyHole(c *fiber.Ctx) error {
 		return result.Error
 	}
 
-	// permission
+	// modify division
 	if body.DivisionID != 0 && body.DivisionID != hole.DivisionID {
 		if !perm.CheckPermission(user, perm.Admin) {
 			return Forbidden("非管理员禁止修改分区")
@@ -256,6 +256,18 @@ func ModifyHole(c *fiber.Ctx) error {
 		// log
 		MyLog("Hole", "Modify", holeID, user.ID, "DivisionID to: ", strconv.Itoa(hole.DivisionID))
 	}
+
+	// modify hidden
+	if body.Unhidden && hole.Hidden {
+		if !perm.CheckPermission(user, perm.Admin) {
+			return Forbidden("非管理员禁止取消隐藏")
+		}
+		hole.Hidden = false
+		// log
+		MyLog("Hole", "Modify", holeID, user.ID, "Unhidden: ")
+	}
+
+	// modify tags
 	if len(body.Tags) != 0 {
 		if perm.CheckPermission(user, perm.Admin) || user.ID == hole.UserID {
 			for _, tag := range body.Tags {
@@ -282,6 +294,13 @@ func ModifyHole(c *fiber.Ctx) error {
 
 	// save
 	DB.Omit("Tags").Save(&hole)
+
+	// update cache
+	updateHoles := []*Hole{&hole}
+	err = UpdateHoleCache(updateHoles)
+	if err != nil {
+		return err
+	}
 
 	return Serialize(c, &hole)
 }
@@ -323,6 +342,19 @@ func DeleteHole(c *fiber.Ctx) error {
 
 	// log
 	MyLog("Hole", "Delete", holeID, user.ID)
+
+	// find hole and update cache
+	result = DB.First(&hole, holeID)
+	if result.Error != nil {
+		return result.Error
+	}
+
+	updateHoles := []*Hole{&hole}
+	err = UpdateHoleCache(updateHoles)
+	if err != nil {
+		return err
+	}
+
 	return c.Status(204).JSON(nil)
 }
 

@@ -75,7 +75,7 @@ definitions:
         maxLength: 16
         type: string
     required:
-      - content
+    - content
     type: object
   floor.CreateOldResponse:
     properties:
@@ -152,7 +152,7 @@ definitions:
           $ref: '#/definitions/tag.CreateModel'
         type: array
     required:
-      - content
+    - content
     type: object
   hole.CreateOldResponse:
     properties:
@@ -172,6 +172,8 @@ definitions:
         items:
           $ref: '#/definitions/tag.CreateModel'
         type: array
+      unhidden:
+        type: boolean
     type: object
   models.Division:
     properties:
@@ -570,7 +572,7 @@ paths:
       - application/json
       responses:
         "204":
-          description: ""
+          description: No Content
         "404":
           description: Not Found
           schema:
@@ -989,7 +991,7 @@ paths:
       - application/json
       responses:
         "204":
-          description: ""
+          description: No Content
         "404":
           description: Not Found
           schema:
@@ -1030,7 +1032,7 @@ paths:
       - application/json
       responses:
         "204":
-          description: ""
+          description: No Content
         "404":
           description: Not Found
           schema:
@@ -1146,7 +1148,7 @@ paths:
       - application/json
       responses:
         "204":
-          description: ""
+          description: No Content
         "400":
           description: Bad Request
           schema:
@@ -1207,12 +1209,12 @@ paths:
   /tags:
     get:
       parameters:
-        - description: search tag by name
-          in: query
-          name: s
-          type: string
+      - description: search tag by name
+        in: query
+        name: s
+        type: string
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
