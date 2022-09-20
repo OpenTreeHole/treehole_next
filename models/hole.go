@@ -84,6 +84,7 @@ func loadTags(holes []*Hole) error {
 
 	tagMap := make(map[int]*Tag)
 	for _, tag := range tags {
+		tag.TagID = tag.ID
 		tagMap[tag.ID] = tag
 	}
 
