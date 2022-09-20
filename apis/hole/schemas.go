@@ -60,4 +60,5 @@ type CreateOldResponse struct {
 type ModifyModel struct {
 	tags
 	divisionID
+	Unhidden bool `json:"unhidden"`
 }

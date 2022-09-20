@@ -278,7 +278,7 @@
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     },
                     "404": {
                         "description": "Not Found",
@@ -912,7 +912,7 @@
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     },
                     "404": {
                         "description": "Not Found",
@@ -942,7 +942,7 @@
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     },
                     "404": {
                         "description": "Not Found",
@@ -1075,7 +1075,7 @@
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     },
                     "400": {
                         "description": "Bad Request",
@@ -1762,6 +1762,9 @@
                     "items": {
                         "$ref": "#/definitions/tag.CreateModel"
                     }
+                },
+                "unhidden": {
+                    "type": "boolean"
                 }
             }
         },
