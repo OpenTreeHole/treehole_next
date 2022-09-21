@@ -65,7 +65,7 @@ func ListReports(c *fiber.Ctx) error {
 	if result.Error != nil {
 		return result.Error
 	}
-	return Serialize(c, reports)
+	return Serialize(c, &reports)
 }
 
 // AddReport

@@ -29,9 +29,9 @@ func (report *Report) Preprocess(c *fiber.Ctx) error {
 	return nil
 }
 
-func (reports Reports) Preprocess(c *fiber.Ctx) error {
-	for _, report := range reports {
-		_ = report.Preprocess(c)
+func (reports *Reports) Preprocess(c *fiber.Ctx) error {
+	for i := range *reports {
+		_ = (*reports)[i].Preprocess(c)
 	}
 	return nil
 }
