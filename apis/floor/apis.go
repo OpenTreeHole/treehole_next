@@ -98,6 +98,10 @@ func GetFloor(c *fiber.Ctx) error {
 		return result.Error
 	}
 
+	for i := range floor.Mention {
+		floor.Mention[i].SetDefaults()
+	}
+
 	return Serialize(c, &floor)
 }
 
@@ -233,6 +237,12 @@ func ModifyFloor(c *fiber.Ctx) error {
 		if err != nil {
 			return err
 		}
+
+		// update floor_mention after update floor.content
+		err = floor.SetMention(DB, true)
+		if err != nil {
+			return err
+		}
 	}
 
 	if body.Fold != "" {
@@ -261,7 +271,7 @@ func ModifyFloor(c *fiber.Ctx) error {
 		return err
 	}
 
-	DB.Save(&floor)
+	DB.Model(&floor).Omit("Mention").UpdateColumns(&floor)
 
 	return Serialize(c, &floor)
 }

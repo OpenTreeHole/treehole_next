@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
+	"strings"
 	"treehole_next/config"
 	"treehole_next/utils"
 	"treehole_next/utils/perm"
@@ -177,6 +178,40 @@ func (floor *Floor) FindMention(tx *gorm.DB) error {
 	return nil
 }
 
+func (floor *Floor) SetMention(tx *gorm.DB, clear bool) error {
+	mentionIDs := make([]int, len(floor.Mention))
+	for i, mention := range floor.Mention {
+		mentionIDs[i] = mention.ID
+	}
+
+	if clear {
+		result := DB.Exec(`
+			DELETE FROM floor_mention
+			WHERE floor_id = ? AND mention_id NOT IN ?`,
+			floor.ID, mentionIDs)
+		if result.Error != nil {
+			return result.Error
+		}
+	}
+
+	var builder strings.Builder
+	builder.WriteString("INSERT IGNORE INTO floor_mention (floor_id, mention_id) VALUES ")
+	for i, mentionID := range mentionIDs {
+		builder.WriteString(fmt.Sprintf("(%d, %d)", floor.ID, mentionID))
+		if i != len(mentionIDs)-1 {
+			builder.WriteString(",")
+		}
+	}
+	builder.WriteString("")
+
+	result := tx.Exec(builder.String())
+	if result.Error != nil {
+		return result.Error
+	}
+
+	return nil
+}
+
 func (floor *Floor) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 	var tx *gorm.DB
 	if len(db) > 0 {
@@ -299,7 +334,7 @@ func (floor *Floor) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 		}
 
 		// create floor
-		result = tx.Create(floor)
+		result = tx.Omit("Mention").Create(floor)
 		if result.Error != nil {
 			return result.Error
 		}
@@ -312,6 +347,13 @@ func (floor *Floor) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 }
 
 func (floor *Floor) AfterCreate(tx *gorm.DB) (err error) {
+
+	// floor set Mention
+	err = floor.SetMention(tx, false)
+	if err != nil {
+		return err
+	}
+
 	// update reply and update_at
 	result := tx.Exec("UPDATE hole SET reply = reply + 1, updated_at = NOW(3) WHERE id = ?", floor.HoleID)
 	if result.Error != nil {
