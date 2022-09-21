@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
+	"time"
 	"treehole_next/config"
 	"treehole_next/utils"
 	"treehole_next/utils/perm"
@@ -313,7 +314,7 @@ func (floor *Floor) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 
 func (floor *Floor) AfterCreate(tx *gorm.DB) (err error) {
 	// update reply and update_at
-	result := tx.Exec("UPDATE hole SET reply = reply + 1, updated_at = NOW(3) WHERE id = ?", floor.HoleID)
+	result := tx.Exec("UPDATE hole SET reply = reply + 1, updated_at = ? WHERE id = ?", time.Now(), floor.HoleID)
 	if result.Error != nil {
 		return result.Error
 	}
