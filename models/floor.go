@@ -186,6 +186,13 @@ func (floor *Floor) FindMention(tx *gorm.DB) error {
 }
 
 func (floor *Floor) SetMention(tx *gorm.DB, clear bool) error {
+	// find mention
+	err := floor.FindMention(tx)
+	if err != nil {
+		return err
+	}
+
+	// get mentionID
 	mentionIDs := make([]int, len(floor.Mention))
 	for i, mention := range floor.Mention {
 		mentionIDs[i] = mention.ID
@@ -344,11 +351,6 @@ func (floor *Floor) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 			} else {
 				floor.Path = replyPath
 			}
-		}
-		// find mention
-		err = floor.FindMention(tx)
-		if err != nil {
-			return err
 		}
 
 		// create floor

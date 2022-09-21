@@ -228,12 +228,6 @@ func ModifyFloor(c *fiber.Ctx) error {
 		}
 		floor.Content = body.Content
 
-		// find mention
-		err := floor.FindMention(DB)
-		if err != nil {
-			return err
-		}
-
 	}
 
 	if body.Fold != "" {
