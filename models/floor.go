@@ -81,21 +81,21 @@ func (floor *Floor) Preprocess(c *fiber.Ctx) error {
 	return nil
 }
 
-func (floors Floors) Preprocess(c *fiber.Ctx) error {
+func (floors *Floors) Preprocess(c *fiber.Ctx) error {
 	userID, err := GetUserID(c)
 	if err != nil {
 		return err
 	}
 
 	// get floors' like
-	floorIDs := make([]int, len(floors))
+	floorIDs := make([]int, len(*floors))
 	IDFloorMapping := make(map[int]*Floor)
-	for i, v := range floors {
-		if userID == v.UserID {
-			floors[i].IsMe = true
+	for i, floor := range *floors {
+		if userID == floor.UserID {
+			(*floors)[i].IsMe = true
 		}
-		floorIDs[i] = v.ID
-		IDFloorMapping[v.ID] = &floors[i]
+		floorIDs[i] = floor.ID
+		IDFloorMapping[floor.ID] = &(*floors)[i]
 	}
 
 	var floorLikes []FloorLike
@@ -106,9 +106,9 @@ func (floors Floors) Preprocess(c *fiber.Ctx) error {
 	if result.Error != nil {
 		return err
 	}
-	for _, v := range floorLikes {
-		if floor, ok := IDFloorMapping[v.FloorID]; ok {
-			floor.Liked = v.LikeData
+	for _, floorLike := range floorLikes {
+		if floor, ok := IDFloorMapping[floorLike.FloorID]; ok {
+			floor.Liked = floorLike.LikeData
 			switch floor.Liked {
 			case 1:
 				floor.LikedFrontend = true
@@ -119,8 +119,11 @@ func (floors Floors) Preprocess(c *fiber.Ctx) error {
 	}
 
 	// set some default values
-	for i := range floors {
-		floors[i].SetDefaults()
+	for i := range *floors {
+		(*floors)[i].SetDefaults()
+		for j := range (*floors)[i].Mention {
+			(*floors)[i].Mention[j].SetDefaults()
+		}
 	}
 	return nil
 }

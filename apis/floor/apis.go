@@ -98,10 +98,6 @@ func GetFloor(c *fiber.Ctx) error {
 		return result.Error
 	}
 
-	for i := range floor.Mention {
-		floor.Mention[i].SetDefaults()
-	}
-
 	return Serialize(c, &floor)
 }
 
