@@ -68,6 +68,10 @@ type FloorHistory struct {
 	UserID  int    `json:"user_id"` // The one who modified the floor
 }
 
+/******************************
+Get and List
+*******************************/
+
 func (floor *Floor) Preprocess(c *fiber.Ctx) error {
 	floors := Floors{*floor}
 
@@ -188,32 +192,43 @@ func (floor *Floor) SetMention(tx *gorm.DB, clear bool) error {
 	}
 
 	if clear {
-		result := DB.Exec(`
-			DELETE FROM floor_mention
-			WHERE floor_id = ? AND mention_id NOT IN ?`,
+		result := DB.Exec("DELETE FROM floor_mention WHERE floor_id = ?",
 			floor.ID, mentionIDs)
 		if result.Error != nil {
 			return result.Error
 		}
 	}
 
-	var builder strings.Builder
-	builder.WriteString("INSERT IGNORE INTO floor_mention (floor_id, mention_id) VALUES ")
-	for i, mentionID := range mentionIDs {
-		builder.WriteString(fmt.Sprintf("(%d, %d)", floor.ID, mentionID))
-		if i != len(mentionIDs)-1 {
-			builder.WriteString(",")
+	if len(mentionIDs) != 0 {
+		var builder strings.Builder
+		if DBType == DBTypeSqlite {
+			builder.WriteString("INSERT INTO ")
+		} else {
+			builder.WriteString("INSERT IGNORE INTO ")
 		}
-	}
-	builder.WriteString("")
+		builder.WriteString("floor_mention (floor_id, mention_id) VALUES ")
+		for i, mentionID := range mentionIDs {
+			builder.WriteString(fmt.Sprintf("(%d, %d)", floor.ID, mentionID))
+			if i != len(mentionIDs)-1 {
+				builder.WriteString(",")
+			}
+		}
+		if DBType == DBTypeSqlite {
+			builder.WriteString(" ON CONFLICT DO NOTHING")
+		}
 
-	result := tx.Exec(builder.String())
-	if result.Error != nil {
-		return result.Error
+		result := tx.Exec(builder.String())
+		if result.Error != nil {
+			return result.Error
+		}
 	}
 
 	return nil
 }
+
+/******************************
+Create
+*******************************/
 
 func (floor *Floor) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 	var tx *gorm.DB
@@ -384,7 +399,17 @@ func (floor *Floor) AfterCreate(tx *gorm.DB) (err error) {
 	return nil
 }
 
+/**********************
+	Update and Modify
+*************/
+
 func (floor *Floor) AfterUpdate(tx *gorm.DB) (err error) {
+
+	// update floor_mention after update floor.content
+	err = floor.SetMention(DB, true)
+	if err != nil {
+		return err
+	}
 
 	err = floor.SendModify(tx)
 	if err != nil {
@@ -456,6 +481,10 @@ func (floor *Floor) ModifyLike(c *fiber.Ctx, likeOption int8) error {
 		return nil
 	})
 }
+
+/***************************
+Send Notifications
+******************/
 
 func (floor *Floor) SendFavorite(tx *gorm.DB) error {
 	// get recipents
