@@ -25,10 +25,9 @@ func GetReport(c *fiber.Ctx) error {
 
 	// find report
 	var report Report
-	result := DB.Preload("Floor.Mention").
-		Preload("Floor").First(&report, reportID)
-	if result.Error != nil {
-		return result.Error
+	err = report.FindReport(reportID)
+	if err != nil {
+		return err
 	}
 	return Serialize(c, &report)
 }
@@ -131,10 +130,9 @@ func DeleteReport(c *fiber.Ctx) error {
 
 	// modify report
 	var report Report
-	result := DB.Preload("Floor.Mention").
-		Preload("Floor").First(&report, reportID)
-	if result.Error != nil {
-		return result.Error
+	err = report.FindReport(reportID)
+	if err != nil {
+		return err
 	}
 	report.Dealt = true
 	report.DealtBy = userID

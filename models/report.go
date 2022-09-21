@@ -26,6 +26,9 @@ type Reports []Report
 
 func (report *Report) Preprocess(c *fiber.Ctx) error {
 	report.Floor.SetDefaults()
+	for i := range report.Floor.Mention {
+		report.Floor.Mention[i].SetDefaults()
+	}
 	return nil
 }
 
@@ -34,6 +37,12 @@ func (reports *Reports) Preprocess(c *fiber.Ctx) error {
 		_ = (*reports)[i].Preprocess(c)
 	}
 	return nil
+}
+
+func (report *Report) FindReport(reportID int) error {
+	result := DB.Preload("Floor.Mention").
+		Preload("Floor").First(&report, reportID)
+	return result.Error
 }
 
 func (report *Report) Create(c *fiber.Ctx, db ...*gorm.DB) error {

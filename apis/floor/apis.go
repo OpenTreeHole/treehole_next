@@ -227,7 +227,6 @@ func ModifyFloor(c *fiber.Ctx) error {
 			return err
 		}
 		floor.Content = body.Content
-
 	}
 
 	if body.Fold != "" {
