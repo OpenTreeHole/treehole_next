@@ -271,7 +271,7 @@ func ModifyFloor(c *fiber.Ctx) error {
 		return err
 	}
 
-	DB.Model(&floor).Omit("Mention").UpdateColumns(&floor)
+	DB.Model(&floor).Omit("Mention").Updates(&floor)
 
 	return Serialize(c, &floor)
 }
