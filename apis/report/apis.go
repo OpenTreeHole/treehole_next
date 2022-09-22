@@ -43,6 +43,7 @@ func GetReport(c *fiber.Ctx) error {
 func ListReports(c *fiber.Ctx) error {
 	// validate query
 	var query ListModel
+	query.Sort = "desc" // default sort desc
 	err := ValidateQuery(c, &query)
 	if err != nil {
 		return err
