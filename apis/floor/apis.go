@@ -227,6 +227,12 @@ func ModifyFloor(c *fiber.Ctx) error {
 			return err
 		}
 		floor.Content = body.Content
+
+		// update floor_mention after update floor.content
+		err = floor.SetMention(DB, true)
+		if err != nil {
+			return err
+		}
 	}
 
 	if body.Fold != "" {
