@@ -2,6 +2,7 @@ package models
 
 import (
 	"fmt"
+	"github.com/gofiber/fiber/v2"
 	"regexp"
 	"strconv"
 	"strings"
@@ -9,7 +10,6 @@ import (
 	"treehole_next/utils"
 	"treehole_next/utils/perm"
 
-	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -85,21 +85,21 @@ func (floor *Floor) Preprocess(c *fiber.Ctx) error {
 	return nil
 }
 
-func (floors *Floors) Preprocess(c *fiber.Ctx) error {
+func (floors Floors) Preprocess(c *fiber.Ctx) error {
 	userID, err := GetUserID(c)
 	if err != nil {
 		return err
 	}
 
 	// get floors' like
-	floorIDs := make([]int, len(*floors))
+	floorIDs := make([]int, len(floors))
 	IDFloorMapping := make(map[int]*Floor)
-	for i, floor := range *floors {
+	for i, floor := range floors {
 		if userID == floor.UserID {
-			(*floors)[i].IsMe = true
+			floors[i].IsMe = true
 		}
 		floorIDs[i] = floor.ID
-		IDFloorMapping[floor.ID] = &(*floors)[i]
+		IDFloorMapping[floor.ID] = &floors[i]
 	}
 
 	var floorLikes []FloorLike
@@ -123,10 +123,10 @@ func (floors *Floors) Preprocess(c *fiber.Ctx) error {
 	}
 
 	// set some default values
-	for i := range *floors {
-		(*floors)[i].SetDefaults()
-		for j := range (*floors)[i].Mention {
-			(*floors)[i].Mention[j].SetDefaults()
+	for i := range floors {
+		floors[i].SetDefaults()
+		for j := range floors[i].Mention {
+			floors[i].Mention[j].SetDefaults()
 		}
 	}
 	return nil

@@ -32,17 +32,15 @@ func (report *Report) Preprocess(c *fiber.Ctx) error {
 	return nil
 }
 
-func (reports *Reports) Preprocess(c *fiber.Ctx) error {
-	for i := range *reports {
-		_ = (*reports)[i].Preprocess(c)
+func (reports Reports) Preprocess(c *fiber.Ctx) error {
+	for i := range reports {
+		_ = reports[i].Preprocess(c)
 	}
 	return nil
 }
 
-func (report *Report) FindReport(reportID int) error {
-	result := DB.Preload("Floor.Mention").
-		Preload("Floor").First(&report, reportID)
-	return result.Error
+func LoadReportFloor(tx *gorm.DB) *gorm.DB {
+	return tx.Preload("Floor.Mention").Preload("Floor")
 }
 
 func (report *Report) Create(c *fiber.Ctx, db ...*gorm.DB) error {

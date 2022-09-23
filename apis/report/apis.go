@@ -25,9 +25,9 @@ func GetReport(c *fiber.Ctx) error {
 
 	// find report
 	var report Report
-	err = report.FindReport(reportID)
-	if err != nil {
-		return err
+	result := LoadReportFloor(DB).First(&report, reportID)
+	if result.Error != nil {
+		return result.Error
 	}
 	return Serialize(c, &report)
 }
@@ -50,8 +50,7 @@ func ListReports(c *fiber.Ctx) error {
 
 	// find reports
 	var reports Reports
-	BaseQuerySet := query.BaseQuery().
-		Preload("Floor.Mention").Preload("Floor")
+	BaseQuerySet := LoadReportFloor(query.BaseQuery())
 	var result *gorm.DB
 	switch query.Range {
 	case RangeNotDealt:
@@ -130,9 +129,9 @@ func DeleteReport(c *fiber.Ctx) error {
 
 	// modify report
 	var report Report
-	err = report.FindReport(reportID)
-	if err != nil {
-		return err
+	result := LoadReportFloor(DB).First(&report, reportID)
+	if result.Error != nil {
+		return result.Error
 	}
 	report.Dealt = true
 	report.DealtBy = userID
