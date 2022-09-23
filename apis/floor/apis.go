@@ -228,8 +228,8 @@ func ModifyFloor(c *fiber.Ctx) error {
 		}
 		floor.Content = body.Content
 
-		// find mention
-		err := floor.FindMention(DB)
+		// update floor_mention after update floor.content
+		err = floor.SetMention(DB, true)
 		if err != nil {
 			return err
 		}
@@ -261,7 +261,7 @@ func ModifyFloor(c *fiber.Ctx) error {
 		return err
 	}
 
-	DB.Save(&floor)
+	DB.Model(&floor).Omit("Mention").Updates(&floor)
 
 	return Serialize(c, &floor)
 }
@@ -387,7 +387,7 @@ func GetFloorHistory(c *fiber.Ctx) error {
 
 // RestoreFloor
 // @Summary Restore A Floor
-// @Description Restore A Floor From A History Vertion
+// @Description Restore A Floor From A History Version
 // @Tags Floor
 // @Router /floors/{id}/restore/{floor_history_id} [post]
 // @Param id path int true "id"

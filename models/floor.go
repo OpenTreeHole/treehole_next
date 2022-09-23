@@ -2,13 +2,14 @@ package models
 
 import (
 	"fmt"
+	"github.com/gofiber/fiber/v2"
 	"regexp"
 	"strconv"
+	"strings"
 	"treehole_next/config"
 	"treehole_next/utils"
 	"treehole_next/utils/perm"
 
-	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -67,6 +68,10 @@ type FloorHistory struct {
 	UserID  int    `json:"user_id"` // The one who modified the floor
 }
 
+/******************************
+Get and List
+*******************************/
+
 func (floor *Floor) Preprocess(c *fiber.Ctx) error {
 	floors := Floors{*floor}
 
@@ -89,12 +94,12 @@ func (floors Floors) Preprocess(c *fiber.Ctx) error {
 	// get floors' like
 	floorIDs := make([]int, len(floors))
 	IDFloorMapping := make(map[int]*Floor)
-	for i, v := range floors {
-		if userID == v.UserID {
+	for i, floor := range floors {
+		if userID == floor.UserID {
 			floors[i].IsMe = true
 		}
-		floorIDs[i] = v.ID
-		IDFloorMapping[v.ID] = &floors[i]
+		floorIDs[i] = floor.ID
+		IDFloorMapping[floor.ID] = &floors[i]
 	}
 
 	var floorLikes []FloorLike
@@ -105,9 +110,9 @@ func (floors Floors) Preprocess(c *fiber.Ctx) error {
 	if result.Error != nil {
 		return err
 	}
-	for _, v := range floorLikes {
-		if floor, ok := IDFloorMapping[v.FloorID]; ok {
-			floor.Liked = v.LikeData
+	for _, floorLike := range floorLikes {
+		if floor, ok := IDFloorMapping[floorLike.FloorID]; ok {
+			floor.Liked = floorLike.LikeData
 			switch floor.Liked {
 			case 1:
 				floor.LikedFrontend = true
@@ -120,6 +125,9 @@ func (floors Floors) Preprocess(c *fiber.Ctx) error {
 	// set some default values
 	for i := range floors {
 		floors[i].SetDefaults()
+		for j := range floors[i].Mention {
+			floors[i].Mention[j].SetDefaults()
+		}
 	}
 	return nil
 }
@@ -141,41 +149,77 @@ func (floor *Floor) SetDefaults() {
 var reHole = regexp.MustCompile(`[^#]#(\d+)`)
 var reFloor = regexp.MustCompile(`##(\d+)`)
 
-func (floor *Floor) FindMention(tx *gorm.DB) error {
+func (floor *Floor) SetMention(tx *gorm.DB, clear bool) error {
+	// find mention IDs
 	holeIDsText := reHole.FindAllStringSubmatch(" "+floor.Content, -1)
 	holeIds, err := utils.ReText2IntArray(holeIDsText)
 	if err != nil {
 		return err
 	}
 
-	var floorIDs []int
+	var mentionIDs = make([]int, 0)
 	if len(holeIds) != 0 {
 		err := tx.
 			Raw("SELECT MIN(id) FROM floor WHERE hole_id IN ? GROUP BY hole_id", holeIds).
-			Scan(&floorIDs).Error
+			Scan(&mentionIDs).Error
 		if err != nil {
 			return err
 		}
 	}
 
 	floorIDsText := reFloor.FindAllStringSubmatch(" "+floor.Content, -1)
-	floorIDs2, err := utils.ReText2IntArray(floorIDsText)
+	mentionIDs2, err := utils.ReText2IntArray(floorIDsText)
 	if err != nil {
 		return err
 	}
 
-	floorIDs = append(floorIDs, floorIDs2...)
-	floors := make([]Floor, 0)
-	if len(floorIDs) != 0 {
-		err := tx.Find(&floors, floorIDs).Error
+	// find mention from floor table
+	mentionIDs = append(mentionIDs, mentionIDs2...)
+	if len(mentionIDs) > 0 {
+		err := tx.Find(&(floor.Mention), mentionIDs).Error
 		if err != nil {
 			return err
 		}
 	}
-	floor.Mention = floors
+
+	// set mention to floor_mention table
+	if clear {
+		result := DB.Exec("DELETE FROM floor_mention WHERE floor_id = ?", floor.ID)
+		if result.Error != nil {
+			return result.Error
+		}
+	}
+
+	if len(mentionIDs) != 0 {
+		var builder strings.Builder
+		if DBType == DBTypeSqlite {
+			builder.WriteString("INSERT INTO ")
+		} else {
+			builder.WriteString("INSERT IGNORE INTO ")
+		}
+		builder.WriteString("floor_mention (floor_id, mention_id) VALUES ")
+		for i, mentionID := range mentionIDs {
+			builder.WriteString(fmt.Sprintf("(%d, %d)", floor.ID, mentionID))
+			if i != len(mentionIDs)-1 {
+				builder.WriteString(",")
+			}
+		}
+		if DBType == DBTypeSqlite {
+			builder.WriteString(" ON CONFLICT DO NOTHING")
+		}
+
+		result := tx.Exec(builder.String())
+		if result.Error != nil {
+			return result.Error
+		}
+	}
 
 	return nil
 }
+
+/******************************
+Create
+*******************************/
 
 func (floor *Floor) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 	var tx *gorm.DB
@@ -292,14 +336,9 @@ func (floor *Floor) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 				floor.Path = replyPath
 			}
 		}
-		// find mention
-		err = floor.FindMention(tx)
-		if err != nil {
-			return err
-		}
 
 		// create floor
-		result = tx.Create(floor)
+		result = tx.Omit("Mention").Create(floor)
 		if result.Error != nil {
 			return result.Error
 		}
@@ -312,6 +351,13 @@ func (floor *Floor) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 }
 
 func (floor *Floor) AfterCreate(tx *gorm.DB) (err error) {
+
+	// floor set Mention
+	err = floor.SetMention(tx, false)
+	if err != nil {
+		return err
+	}
+
 	// update reply and update_at
 	result := tx.Exec("UPDATE hole SET reply = reply + 1, updated_at = NOW(3) WHERE id = ?", floor.HoleID)
 	if result.Error != nil {
@@ -338,6 +384,10 @@ func (floor *Floor) AfterCreate(tx *gorm.DB) (err error) {
 
 	return nil
 }
+
+/**********************
+	Update and Modify
+*************/
 
 func (floor *Floor) AfterUpdate(tx *gorm.DB) (err error) {
 
@@ -411,6 +461,10 @@ func (floor *Floor) ModifyLike(c *fiber.Ctx, likeOption int8) error {
 		return nil
 	})
 }
+
+/***************************
+Send Notifications
+******************/
 
 func (floor *Floor) SendFavorite(tx *gorm.DB) error {
 	// get recipents
