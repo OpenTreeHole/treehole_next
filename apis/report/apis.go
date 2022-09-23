@@ -43,24 +43,22 @@ func GetReport(c *fiber.Ctx) error {
 func ListReports(c *fiber.Ctx) error {
 	// validate query
 	var query ListModel
-	query.Sort = "desc" // default sort desc
 	err := ValidateQuery(c, &query)
 	if err != nil {
 		return err
 	}
-	query.OrderBy = "`report`.`" + query.OrderBy + "`"
 
 	// find reports
 	var reports Reports
-	BaseQuerySet := query.BaseQuery().Joins("Floor")
+	querySet := query.BaseQuery().Joins("Floor")
 	var result *gorm.DB
 	switch query.Range {
 	case RangeNotDealt:
-		result = BaseQuerySet.Find(&reports, "dealt = ?", false)
+		result = querySet.Find(&reports, "dealt = ?", false)
 	case RangeDealt:
-		result = BaseQuerySet.Find(&reports, "dealt = ?", true)
+		result = querySet.Find(&reports, "dealt = ?", true)
 	case RangeAll:
-		result = BaseQuerySet.Find(&reports)
+		result = querySet.Find(&reports)
 	}
 	if result.Error != nil {
 		return result.Error

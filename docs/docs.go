@@ -286,7 +286,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": "No Content"
+                        "description": ""
                     },
                     "404": {
                         "description": "Not Found",
@@ -920,7 +920,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": "No Content"
+                        "description": ""
                     },
                     "404": {
                         "description": "Not Found",
@@ -950,7 +950,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": "No Content"
+                        "description": ""
                     },
                     "404": {
                         "description": "Not Found",
@@ -1037,7 +1037,7 @@ const docTemplate = `{
                             "desc"
                         ],
                         "type": "string",
-                        "default": "asc",
+                        "default": "desc",
                         "description": "Sort order",
                         "name": "sort",
                         "in": "query"
@@ -1083,7 +1083,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": "No Content"
+                        "description": ""
                     },
                     "400": {
                         "description": "Bad Request",
