@@ -387,7 +387,7 @@ func GetFloorHistory(c *fiber.Ctx) error {
 
 // RestoreFloor
 // @Summary Restore A Floor
-// @Description Restore A Floor From A History Vertion
+// @Description Restore A Floor From A History Version
 // @Tags Floor
 // @Router /floors/{id}/restore/{floor_history_id} [post]
 // @Param id path int true "id"

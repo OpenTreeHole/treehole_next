@@ -149,58 +149,42 @@ func (floor *Floor) SetDefaults() {
 var reHole = regexp.MustCompile(`[^#]#(\d+)`)
 var reFloor = regexp.MustCompile(`##(\d+)`)
 
-func (floor *Floor) FindMention(tx *gorm.DB) error {
+func (floor *Floor) SetMention(tx *gorm.DB, clear bool) error {
+	// find mention IDs
 	holeIDsText := reHole.FindAllStringSubmatch(" "+floor.Content, -1)
 	holeIds, err := utils.ReText2IntArray(holeIDsText)
 	if err != nil {
 		return err
 	}
 
-	var floorIDs []int
+	var mentionIDs = make([]int, 0)
 	if len(holeIds) != 0 {
 		err := tx.
 			Raw("SELECT MIN(id) FROM floor WHERE hole_id IN ? GROUP BY hole_id", holeIds).
-			Scan(&floorIDs).Error
+			Scan(&mentionIDs).Error
 		if err != nil {
 			return err
 		}
 	}
 
 	floorIDsText := reFloor.FindAllStringSubmatch(" "+floor.Content, -1)
-	floorIDs2, err := utils.ReText2IntArray(floorIDsText)
+	mentionIDs2, err := utils.ReText2IntArray(floorIDsText)
 	if err != nil {
 		return err
 	}
 
-	floorIDs = append(floorIDs, floorIDs2...)
-	floors := make([]Floor, 0)
-	if len(floorIDs) != 0 {
-		err := tx.Find(&floors, floorIDs).Error
+	// find mention from floor table
+	mentionIDs = append(mentionIDs, mentionIDs2...)
+	if len(mentionIDs) > 0 {
+		err := tx.Find(&(floor.Mention), mentionIDs).Error
 		if err != nil {
 			return err
 		}
 	}
-	floor.Mention = floors
 
-	return nil
-}
-
-func (floor *Floor) SetMention(tx *gorm.DB, clear bool) error {
-	// find mention
-	err := floor.FindMention(tx)
-	if err != nil {
-		return err
-	}
-
-	// get mentionID
-	mentionIDs := make([]int, len(floor.Mention))
-	for i, mention := range floor.Mention {
-		mentionIDs[i] = mention.ID
-	}
-
+	// set mention to floor_mention table
 	if clear {
-		result := DB.Exec("DELETE FROM floor_mention WHERE floor_id = ?",
-			floor.ID, mentionIDs)
+		result := DB.Exec("DELETE FROM floor_mention WHERE floor_id = ?", floor.ID)
 		if result.Error != nil {
 			return result.Error
 		}
