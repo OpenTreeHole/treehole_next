@@ -33,7 +33,7 @@ func (report *Report) Preprocess(c *fiber.Ctx) error {
 }
 
 func (reports Reports) Preprocess(c *fiber.Ctx) error {
-	for i := range reports {
+	for i := 0; i < len(reports); i++ {
 		_ = reports[i].Preprocess(c)
 	}
 	return nil

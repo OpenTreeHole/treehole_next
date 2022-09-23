@@ -572,7 +572,7 @@ paths:
       - application/json
       responses:
         "204":
-          description: No Content
+          description: ""
         "404":
           description: Not Found
           schema:
@@ -991,7 +991,7 @@ paths:
       - application/json
       responses:
         "204":
-          description: No Content
+          description: ""
         "404":
           description: Not Found
           schema:
@@ -1032,7 +1032,7 @@ paths:
       - application/json
       responses:
         "204":
-          description: No Content
+          description: ""
         "404":
           description: Not Found
           schema:
@@ -1090,7 +1090,7 @@ paths:
   /reports:
     get:
       parameters:
-      - default: 0
+        - default: 0
         description: offset of object array
         in: query
         minimum: 0
@@ -1111,14 +1111,14 @@ paths:
         minimum: 0
         name: size
         type: integer
-      - default: asc
-        description: Sort order
-        enum:
-        - asc
-        - desc
-        in: query
-        name: sort
-        type: string
+        - default: desc
+          description: Sort order
+          enum:
+            - asc
+            - desc
+          in: query
+          name: sort
+          type: string
       produces:
       - application/json
       responses:
@@ -1148,7 +1148,7 @@ paths:
       - application/json
       responses:
         "204":
-          description: No Content
+          description: ""
         "400":
           description: Bad Request
           schema:

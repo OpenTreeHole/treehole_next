@@ -263,6 +263,16 @@ func ModifyFloor(c *fiber.Ctx) error {
 
 	DB.Model(&floor).Omit("Mention").Updates(&floor)
 
+	// notification
+	// place here to check if not me
+	if user.ID != floor.UserID {
+		err = floor.SendModify(DB)
+		if err != nil {
+			Logger.Error("[notification] SendModify failed: " + err.Error())
+			// return err // only for test
+		}
+	}
+
 	return Serialize(c, &floor)
 }
 

@@ -5,6 +5,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"regexp"
 	"strconv"
+	"time"
 	"strings"
 	"treehole_next/config"
 	"treehole_next/utils"
@@ -359,7 +360,7 @@ func (floor *Floor) AfterCreate(tx *gorm.DB) (err error) {
 	}
 
 	// update reply and update_at
-	result := tx.Exec("UPDATE hole SET reply = reply + 1, updated_at = NOW(3) WHERE id = ?", floor.HoleID)
+	result := tx.Exec("UPDATE hole SET reply = reply + 1, updated_at = ? WHERE id = ?", time.Now(), floor.HoleID)
 	if result.Error != nil {
 		return result.Error
 	}
@@ -385,12 +386,10 @@ func (floor *Floor) AfterCreate(tx *gorm.DB) (err error) {
 	return nil
 }
 
-/**********************
-	Update and Modify
-*************/
+
+//	Update and Modify
 
 func (floor *Floor) AfterUpdate(tx *gorm.DB) (err error) {
-
 	err = floor.SendModify(tx)
 	if err != nil {
 		utils.Logger.Error("[notification] SendModify failed: " + err.Error())
@@ -468,14 +467,22 @@ Send Notifications
 
 func (floor *Floor) SendFavorite(tx *gorm.DB) error {
 	// get recipents
-	var userIDs []int
-	result := tx.Raw("SELECT user_id from user_favorites WHERE hole_id = ?", floor.HoleID).Scan(&userIDs)
+	var tmpIDs []int
+	result := tx.Raw("SELECT user_id from user_favorites WHERE hole_id = ?", floor.HoleID).Scan(&tmpIDs)
 	if result.Error != nil {
 		return result.Error
 	}
 
+	// filter my id
+	var userIDs []int
+	for id := range tmpIDs {
+		if id != floor.UserID {
+			userIDs = append(userIDs, id)
+		}
+	}
+
 	// return if no recipents
-	if userIDs == nil {
+	if userIDs == nil || len(userIDs) == 0 {
 		return nil
 	}
 
@@ -504,8 +511,8 @@ func (floor *Floor) SendReply(tx *gorm.DB) error {
 		return result.Error
 	}
 
-	// return if no recipents
-	if userID == 0 {
+	// return if no recipents or isMe
+	if userID == 0 || userID == floor.UserID {
 		return nil
 	}
 
@@ -532,11 +539,16 @@ func (floor *Floor) SendMention(tx *gorm.DB) error {
 	// get recipents
 	var userIDs []int
 	for _, mention := range floor.Mention {
+		// not send to me
+		if mention.UserID == floor.UserID {
+			continue
+		}
+
 		userIDs = append(userIDs, mention.UserID)
 	}
 
 	// return if no recipents
-	if userIDs == nil {
+	if userIDs == nil || len(userIDs) == 0 {
 		return nil
 	}
 

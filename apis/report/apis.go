@@ -50,15 +50,17 @@ func ListReports(c *fiber.Ctx) error {
 
 	// find reports
 	var reports Reports
-	BaseQuerySet := LoadReportFloor(query.BaseQuery())
+
+	querySet := LoadReportFloor(query.BaseQuery())
+
 	var result *gorm.DB
 	switch query.Range {
 	case RangeNotDealt:
-		result = BaseQuerySet.Find(&reports, "dealt = ?", false)
+		result = querySet.Find(&reports, "dealt = ?", false)
 	case RangeDealt:
-		result = BaseQuerySet.Find(&reports, "dealt = ?", true)
+		result = querySet.Find(&reports, "dealt = ?", true)
 	case RangeAll:
-		result = BaseQuerySet.Find(&reports)
+		result = querySet.Find(&reports)
 	}
 	if result.Error != nil {
 		return result.Error
