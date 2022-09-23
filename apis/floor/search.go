@@ -118,5 +118,5 @@ func search(c *fiber.Ctx, body bytes.Buffer) error {
 
 	// order
 	floors = OrderInGivenOrder(floors, floorIDs)
-	return Serialize(c, floors)
+	return Serialize(c, &floors)
 }
