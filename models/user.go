@@ -55,7 +55,7 @@ func (user *User) parseJWT(token string) error {
 }
 
 func (user *User) GetUser(c *fiber.Ctx) error {
-	if config.Config.Mode == "dev" {
+	if config.Config.Mode == "dev" || config.Config.Mode == "test" {
 		user.ID = 1
 		user.Permission = perm.Admin + perm.Operator
 		return nil
@@ -95,7 +95,7 @@ func (user *User) GetUser(c *fiber.Ctx) error {
 }
 
 func GetUserID(c *fiber.Ctx) (int, error) {
-	if config.Config.Mode == "dev" {
+	if config.Config.Mode == "dev" || config.Config.Mode == "test" {
 		return 1, nil
 	}
 

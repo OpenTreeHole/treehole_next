@@ -159,11 +159,14 @@ func loadFloors(holes []*Hole) error {
 		hole.HoleFloor.FirstFloor = hole.HoleFloor.Floors[0]
 
 		// last floor
-		if hole.Reply <= config.Config.Size {
+		// this means all the floors are loaded into hole.HoleFloor.Floors,
+		// so we can just get last floor from hole.HoleFloor.Floors
+		if hole.Reply <= config.Config.HoleFloorSize {
 			hole.HoleFloor.LastFloor = hole.HoleFloor.Floors[len(hole.HoleFloor.Floors)-1]
 		} else {
 			var floor Floor
 			DB.Where("hole_id = ?", hole.ID).Last(&floor)
+			floor.SetDefaults()
 			hole.HoleFloor.LastFloor = &floor
 		}
 	}
