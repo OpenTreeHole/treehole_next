@@ -10,8 +10,8 @@ import (
 
 type MyConfig struct {
 	Mode          string `default:"dev" env:"MODE"`
-	Size          int    `default:"10" env:"SIZE"`
-	MaxSize       int    `default:"30" env:"MAX_SIZE"`
+	Size          int    `default:"30" env:"SIZE"`
+	MaxSize       int    `default:"50" env:"MAX_SIZE"`
 	TagSize       int    `default:"5" env:"TAG_SIZE"`
 	HoleFloorSize int    `default:"10" env:"HOLE_FLOOR_SIZE"`
 	Debug         bool   `default:"false" env:"DEBUG"`

@@ -164,6 +164,7 @@ func loadFloors(holes []*Hole) error {
 		} else {
 			var floor Floor
 			DB.Where("hole_id = ?", hole.ID).Last(&floor)
+			floor.SetDefaults()
 			hole.HoleFloor.LastFloor = &floor
 		}
 	}
