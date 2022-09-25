@@ -23,7 +23,7 @@ type ListOldModel struct {
 }
 
 func (q *ListOldModel) BaseQuery() *gorm.DB {
-	return models.DB.Limit(q.Size).Offset(q.Offset).Order("storey")
+	return models.DB.Limit(q.Size).Offset(q.Offset).Order("id")
 }
 
 type CreateModel struct {
