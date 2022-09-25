@@ -261,7 +261,9 @@ func ModifyFloor(c *fiber.Ctx) error {
 		return err
 	}
 
-	DB.Model(&floor).Omit("Mention").Updates(&floor)
+	// save all fields except Mention
+	// including Like when Like == 0
+	DB.Model(&floor).Select("*").Omit("Mention").Updates(&floor)
 
 	// notification
 	// place here to check if not me
