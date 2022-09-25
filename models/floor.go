@@ -5,8 +5,8 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"regexp"
 	"strconv"
-	"time"
 	"strings"
+	"time"
 	"treehole_next/config"
 	"treehole_next/utils"
 	"treehole_next/utils/perm"
@@ -386,7 +386,6 @@ func (floor *Floor) AfterCreate(tx *gorm.DB) (err error) {
 	return nil
 }
 
-
 //	Update and Modify
 
 func (floor *Floor) AfterUpdate(tx *gorm.DB) (err error) {
@@ -424,7 +423,9 @@ func (floor *Floor) ModifyLike(c *fiber.Ctx, likeOption int8) error {
 	if err != nil {
 		return err
 	}
-	floor.IsMe = true
+	if floor.UserID == userID {
+		floor.IsMe = true
+	}
 
 	return DB.Transaction(func(tx *gorm.DB) error {
 
