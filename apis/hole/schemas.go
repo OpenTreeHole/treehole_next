@@ -10,7 +10,7 @@ import (
 type QueryTime struct {
 	Size int `json:"size" default:"10" validate:"max=10"`
 	// updated time < offset (default is now)
-	Offset utils.CustomTime `json:"offset"`
+	Offset utils.CustomTime `json:"offset" swaggertype:"string"`
 }
 
 func (q *QueryTime) SetDefaults() {
@@ -20,7 +20,7 @@ func (q *QueryTime) SetDefaults() {
 }
 
 type ListOldModel struct {
-	Offset     utils.CustomTime `json:"start_time" query:"start_time"`
+	Offset     utils.CustomTime `json:"start_time" query:"start_time" swaggertype:"string"`
 	Size       int              `json:"length"     query:"length"      default:"10" validate:"max=10" `
 	Tag        string           `json:"tag"        query:"tag"`
 	DivisionID int              `json:"division_id" query:"division_id"`
