@@ -110,13 +110,17 @@ func search(c *fiber.Ctx, body bytes.Buffer) error {
 	Logger.Debug("search response", zap.Ints("floorIDs", floorIDs))
 
 	// get floors
-	var floors Floors
-	result := DB.Preload("Mention").Find(&floors, floorIDs)
-	if result.Error != nil {
-		return result.Error
+	floors := Floors{}
+	if len(floorIDs) > 0 {
+
+		result := DB.Preload("Mention").Find(&floors, floorIDs)
+		if result.Error != nil {
+			return result.Error
+		}
+
+		// order
+		floors = OrderInGivenOrder(floors, floorIDs)
 	}
 
-	// order
-	floors = OrderInGivenOrder(floors, floorIDs)
 	return Serialize(c, &floors)
 }
