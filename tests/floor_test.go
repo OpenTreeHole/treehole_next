@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"encoding/json"
 	"strconv"
 	"strings"
 	"testing"
@@ -110,9 +111,15 @@ func TestCreateFloorOld(t *testing.T) {
 	DB.Where("division_id = ?", 7).Offset(2).First(&hole)
 	content := "1234"
 	data := Map{"hole_id": hole.ID, "content": content}
-	var getfloor Floor
-	testAPIModel(t, "post", "/api/floors", 201, &getfloor, data)
-	assert.EqualValues(t, content, getfloor.Content)
+	type CreateOLdResponse struct {
+		Data    Floor
+		Message string
+	}
+	var getfloor CreateOLdResponse
+	rsp := testCommon(t, "post", "/api/floors", 201, data)
+	err := json.Unmarshal(rsp, &getfloor)
+	assert.Nilf(t, err, "Unmarshal Failed")
+	assert.EqualValues(t, content, getfloor.Data.Content)
 
 	var floors []Floor
 	DB.Where("hole_id = ?", hole.ID).Find(&floors)
@@ -121,7 +128,7 @@ func TestCreateFloorOld(t *testing.T) {
 		assert.EqualValues(t, content, floors[1].Content)
 	}
 
-	testAPIModel(t, "post", "/api/holes/"+strconv.Itoa(123456)+"/floors", 201, &getfloor, data)
+	testCommon(t, "post", "/api/holes/"+strconv.Itoa(123456)+"/floors", 201, data)
 }
 
 func TestModifyFloor(t *testing.T) {
