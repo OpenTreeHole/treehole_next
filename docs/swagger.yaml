@@ -411,11 +411,6 @@ definitions:
         description: Admin only
         type: integer
     type: object
-  utils.CustomTime:
-    properties:
-      time.Time:
-        type: string
-    type: object
   utils.ErrorDetailElement:
     properties:
       field:
@@ -503,6 +498,10 @@ paths:
         name: division_id
         required: true
         type: integer
+      - description: updated time < offset (default is now)
+        in: query
+        name: offset
+        type: string
       - default: 10
         in: query
         maximum: 10
@@ -572,7 +571,7 @@ paths:
       - application/json
       responses:
         "204":
-          description: ""
+          description: No Content
         "404":
           description: Not Found
           schema:
@@ -807,7 +806,7 @@ paths:
       - Floor
   /floors/{id}/restore/{floor_history_id}:
     post:
-      description: Restore A Floor From A History Vertion
+      description: Restore A Floor From A History Version
       parameters:
       - description: id
         in: path
@@ -870,6 +869,9 @@ paths:
         maximum: 10
         name: length
         type: integer
+      - in: query
+        name: start_time
+        type: string
       - in: query
         name: tag
         type: string
@@ -991,7 +993,7 @@ paths:
       - application/json
       responses:
         "204":
-          description: ""
+          description: No Content
         "404":
           description: Not Found
           schema:
@@ -1032,7 +1034,7 @@ paths:
       - application/json
       responses:
         "204":
-          description: ""
+          description: No Content
         "404":
           description: Not Found
           schema:
@@ -1090,7 +1092,7 @@ paths:
   /reports:
     get:
       parameters:
-        - default: 0
+      - default: 0
         description: offset of object array
         in: query
         minimum: 0
@@ -1101,7 +1103,8 @@ paths:
         in: query
         name: orderBy
         type: string
-      - in: query
+      - description: 'Range, 0: not dealt, 1: dealt, 2: all'
+        in: query
         name: range
         type: integer
       - default: 30
@@ -1111,14 +1114,14 @@ paths:
         minimum: 0
         name: size
         type: integer
-        - default: desc
-          description: Sort order
-          enum:
-            - asc
-            - desc
-          in: query
-          name: sort
-          type: string
+      - default: desc
+        description: Sort order, default is desc
+        enum:
+        - asc
+        - desc
+        in: query
+        name: sort
+        type: string
       produces:
       - application/json
       responses:
@@ -1148,7 +1151,7 @@ paths:
       - application/json
       responses:
         "204":
-          description: ""
+          description: No Content
         "400":
           description: Bad Request
           schema:
@@ -1331,6 +1334,10 @@ paths:
         in: path
         name: tag_name
         required: true
+        type: string
+      - description: updated time < offset (default is now)
+        in: query
+        name: offset
         type: string
       - default: 10
         in: query

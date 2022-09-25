@@ -115,6 +115,12 @@ const docTemplate = `{
                         "required": true
                     },
                     {
+                        "type": "string",
+                        "description": "updated time \u003c offset (default is now)",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
                         "maximum": 10,
                         "type": "integer",
                         "default": 10,
@@ -286,7 +292,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     },
                     "404": {
                         "description": "Not Found",
@@ -603,7 +609,7 @@ const docTemplate = `{
         },
         "/floors/{id}/restore/{floor_history_id}": {
             "post": {
-                "description": "Restore A Floor From A History Vertion",
+                "description": "Restore A Floor From A History Version",
                 "tags": [
                     "Floor"
                 ],
@@ -670,6 +676,11 @@ const docTemplate = `{
                         "type": "integer",
                         "default": 10,
                         "name": "length",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "name": "start_time",
                         "in": "query"
                     },
                     {
@@ -920,7 +931,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     },
                     "404": {
                         "description": "Not Found",
@@ -950,7 +961,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     },
                     "404": {
                         "description": "Not Found",
@@ -1019,6 +1030,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "integer",
+                        "description": "Range, 0: not dealt, 1: dealt, 2: all",
                         "name": "range",
                         "in": "query"
                     },
@@ -1038,7 +1050,7 @@ const docTemplate = `{
                         ],
                         "type": "string",
                         "default": "desc",
-                        "description": "Sort order",
+                        "description": "Sort order, default is desc",
                         "name": "sort",
                         "in": "query"
                     }
@@ -1083,7 +1095,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     },
                     "400": {
                         "description": "Bad Request",
@@ -1367,6 +1379,12 @@ const docTemplate = `{
                         "name": "tag_name",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "updated time \u003c offset (default is now)",
+                        "name": "offset",
+                        "in": "query"
                     },
                     {
                         "maximum": 10,
@@ -2113,14 +2131,6 @@ const docTemplate = `{
                 "temperature": {
                     "description": "Admin only",
                     "type": "integer"
-                }
-            }
-        },
-        "utils.CustomTime": {
-            "type": "object",
-            "properties": {
-                "time.Time": {
-                    "type": "string"
                 }
             }
         },
