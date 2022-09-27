@@ -254,7 +254,7 @@ func ModifyHole(c *fiber.Ctx) error {
 		}
 		hole.DivisionID = body.DivisionID
 		// log
-		MyLog("Hole", "Modify", holeID, user.ID, "DivisionID to: ", strconv.Itoa(hole.DivisionID))
+		MyLog("Hole", "Modify", holeID, user.ID, RoleAdmin, "DivisionID to: ", strconv.Itoa(hole.DivisionID))
 	}
 
 	// modify hidden
@@ -264,7 +264,7 @@ func ModifyHole(c *fiber.Ctx) error {
 		}
 		hole.Hidden = false
 		// log
-		MyLog("Hole", "Modify", holeID, user.ID, "Unhidden: ")
+		MyLog("Hole", "Modify", holeID, user.ID, RoleAdmin, "Unhidden: ")
 	}
 
 	// modify tags
@@ -282,9 +282,9 @@ func ModifyHole(c *fiber.Ctx) error {
 
 			// log
 			if perm.CheckPermission(user, perm.Admin) {
-				MyLog("Hole", "Modify", holeID, user.ID, "[admin]NewTags: ", fmt.Sprintf("%v", body.Tags))
+				MyLog("Hole", "Modify", holeID, user.ID, RoleAdmin, "NewTags: ", fmt.Sprintf("%v", body.Tags))
 			} else {
-				MyLog("Hole", "Modify", holeID, user.ID, "[owner]NewTags: ", fmt.Sprintf("%v", body.Tags))
+				MyLog("Hole", "Modify", holeID, user.ID, RoleOwner, "NewTags: ", fmt.Sprintf("%v", body.Tags))
 			}
 
 		} else {
@@ -341,7 +341,7 @@ func DeleteHole(c *fiber.Ctx) error {
 	}
 
 	// log
-	MyLog("Hole", "Delete", holeID, user.ID)
+	MyLog("Hole", "Delete", holeID, user.ID, RoleAdmin)
 
 	// find hole and update cache
 	result = DB.First(&hole, holeID)

@@ -111,7 +111,7 @@ func ModifyTag(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	MyLog("Tag", "Modify", tag.ID, userID)
+	MyLog("Tag", "Modify", tag.ID, userID, RoleAdmin)
 	return c.JSON(&tag)
 }
 
@@ -187,6 +187,6 @@ func DeleteTag(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	MyLog("Tag", "Delete", id, userID)
+	MyLog("Tag", "Delete", id, userID, RoleAdmin)
 	return c.JSON(&newTag)
 }
