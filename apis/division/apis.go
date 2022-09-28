@@ -112,7 +112,7 @@ func ModifyDivision(c *fiber.Ctx) error {
 		return err
 	}
 
-	MyLog("Division", "Modify", division.ID, userID)
+	MyLog("Division", "Modify", division.ID, userID, RoleAdmin)
 
 	go refreshCache()
 
@@ -152,7 +152,7 @@ func DeleteDivision(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	MyLog("Division", "Delete", id, userID, "To: ", strconv.Itoa(body.To))
+	MyLog("Division", "Delete", id, userID, RoleAdmin, "To: ", strconv.Itoa(body.To))
 
 	go refreshCache()
 

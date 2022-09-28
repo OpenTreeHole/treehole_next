@@ -215,10 +215,10 @@ func ModifyFloor(c *fiber.Ctx) error {
 		var reason string
 		if user.ID == floor.UserID {
 			reason = "该内容已被作者修改"
-			MyLog("Floor", "Modify", floorID, user.ID, "[owner]content")
+			MyLog("Floor", "Modify", floorID, user.ID, RoleOwner, "content")
 		} else if perm.CheckPermission(user, perm.Admin) {
 			reason = "该内容已被管理员修改"
-			MyLog("Floor", "Modify", floorID, user.ID, "[admin]content")
+			MyLog("Floor", "Modify", floorID, user.ID, RoleAdmin, "content")
 		} else {
 			return Forbidden()
 		}
@@ -240,7 +240,7 @@ func ModifyFloor(c *fiber.Ctx) error {
 			return Forbidden()
 		}
 		floor.Fold = body.Fold
-		MyLog("Floor", "Modify", floorID, user.ID, "[admin]fold")
+		MyLog("Floor", "Modify", floorID, user.ID, RoleAdmin, "fold")
 	}
 
 	if body.SpecialTag != "" {
@@ -249,7 +249,7 @@ func ModifyFloor(c *fiber.Ctx) error {
 			return Forbidden()
 		}
 		floor.SpecialTag = body.SpecialTag
-		MyLog("Floor", "Modify", floorID, user.ID, "[operator]specialTag to: ", fmt.Sprintf("%v", floor.SpecialTag))
+		MyLog("Floor", "Modify", floorID, user.ID, RoleOperator, "specialTag to: ", fmt.Sprintf("%v", floor.SpecialTag))
 	}
 
 	if body.Like == "add" {
@@ -368,9 +368,9 @@ func DeleteFloor(c *fiber.Ctx) error {
 
 	// log
 	if user.ID == floor.UserID {
-		MyLog("Floor", "Delete", floorID, user.ID, "[owner]reason: ", body.Reason)
+		MyLog("Floor", "Delete", floorID, user.ID, RoleOperator, "reason: ", body.Reason)
 	} else {
-		MyLog("Floor", "Delete", floorID, user.ID, "[admin]reason: ", body.Reason)
+		MyLog("Floor", "Delete", floorID, user.ID, RoleOperator, "reason: ", body.Reason)
 	}
 
 	return Serialize(c, &floor)
@@ -460,6 +460,6 @@ func RestoreFloor(c *fiber.Ctx) error {
 	DB.Save(&floor)
 
 	// log
-	MyLog("Floor", "Restore", floorID, user.ID, reason)
+	MyLog("Floor", "Restore", floorID, user.ID, RoleAdmin, reason)
 	return Serialize(c, &floor)
 }

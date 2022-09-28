@@ -37,15 +37,25 @@ func InitLog() (*zap.Logger, error) {
 	return logConfig.Build()
 }
 
-func MyLog(model string, action string, objectID, userID int, msg ...string) {
+type Role string
+
+const (
+	RoleOwner    = "owner"
+	RoleAdmin    = "admin"
+	RoleOperator = "operator"
+)
+
+func MyLog(model string, action string, objectID, userID int, role Role, msg ...string) {
 	message := ""
 	for _, v := range msg {
 		message += v
 	}
 	Logger.Info(
-		model+""+action,
-		zap.Int("UserID", userID),
-		zap.Int("ID", objectID),
-		zap.String("Additional", message),
+		message,
+		zap.String("model", model),
+		zap.Int("user_id", userID),
+		zap.Int("object_id", objectID),
+		zap.String("action", action),
+		zap.String("role", string(role)),
 	)
 }

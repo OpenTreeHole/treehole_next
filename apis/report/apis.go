@@ -140,7 +140,7 @@ func DeleteReport(c *fiber.Ctx) error {
 	report.Result = body.Result
 	DB.Omit("Floor").Save(&report)
 
-	MyLog("Report", "Delete", reportID, userID)
+	MyLog("Report", "Delete", reportID, userID, RoleAdmin)
 
 	return Serialize(c, &report)
 }
