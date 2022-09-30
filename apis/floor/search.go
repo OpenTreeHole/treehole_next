@@ -3,7 +3,6 @@ package floor
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"go.uber.org/zap"
 	. "treehole_next/config"
@@ -54,26 +53,15 @@ func SearchFloors(c *fiber.Ctx) error {
 }
 
 func SearchFloorsOld(c *fiber.Ctx, query ListOldModel) error {
-	var body bytes.Buffer
-	body.WriteString(fmt.Sprintf(`
-	{
-		"query": {
-			"match": {
-				"content": {
-					"query": "%s",
-					"operator": "or"
-				}
-			}
-		},
-		"sort": {
-			"_score": {
-				"order": "desc"
-			}
-		},
-		"size": %d,
-		"from": %d
-	}`, query.Search, query.Size, query.Offset))
-	return search(c, body)
+	floors := Floors{}
+	result := DB.
+		Where("content like ?", "%"+query.Search+"%").
+		Offset(query.Offset).Limit(query.Size).Order("id desc").
+		Preload("Mention").Find(&floors)
+	if result.Error != nil {
+		return result.Error
+	}
+	return Serialize(c, &floors)
 }
 
 func search(c *fiber.Ctx, body bytes.Buffer) error {
