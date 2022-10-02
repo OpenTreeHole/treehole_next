@@ -21,7 +21,7 @@ func ListFavorites(c *fiber.Ctx) error {
 	}
 
 	// get favorites
-	var holes Holes
+	holes := Holes{}
 	sql := `SELECT * FROM hole 
 	JOIN user_favorites 
 	ON user_favorites.hole_id = hole.id 
@@ -40,8 +40,8 @@ func ListFavorites(c *fiber.Ctx) error {
 // @Produce application/json
 // @Router /user/favorites [post]
 // @Param json body AddModel true "json"
-// @Success 201 {object} models.MessageModel
-// @Success 200 {object} models.MessageModel
+// @Success 201 {object} Response
+// @Success 200 {object} Response
 func AddFavorite(c *fiber.Ctx) error {
 	// validate body
 	var body AddModel
@@ -61,7 +61,17 @@ func AddFavorite(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	return c.JSON(MessageModel{Message: "收藏成功"})
+
+	// create response
+	data, err := UserGetFavoriteData(userID)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(&Response{
+		Message: "收藏成功",
+		Data:    data,
+	})
 }
 
 // ModifyFavorite
@@ -70,8 +80,8 @@ func AddFavorite(c *fiber.Ctx) error {
 // @Produce application/json
 // @Router /user/favorites [put]
 // @Param json body ModifyModel true "json"
-// @Success 200 {object} models.MessageModel
-// @Failure 404 {object} models.MessageModel
+// @Success 200 {object} Response
+// @Failure 404 {object} Response
 func ModifyFavorite(c *fiber.Ctx) error {
 	// validate body
 	var body ModifyModel
@@ -91,7 +101,17 @@ func ModifyFavorite(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	return c.JSON(MessageModel{Message: "修改成功"})
+
+	// create response
+	data, err := UserGetFavoriteData(userID)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(&Response{
+		Message: "修改成功",
+		Data:    data,
+	})
 }
 
 // DeleteFavorite
@@ -100,8 +120,8 @@ func ModifyFavorite(c *fiber.Ctx) error {
 // @Produce application/json
 // @Router /user/favorites [delete]
 // @Param json body DeleteModel true "json"
-// @Success 200 {object} models.MessageModel
-// @Failure 404 {object} models.MessageModel
+// @Success 200 {object} Response
+// @Failure 404 {object} Response
 func DeleteFavorite(c *fiber.Ctx) error {
 	// validate body
 	var body DeleteModel
@@ -121,5 +141,15 @@ func DeleteFavorite(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	return c.JSON(MessageModel{Message: "删除成功"})
+
+	// create response
+	data, err := UserGetFavoriteData(userID)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(&Response{
+		Message: "删除成功",
+		Data:    data,
+	})
 }
