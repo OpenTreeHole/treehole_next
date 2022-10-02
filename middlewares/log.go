@@ -12,7 +12,7 @@ func Logger(c *fiber.Ctx) (err error) {
 	var start, stop time.Time
 
 	// Set latency start time
-	if config.Config.Debug {
+	if config.Debug {
 		start = time.Now()
 	}
 
@@ -27,7 +27,7 @@ func Logger(c *fiber.Ctx) (err error) {
 	}
 
 	// Set latency stop time
-	if config.Config.Debug {
+	if config.Debug {
 		stop = time.Now()
 	}
 

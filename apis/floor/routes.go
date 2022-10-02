@@ -2,7 +2,7 @@ package floor
 
 import "github.com/gofiber/fiber/v2"
 
-func RegisterRoutes(app *fiber.App) {
+func RegisterRoutes(app fiber.Router) {
 	app.Get("/holes/:id/floors", ListFloorsInAHole)
 	app.Get("/floors", ListFloorsOld)
 	app.Get("/floors/:id", GetFloor)
@@ -13,4 +13,7 @@ func RegisterRoutes(app *fiber.App) {
 	app.Delete("/floors/:id", DeleteFloor)
 
 	app.Get("/floors/:id/history", GetFloorHistory)
+	app.Post("/floors/:id/restore/:floor_history_id", RestoreFloor)
+
+	app.Post("/floors/search", SearchFloors)
 }

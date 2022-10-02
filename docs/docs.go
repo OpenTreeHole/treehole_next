@@ -292,7 +292,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     },
                     "404": {
                         "description": "Not Found",
@@ -316,20 +316,25 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "integer",
-                        "name": "holeID",
+                        "name": "hole_id",
                         "in": "query"
                     },
                     {
-                        "type": "integer",
-                        "name": "offset",
-                        "in": "query"
-                    },
-                    {
-                        "maximum": 30,
+                        "maximum": 50,
                         "minimum": 0,
                         "type": "integer",
-                        "default": 10,
-                        "name": "size",
+                        "default": 30,
+                        "name": "length",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "name": "s",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "name": "start_floor",
                         "in": "query"
                     }
                 ],
@@ -369,7 +374,40 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/models.Floor"
+                            "$ref": "#/definitions/floor.CreateOldResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/floors/search": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Search"
+                ],
+                "summary": "SearchFloors In ElasticSearch",
+                "parameters": [
+                    {
+                        "description": "json",
+                        "name": "json",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Floor"
+                            }
                         }
                     }
                 }
@@ -569,6 +607,54 @@ const docTemplate = `{
                 }
             }
         },
+        "/floors/{id}/restore/{floor_history_id}": {
+            "post": {
+                "description": "Restore A Floor From A History Version",
+                "tags": [
+                    "Floor"
+                ],
+                "summary": "Restore A Floor",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "floor_history_id",
+                        "name": "floor_history_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "json",
+                        "name": "json",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/floor.RestoreModel"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Floor"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.MessageModel"
+                        }
+                    }
+                }
+            }
+        },
         "/holes": {
             "get": {
                 "produces": [
@@ -639,7 +725,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/models.Hole"
+                            "$ref": "#/definitions/hole.CreateOldResponse"
                         }
                     }
                 }
@@ -683,10 +769,10 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
-                        "maximum": 30,
+                        "maximum": 50,
                         "minimum": 0,
                         "type": "integer",
-                        "default": 10,
+                        "default": 30,
                         "description": "length of object array",
                         "name": "size",
                         "in": "query"
@@ -845,7 +931,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     },
                     "404": {
                         "description": "Not Found",
@@ -875,12 +961,43 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/models.MessageModel"
+                        }
+                    }
+                }
+            }
+        },
+        "/penalty/{floor_id}": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Penalty"
+                ],
+                "summary": "[Deprecated] Ban publisher of a floor",
+                "deprecated": true,
+                "parameters": [
+                    {
+                        "description": "json",
+                        "name": "json",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/penalty.PostBody"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/models.Hole"
                         }
                     }
                 }
@@ -913,14 +1030,15 @@ const docTemplate = `{
                     },
                     {
                         "type": "integer",
+                        "description": "Range, 0: not dealt, 1: dealt, 2: all",
                         "name": "range",
                         "in": "query"
                     },
                     {
-                        "maximum": 30,
+                        "maximum": 50,
                         "minimum": 0,
                         "type": "integer",
-                        "default": 10,
+                        "default": 30,
                         "description": "length of object array",
                         "name": "size",
                         "in": "query"
@@ -931,8 +1049,8 @@ const docTemplate = `{
                             "desc"
                         ],
                         "type": "string",
-                        "default": "asc",
-                        "description": "Sort order",
+                        "default": "desc",
+                        "description": "Sort order, default is desc",
                         "name": "sort",
                         "in": "query"
                     }
@@ -977,7 +1095,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": ""
+                        "description": "No Content"
                     },
                     "400": {
                         "description": "Bad Request",
@@ -1073,6 +1191,14 @@ const docTemplate = `{
                     "Tag"
                 ],
                 "summary": "List All Tags",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "search tag by name",
+                        "name": "s",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -1286,6 +1412,133 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/user/favorites": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Favorite"
+                ],
+                "summary": "List User's Favorites",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Hole"
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Favorite"
+                ],
+                "summary": "Modify User's Favorites",
+                "parameters": [
+                    {
+                        "description": "json",
+                        "name": "json",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/favourite.ModifyModel"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.MessageModel"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.MessageModel"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Favorite"
+                ],
+                "summary": "Add A Favorite",
+                "parameters": [
+                    {
+                        "description": "json",
+                        "name": "json",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/favourite.AddModel"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.MessageModel"
+                        }
+                    },
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/models.MessageModel"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Favorite"
+                ],
+                "summary": "Delete A Favorite",
+                "parameters": [
+                    {
+                        "description": "json",
+                        "name": "json",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/favourite.DeleteModel"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.MessageModel"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.MessageModel"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -1327,6 +1580,33 @@ const docTemplate = `{
                 }
             }
         },
+        "favourite.AddModel": {
+            "type": "object",
+            "properties": {
+                "hole_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "favourite.DeleteModel": {
+            "type": "object",
+            "properties": {
+                "hole_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "favourite.ModifyModel": {
+            "type": "object",
+            "properties": {
+                "hole_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                }
+            }
+        },
         "floor.CreateModel": {
             "type": "object",
             "required": [
@@ -1334,13 +1614,17 @@ const docTemplate = `{
             ],
             "properties": {
                 "content": {
-                    "description": "Owner or admin, the original content should be moved to  floor_history",
                     "type": "string"
                 },
                 "reply_to": {
                     "description": "id of the floor to which replied",
                     "type": "integer",
                     "minimum": 0
+                },
+                "special_tag": {
+                    "description": "Admin and Operator only",
+                    "type": "string",
+                    "maxLength": 16
                 }
             }
         },
@@ -1351,7 +1635,6 @@ const docTemplate = `{
             ],
             "properties": {
                 "content": {
-                    "description": "Owner or admin, the original content should be moved to  floor_history",
                     "type": "string"
                 },
                 "hole_id": {
@@ -1362,6 +1645,22 @@ const docTemplate = `{
                     "description": "id of the floor to which replied",
                     "type": "integer",
                     "minimum": 0
+                },
+                "special_tag": {
+                    "description": "Admin and Operator only",
+                    "type": "string",
+                    "maxLength": 16
+                }
+            }
+        },
+        "floor.CreateOldResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/models.Floor"
+                },
+                "message": {
+                    "type": "string"
                 }
             }
         },
@@ -1376,9 +1675,6 @@ const docTemplate = `{
         },
         "floor.ModifyModel": {
             "type": "object",
-            "required": [
-                "content"
-            ],
             "properties": {
                 "content": {
                     "description": "Owner or admin, the original content should be moved to  floor_history",
@@ -1398,9 +1694,21 @@ const docTemplate = `{
                     ]
                 },
                 "special_tag": {
-                    "description": "Admin only",
+                    "description": "Admin and Operator only",
                     "type": "string",
                     "maxLength": 16
+                }
+            }
+        },
+        "floor.RestoreModel": {
+            "type": "object",
+            "required": [
+                "restore_reason"
+            ],
+            "properties": {
+                "restore_reason": {
+                    "type": "string",
+                    "maxLength": 32
                 }
             }
         },
@@ -1412,6 +1720,11 @@ const docTemplate = `{
             "properties": {
                 "content": {
                     "type": "string"
+                },
+                "special_tag": {
+                    "description": "Admin and Operator only",
+                    "type": "string",
+                    "maxLength": 16
                 },
                 "tags": {
                     "description": "All users",
@@ -1436,12 +1749,28 @@ const docTemplate = `{
                     "type": "integer",
                     "minimum": 1
                 },
+                "special_tag": {
+                    "description": "Admin and Operator only",
+                    "type": "string",
+                    "maxLength": 16
+                },
                 "tags": {
                     "description": "All users",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/tag.CreateModel"
                     }
+                }
+            }
+        },
+        "hole.CreateOldResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/models.Hole"
+                },
+                "message": {
+                    "type": "string"
                 }
             }
         },
@@ -1459,6 +1788,9 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/tag.CreateModel"
                     }
+                },
+                "unhidden": {
+                    "type": "boolean"
                 }
             }
         },
@@ -1467,6 +1799,9 @@ const docTemplate = `{
             "properties": {
                 "description": {
                     "type": "string"
+                },
+                "division_id": {
+                    "type": "integer"
                 },
                 "id": {
                     "type": "integer"
@@ -1492,22 +1827,37 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "anonyname": {
-                    "description": "random username, not empty",
+                    "description": "a random username",
                     "type": "string"
                 },
                 "content": {
-                    "description": "not empty",
+                    "description": "content of the floor",
                     "type": "string"
                 },
                 "deleted": {
                     "description": "whether the floor is deleted",
                     "type": "boolean"
                 },
+                "disliked": {
+                    "description": "whether the user has disliked the floor, dynamically generated",
+                    "type": "boolean"
+                },
+                "floor_id": {
+                    "type": "integer"
+                },
                 "fold": {
+                    "description": "fold reason, for v1",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "fold_v2": {
                     "description": "fold reason",
                     "type": "string"
                 },
                 "hole_id": {
+                    "description": "the hole it belongs to",
                     "type": "integer"
                 },
                 "id": {
@@ -1518,30 +1868,30 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "like": {
-                    "description": "like - dislike",
+                    "description": "like number - dislike number",
                     "type": "integer"
                 },
                 "liked": {
-                    "description": "whether the user has liked or disliked the floor, dynamically generated",
-                    "type": "integer"
+                    "description": "whether the user has liked the floor, dynamically generated",
+                    "type": "boolean"
                 },
                 "mention": {
-                    "description": "Many to many mentions (in different holes)",
+                    "description": "many to many mentions (in different holes)",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/models.Floor"
                     }
                 },
                 "path": {
-                    "description": "storey path",
+                    "description": "storey path e.g. /1/2/3/",
                     "type": "string"
                 },
                 "special_tag": {
-                    "description": "Additional info",
+                    "description": "additional info, like \"树洞管理团队\"",
                     "type": "string"
                 },
                 "storey": {
-                    "description": "The sequence of floors in a hole",
+                    "description": "the sequence of floors in a hole",
                     "type": "integer"
                 },
                 "time_created": {
@@ -1583,22 +1933,30 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "division_id": {
+                    "description": "所属 division 的 id",
                     "type": "integer"
                 },
                 "floors": {
-                    "description": "return floors",
+                    "description": "返回给前端的楼层列表，包括首楼、尾楼和预加载的前 n 个楼层",
                     "$ref": "#/definitions/models.HoleFloor"
                 },
                 "hidden": {
+                    "description": "是否隐藏，隐藏的洞用户不可见，管理员可见",
                     "type": "boolean"
+                },
+                "hole_id": {
+                    "description": "兼容旧版 id",
+                    "type": "integer"
                 },
                 "id": {
                     "type": "integer"
                 },
                 "reply": {
+                    "description": "回复量（即该洞下 floor 的数量）",
                     "type": "integer"
                 },
                 "tags": {
+                    "description": "tag 列表",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/models.Tag"
@@ -1611,6 +1969,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "view": {
+                    "description": "浏览量",
                     "type": "integer"
                 }
             }
@@ -1619,16 +1978,19 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "first_floor": {
+                    "description": "首楼",
                     "$ref": "#/definitions/models.Floor"
                 },
-                "floors": {
+                "last_floor": {
+                    "description": "尾楼",
+                    "$ref": "#/definitions/models.Floor"
+                },
+                "prefetch": {
+                    "description": "预加载的楼层",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/models.Floor"
                     }
-                },
-                "last_floor": {
-                    "$ref": "#/definitions/models.Floor"
                 }
             }
         },
@@ -1647,6 +2009,10 @@ const docTemplate = `{
                     "description": "the report has been dealt",
                     "type": "boolean"
                 },
+                "dealt_by": {
+                    "description": "who dealt the report",
+                    "type": "integer"
+                },
                 "floor": {
                     "$ref": "#/definitions/models.Floor"
                 },
@@ -1657,6 +2023,13 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "reason": {
+                    "type": "string"
+                },
+                "report_id": {
+                    "type": "integer"
+                },
+                "result": {
+                    "description": "deal result",
                     "type": "string"
                 },
                 "time_created": {
@@ -1676,6 +2049,9 @@ const docTemplate = `{
                 "name": {
                     "type": "string"
                 },
+                "tag_id": {
+                    "type": "integer"
+                },
                 "temperature": {
                     "type": "integer"
                 },
@@ -1684,6 +2060,17 @@ const docTemplate = `{
                 },
                 "time_updated": {
                     "type": "string"
+                }
+            }
+        },
+        "penalty.PostBody": {
+            "type": "object",
+            "properties": {
+                "division_id": {
+                    "type": "integer"
+                },
+                "penalty_level": {
+                    "type": "integer"
                 }
             }
         },
@@ -1792,7 +2179,7 @@ const docTemplate = `{
 var SwaggerInfo = &swag.Spec{
 	Version:          "2.0.0",
 	Host:             "",
-	BasePath:         "/",
+	BasePath:         "/api",
 	Schemes:          []string{},
 	Title:            "Open Tree Hole",
 	Description:      "An Anonymous BBS \\n Note: PUT methods are used to PARTLY update, and we don't use PATCH method.",

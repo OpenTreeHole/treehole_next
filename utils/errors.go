@@ -27,6 +27,17 @@ func BadRequest(messages ...string) *HttpError {
 	}
 }
 
+func Unauthorized(messages ...string) *HttpError {
+	message := "Invalid JWT Token"
+	if len(messages) > 0 {
+		message = messages[0]
+	}
+	return &HttpError{
+		Code:    401,
+		Message: message,
+	}
+}
+
 func Forbidden(messages ...string) *HttpError {
 	message := "您没有权限进行此操作"
 	if len(messages) > 0 {
@@ -52,6 +63,8 @@ func MyErrorHandler(ctx *fiber.Ctx, err error) error {
 		httpError.Code = 404
 	} else {
 		switch e := err.(type) {
+		case *HttpError:
+			httpError = *e
 		case *fiber.Error:
 			httpError.Code = e.Code
 		case *ErrorDetail:

@@ -1,8 +1,11 @@
 package hole
 
 import (
+	"fmt"
+	"strconv"
 	. "treehole_next/models"
 	. "treehole_next/utils"
+	"treehole_next/utils/perm"
 
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
@@ -145,6 +148,7 @@ func GetHole(c *fiber.Ctx) error {
 // @Param json body CreateModel true "json"
 // @Success 201 {object} Hole
 func CreateHole(c *fiber.Ctx) error {
+	// validate body
 	var body CreateModel
 	err := ValidateBody(c, &body)
 	if err != nil {
@@ -161,7 +165,7 @@ func CreateHole(c *fiber.Ctx) error {
 	for _, tag := range body.Tags {
 		hole.Tags = append(hole.Tags, &Tag{Name: tag.Name})
 	}
-	err = hole.Create(c, &body.Content)
+	err = hole.Create(c, body.Content, body.SpecialTag)
 	if err != nil {
 		return err
 	}
@@ -176,26 +180,35 @@ func CreateHole(c *fiber.Ctx) error {
 // @Produce application/json
 // @Router /holes [post]
 // @Param json body CreateOldModel true "json"
-// @Success 201 {object} Hole
+// @Success 201 {object} CreateOldResponse
 func CreateHoleOld(c *fiber.Ctx) error {
+	// validate body
 	var body CreateOldModel
 	err := ValidateBody(c, &body)
 	if err != nil {
 		return err
 	}
 
+	// create hole
 	hole := Hole{
 		DivisionID: body.DivisionID,
 	}
 	for _, tag := range body.Tags {
 		hole.Tags = append(hole.Tags, &Tag{Name: tag.Name})
 	}
-	err = hole.Create(c, &body.Content)
+	err = hole.Create(c, body.Content, body.SpecialTag)
 	if err != nil {
 		return err
 	}
 
-	return Serialize(c.Status(201), &hole)
+	err = hole.Preprocess(c)
+	if err != nil {
+		return err
+	}
+	return c.Status(201).JSON(&CreateOldResponse{
+		Data:    hole,
+		Message: "发表成功",
+	})
 }
 
 // ModifyHole
@@ -220,6 +233,13 @@ func ModifyHole(c *fiber.Ctx) error {
 		return err
 	}
 
+	// get user
+	var user User
+	err = user.GetUser(c)
+	if err != nil {
+		return err
+	}
+
 	// Find hole
 	var hole Hole
 	result := DB.First(&hole, holeID)
@@ -227,26 +247,61 @@ func ModifyHole(c *fiber.Ctx) error {
 		return result.Error
 	}
 
-	// update divisionID
-	if body.DivisionID != 0 {
+	// modify division
+	if body.DivisionID != 0 && body.DivisionID != hole.DivisionID {
+		if !perm.CheckPermission(user, perm.Admin) {
+			return Forbidden("非管理员禁止修改分区")
+		}
 		hole.DivisionID = body.DivisionID
+		// log
+		MyLog("Hole", "Modify", holeID, user.ID, RoleAdmin, "DivisionID to: ", strconv.Itoa(hole.DivisionID))
 	}
 
-	// update tags
-	if len(body.Tags) != 0 {
-		for _, tag := range body.Tags {
-			hole.Tags = append(hole.Tags, &Tag{Name: tag.Name})
+	// modify hidden
+	if body.Unhidden && hole.Hidden {
+		if !perm.CheckPermission(user, perm.Admin) {
+			return Forbidden("非管理员禁止取消隐藏")
 		}
-		err = DB.Transaction(func(tx *gorm.DB) error {
-			return hole.SetTags(tx, true)
-		})
-		if err != nil {
-			return err
+		hole.Hidden = false
+		// log
+		MyLog("Hole", "Modify", holeID, user.ID, RoleAdmin, "Unhidden: ")
+	}
+
+	// modify tags
+	if len(body.Tags) != 0 {
+		if perm.CheckPermission(user, perm.Admin) || user.ID == hole.UserID {
+			for _, tag := range body.Tags {
+				hole.Tags = append(hole.Tags, &Tag{Name: tag.Name})
+			}
+			err = DB.Transaction(func(tx *gorm.DB) error {
+				return hole.SetTags(tx, true)
+			})
+			if err != nil {
+				return err
+			}
+
+			// log
+			if perm.CheckPermission(user, perm.Admin) {
+				MyLog("Hole", "Modify", holeID, user.ID, RoleAdmin, "NewTags: ", fmt.Sprintf("%v", body.Tags))
+			} else {
+				MyLog("Hole", "Modify", holeID, user.ID, RoleOwner, "NewTags: ", fmt.Sprintf("%v", body.Tags))
+			}
+
+		} else {
+			return Forbidden()
 		}
 	}
 
 	// save
 	DB.Omit("Tags").Save(&hole)
+
+	// update cache
+	updateHoles := []*Hole{&hole}
+	err = UpdateHoleCache(updateHoles)
+	if err != nil {
+		return err
+	}
+
 	return Serialize(c, &hole)
 }
 
@@ -260,13 +315,46 @@ func ModifyHole(c *fiber.Ctx) error {
 // @Success 204
 // @Failure 404 {object} MessageModel
 func DeleteHole(c *fiber.Ctx) error {
-	holeID, _ := c.ParamsInt("id")
+	// validate holeID
+	holeID, err := c.ParamsInt("id")
+	if err != nil {
+		return err
+	}
+
+	// get user
+	var user User
+	err = user.GetUser(c)
+	if err != nil {
+		return err
+	}
+
+	// permission
+	if !perm.CheckPermission(user, perm.Admin) {
+		return Forbidden()
+	}
+
 	var hole Hole
 	hole.ID = holeID
 	result := DB.Model(&hole).Select("Hidden").Updates(Hole{Hidden: true})
 	if result.RowsAffected == 0 {
 		return gorm.ErrRecordNotFound
 	}
+
+	// log
+	MyLog("Hole", "Delete", holeID, user.ID, RoleAdmin)
+
+	// find hole and update cache
+	result = DB.First(&hole, holeID)
+	if result.Error != nil {
+		return result.Error
+	}
+
+	updateHoles := []*Hole{&hole}
+	err = UpdateHoleCache(updateHoles)
+	if err != nil {
+		return err
+	}
+
 	return c.Status(204).JSON(nil)
 }
 

@@ -3,30 +3,32 @@ package hole
 import (
 	"time"
 	"treehole_next/apis/tag"
+	"treehole_next/models"
+	"treehole_next/utils"
 )
 
 type QueryTime struct {
 	Size int `json:"size" default:"10" validate:"max=10"`
 	// updated time < offset (default is now)
-	Offset time.Time `json:"offset"`
+	Offset utils.CustomTime `json:"offset" swaggertype:"string"`
 }
 
 func (q *QueryTime) SetDefaults() {
 	if q.Offset.IsZero() {
-		q.Offset = time.Now()
+		q.Offset = utils.CustomTime{Time: time.Now()}
 	}
 }
 
 type ListOldModel struct {
-	Offset     time.Time `json:"start_time" query:"start_time"`
-	Size       int       `json:"length"     query:"length"      default:"10" validate:"max=10" `
-	Tag        string    `json:"tag"        query:"tag"`
-	DivisionID int       `json:"division_id" query:"division_id"`
+	Offset     utils.CustomTime `json:"start_time" query:"start_time" swaggertype:"string"`
+	Size       int              `json:"length"     query:"length"      default:"10" validate:"max=10" `
+	Tag        string           `json:"tag"        query:"tag"`
+	DivisionID int              `json:"division_id" query:"division_id"`
 }
 
 func (q *ListOldModel) SetDefaults() {
 	if q.Offset.IsZero() {
-		q.Offset = time.Now()
+		q.Offset = utils.CustomTime{Time: time.Now()}
 	}
 }
 
@@ -35,12 +37,14 @@ type tags struct {
 }
 
 type divisionID struct {
-	DivisionID int `json:"division_id" validate:"min=1"` // Admin only
+	DivisionID int `json:"division_id" validate:"omitempty,min=1"` // Admin only
 }
 
 type CreateModel struct {
 	Content string `json:"content" validate:"required"`
 	tags
+	// Admin and Operator only
+	SpecialTag string `json:"special_tag" validate:"max=16"`
 }
 
 type CreateOldModel struct {
@@ -48,7 +52,13 @@ type CreateOldModel struct {
 	divisionID
 }
 
+type CreateOldResponse struct {
+	Data    models.Hole `json:"data"`
+	Message string      `json:"message"`
+}
+
 type ModifyModel struct {
 	tags
 	divisionID
+	Unhidden bool `json:"unhidden"`
 }

@@ -4,21 +4,19 @@ import (
 	"encoding/base64"
 	"encoding/binary"
 	"encoding/json"
-	"io/ioutil"
 	"math/rand"
 	"sort"
 	"time"
+	"treehole_next/data"
+
+	"golang.org/x/exp/slices"
 )
 
 var names []string
 var length int
 
 func init() {
-	file, err := ioutil.ReadFile("data/names.json")
-	if err != nil {
-		panic(err)
-	}
-	err = json.Unmarshal(file, &names)
+	err := json.Unmarshal(data.NamesFile, &names)
 	if err != nil {
 		panic(err)
 	}
@@ -29,19 +27,8 @@ func init() {
 }
 
 func inArray(target string, array []string) bool {
-	left := 0
-	right := len(array)
-	for left < right {
-		mid := left + (right-left)>>1
-		if array[mid] < target {
-			left = mid + 1
-		} else if array[mid] > target {
-			right = mid
-		} else {
-			return true
-		}
-	}
-	return false
+	_, in := slices.BinarySearch(array, target)
+	return in
 }
 
 func timeStampBase64() string {

@@ -1,21 +1,33 @@
 package tag
 
 import (
-	"github.com/gofiber/fiber/v2"
-	"gorm.io/gorm"
 	. "treehole_next/models"
 	. "treehole_next/utils"
+
+	"github.com/gofiber/fiber/v2"
+	"gorm.io/gorm"
 )
 
 // ListTags
 // @Summary List All Tags
 // @Tags Tag
 // @Produce application/json
+// @Param object query SearchModel false "query"
 // @Router /tags [get]
 // @Success 200 {array} Tag
 func ListTags(c *fiber.Ctx) error {
-	var tags []*Tag
-	DB.Find(&tags)
+	var query SearchModel
+	err := ValidateQuery(c, &query)
+	if err != nil {
+		return err
+	}
+
+	var tags []Tag
+	querySet := DB.Order("temperature DESC")
+	if query.Search != "" {
+		querySet = querySet.Where("name LIKE ?", "%"+query.Search+"%")
+	}
+	querySet = querySet.Find(&tags)
 	return c.JSON(&tags)
 }
 
@@ -47,11 +59,15 @@ func GetTag(c *fiber.Ctx) error {
 // @Success 200 {object} Tag
 // @Success 201 {object} Tag
 func CreateTag(c *fiber.Ctx) error {
+	// validate body
 	var tag Tag
 	var body CreateModel
-	if err := ValidateBody(c, &body); err != nil {
+	err := ValidateBody(c, &body)
+	if err != nil {
 		return err
 	}
+
+	// bind and create tag
 	tag.Name = body.Name
 	result := DB.Where("name = ?", body.Name).FirstOrCreate(&tag)
 	if result.RowsAffected == 0 {
@@ -72,17 +88,30 @@ func CreateTag(c *fiber.Ctx) error {
 // @Success 200 {object} Tag
 // @Failure 404 {object} MessageModel
 func ModifyTag(c *fiber.Ctx) error {
-	id, _ := c.ParamsInt("id")
-	var tag Tag
+	// validate body
 	var body ModifyModel
 	err := ValidateBody(c, &body)
 	if err != nil {
 		return err
 	}
+	id, err := c.ParamsInt("id")
+	if err != nil {
+		return err
+	}
+
+	// modify tag
+	var tag Tag
 	DB.Find(&tag, id)
 	tag.Name = body.Name
 	tag.Temperature = body.Temperature
 	DB.Save(&tag)
+
+	// log
+	userID, err := GetUserID(c)
+	if err != nil {
+		return err
+	}
+	MyLog("Tag", "Modify", tag.ID, userID, RoleAdmin)
 	return c.JSON(&tag)
 }
 
@@ -97,9 +126,13 @@ func ModifyTag(c *fiber.Ctx) error {
 // @Success 200 {object} Tag
 // @Failure 404 {object} MessageModel
 func DeleteTag(c *fiber.Ctx) error {
-	id, _ := c.ParamsInt("id")
+	// validate body
 	var body DeleteModel
 	err := ValidateBody(c, &body)
+	if err != nil {
+		return err
+	}
+	id, err := c.ParamsInt("id")
 	if err != nil {
 		return err
 	}
@@ -148,5 +181,12 @@ func DeleteTag(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
+
+	// log
+	userID, err := GetUserID(c)
+	if err != nil {
+		return err
+	}
+	MyLog("Tag", "Delete", id, userID, RoleAdmin)
 	return c.JSON(&newTag)
 }

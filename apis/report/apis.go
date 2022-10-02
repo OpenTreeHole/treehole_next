@@ -25,11 +25,11 @@ func GetReport(c *fiber.Ctx) error {
 
 	// find report
 	var report Report
-	result := DB.Joins("Floor").First(&report, reportID)
+	result := LoadReportFloor(DB).First(&report, reportID)
 	if result.Error != nil {
 		return result.Error
 	}
-	return c.JSON(&report)
+	return Serialize(c, &report)
 }
 
 // ListReports
@@ -47,24 +47,25 @@ func ListReports(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	query.OrderBy = "`report`.`" + query.OrderBy + "`"
 
 	// find reports
-	var reports []Report
-	BaseQuerySet := query.BaseQuery().Joins("Floor")
+	var reports Reports
+
+	querySet := LoadReportFloor(query.BaseQuery())
+
 	var result *gorm.DB
 	switch query.Range {
 	case RangeNotDealt:
-		result = BaseQuerySet.Find(&reports, "dealt = ?", false)
+		result = querySet.Find(&reports, "dealt = ?", false)
 	case RangeDealt:
-		result = BaseQuerySet.Find(&reports, "dealt = ?", true)
+		result = querySet.Find(&reports, "dealt = ?", true)
 	case RangeAll:
-		result = BaseQuerySet.Find(&reports)
+		result = querySet.Find(&reports)
 	}
 	if result.Error != nil {
 		return result.Error
 	}
-	return c.JSON(&reports)
+	return Serialize(c, &reports)
 }
 
 // AddReport
@@ -95,8 +96,6 @@ func AddReport(c *fiber.Ctx) error {
 		return err
 	}
 
-	// TODO: notification to admin
-
 	return c.Status(204).JSON(nil)
 }
 
@@ -117,18 +116,31 @@ func DeleteReport(c *fiber.Ctx) error {
 		return err
 	}
 
+	// validate body
+	var body DeleteModel
+	err = ValidateBody(c, &body)
+	if err != nil {
+		return err
+	}
+
+	// get user id
+	userID, err := GetUserID(c)
+	if err != nil {
+		return err
+	}
+
 	// modify report
 	var report Report
-	result := DB.Joins("Floor").First(&report, reportID)
+	result := LoadReportFloor(DB).First(&report, reportID)
 	if result.Error != nil {
 		return result.Error
 	}
 	report.Dealt = true
-
-	// save report
+	report.DealtBy = userID
+	report.Result = body.Result
 	DB.Omit("Floor").Save(&report)
 
-	// TODO: notification to reporter
+	MyLog("Report", "Delete", reportID, userID, RoleAdmin)
 
-	return c.JSON(&report)
+	return Serialize(c, &report)
 }

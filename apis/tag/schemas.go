@@ -14,3 +14,7 @@ type DeleteModel struct {
 	// Name of the target tag that all the deleted tag's holes will be connected to
 	To string `json:"to,omitempty"`
 }
+
+type SearchModel struct {
+	Search string `json:"s" query:"s"` // search tag by name
+}

@@ -11,25 +11,39 @@ import (
 )
 
 var DB *gorm.DB
+
 var gormConfig = &gorm.Config{
 	NamingStrategy: schema.NamingStrategy{
 		SingularTable: true, // use singular table name, table for `User` would be `user` with this option enabled
 	},
 }
 
+type DBTypeEnum uint
+
+const (
+	DBTypeMysql DBTypeEnum = iota
+	DBTypeSqlite
+)
+
+var DBType DBTypeEnum
+
 func mysqlDB() (*gorm.DB, error) {
+	DBType = DBTypeMysql
 	return gorm.Open(mysql.Open(config.Config.DbUrl), gormConfig)
 }
 
 func sqliteDB() (*gorm.DB, error) {
+	DBType = DBTypeSqlite
 	err := os.MkdirAll("data", 0750)
 	if err != nil {
 		panic(err)
 	}
+	DBType = DBTypeSqlite
 	return gorm.Open(sqlite.Open("data/sqlite.db"), gormConfig)
 }
 
 func memoryDB() (*gorm.DB, error) {
+	DBType = DBTypeSqlite
 	return gorm.Open(sqlite.Open("file::memory:?cache=shared"), gormConfig)
 }
 
@@ -41,11 +55,15 @@ func InitDB() {
 	case "test":
 		DB, err = memoryDB()
 		DB = DB.Debug()
+	case "bench":
+		DB, err = memoryDB()
 	case "dev":
-		DB, err = sqliteDB()
+		if config.Config.DbUrl == "" {
+			DB, err = sqliteDB()
+		} else {
+			DB, err = mysqlDB()
+		}
 		DB = DB.Debug()
-	case "perf":
-		DB, err = sqliteDB()
 	default: // sqlite as default
 		panic("unknown mode")
 	}
@@ -61,8 +79,8 @@ func InitDB() {
 		&Floor{},
 		&FloorHistory{},
 		&FloorLike{},
-		&User{},
 		&Report{},
+		&UserFavorites{},
 	)
 	if err != nil {
 		panic(err)

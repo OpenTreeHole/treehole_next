@@ -1,20 +1,10 @@
 package utils
 
 import (
-	"encoding/json"
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
 )
-
-// BindJSON is a safe method to bind request body to struct
-func BindJSON(c *fiber.Ctx, obj interface{}) error {
-	body := c.Body()
-	if len(body) == 0 {
-		body, _ = json.Marshal(fiber.Map{})
-	}
-	return json.Unmarshal(body, obj)
-}
 
 type CanPreprocess interface {
 	Preprocess(c *fiber.Ctx) error

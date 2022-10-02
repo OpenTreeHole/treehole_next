@@ -1,8 +1,10 @@
 package floor
 
 import (
+	"fmt"
 	. "treehole_next/models"
 	. "treehole_next/utils"
+	"treehole_next/utils/perm"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -55,6 +57,10 @@ func ListFloorsOld(c *fiber.Ctx) error {
 	err := ValidateQuery(c, &query)
 	if err != nil {
 		return err
+	}
+
+	if query.Search != "" {
+		return SearchFloorsOld(c, query)
 	}
 
 	// get floors
@@ -115,10 +121,12 @@ func CreateFloor(c *fiber.Ctx) error {
 		return err
 	}
 
+	// create floor
 	floor := Floor{
-		HoleID:  holeID,
-		Content: body.Content,
-		ReplyTo: body.ReplyTo,
+		HoleID:     holeID,
+		Content:    body.Content,
+		ReplyTo:    body.ReplyTo,
+		SpecialTag: body.SpecialTag,
 	}
 	err = floor.Create(c)
 	if err != nil {
@@ -135,7 +143,7 @@ func CreateFloor(c *fiber.Ctx) error {
 // @Produce application/json
 // @Router /floors [post]
 // @Param json body CreateOldModel true "json"
-// @Success 201 {object} Floor
+// @Success 201 {object} CreateOldResponse
 func CreateFloorOld(c *fiber.Ctx) error {
 	var body CreateOldModel
 	err := ValidateBody(c, &body)
@@ -143,17 +151,27 @@ func CreateFloorOld(c *fiber.Ctx) error {
 		return err
 	}
 
+	// create floor
 	floor := Floor{
-		HoleID:  body.HoleID,
-		Content: body.Content,
-		ReplyTo: body.ReplyTo,
+		HoleID:     body.HoleID,
+		Content:    body.Content,
+		ReplyTo:    body.ReplyTo,
+		SpecialTag: body.SpecialTag,
 	}
 	err = floor.Create(c)
 	if err != nil {
 		return err
 	}
 
-	return Serialize(c.Status(201), &floor)
+	err = floor.Preprocess(c)
+	if err != nil {
+		return err
+	}
+
+	return c.Status(201).JSON(&CreateOldResponse{
+		Data:    floor,
+		Message: "发表成功",
+	})
 }
 
 // ModifyFloor
@@ -197,8 +215,10 @@ func ModifyFloor(c *fiber.Ctx) error {
 		var reason string
 		if user.ID == floor.UserID {
 			reason = "该内容已被作者修改"
-		} else if user.IsAdmin {
+			MyLog("Floor", "Modify", floorID, user.ID, RoleOwner, "content")
+		} else if perm.CheckPermission(user, perm.Admin) {
 			reason = "该内容已被管理员修改"
+			MyLog("Floor", "Modify", floorID, user.ID, RoleAdmin, "content")
 		} else {
 			return Forbidden()
 		}
@@ -208,37 +228,52 @@ func ModifyFloor(c *fiber.Ctx) error {
 		}
 		floor.Content = body.Content
 
-		// find mention
-		err := floor.LoadMention()
+		// update floor_mention after update floor.content
+		err = floor.SetMention(DB, true)
 		if err != nil {
 			return err
 		}
 	}
 
 	if body.Fold != "" {
-		if !user.IsAdmin {
+		if !perm.CheckPermission(user, perm.Admin) {
 			return Forbidden()
 		}
 		floor.Fold = body.Fold
+		MyLog("Floor", "Modify", floorID, user.ID, RoleAdmin, "fold")
 	}
 
 	if body.SpecialTag != "" {
-		if !user.IsAdmin {
+		// operator can modify specialTag
+		if !perm.CheckPermission(user, perm.Admin|perm.Operator) {
 			return Forbidden()
 		}
 		floor.SpecialTag = body.SpecialTag
+		MyLog("Floor", "Modify", floorID, user.ID, RoleOperator, "specialTag to: ", fmt.Sprintf("%v", floor.SpecialTag))
 	}
 
 	if body.Like == "add" {
 		err = floor.ModifyLike(c, 1)
-	} else if body.Like == "reset" {
+	} else if body.Like == "cancel" {
 		err = floor.ModifyLike(c, 0)
 	}
 	if err != nil {
 		return err
 	}
 
-	DB.Save(&floor)
+	// save all fields except Mention
+	// including Like when Like == 0
+	DB.Model(&floor).Select("*").Omit("Mention").Updates(&floor)
+
+	// notification
+	// place here to check if not me
+	if user.ID != floor.UserID {
+		err = floor.SendModify(DB)
+		if err != nil {
+			Logger.Error("[notification] SendModify failed: " + err.Error())
+			// return err // only for test
+		}
+	}
 
 	return Serialize(c, &floor)
 }
@@ -292,6 +327,7 @@ func ModifyFloorLike(c *fiber.Ctx) error {
 // @Success 200 {object} Floor
 // @Failure 404 {object} MessageModel
 func DeleteFloor(c *fiber.Ctx) error {
+	// validate body
 	var body DeleteModel
 	err := ValidateBody(c, &body)
 	if err != nil {
@@ -303,10 +339,22 @@ func DeleteFloor(c *fiber.Ctx) error {
 		return err
 	}
 
+	// get user
+	var user User
+	err = user.GetUser(c)
+	if err != nil {
+		return err
+	}
+
 	var floor Floor
 	result := DB.First(&floor, floorID)
 	if result.Error != nil {
 		return result.Error
+	}
+
+	// permission
+	if !(user.ID == floor.UserID || perm.CheckPermission(user, perm.Admin)) {
+		return Forbidden()
 	}
 
 	err = floor.Backup(c, body.Reason)
@@ -315,7 +363,15 @@ func DeleteFloor(c *fiber.Ctx) error {
 	}
 
 	floor.Deleted = true
+	floor.Content = generateDeleteReason(body.Reason, user.ID == floor.UserID)
 	DB.Save(&floor)
+
+	// log
+	if user.ID == floor.UserID {
+		MyLog("Floor", "Delete", floorID, user.ID, RoleOperator, "reason: ", body.Reason)
+	} else {
+		MyLog("Floor", "Delete", floorID, user.ID, RoleOperator, "reason: ", body.Reason)
+	}
 
 	return Serialize(c, &floor)
 }
@@ -339,4 +395,71 @@ func GetFloorHistory(c *fiber.Ctx) error {
 		return result.Error
 	}
 	return c.JSON(&histories)
+}
+
+// RestoreFloor
+// @Summary Restore A Floor
+// @Description Restore A Floor From A History Version
+// @Tags Floor
+// @Router /floors/{id}/restore/{floor_history_id} [post]
+// @Param id path int true "id"
+// @Param floor_history_id path int true "floor_history_id"
+// @Param json body RestoreModel true "json"
+// @Success 200 {object} Floor
+// @Failure 404 {object} MessageModel
+func RestoreFloor(c *fiber.Ctx) error {
+	// validate body
+	var body RestoreModel
+	err := ValidateBody(c, &body)
+	if err != nil {
+		return err
+	}
+
+	// get id
+	floorID, err := c.ParamsInt("id")
+	if err != nil {
+		return err
+	}
+	floorHistoryID, err := c.ParamsInt("floor_history_id")
+	if err != nil {
+		return err
+	}
+
+	// get user
+	var user User
+	err = user.GetUser(c)
+	if err != nil {
+		return err
+	}
+
+	// permission check
+	if !perm.CheckPermission(user, perm.Admin) {
+		return Forbidden()
+	}
+
+	var floor Floor
+	result := DB.First(&floor, floorID)
+	if result.Error != nil {
+		return result.Error
+	}
+	var floorHistory FloorHistory
+	result = DB.First(&floorHistory, floorHistoryID)
+	if result.Error != nil {
+		return result.Error
+	}
+	if floorHistory.FloorID != floorID {
+		return BadRequest(fmt.Sprintf("%v 不是 #%v 的历史版本", floorHistoryID, floorID))
+	}
+	reason := body.Reason
+	err = floor.Backup(c, reason)
+	if err != nil {
+		return err
+	}
+	floor.Deleted = false
+	floor.Content = floorHistory.Content
+	DB.Save(&floor)
+
+	// log
+	MyLog("Floor", "Restore", floorID, user.ID, RoleAdmin, reason)
+	return Serialize(c, &floor)
 }

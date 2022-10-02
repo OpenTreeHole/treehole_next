@@ -1,9 +1,14 @@
 package models
 
-import "github.com/gofiber/fiber/v2"
+import (
+	"github.com/gofiber/fiber/v2"
+	"gorm.io/gorm"
+	"treehole_next/utils"
+)
 
 type Division struct {
 	BaseModel
+	DivisionID  int      `json:"division_id" gorm:"-:all"`
 	Name        string   `json:"name" gorm:"unique" `
 	Description string   `json:"description"`
 	Pinned      IntArray `json:"-"     ` // pinned holes in given order
@@ -19,7 +24,7 @@ func (divisions Divisions) Preprocess(c *fiber.Ctx) error {
 			return err
 		}
 	}
-	return nil
+	return utils.SetCache("divisions", divisions, 0)
 }
 
 func (division *Division) Preprocess(c *fiber.Ctx) error {
@@ -28,30 +33,23 @@ func (division *Division) Preprocess(c *fiber.Ctx) error {
 		division.Holes = []Hole{}
 		return nil
 	}
-	var holes []Hole
+	var holes Holes
 	DB.Find(&holes, pinned)
-	orderedHoles := make([]Hole, 0, len(holes))
-	for _, order := range pinned {
-		// binary search the index
-		index := func(target int) int {
-			left := 0
-			right := len(holes)
-			for left < right {
-				mid := left + (right-left)>>1
-				if holes[mid].ID < target {
-					left = mid + 1
-				} else if holes[mid].ID > target {
-					right = mid
-				} else {
-					return mid
-				}
-			}
-			return -1
-		}(order)
-		if index >= 0 {
-			orderedHoles = append(orderedHoles, holes[index])
-		}
+	holes = utils.OrderInGivenOrder(holes, pinned)
+	err := holes.Preprocess(c)
+	if err != nil {
+		return err
 	}
-	division.Holes = orderedHoles
+	division.Holes = holes
+	return nil
+}
+
+func (division *Division) AfterFind(tx *gorm.DB) (err error) {
+	division.DivisionID = division.ID
+	return nil
+}
+
+func (division *Division) AfterCreate(tx *gorm.DB) (err error) {
+	division.DivisionID = division.ID
 	return nil
 }

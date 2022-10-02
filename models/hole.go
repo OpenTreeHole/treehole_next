@@ -2,37 +2,50 @@ package models
 
 import (
 	"fmt"
-	"github.com/gofiber/fiber/v2"
-	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
+	"golang.org/x/exp/slices"
 	"strings"
 	"time"
 	"treehole_next/config"
-)
+	"treehole_next/utils"
+	"treehole_next/utils/perm"
 
-type HoleFloor struct {
-	FirstFloor *Floor   `json:"first_floor"`
-	LastFloor  *Floor   `json:"last_floor"`
-	Floors     []*Floor `json:"floors"`
-}
+	"github.com/gofiber/fiber/v2"
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
+)
 
 type Hole struct {
 	BaseModel
-	DivisionID int                `json:"division_id"`
-	Tags       []*Tag             `json:"tags" gorm:"many2many:hole_tags"`
-	Floors     []Floor            `json:"-"`
-	HoleFloor  HoleFloor          `json:"floors" gorm:"-:all"` // return floors
-	View       int                `json:"view"`
-	Reply      int                `json:"reply"`
-	Hidden     bool               `json:"hidden"`
-	Mapping    []AnonynameMapping `json:"-"`
+	HoleID     int                `json:"hole_id" gorm:"-:all"`            // 兼容旧版 id
+	DivisionID int                `json:"division_id"`                     // 所属 division 的 id
+	UserID     int                `json:"-"`                               // 洞主 id
+	Tags       []*Tag             `json:"tags" gorm:"many2many:hole_tags"` // tag 列表
+	Floors     []Floor            `json:"-"`                               // 楼层列表
+	HoleFloor  HoleFloor          `json:"floors" gorm:"-:all"`             // 返回给前端的楼层列表，包括首楼、尾楼和预加载的前 n 个楼层
+	View       int                `json:"view"`                            // 浏览量
+	Reply      int                `json:"reply"`                           // 回复量（即该洞下 floor 的数量）
+	Hidden     bool               `json:"hidden"`                          // 是否隐藏，隐藏的洞用户不可见，管理员可见
+	Mapping    []AnonynameMapping `json:"-"`                               // 匿名映射表
 }
+
 type Holes []Hole
+
+type HoleFloor struct {
+	FirstFloor *Floor   `json:"first_floor"` // 首楼
+	LastFloor  *Floor   `json:"last_floor"`  // 尾楼
+	Floors     []*Floor `json:"prefetch"`    // 预加载的楼层
+}
 
 type HoleTag struct {
 	HoleID int `json:"hole_id"`
 	TagID  int `json:"tag_id"`
 }
+
+/**************
+	get hole methods
+ *******************/
+
+const HoleCacheExpire = time.Minute * 10
 
 func loadTags(holes []*Hole) error {
 	holeIDs := make([]int, len(holes))
@@ -71,6 +84,7 @@ func loadTags(holes []*Hole) error {
 
 	tagMap := make(map[int]*Tag)
 	for _, tag := range tags {
+		tag.TagID = tag.ID
 		tagMap[tag.ID] = tag
 	}
 
@@ -87,7 +101,7 @@ func loadFloors(holes []*Hole) error {
 	holeIDs := make([]int, len(holes))
 	for i, hole := range holes {
 		holeIDs[i] = hole.ID
-		hole.HoleFloor.Floors = make([]*Floor, 0, config.Config.Size)
+		hole.HoleFloor.Floors = make([]*Floor, 0, config.Config.HoleFloorSize)
 	}
 
 	var floors []*Floor
@@ -99,7 +113,7 @@ func loadFloors(holes []*Hole) error {
 			FROM floor
 		) AS a 
 		WHERE hole_id IN (?) AND ranking <= ?`,
-		holeIDs, config.Config.Size,
+		holeIDs, config.Config.HoleFloorSize,
 	).Scan(&floors)
 	if result.Error != nil {
 		return result.Error
@@ -108,19 +122,29 @@ func loadFloors(holes []*Hole) error {
 		return nil
 	}
 
-	var index, left, right int
+	/*
+			Bind floors to hole.
+			Note that floor is grouped by hole_id in hole_id asc order
+		and hole is in random order, so we have to find hole_id those floors
+		belong to both at the beginning and after floor group has changed.
+			To bind, we use two pointers. Binding occurs when the floor's hole_id
+		has changed, or when the floor is the last floor.
+			The complexity is O(m*n), where m is the number of holes and
+		n is the number of floors. Given that m is relatively small,
+		the complexity is acceptable.
+	*/
+	var left, right int
+	index := slices.IndexFunc(holes, func(hole *Hole) bool {
+		return hole.ID == floors[0].HoleID
+	})
 	for _, floor := range floors {
+		floor.SetDefaults()
 		if floor.HoleID != holes[index].ID {
-			if index != 0 { // set floors
-				holes[index].HoleFloor.Floors = floors[left:right]
-				left = right
-			}
-			for i, hole := range holes { // update index
-				if hole.ID == floor.HoleID {
-					index = i
-					break
-				}
-			}
+			holes[index].HoleFloor.Floors = floors[left:right]
+			left = right
+			index = slices.IndexFunc(holes, func(hole *Hole) bool {
+				return hole.ID == floor.HoleID
+			})
 		}
 		right++
 	}
@@ -135,11 +159,14 @@ func loadFloors(holes []*Hole) error {
 		hole.HoleFloor.FirstFloor = hole.HoleFloor.Floors[0]
 
 		// last floor
-		if hole.Reply <= config.Config.Size {
+		// this means all the floors are loaded into hole.HoleFloor.Floors,
+		// so we can just get last floor from hole.HoleFloor.Floors
+		if hole.Reply <= config.Config.HoleFloorSize {
 			hole.HoleFloor.LastFloor = hole.HoleFloor.Floors[len(hole.HoleFloor.Floors)-1]
 		} else {
 			var floor Floor
 			DB.Where("hole_id = ?", hole.ID).Last(&floor)
+			floor.SetDefaults()
 			hole.HoleFloor.LastFloor = &floor
 		}
 	}
@@ -148,39 +175,42 @@ func loadFloors(holes []*Hole) error {
 }
 
 func (hole *Hole) Preprocess(c *fiber.Ctx) error {
-	holes := []*Hole{hole}
+	holes := Holes{*hole}
 
-	err := loadFloors(holes)
+	err := holes.Preprocess(c)
 	if err != nil {
 		return err
 	}
 
-	err = loadTags(holes)
-	if err != nil {
-		return err
+	*hole = holes[0]
+
+	return nil
+}
+
+func (holes Holes) Preprocess(c *fiber.Ctx) error {
+	notInCache := make([]*Hole, 0, len(holes))
+
+	for i := 0; i < len(holes); i++ {
+		var hole Hole
+		ok := utils.GetCache(fmt.Sprintf("hole_%d", holes[i].ID), &hole)
+		if !ok {
+			notInCache = append(notInCache, &holes[i])
+		} else {
+			holes[i] = hole
+		}
+	}
+
+	if len(notInCache) > 0 {
+		err := UpdateHoleCache(notInCache)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
 }
 
-func getCache(key string) (*Hole, error) {
-	// TODO: cache
-	return nil, nil
-}
-func (holes Holes) Preprocess(c *fiber.Ctx) error {
-	notInCache := make([]*Hole, 0, len(holes))
-
-	for i := 0; i < len(holes); i++ {
-		hole, err := getCache("key")
-		if err != nil {
-			return err
-		}
-		if hole == nil {
-			notInCache = append(notInCache, &holes[i])
-		} else {
-			holes[i] = *hole
-		}
-	}
+func UpdateHoleCache(notInCache []*Hole) error {
 	err := loadFloors(notInCache)
 	if err != nil {
 		return err
@@ -191,31 +221,51 @@ func (holes Holes) Preprocess(c *fiber.Ctx) error {
 		return err
 	}
 
+	for i := 0; i < len(notInCache); i++ {
+		err = utils.SetCache(
+			fmt.Sprintf("hole_%d", notInCache[i].ID),
+			notInCache[i],
+			HoleCacheExpire,
+		)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (hole *Hole) AfterFind(tx *gorm.DB) (err error) {
+	hole.HoleID = hole.ID
 	return nil
 }
 
 func MakeQuerySet(c *fiber.Ctx) *gorm.DB {
 	var user User
 	_ = user.GetUser(c)
-	if user.IsAdmin {
+	if perm.CheckPermission(user, perm.Admin) {
 		return DB
 	} else {
 		return DB.Where("hidden = ?", false)
 	}
 }
 
-func (holes *Holes) MakeQuerySet(offset time.Time, size int, c *fiber.Ctx) (tx *gorm.DB) {
+func (holes *Holes) MakeQuerySet(offset utils.CustomTime, size int, c *fiber.Ctx) (tx *gorm.DB) {
 	return MakeQuerySet(c).
-		Where("updated_at < ?", offset).
+		Where("updated_at < ?", offset.Time).
 		Order("updated_at desc").Limit(size)
 }
+
+/************************
+	create and modify hole methods
+ ************************/
 
 // SetTags sets tags for a hole
 func (hole *Hole) SetTags(tx *gorm.DB, clear bool) error {
 	if clear {
 		// update tag temperature
 		var sql string
-		if config.Config.Debug {
+
+		if DBType == DBTypeSqlite {
 			sql = `
 			UPDATE tag
 			SET temperature = temperature - 1 
@@ -240,19 +290,37 @@ func (hole *Hole) SetTags(tx *gorm.DB, clear bool) error {
 		}
 	}
 
-	// create tags
-	tx.Clauses(clause.OnConflict{
-		Columns: []clause.Column{{Name: "name"}},
-	}).Create(&hole.Tags)
+	if len(hole.Tags) == 0 {
+		return nil
+	}
 
+	// create tags
+	result := tx.Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "name"}},
+		DoNothing: true,
+	}).Create(&hole.Tags)
+	if result.Error != nil {
+		return result.Error
+	}
+
+	// find tags
+	tagNames := make([]string, len(hole.Tags))
+	for i, tag := range hole.Tags {
+		tagNames[i] = tag.Name
+	}
+	result = tx.Where("name IN (?)", tagNames).Find(&hole.Tags)
+	if result.Error != nil {
+		return result.Error
+	}
+
+	// create associations
 	tagIDs := make([]int, len(hole.Tags))
 	for i, tag := range hole.Tags {
 		tagIDs[i] = tag.ID
 	}
-
-	// create associations
 	var builder strings.Builder
-	if config.Config.Debug {
+
+	if DBType == DBTypeSqlite {
 		builder.WriteString("INSERT INTO")
 	} else {
 		builder.WriteString("INSERT IGNORE INTO")
@@ -264,10 +332,11 @@ func (hole *Hole) SetTags(tx *gorm.DB, clear bool) error {
 			builder.WriteString(",")
 		}
 	}
-	if config.Config.Debug {
+
+	if DBType == DBTypeSqlite {
 		builder.WriteString(" ON CONFLICT DO NOTHING")
 	}
-	result := tx.Exec(builder.String())
+	result = tx.Exec(builder.String())
 	if result.Error != nil {
 		return result.Error
 	}
@@ -286,7 +355,7 @@ func (hole *Hole) SetTags(tx *gorm.DB, clear bool) error {
 	return nil
 }
 
-func (hole *Hole) Create(c *fiber.Ctx, content *string, db ...*gorm.DB) error {
+func (hole *Hole) Create(c *fiber.Ctx, content string, specialTag string, db ...*gorm.DB) error {
 	var tx *gorm.DB
 	if len(db) > 0 {
 		tx = db[0]
@@ -294,7 +363,9 @@ func (hole *Hole) Create(c *fiber.Ctx, content *string, db ...*gorm.DB) error {
 		tx = DB
 	}
 
-	err := tx.Transaction(func(tx *gorm.DB) error {
+	hole.UserID, _ = GetUserID(c)
+
+	return tx.Transaction(func(tx *gorm.DB) error {
 		// Create hole
 		result := tx.Omit("Tags").Create(hole) // tags are created in AfterCreate hook
 		if result.Error != nil {
@@ -303,29 +374,18 @@ func (hole *Hole) Create(c *fiber.Ctx, content *string, db ...*gorm.DB) error {
 
 		// Bind and Create floor
 		floor := Floor{
-			HoleID:  hole.ID,
-			Content: *content,
-		}
-		err := floor.Create(c, tx)
-		if err != nil {
-			return err
+			HoleID:     hole.ID,
+			Content:    content,
+			UserID:     hole.UserID,
+			SpecialTag: specialTag,
+			IsMe:       true,
 		}
 
-		return nil
+		return floor.Create(c, tx)
 	})
-
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func (hole *Hole) AfterCreate(tx *gorm.DB) (err error) {
-	err = hole.SetTags(tx, false)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	hole.HoleID = hole.ID
+	return hole.SetTags(tx, false)
 }
