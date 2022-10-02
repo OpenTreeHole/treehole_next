@@ -44,6 +44,15 @@ definitions:
           type: integer
         type: array
     type: object
+  favourite.Response:
+    properties:
+      data:
+        items:
+          type: integer
+        type: array
+      message:
+        type: string
+    type: object
   floor.CreateModel:
     properties:
       content:
@@ -1375,11 +1384,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.MessageModel'
+            $ref: '#/definitions/favourite.Response'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/models.MessageModel'
+            $ref: '#/definitions/favourite.Response'
       summary: Delete A Favorite
       tags:
       - Favorite
@@ -1412,11 +1421,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.MessageModel'
+            $ref: '#/definitions/favourite.Response'
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/models.MessageModel'
+            $ref: '#/definitions/favourite.Response'
       summary: Add A Favorite
       tags:
       - Favorite
@@ -1434,11 +1443,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.MessageModel'
+            $ref: '#/definitions/favourite.Response'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/models.MessageModel'
+            $ref: '#/definitions/favourite.Response'
       summary: Modify User's Favorites
       tags:
       - Favorite

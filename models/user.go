@@ -148,3 +148,9 @@ func UserDeleteFavorite(userID int, holeIDs []int) error {
 	result := DB.Exec(sql, userID, holeIDs)
 	return result.Error
 }
+
+func UserGetFavoriteData(userID int) ([]int, error) {
+	data := []int{}
+	err := DB.Raw("SELECT hole_id FROM user_favorites WHERE user_id = ?", userID).Scan(&data).Error
+	return data, err
+}
