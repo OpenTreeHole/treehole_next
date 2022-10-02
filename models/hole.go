@@ -221,6 +221,10 @@ func UpdateHoleCache(notInCache []*Hole) error {
 		return err
 	}
 
+	for i := range notInCache {
+		notInCache[i].HoleID = notInCache[i].ID
+	}
+
 	for i := 0; i < len(notInCache); i++ {
 		err = utils.SetCache(
 			fmt.Sprintf("hole_%d", notInCache[i].ID),
@@ -231,11 +235,6 @@ func UpdateHoleCache(notInCache []*Hole) error {
 			return err
 		}
 	}
-	return nil
-}
-
-func (hole *Hole) AfterFind(tx *gorm.DB) (err error) {
-	hole.HoleID = hole.ID
 	return nil
 }
 
