@@ -2,6 +2,7 @@ package floor
 
 import (
 	"fmt"
+	"gorm.io/gorm"
 	. "treehole_next/models"
 	. "treehole_next/utils"
 	"treehole_next/utils/perm"
@@ -54,7 +55,13 @@ func ListFloorsInAHole(c *fiber.Ctx) error {
 func ListFloorsOld(c *fiber.Ctx) error {
 	// validate
 	var query ListOldModel
-	err := ValidateQuery(c, &query)
+
+	// parse and validate query manually
+	err := c.QueryParser(&query)
+	if err != nil {
+		return err
+	}
+	err = Validate(&query)
 	if err != nil {
 		return err
 	}
@@ -63,9 +70,19 @@ func ListFloorsOld(c *fiber.Ctx) error {
 		return SearchFloorsOld(c, query)
 	}
 
+	var querySet *gorm.DB
+	if query.Size == 0 && query.Offset == 0 {
+		querySet = DB
+	} else {
+		if query.Size == 0 {
+			query.Size = 30
+		}
+		querySet = query.BaseQuery()
+	}
+
 	// get floors
-	var floors Floors
-	result := query.BaseQuery().
+	floors := Floors{}
+	result := querySet.
 		Where("hole_id = ?", query.HoleID).
 		Preload("Mention").
 		Find(&floors)
