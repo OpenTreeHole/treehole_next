@@ -17,7 +17,7 @@ func (q *ListModel) BaseQuery() *gorm.DB {
 
 type ListOldModel struct {
 	HoleID int    `query:"hole_id"     json:"hole_id"`
-	Size   int    `query:"length"      json:"length"        default:"30" validate:"min=0,max=50" `
+	Size   int    `query:"length"      json:"length"     default:"30"   validate:"min=0,max=50" `
 	Offset int    `query:"start_floor" json:"start_floor"`
 	Search string `query:"s"           json:"s"`
 }
