@@ -1457,13 +1457,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.MessageModel"
+                            "$ref": "#/definitions/favourite.Response"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/models.MessageModel"
+                            "$ref": "#/definitions/favourite.Response"
                         }
                     }
                 }
@@ -1494,13 +1494,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.MessageModel"
+                            "$ref": "#/definitions/favourite.Response"
                         }
                     },
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/models.MessageModel"
+                            "$ref": "#/definitions/favourite.Response"
                         }
                     }
                 }
@@ -1528,13 +1528,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.MessageModel"
+                            "$ref": "#/definitions/favourite.Response"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/models.MessageModel"
+                            "$ref": "#/definitions/favourite.Response"
                         }
                     }
                 }
@@ -1604,6 +1604,20 @@ const docTemplate = `{
                     "items": {
                         "type": "integer"
                     }
+                }
+            }
+        },
+        "favourite.Response": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "message": {
+                    "type": "string"
                 }
             }
         },
