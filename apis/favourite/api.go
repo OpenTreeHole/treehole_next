@@ -21,7 +21,7 @@ func ListFavorites(c *fiber.Ctx) error {
 	}
 
 	// get favorites
-	var holes Holes
+	holes := Holes{}
 	sql := `SELECT * FROM hole 
 	JOIN user_favorites 
 	ON user_favorites.hole_id = hole.id 
