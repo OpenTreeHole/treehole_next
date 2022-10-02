@@ -14,6 +14,7 @@ type Report struct {
 	BaseModel
 	ReportID int    `json:"report_id" gorm:"-:all"`
 	FloorID  int    `json:"floor_id"`
+	HoleID   int    `json:"hole_id" gorm:"-:all"`
 	Floor    Floor  `json:"floor"`
 	UserID   int    `json:"-"` // the reporter's id, should keep a secret
 	Reason   string `json:"reason" gorm:"size:128"`
@@ -29,6 +30,7 @@ func (report *Report) Preprocess(c *fiber.Ctx) error {
 	for i := range report.Floor.Mention {
 		report.Floor.Mention[i].SetDefaults()
 	}
+	report.HoleID = report.Floor.HoleID
 	return nil
 }
 

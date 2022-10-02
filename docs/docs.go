@@ -2033,6 +2033,9 @@ const docTemplate = `{
                 "floor_id": {
                     "type": "integer"
                 },
+                "hole_id": {
+                    "type": "integer"
+                },
                 "id": {
                     "type": "integer"
                 },
