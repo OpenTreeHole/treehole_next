@@ -204,5 +204,5 @@ func TestDeleteFloor(t *testing.T) {
 	// permission
 	floor = Floor{}
 	DB.Where("hole_id = ?", hole.ID).Offset(1).First(&floor)
-	testAPI(t, "delete", "/api/floors/"+strconv.Itoa(floor.ID), 500, data)
+	testAPI(t, "delete", "/api/floors/"+strconv.Itoa(floor.ID), 200, data)
 }
