@@ -4,6 +4,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	. "treehole_next/config"
 	. "treehole_next/models"
 
 	"github.com/stretchr/testify/assert"
@@ -50,7 +51,7 @@ func TestGetHoleInDivision(t *testing.T) {
 	for _, hole := range holes {
 		respIDs = append(respIDs, hole.ID)
 	}
-	assert.Equal(t, ids, respIDs)
+	assert.Equal(t, ids[:Config.HoleFloorSize], respIDs)
 
 	testAPIModel(t, "get", "/api/divisions/"+strconv.Itoa(largeInt)+"/holes", 200, &holes)        // return empty holes
 	testAPI(t, "get", "/api/divisions/"+strings.Repeat(strconv.Itoa(largeInt), 15)+"/holes", 500) // huge divisionID
