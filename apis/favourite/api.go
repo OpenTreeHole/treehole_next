@@ -57,7 +57,7 @@ func AddFavorite(c *fiber.Ctx) error {
 	}
 
 	// add favorite
-	err = UserCreateFavourite(c, false, userID, []int{body.HoleID})
+	err = UserCreateFavourite(DB, c, false, userID, []int{body.HoleID})
 	if err != nil {
 		return err
 	}
@@ -97,7 +97,7 @@ func ModifyFavorite(c *fiber.Ctx) error {
 	}
 
 	// modify favorite
-	err = UserCreateFavourite(c, true, userID, body.HoleIDs)
+	err = UserCreateFavourite(DB, c, true, userID, body.HoleIDs)
 	if err != nil {
 		return err
 	}
