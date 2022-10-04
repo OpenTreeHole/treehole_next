@@ -388,15 +388,6 @@ func (floor *Floor) AfterCreate(tx *gorm.DB) (err error) {
 
 //	Update and Modify
 
-func (floor *Floor) AfterUpdate(tx *gorm.DB) (err error) {
-	err = floor.SendModify(tx)
-	if err != nil {
-		utils.Logger.Error("[notification] SendModify failed: " + err.Error())
-		// return err // only for test
-	}
-	return nil
-}
-
 func (floor *Floor) Backup(c *fiber.Ctx, reason string) error {
 	userID, err := GetUserID(c)
 	if err != nil {
@@ -571,7 +562,7 @@ func (floor *Floor) SendMention(tx *gorm.DB) error {
 }
 
 func (floor *Floor) SendModify(tx *gorm.DB) error {
-	// get recipents
+	// get recipients
 	userIDs := []int{floor.UserID}
 
 	// construct message

@@ -1395,6 +1395,11 @@ paths:
       tags:
       - Favorite
     get:
+      parameters:
+      - default: false
+        in: query
+        name: plain
+        type: boolean
       produces:
       - application/json
       responses:

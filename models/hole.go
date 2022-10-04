@@ -366,10 +366,12 @@ func (hole *Hole) Create(c *fiber.Ctx, content string, specialTag string, db ...
 
 	return tx.Transaction(func(tx *gorm.DB) error {
 		// Create hole
+		hole.Reply = -1
 		result := tx.Omit("Tags").Create(hole) // tags are created in AfterCreate hook
 		if result.Error != nil {
 			return result.Error
 		}
+		hole.Reply = 0
 
 		// Bind and Create floor
 		floor := Floor{
@@ -377,10 +379,16 @@ func (hole *Hole) Create(c *fiber.Ctx, content string, specialTag string, db ...
 			Content:    content,
 			UserID:     hole.UserID,
 			SpecialTag: specialTag,
-			IsMe:       true,
 		}
 
-		return floor.Create(c, tx)
+		// create floor
+		err := floor.Create(c, tx)
+		if err != nil {
+			return err
+		}
+
+		// create Favorite
+		return UserCreateFavourite(tx, c, false, hole.UserID, []int{hole.ID})
 	})
 }
 
