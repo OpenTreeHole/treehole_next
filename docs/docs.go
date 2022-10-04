@@ -1422,6 +1422,14 @@ const docTemplate = `{
                     "Favorite"
                 ],
                 "summary": "List User's Favorites",
+                "parameters": [
+                    {
+                        "type": "boolean",
+                        "default": false,
+                        "name": "plain",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
