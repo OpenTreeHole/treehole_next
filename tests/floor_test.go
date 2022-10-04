@@ -72,7 +72,7 @@ func TestListFloorsOld(t *testing.T) {
 	data := Map{"hole_id": hole.ID}
 	var floors []Floor
 	testAPIModelWithQuery(t, "get", "/api/floors", 200, &floors, data)
-	assert.EqualValues(t, Config.Size, len(floors))
+	assert.EqualValues(t, Config.MaxSize, len(floors))
 	if len(floors) != 0 {
 		assert.EqualValues(t, "1", floors[0].Content)
 	}
@@ -204,5 +204,5 @@ func TestDeleteFloor(t *testing.T) {
 	// permission
 	floor = Floor{}
 	DB.Where("hole_id = ?", hole.ID).Offset(1).First(&floor)
-	testAPI(t, "delete", "/api/floors/"+strconv.Itoa(floor.ID), 500, data)
+	testAPI(t, "delete", "/api/floors/"+strconv.Itoa(floor.ID), 200, data)
 }
