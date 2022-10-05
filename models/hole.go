@@ -109,7 +109,7 @@ func loadFloors(holes []*Hole) error {
 		SELECT *
 		FROM (
 			SELECT *, rank() over
-			(PARTITION BY hole_id ORDER BY id ASC) AS ranking
+			(PARTITION BY hole_id ORDER BY id) AS ranking
 			FROM floor
 		) AS a 
 		WHERE hole_id IN (?) AND ranking <= ?`,
@@ -248,10 +248,16 @@ func MakeQuerySet(c *fiber.Ctx) *gorm.DB {
 	}
 }
 
-func (holes *Holes) MakeQuerySet(offset utils.CustomTime, size int, c *fiber.Ctx) (tx *gorm.DB) {
-	return MakeQuerySet(c).
-		Where("updated_at < ?", offset.Time).
-		Order("updated_at desc").Limit(size)
+func (holes Holes) MakeQuerySet(offset utils.CustomTime, size int, order string, c *fiber.Ctx) (tx *gorm.DB) {
+	if order == "time_created" || order == "created_at" {
+		return MakeQuerySet(c).
+			Where("created_at < ?", offset.Time).
+			Order("created_at desc").Limit(size)
+	} else {
+		return MakeQuerySet(c).
+			Where("updated_at < ?", offset.Time).
+			Order("updated_at desc").Limit(size)
+	}
 }
 
 /************************
@@ -366,10 +372,12 @@ func (hole *Hole) Create(c *fiber.Ctx, content string, specialTag string, db ...
 
 	return tx.Transaction(func(tx *gorm.DB) error {
 		// Create hole
+		hole.Reply = -1
 		result := tx.Omit("Tags").Create(hole) // tags are created in AfterCreate hook
 		if result.Error != nil {
 			return result.Error
 		}
+		hole.Reply = 0
 
 		// Bind and Create floor
 		floor := Floor{
@@ -377,10 +385,16 @@ func (hole *Hole) Create(c *fiber.Ctx, content string, specialTag string, db ...
 			Content:    content,
 			UserID:     hole.UserID,
 			SpecialTag: specialTag,
-			IsMe:       true,
 		}
 
-		return floor.Create(c, tx)
+		// create floor
+		err := floor.Create(c, tx)
+		if err != nil {
+			return err
+		}
+
+		// create Favorite
+		return UserCreateFavourite(tx, c, false, hole.UserID, []int{hole.ID})
 	})
 }
 

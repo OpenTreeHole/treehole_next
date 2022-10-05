@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"gorm.io/gorm"
 	"strconv"
 	"strings"
 	"treehole_next/config"
@@ -111,7 +112,7 @@ func (user User) GetPermission() perm.Permission {
 	return user.Permission
 }
 
-func UserCreateFavourite(c *fiber.Ctx, clear bool, userID int, holeIDs []int) error {
+func UserCreateFavourite(tx *gorm.DB, c *fiber.Ctx, clear bool, userID int, holeIDs []int) error {
 	if clear {
 		DB.Exec("DELETE FROM user_favorites WHERE user_id = ?", userID)
 	}
@@ -133,7 +134,7 @@ func UserCreateFavourite(c *fiber.Ctx, clear bool, userID int, holeIDs []int) er
 	if DBType == DBTypeSqlite {
 		builder.WriteString(" ON CONFLICT DO NOTHING")
 	}
-	result := DB.Exec(builder.String())
+	result := tx.Exec(builder.String())
 	if result.Error != nil {
 		return result.Error
 	}

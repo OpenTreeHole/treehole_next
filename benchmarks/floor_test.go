@@ -33,7 +33,7 @@ func BenchmarkCreateFloor(b *testing.B) {
 		route := "/api/holes/" + strconv.Itoa(rand.Intn(HOLE_MAX)+1) + "/floors/"
 		data := Map{
 			"content":  strconv.Itoa(rand.Int()),
-			"reply_to": rand.Intn(FLOOR_MAX) + 1,
+			"reply_to": 0,
 		}
 		b.StartTimer()
 

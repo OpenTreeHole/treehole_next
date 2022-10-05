@@ -7,6 +7,10 @@ type Response struct {
 	Data    IntArray `json:"data"`
 }
 
+type ListModel struct {
+	Plain bool `default:"false" query:"plain"`
+}
+
 type AddModel struct {
 	HoleID int `json:"hole_id"`
 }

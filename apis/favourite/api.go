@@ -12,6 +12,8 @@ import (
 // @Tags Favorite
 // @Produce application/json
 // @Router /user/favorites [get]
+// @Param object query ListModel false "query"
+// @Success 200 {array} int
 // @Success 200 {array} models.Hole
 func ListFavorites(c *fiber.Ctx) error {
 	// get userID
@@ -20,17 +22,33 @@ func ListFavorites(c *fiber.Ctx) error {
 		return err
 	}
 
-	// get favorites
-	holes := Holes{}
-	sql := `SELECT * FROM hole 
-	JOIN user_favorites 
-	ON user_favorites.hole_id = hole.id 
-	AND user_favorites.user_id = ?`
-	result := DB.Raw(sql, userID).Scan(&holes)
-	if result.Error != nil {
-		return result.Error
+	var query ListModel
+	err = ValidateQuery(c, &query)
+	if err != nil {
+		return err
 	}
-	return Serialize(c, &holes)
+
+	if query.Plain {
+		// get favorite ids
+		data, err := UserGetFavoriteData(userID)
+		if err != nil {
+			return err
+		}
+		return c.JSON(&data)
+	} else {
+		// get favorites
+		holes := Holes{}
+		sql := `SELECT * FROM hole 
+		JOIN user_favorites 
+		ON user_favorites.hole_id = hole.id 
+		AND user_favorites.user_id = ?`
+		result := DB.Raw(sql, userID).Scan(&holes)
+		if result.Error != nil {
+			return result.Error
+		}
+		return Serialize(c, &holes)
+	}
+
 }
 
 // AddFavorite
@@ -57,7 +75,7 @@ func AddFavorite(c *fiber.Ctx) error {
 	}
 
 	// add favorite
-	err = UserCreateFavourite(c, false, userID, []int{body.HoleID})
+	err = UserCreateFavourite(DB, c, false, userID, []int{body.HoleID})
 	if err != nil {
 		return err
 	}
@@ -97,7 +115,7 @@ func ModifyFavorite(c *fiber.Ctx) error {
 	}
 
 	// modify favorite
-	err = UserCreateFavourite(c, true, userID, body.HoleIDs)
+	err = UserCreateFavourite(DB, c, true, userID, body.HoleIDs)
 	if err != nil {
 		return err
 	}

@@ -680,6 +680,11 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
+                        "name": "order",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
                         "name": "start_time",
                         "in": "query"
                     },
@@ -1422,6 +1427,14 @@ const docTemplate = `{
                     "Favorite"
                 ],
                 "summary": "List User's Favorites",
+                "parameters": [
+                    {
+                        "type": "boolean",
+                        "default": false,
+                        "name": "plain",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",

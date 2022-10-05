@@ -250,6 +250,13 @@ func ModifyFloor(c *fiber.Ctx) error {
 		if err != nil {
 			return err
 		}
+
+		// SendModify only when modify content
+		err = floor.SendModify(DB)
+		if err != nil {
+			Logger.Error("[notification] SendModify failed: " + err.Error())
+		}
+		err = nil
 	}
 
 	if body.Fold != "" {
