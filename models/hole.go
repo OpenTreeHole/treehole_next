@@ -109,7 +109,7 @@ func loadFloors(holes []*Hole) error {
 		SELECT *
 		FROM (
 			SELECT *, rank() over
-			(PARTITION BY hole_id ORDER BY id ASC) AS ranking
+			(PARTITION BY hole_id ORDER BY id) AS ranking
 			FROM floor
 		) AS a 
 		WHERE hole_id IN (?) AND ranking <= ?`,
@@ -248,10 +248,16 @@ func MakeQuerySet(c *fiber.Ctx) *gorm.DB {
 	}
 }
 
-func (holes *Holes) MakeQuerySet(offset utils.CustomTime, size int, c *fiber.Ctx) (tx *gorm.DB) {
-	return MakeQuerySet(c).
-		Where("updated_at < ?", offset.Time).
-		Order("updated_at desc").Limit(size)
+func (holes Holes) MakeQuerySet(offset utils.CustomTime, size int, order string, c *fiber.Ctx) (tx *gorm.DB) {
+	if order == "time_created" || order == "created_at" {
+		return MakeQuerySet(c).
+			Where("created_at < ?", offset.Time).
+			Order("created_at desc").Limit(size)
+	} else {
+		return MakeQuerySet(c).
+			Where("updated_at < ?", offset.Time).
+			Order("updated_at desc").Limit(size)
+	}
 }
 
 /************************

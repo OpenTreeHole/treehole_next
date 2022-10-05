@@ -680,6 +680,11 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
+                        "name": "order",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
                         "name": "start_time",
                         "in": "query"
                     },
