@@ -249,15 +249,15 @@ func MakeQuerySet(c *fiber.Ctx) *gorm.DB {
 }
 
 func (holes Holes) MakeQuerySet(offset utils.CustomTime, size int, order string, c *fiber.Ctx) (tx *gorm.DB) {
-	if order == "time_created" || order == "created_at" {
-		return MakeQuerySet(c).
-			Where("created_at < ?", offset.Time).
-			Order("created_at desc").Limit(size)
-	} else {
-		return MakeQuerySet(c).
-			Where("updated_at < ?", offset.Time).
-			Order("updated_at desc").Limit(size)
-	}
+	//if order == "time_created" || order == "created_at" {
+	//	return MakeQuerySet(c).
+	//		Where("created_at < ?", offset.Time).
+	//		Order("created_at desc").Limit(size)
+	//} else {
+	return MakeQuerySet(c).
+		Where("updated_at < ?", offset.Time).
+		Order("updated_at desc").Limit(size)
+	//}
 }
 
 /************************
