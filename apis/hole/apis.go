@@ -114,6 +114,13 @@ func ListHolesOld(c *fiber.Ctx) error {
 		querySet.Find(&holes)
 	}
 
+	// only for danxi v1.3.10 old api
+	if query.Order == "time_created" || query.Order == "created_at" {
+		for i := range holes {
+			holes[i].UpdatedAt = holes[i].CreatedAt
+		}
+	}
+
 	return Serialize(c, &holes)
 }
 
