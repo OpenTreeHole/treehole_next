@@ -458,7 +458,7 @@ Send Notifications
 ******************/
 
 func (floor *Floor) SendFavorite(tx *gorm.DB) error {
-	// get recipents
+	// get recipients
 	var tmpIDs []int
 	result := tx.Raw("SELECT user_id from user_favorites WHERE hole_id = ?", floor.HoleID).Scan(&tmpIDs)
 	if result.Error != nil {
@@ -473,7 +473,7 @@ func (floor *Floor) SendFavorite(tx *gorm.DB) error {
 		}
 	}
 
-	// return if no recipents
+	// return if no recipients
 	if userIDs == nil || len(userIDs) == 0 {
 		return nil
 	}
@@ -496,14 +496,14 @@ func (floor *Floor) SendFavorite(tx *gorm.DB) error {
 }
 
 func (floor *Floor) SendReply(tx *gorm.DB) error {
-	// get recipents
+	// get recipients
 	userID := 0
 	result := tx.Raw("SELECT user_id from hole WHERE id = ?", floor.HoleID).Scan(&userID)
 	if result.Error != nil {
 		return result.Error
 	}
 
-	// return if no recipents or isMe
+	// return if no recipients or isMe
 	if userID == 0 || userID == floor.UserID {
 		return nil
 	}
@@ -528,7 +528,7 @@ func (floor *Floor) SendReply(tx *gorm.DB) error {
 }
 
 func (floor *Floor) SendMention(tx *gorm.DB) error {
-	// get recipents
+	// get recipients
 	var userIDs []int
 	for _, mention := range floor.Mention {
 		// not send to me
@@ -539,7 +539,7 @@ func (floor *Floor) SendMention(tx *gorm.DB) error {
 		userIDs = append(userIDs, mention.UserID)
 	}
 
-	// return if no recipents
+	// return if no recipients
 	if userIDs == nil || len(userIDs) == 0 {
 		return nil
 	}

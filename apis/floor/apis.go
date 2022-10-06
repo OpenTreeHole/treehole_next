@@ -250,13 +250,6 @@ func ModifyFloor(c *fiber.Ctx) error {
 		if err != nil {
 			return err
 		}
-
-		// SendModify only when modify content
-		err = floor.SendModify(DB)
-		if err != nil {
-			Logger.Error("[notification] SendModify failed: " + err.Error())
-		}
-		err = nil
 	}
 
 	if body.Fold != "" {
@@ -289,9 +282,10 @@ func ModifyFloor(c *fiber.Ctx) error {
 	// including Like when Like == 0
 	DB.Model(&floor).Select("*").Omit("Mention").Updates(&floor)
 
-	// notification
-	// place here to check if not me
-	if user.ID != floor.UserID {
+	// SendModify only when operator or admin modify content or fold
+	if (body.Content != "" ||
+		body.Fold != "") &&
+		user.ID != floor.UserID {
 		err = floor.SendModify(DB)
 		if err != nil {
 			Logger.Error("[notification] SendModify failed: " + err.Error())
@@ -395,6 +389,17 @@ func DeleteFloor(c *fiber.Ctx) error {
 		MyLog("Floor", "Delete", floorID, user.ID, RoleOperator, "reason: ", body.Reason)
 	} else {
 		MyLog("Floor", "Delete", floorID, user.ID, RoleOperator, "reason: ", body.Reason)
+
+		// SendModify when admin delete floor
+		err = floor.SendModify(DB)
+		if err != nil {
+			Logger.Error("[notification] SendModify failed: " + err.Error())
+			// return err // only for test
+		}
+	}
+
+	if user.ID != floor.UserID {
+
 	}
 
 	return Serialize(c, &floor)
