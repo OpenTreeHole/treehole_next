@@ -2021,6 +2021,10 @@ const docTemplate = `{
                 }
             }
         },
+        "models.Map": {
+            "type": "object",
+            "additionalProperties": true
+        },
         "models.MessageModel": {
             "type": "object",
             "properties": {

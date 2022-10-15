@@ -13,7 +13,7 @@ import (
 // @Produce application/json
 // @Router /user/favorites [get]
 // @Param object query ListModel false "query"
-// @Success 200 {array} int
+// @Success 200 {object} models.Map
 // @Success 200 {array} models.Hole
 func ListFavorites(c *fiber.Ctx) error {
 	// get userID
@@ -34,7 +34,7 @@ func ListFavorites(c *fiber.Ctx) error {
 		if err != nil {
 			return err
 		}
-		return c.JSON(&data)
+		return c.JSON(Map{"data": data})
 	} else {
 		// get favorites
 		holes := Holes{}
