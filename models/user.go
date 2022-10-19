@@ -116,6 +116,11 @@ func UserCreateFavourite(tx *gorm.DB, c *fiber.Ctx, clear bool, userID int, hole
 	if clear {
 		DB.Exec("DELETE FROM user_favorites WHERE user_id = ?", userID)
 	}
+
+	if len(holeIDs) == 0 {
+		return nil
+	}
+
 	var builder strings.Builder
 
 	if DBType == DBTypeSqlite {
