@@ -51,8 +51,10 @@ type ModifyModel struct {
 	SpecialTag string `json:"special_tag" validate:"omitempty,max=16"`
 	// All user, deprecated, "add" is like, "cancel" is reset
 	Like string `json:"like" validate:"omitempty,oneof=add cancel"`
-	// Admin only
-	Fold string `json:"fold" validate:"omitempty,max=16"`
+	// Admin and operator only
+	Fold string `json:"fold_v2" validate:"omitempty,max=16"`
+	// Admin and operator only
+	FoldFrontend []string `json:"fold" validate:"omitempty"`
 }
 
 type DeleteModel struct {

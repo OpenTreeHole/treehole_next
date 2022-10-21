@@ -537,7 +537,7 @@ const docTemplate = `{
                 "tags": [
                     "Floor"
                 ],
-                "summary": "Get A Floor's History",
+                "summary": "Get A Floor's History, admin only",
                 "parameters": [
                     {
                         "type": "integer",
@@ -613,7 +613,7 @@ const docTemplate = `{
                 "tags": [
                     "Floor"
                 ],
-                "summary": "Restore A Floor",
+                "summary": "Restore A Floor, admin only",
                 "parameters": [
                     {
                         "type": "integer",
@@ -1708,7 +1708,14 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "fold": {
-                    "description": "Admin only",
+                    "description": "Admin and operator only",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "fold_v2": {
+                    "description": "Admin and operator only",
                     "type": "string",
                     "maxLength": 16
                 },

@@ -252,6 +252,10 @@ func ModifyFloor(c *fiber.Ctx) error {
 		}
 	}
 
+	if body.Fold == "" && body.FoldFrontend != nil {
+		body.Fold = body.FoldFrontend[0]
+	}
+
 	if body.Fold != "" {
 		if !perm.CheckPermission(user, perm.Admin) {
 			return Forbidden()
@@ -406,7 +410,7 @@ func DeleteFloor(c *fiber.Ctx) error {
 }
 
 // GetFloorHistory
-// @Summary Get A Floor's History
+// @Summary Get A Floor's History, admin only
 // @Tags Floor
 // @Produce application/json
 // @Router /floors/{id}/history [get]
@@ -418,6 +422,19 @@ func GetFloorHistory(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
+
+	// get user
+	var user User
+	err = user.GetUser(c)
+	if err != nil {
+		return err
+	}
+
+	// permission
+	if !perm.CheckPermission(user, perm.Admin) {
+		return Forbidden()
+	}
+
 	var histories []FloorHistory
 	result := DB.Where("floor_id = ?", floorID).Find(&histories)
 	if result.Error != nil {
@@ -427,7 +444,7 @@ func GetFloorHistory(c *fiber.Ctx) error {
 }
 
 // RestoreFloor
-// @Summary Restore A Floor
+// @Summary Restore A Floor, admin only
 // @Description Restore A Floor From A History Version
 // @Tags Floor
 // @Router /floors/{id}/restore/{floor_history_id} [post]
