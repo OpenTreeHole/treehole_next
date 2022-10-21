@@ -193,6 +193,7 @@ func CreateFloorOld(c *fiber.Ctx) error {
 
 // ModifyFloor
 // @Summary Modify A Floor
+// @Description when both "fold_v2" and "fold" are empty, reset fold; else, "fold_v2" has the priority
 // @Tags Floor
 // @Produce application/json
 // @Router /floors/{id} [put]
@@ -252,8 +253,18 @@ func ModifyFloor(c *fiber.Ctx) error {
 		}
 	}
 
-	if body.Fold == "" && body.FoldFrontend != nil {
-		body.Fold = body.FoldFrontend[0]
+	if body.Fold == "" {
+		if body.FoldFrontend == nil || len(body.FoldFrontend) == 0 {
+			// reset floor.Fold
+			if !perm.CheckPermission(user, perm.Admin) {
+				return Forbidden()
+			}
+			floor.Fold = ""
+			MyLog("Floor", "Modify", floorID, user.ID, RoleAdmin, "fold reset")
+		} else {
+			// set floor.Fold
+			body.Fold = body.FoldFrontend[0]
+		}
 	}
 
 	if body.Fold != "" {
