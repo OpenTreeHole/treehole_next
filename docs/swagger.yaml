@@ -105,7 +105,12 @@ definitions:
         description: Owner or admin, the original content should be moved to  floor_history
         type: string
       fold:
-        description: Admin only
+        description: Admin and operator only
+        items:
+          type: string
+        type: array
+      fold_v2:
+        description: Admin and operator only
         maxLength: 16
         type: string
       like:

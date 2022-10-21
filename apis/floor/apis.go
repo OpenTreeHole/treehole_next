@@ -252,6 +252,10 @@ func ModifyFloor(c *fiber.Ctx) error {
 		}
 	}
 
+	if body.Fold == "" && body.FoldFrontend != nil {
+		body.Fold = body.FoldFrontend[0]
+	}
+
 	if body.Fold != "" {
 		if !perm.CheckPermission(user, perm.Admin) {
 			return Forbidden()
