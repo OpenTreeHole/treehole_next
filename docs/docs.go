@@ -537,7 +537,7 @@ const docTemplate = `{
                 "tags": [
                     "Floor"
                 ],
-                "summary": "Get A Floor's History",
+                "summary": "Get A Floor's History, admin only",
                 "parameters": [
                     {
                         "type": "integer",
@@ -613,7 +613,7 @@ const docTemplate = `{
                 "tags": [
                     "Floor"
                 ],
-                "summary": "Restore A Floor",
+                "summary": "Restore A Floor, admin only",
                 "parameters": [
                     {
                         "type": "integer",

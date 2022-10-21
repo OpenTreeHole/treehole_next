@@ -793,7 +793,7 @@ paths:
           description: Not Found
           schema:
             $ref: '#/definitions/models.MessageModel'
-      summary: Get A Floor's History
+      summary: Get A Floor's History, admin only
       tags:
       - Floor
   /floors/{id}/like/{like}:
@@ -852,7 +852,7 @@ paths:
           description: Not Found
           schema:
             $ref: '#/definitions/models.MessageModel'
-      summary: Restore A Floor
+      summary: Restore A Floor, admin only
       tags:
       - Floor
   /floors/search:
