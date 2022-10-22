@@ -165,14 +165,20 @@ func TestModifyFloor(t *testing.T) {
 	DB.Find(&getFloor, floor.ID)
 	assert.EqualValues(t, data["fold_v2"], getFloor.Fold)
 
-	// test4: fold == nil, fold_v2 == "": expect reset fold
-	data = Map{}
+	// test4: fold == [], fold_v2 == "": expect reset fold
+	data = Map{"fold": []string{}}
 	testAPI(t, "put", "/api/floors/"+strconv.Itoa(floor.ID), 200, data)
 	DB.Find(&getFloor, floor.ID)
 	assert.EqualValues(t, "", getFloor.Fold)
 
 	// test5: fold == ["test"], fold_v2 == "test_test": expect "test_test", fold_v2 has the priority
 	data = Map{"fold": []string{"test"}, "fold_v2": "test_test"}
+	testAPI(t, "put", "/api/floors/"+strconv.Itoa(floor.ID), 200, data)
+	DB.Find(&getFloor, floor.ID)
+	assert.EqualValues(t, "test_test", getFloor.Fold)
+
+	// test6: fold == nil, fold_v2 == "": do nothing
+	data = Map{}
 	testAPI(t, "put", "/api/floors/"+strconv.Itoa(floor.ID), 200, data)
 	DB.Find(&getFloor, floor.ID)
 	assert.EqualValues(t, "test_test", getFloor.Fold)

@@ -253,12 +253,12 @@ func ModifyFloor(c *fiber.Ctx) error {
 		}
 	}
 
-	if body.Fold == "" {
-		if body.FoldFrontend == nil || len(body.FoldFrontend) == 0 {
+	if body.Fold == "" && body.FoldFrontend != nil {
+		if !perm.CheckPermission(user, perm.Admin) {
+			return Forbidden()
+		}
+		if len(body.FoldFrontend) == 0 {
 			// reset floor.Fold
-			if !perm.CheckPermission(user, perm.Admin) {
-				return Forbidden()
-			}
 			floor.Fold = ""
 			MyLog("Floor", "Modify", floorID, user.ID, RoleAdmin, "fold reset")
 		} else {
