@@ -51,9 +51,9 @@ type ModifyModel struct {
 	SpecialTag string `json:"special_tag" validate:"omitempty,max=16"`
 	// All user, deprecated, "add" is like, "cancel" is reset
 	Like string `json:"like" validate:"omitempty,oneof=add cancel"`
-	// Admin and operator only
-	Fold string `json:"fold_v2" validate:"omitempty,max=16"`
-	// Admin and operator only
+	// Admin and operator only, only string, for version 2
+	Fold string `json:"fold_v2" validate:"omitempty,max=64"`
+	// Admin and operator only, string array, for version 1: danxi app
 	FoldFrontend []string `json:"fold" validate:"omitempty"`
 }
 

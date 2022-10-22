@@ -138,25 +138,56 @@ func TestModifyFloor(t *testing.T) {
 	DB.Where("hole_id = ?", hole.ID).First(&floor)
 	content := "12341234"
 	data := Map{"content": content}
-	var getfloor Floor
+	var getFloor Floor
 
 	// modify content
 	testAPI(t, "put", "/api/floors/"+strconv.Itoa(floor.ID), 200, data)
 
-	DB.Find(&getfloor, floor.ID)
-	assert.EqualValues(t, content, getfloor.Content)
+	DB.Find(&getFloor, floor.ID)
+	assert.EqualValues(t, content, getFloor.Content)
+
+	// modify fold
+	// test 1: fold == ["test"], fold_v2 == ""
+	data = Map{"fold": []string{"test"}}
+	testAPI(t, "put", "/api/floors/"+strconv.Itoa(floor.ID), 200, data)
+	DB.Find(&getFloor, floor.ID)
+	assert.EqualValues(t, data["fold"].([]string)[0], getFloor.Fold)
+
+	// test2: fold == [], fold_v2 == "": expect reset fold
+	data = Map{"fold": []string{}}
+	testAPI(t, "put", "/api/floors/"+strconv.Itoa(floor.ID), 200, data)
+	DB.Find(&getFloor, floor.ID)
+	assert.EqualValues(t, "", getFloor.Fold)
+
+	// test3: fold == [], fold_v2 == "test_test"
+	data = Map{"fold_v2": "test_test"}
+	testAPI(t, "put", "/api/floors/"+strconv.Itoa(floor.ID), 200, data)
+	DB.Find(&getFloor, floor.ID)
+	assert.EqualValues(t, data["fold_v2"], getFloor.Fold)
+
+	// test4: fold == nil, fold_v2 == "": expect reset fold
+	data = Map{}
+	testAPI(t, "put", "/api/floors/"+strconv.Itoa(floor.ID), 200, data)
+	DB.Find(&getFloor, floor.ID)
+	assert.EqualValues(t, "", getFloor.Fold)
+
+	// test5: fold == ["test"], fold_v2 == "test_test": expect "test_test", fold_v2 has the priority
+	data = Map{"fold": []string{"test"}, "fold_v2": "test_test"}
+	testAPI(t, "put", "/api/floors/"+strconv.Itoa(floor.ID), 200, data)
+	DB.Find(&getFloor, floor.ID)
+	assert.EqualValues(t, "test_test", getFloor.Fold)
 
 	// modify like add old
 	data = Map{"like": "add"}
 	testAPI(t, "put", "/api/floors/"+strconv.Itoa(floor.ID), 200, data)
-	DB.Find(&getfloor, floor.ID)
-	assert.EqualValues(t, 1, getfloor.Like)
+	DB.Find(&getFloor, floor.ID)
+	assert.EqualValues(t, 1, getFloor.Like)
 
 	// modify like reset old
 	data = Map{"like": "cancel"}
 	testAPI(t, "put", "/api/floors/"+strconv.Itoa(floor.ID), 200, data)
-	DB.Find(&getfloor, floor.ID)
-	assert.EqualValues(t, 0, getfloor.Like)
+	DB.Find(&getFloor, floor.ID)
+	assert.EqualValues(t, 0, getFloor.Like)
 }
 
 func TestModifyFloorLike(t *testing.T) {

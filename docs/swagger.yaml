@@ -105,13 +105,14 @@ definitions:
         description: Owner or admin, the original content should be moved to  floor_history
         type: string
       fold:
-        description: Admin and operator only
+        description: 'Admin and operator only, string array, for version 1: danxi
+          app'
         items:
           type: string
         type: array
       fold_v2:
-        description: Admin and operator only
-        maxLength: 16
+        description: Admin and operator only, only string, for version 2
+        maxLength: 64
         type: string
       like:
         description: All user, deprecated, "add" is like, "cancel" is reset
@@ -746,6 +747,8 @@ paths:
       tags:
       - Floor
     put:
+      description: when both "fold_v2" and "fold" are empty, reset fold; else, "fold_v2"
+        has the priority
       parameters:
       - description: id
         in: path
