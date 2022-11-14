@@ -138,6 +138,25 @@ func CreateFloor(c *fiber.Ctx) error {
 		return err
 	}
 
+	// get divisionID
+	var divisionID int
+	result := DB.Table("hole").Select("division_id").Where("id = ?", holeID).Take(&divisionID)
+	if result.Error != nil {
+		return result.Error
+	}
+
+	// get user
+	var user User
+	err = user.GetUser(c)
+	if err != nil {
+		return err
+	}
+
+	// permission
+	if user.BanDivision[divisionID] {
+		return Forbidden("您没有权限在此板块发言")
+	}
+
 	// create floor
 	floor := Floor{
 		HoleID:     holeID,
@@ -166,6 +185,25 @@ func CreateFloorOld(c *fiber.Ctx) error {
 	err := ValidateBody(c, &body)
 	if err != nil {
 		return err
+	}
+
+	// get divisionID
+	var divisionID int
+	result := DB.Table("hole").Select("division_id").Where("id = ?", body.HoleID).Take(&divisionID)
+	if result.Error != nil {
+		return result.Error
+	}
+
+	// get user
+	var user User
+	err = user.GetUser(c)
+	if err != nil {
+		return err
+	}
+
+	// permission
+	if user.BanDivision[divisionID] {
+		return Forbidden("您没有权限在此板块发言")
 	}
 
 	// create floor
