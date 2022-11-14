@@ -166,6 +166,18 @@ func CreateHole(c *fiber.Ctx) error {
 		return err
 	}
 
+	// get user
+	var user User
+	err = user.GetUser(c)
+	if err != nil {
+		return err
+	}
+
+	// permission
+	if user.BanDivision[divisionID] {
+		return Forbidden("您没有权限在此板块发言")
+	}
+
 	hole := Hole{
 		DivisionID: divisionID,
 	}
@@ -194,6 +206,18 @@ func CreateHoleOld(c *fiber.Ctx) error {
 	err := ValidateBody(c, &body)
 	if err != nil {
 		return err
+	}
+
+	// get user
+	var user User
+	err = user.GetUser(c)
+	if err != nil {
+		return err
+	}
+
+	// permission
+	if user.BanDivision[body.DivisionID] {
+		return Forbidden("您没有权限在此板块发言")
 	}
 
 	// create hole
