@@ -467,7 +467,7 @@ func (floor *Floor) SendFavorite(tx *gorm.DB) error {
 
 	// filter my id
 	var userIDs []int
-	for id := range tmpIDs {
+	for _, id := range tmpIDs {
 		if id != floor.UserID {
 			userIDs = append(userIDs, id)
 		}
