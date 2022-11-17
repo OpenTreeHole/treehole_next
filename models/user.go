@@ -17,17 +17,17 @@ import (
 
 type User struct {
 	BaseModel
-	ID          int                    `json:"id" gorm:"primarykey"`
-	Roles       []string               `json:"roles" gorm:"-:all"`
-	BanDivision map[int]bool           `json:"-" gorm:"-:all"`
-	Nickname    string                 `json:"nickname" gorm:"-:all"`
-	Config      map[string]interface{} `json:"config" gorm:"-:all"`
-	Permission  perm.Permission        `json:"permission" gorm:"-:all"`
+	ID          int             `json:"id" gorm:"primaryKey"`
+	Roles       []string        `json:"roles" gorm:"-:all"`
+	BanDivision map[int]bool    `json:"-" gorm:"-:all"`
+	Nickname    string          `json:"nickname" gorm:"-:all"`
+	Config      map[string]any  `json:"config" gorm:"-:all"`
+	Permission  perm.Permission `json:"permission" gorm:"-:all"`
 }
 
 type UserFavorites struct {
-	UserID int `json:"user_id" gorm:"primarykey"`
-	HoleID int `json:"hole_id" gorm:"primarykey"`
+	UserID int `json:"user_id" gorm:"primaryKey"`
+	HoleID int `json:"hole_id" gorm:"primaryKey"`
 }
 
 // parseJWT extracts and parse token
@@ -55,17 +55,23 @@ func (user *User) parseJWT(token string) error {
 	return nil
 }
 
-func (user *User) GetUser(c *fiber.Ctx) error {
+func GetUser(c *fiber.Ctx) (*User, error) {
+	user := &User{
+		Roles:       make([]string, 0, 10),
+		BanDivision: make(map[int]bool),
+		Config:      make(map[string]any),
+		Permission:  0,
+	}
 	if config.Config.Mode == "dev" || config.Config.Mode == "test" {
 		user.ID = 1
 		user.Permission = perm.Admin + perm.Operator
-		return nil
+		return user, nil
 	}
 
 	// get id
 	id, err := GetUserID(c)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	user.ID = id
 
@@ -76,7 +82,7 @@ func (user *User) GetUser(c *fiber.Ctx) error {
 	}
 	err = user.parseJWT(tokenString)
 	if err != nil {
-		return utils.Unauthorized(err.Error())
+		return nil, utils.Unauthorized(err.Error())
 	}
 
 	for _, v := range user.Roles {
@@ -87,12 +93,12 @@ func (user *User) GetUser(c *fiber.Ctx) error {
 		} else if strings.HasPrefix(v, "ban_treehole") {
 			banDivisionID, err := strconv.Atoi(v[13:]) // "ban_treehole_{divisionID}"
 			if err != nil {
-				return err
+				return nil, err
 			}
 			user.BanDivision[banDivisionID] = true
 		}
 	}
-	return nil
+	return user, nil
 }
 
 func GetUserID(c *fiber.Ctx) (int, error) {
@@ -108,7 +114,7 @@ func GetUserID(c *fiber.Ctx) (int, error) {
 	return id, nil
 }
 
-func (user User) GetPermission() perm.Permission {
+func (user *User) GetPermission() perm.Permission {
 	return user.Permission
 }
 
@@ -156,7 +162,7 @@ func UserDeleteFavorite(userID int, holeIDs []int) error {
 }
 
 func UserGetFavoriteData(userID int) ([]int, error) {
-	data := []int{}
+	data := make([]int, 0, 10)
 	err := DB.Raw("SELECT hole_id FROM user_favorites WHERE user_id = ?", userID).Scan(&data).Error
 	return data, err
 }

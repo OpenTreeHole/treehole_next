@@ -238,25 +238,31 @@ func UpdateHoleCache(notInCache []*Hole) error {
 	return nil
 }
 
-func MakeQuerySet(c *fiber.Ctx) *gorm.DB {
-	var user User
-	_ = user.GetUser(c)
+func MakeQuerySet(c *fiber.Ctx) (*gorm.DB, error) {
+	user, err := GetUser(c)
+	if err != nil {
+		return nil, err
+	}
 	if perm.CheckPermission(user, perm.Admin) {
-		return DB
+		return DB, err
 	} else {
-		return DB.Where("hidden = ?", false)
+		return DB.Where("hidden = ?", false), err
 	}
 }
 
-func (holes Holes) MakeQuerySet(offset utils.CustomTime, size int, order string, c *fiber.Ctx) (tx *gorm.DB) {
+func (holes Holes) MakeQuerySet(offset utils.CustomTime, size int, order string, c *fiber.Ctx) (*gorm.DB, error) {
+	querySet, err := MakeQuerySet(c)
+	if err != nil {
+		return nil, err
+	}
 	if order == "time_created" || order == "created_at" {
-		return MakeQuerySet(c).
+		return querySet.
 			Where("created_at < ?", offset.Time).
-			Order("created_at desc").Limit(size)
+			Order("created_at desc").Limit(size), nil
 	} else {
-		return MakeQuerySet(c).
+		return querySet.
 			Where("updated_at < ?", offset.Time).
-			Order("updated_at desc").Limit(size)
+			Order("updated_at desc").Limit(size), nil
 	}
 }
 
