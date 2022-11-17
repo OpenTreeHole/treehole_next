@@ -7,10 +7,12 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"time"
 	"treehole_next/config"
 	. "treehole_next/models"
 	. "treehole_next/utils"
+	"treehole_next/utils/perm"
 
 	"github.com/gofiber/fiber/v2"
 	"go.uber.org/zap"
@@ -47,6 +49,18 @@ func BanUser(c *fiber.Ctx) error {
 		return err
 	}
 
+	// get user
+	var user User
+	err = user.GetUser(c)
+	if err != nil {
+		return err
+	}
+
+	// permission
+	if !perm.CheckPermission(user, perm.Admin) {
+		return Forbidden()
+	}
+
 	var floor Floor
 	result := DB.First(&floor, floorID)
 	if result.Error != nil {
@@ -65,7 +79,7 @@ func BanUser(c *fiber.Ctx) error {
 		days = 1
 	}
 
-	banUser(body.DivisionID, days, floor.UserID)
+	banUser(body.DivisionID, days, user.ID, floor.UserID)
 
 	userData := getUser(floor.UserID)
 
@@ -74,7 +88,7 @@ func BanUser(c *fiber.Ctx) error {
 
 var client = http.Client{Timeout: time.Second * 10}
 
-func banUser(divisionID int, days int, userID int) {
+func banUser(divisionID int, days int, fromUserID int, toUserID int) {
 	data := map[string]any{
 		"name":   fmt.Sprintf("ban_treehole_%d", divisionID),
 		"days":   days,
@@ -83,21 +97,22 @@ func banUser(divisionID int, days int, userID int) {
 	dataBytes, _ := json.Marshal(data)
 	req, _ := http.NewRequest(
 		"POST",
-		fmt.Sprintf("%s/users/%d/permissions", config.Config.AuthUrl, userID),
+		fmt.Sprintf("%s/users/%d/permissions", config.Config.AuthUrl, toUserID),
 		bytes.NewBuffer(dataBytes),
 	)
 	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add("X-Consumer-Username", strconv.Itoa(fromUserID))
 	res, err := client.Do(req)
 	if err != nil {
 		Logger.Error(
 			"auth add permission error, request error",
-			zap.Int("user id", userID),
+			zap.Int("user id", toUserID),
 		)
 	}
 	if res.StatusCode != 200 {
 		Logger.Error(
 			"auth add permission error, response error",
-			zap.Int("user id", userID),
+			zap.Int("user id", toUserID),
 		)
 	}
 }
