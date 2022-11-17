@@ -84,7 +84,7 @@ func BanUser(c *fiber.Ctx) error {
 		return err
 	}
 
-	userData, err := getUser(user.ID, floor.UserID)
+	userData, err := getUser(floor.UserID)
 	if err != nil {
 		return err
 	}
@@ -147,7 +147,7 @@ func banUser(c *fiber.Ctx, divisionID, days, fromUserID, toUserID int) error {
 	return nil
 }
 
-func getUser(fromUserID, toUserID int) (io.Reader, error) {
+func getUser(toUserID int) (io.Reader, error) {
 	// make request
 	req, err := http.NewRequest(
 		"GET",
@@ -160,7 +160,7 @@ func getUser(fromUserID, toUserID int) (io.Reader, error) {
 	}
 
 	// add headers
-	req.Header.Add("X-Consumer-Username", strconv.Itoa(fromUserID))
+	req.Header.Add("X-Consumer-Username", strconv.Itoa(toUserID))
 	rsp, err := client.Do(req)
 
 	if err == nil && rsp.StatusCode == 200 {
