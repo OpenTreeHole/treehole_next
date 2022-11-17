@@ -146,8 +146,7 @@ func CreateFloor(c *fiber.Ctx) error {
 	}
 
 	// get user
-	var user User
-	err = user.GetUser(c)
+	user, err := GetUser(c)
 	if err != nil {
 		return err
 	}
@@ -195,8 +194,7 @@ func CreateFloorOld(c *fiber.Ctx) error {
 	}
 
 	// get user
-	var user User
-	err = user.GetUser(c)
+	user, err := GetUser(c)
 	if err != nil {
 		return err
 	}
@@ -260,8 +258,7 @@ func ModifyFloor(c *fiber.Ctx) error {
 	}
 
 	// get user
-	var user User
-	err = user.GetUser(c)
+	user, err := GetUser(c)
 	if err != nil {
 		return err
 	}
@@ -411,8 +408,7 @@ func DeleteFloor(c *fiber.Ctx) error {
 	}
 
 	// get user
-	var user User
-	err = user.GetUser(c)
+	user, err := GetUser(c)
 	if err != nil {
 		return err
 	}
@@ -473,8 +469,7 @@ func GetFloorHistory(c *fiber.Ctx) error {
 	}
 
 	// get user
-	var user User
-	err = user.GetUser(c)
+	user, err := GetUser(c)
 	if err != nil {
 		return err
 	}
@@ -521,8 +516,7 @@ func RestoreFloor(c *fiber.Ctx) error {
 	}
 
 	// get user
-	var user User
-	err = user.GetUser(c)
+	user, err := GetUser(c)
 	if err != nil {
 		return err
 	}
