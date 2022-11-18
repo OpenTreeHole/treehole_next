@@ -34,7 +34,10 @@ func ListHolesByDivision(c *fiber.Ctx) error {
 
 	// get holes
 	var holes Holes
-	querySet := holes.MakeQuerySet(query.Offset, query.Size, "", c)
+	querySet, err := holes.MakeQuerySet(query.Offset, query.Size, "", c)
+	if err != nil {
+		return err
+	}
 	if id != 0 {
 		querySet = querySet.Where("division_id = ?", id)
 	}
@@ -69,7 +72,10 @@ func ListHolesByTag(c *fiber.Ctx) error {
 
 	// get holes
 	var holes Holes
-	querySet := holes.MakeQuerySet(query.Offset, query.Size, "", c)
+	querySet, err := holes.MakeQuerySet(query.Offset, query.Size, "", c)
+	if err != nil {
+		return err
+	}
 	err = querySet.Model(&tag).
 		Association("Holes").Find(&holes)
 	if err != nil {
@@ -95,7 +101,10 @@ func ListHolesOld(c *fiber.Ctx) error {
 	}
 
 	var holes Holes
-	querySet := holes.MakeQuerySet(query.Offset, query.Size, query.Order, c)
+	querySet, err := holes.MakeQuerySet(query.Offset, query.Size, query.Order, c)
+	if err != nil {
+		return err
+	}
 	if query.Tag != "" {
 		var tag Tag
 		result := DB.Where("name = ?", query.Tag).First(&tag)
@@ -114,6 +123,13 @@ func ListHolesOld(c *fiber.Ctx) error {
 		querySet.Find(&holes)
 	}
 
+	// only for danxi v1.3.10 old api
+	if query.Order == "time_created" || query.Order == "created_at" {
+		for i := range holes {
+			holes[i].UpdatedAt = holes[i].CreatedAt
+		}
+	}
+
 	return Serialize(c, &holes)
 }
 
@@ -129,8 +145,12 @@ func GetHole(c *fiber.Ctx) error {
 	id, _ := c.ParamsInt("id")
 
 	// get hole
-	var hole Hole
-	result := MakeQuerySet(c).First(&hole, id)
+	hole := Hole{}
+	querySet, err := MakeQuerySet(c)
+	if err != nil {
+		return err
+	}
+	result := querySet.First(&hole, id)
 	if result.Error != nil {
 		return result.Error
 	}
@@ -157,6 +177,17 @@ func CreateHole(c *fiber.Ctx) error {
 	divisionID, err := c.ParamsInt("id")
 	if err != nil {
 		return err
+	}
+
+	// get user
+	user, err := GetUser(c)
+	if err != nil {
+		return err
+	}
+
+	// permission
+	if user.BanDivision[divisionID] {
+		return Forbidden("您没有权限在此板块发言")
 	}
 
 	hole := Hole{
@@ -187,6 +218,17 @@ func CreateHoleOld(c *fiber.Ctx) error {
 	err := ValidateBody(c, &body)
 	if err != nil {
 		return err
+	}
+
+	// get user
+	user, err := GetUser(c)
+	if err != nil {
+		return err
+	}
+
+	// permission
+	if user.BanDivision[body.DivisionID] {
+		return Forbidden("您没有权限在此板块发言")
 	}
 
 	// create hole
@@ -234,8 +276,7 @@ func ModifyHole(c *fiber.Ctx) error {
 	}
 
 	// get user
-	var user User
-	err = user.GetUser(c)
+	user, err := GetUser(c)
 	if err != nil {
 		return err
 	}
@@ -322,8 +363,7 @@ func DeleteHole(c *fiber.Ctx) error {
 	}
 
 	// get user
-	var user User
-	err = user.GetUser(c)
+	user, err := GetUser(c)
 	if err != nil {
 		return err
 	}

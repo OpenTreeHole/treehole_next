@@ -16,11 +16,12 @@ func init() {
 		divisions[i-1].Description = strconv.Itoa(i)
 	}
 	holes := make([]Hole, 10)
-	for i := 0; i < 10; i++ {
+	for i := 0; i < 9; i++ {
 		holes[i] = Hole{
 			DivisionID: 1,
 		}
 	}
+	holes[9] = Hole{DivisionID: 4} // for TestDeleteDivisionDefaultValue
 	DB.Create(&divisions)
 	DB.Create(&holes)
 }
@@ -104,8 +105,9 @@ func TestDeleteDivisionDefaultValue(t *testing.T) {
 	id := 4
 	toID := 1
 
-	hole := Hole{DivisionID: id}
-	DB.Create(&hole)
+	// if create hole here, say database lock, pending enquiry
+	hole := Hole{}
+	DB.Where("division_id = ?", id).First(&hole)
 	testAPI(t, "delete", "/api/divisions/"+strconv.Itoa(id), 204, Map{})
 
 	// hole moved

@@ -447,6 +447,7 @@ const docTemplate = `{
                 }
             },
             "put": {
+                "description": "when both \"fold_v2\" and \"fold\" are empty, reset fold; else, \"fold_v2\" has the priority",
                 "produces": [
                     "application/json"
                 ],
@@ -537,7 +538,7 @@ const docTemplate = `{
                 "tags": [
                     "Floor"
                 ],
-                "summary": "Get A Floor's History",
+                "summary": "Get A Floor's History, admin only",
                 "parameters": [
                     {
                         "type": "integer",
@@ -613,7 +614,7 @@ const docTemplate = `{
                 "tags": [
                     "Floor"
                 ],
-                "summary": "Restore A Floor",
+                "summary": "Restore A Floor, admin only",
                 "parameters": [
                     {
                         "type": "integer",
@@ -1708,9 +1709,16 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "fold": {
-                    "description": "Admin only",
+                    "description": "Admin and operator only, string array, for version 1: danxi app",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "fold_v2": {
+                    "description": "Admin and operator only, only string, for version 2",
                     "type": "string",
-                    "maxLength": 16
+                    "maxLength": 64
                 },
                 "like": {
                     "description": "All user, deprecated, \"add\" is like, \"cancel\" is reset",
@@ -2020,6 +2028,10 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "models.Map": {
+            "type": "object",
+            "additionalProperties": true
         },
         "models.MessageModel": {
             "type": "object",

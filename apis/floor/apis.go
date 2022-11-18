@@ -138,6 +138,24 @@ func CreateFloor(c *fiber.Ctx) error {
 		return err
 	}
 
+	// get divisionID
+	var divisionID int
+	result := DB.Table("hole").Select("division_id").Where("id = ?", holeID).Take(&divisionID)
+	if result.Error != nil {
+		return result.Error
+	}
+
+	// get user
+	user, err := GetUser(c)
+	if err != nil {
+		return err
+	}
+
+	// permission
+	if user.BanDivision[divisionID] {
+		return Forbidden("您没有权限在此板块发言")
+	}
+
 	// create floor
 	floor := Floor{
 		HoleID:     holeID,
@@ -168,6 +186,24 @@ func CreateFloorOld(c *fiber.Ctx) error {
 		return err
 	}
 
+	// get divisionID
+	var divisionID int
+	result := DB.Table("hole").Select("division_id").Where("id = ?", body.HoleID).Take(&divisionID)
+	if result.Error != nil {
+		return result.Error
+	}
+
+	// get user
+	user, err := GetUser(c)
+	if err != nil {
+		return err
+	}
+
+	// permission
+	if user.BanDivision[divisionID] {
+		return Forbidden("您没有权限在此板块发言")
+	}
+
 	// create floor
 	floor := Floor{
 		HoleID:     body.HoleID,
@@ -193,6 +229,7 @@ func CreateFloorOld(c *fiber.Ctx) error {
 
 // ModifyFloor
 // @Summary Modify A Floor
+// @Description when both "fold_v2" and "fold" are empty, reset fold; else, "fold_v2" has the priority
 // @Tags Floor
 // @Produce application/json
 // @Router /floors/{id} [put]
@@ -221,8 +258,7 @@ func ModifyFloor(c *fiber.Ctx) error {
 	}
 
 	// get user
-	var user User
-	err = user.GetUser(c)
+	user, err := GetUser(c)
 	if err != nil {
 		return err
 	}
@@ -250,13 +286,20 @@ func ModifyFloor(c *fiber.Ctx) error {
 		if err != nil {
 			return err
 		}
+	}
 
-		// SendModify only when modify content
-		err = floor.SendModify(DB)
-		if err != nil {
-			Logger.Error("[notification] SendModify failed: " + err.Error())
+	if body.Fold == "" && body.FoldFrontend != nil {
+		if !perm.CheckPermission(user, perm.Admin) {
+			return Forbidden()
 		}
-		err = nil
+		if len(body.FoldFrontend) == 0 {
+			// reset floor.Fold
+			floor.Fold = ""
+			MyLog("Floor", "Modify", floorID, user.ID, RoleAdmin, "fold reset")
+		} else {
+			// set floor.Fold
+			body.Fold = body.FoldFrontend[0]
+		}
 	}
 
 	if body.Fold != "" {
@@ -289,9 +332,10 @@ func ModifyFloor(c *fiber.Ctx) error {
 	// including Like when Like == 0
 	DB.Model(&floor).Select("*").Omit("Mention").Updates(&floor)
 
-	// notification
-	// place here to check if not me
-	if user.ID != floor.UserID {
+	// SendModify only when operator or admin modify content or fold
+	if (body.Content != "" ||
+		body.Fold != "") &&
+		user.ID != floor.UserID {
 		err = floor.SendModify(DB)
 		if err != nil {
 			Logger.Error("[notification] SendModify failed: " + err.Error())
@@ -364,8 +408,7 @@ func DeleteFloor(c *fiber.Ctx) error {
 	}
 
 	// get user
-	var user User
-	err = user.GetUser(c)
+	user, err := GetUser(c)
 	if err != nil {
 		return err
 	}
@@ -395,13 +438,24 @@ func DeleteFloor(c *fiber.Ctx) error {
 		MyLog("Floor", "Delete", floorID, user.ID, RoleOperator, "reason: ", body.Reason)
 	} else {
 		MyLog("Floor", "Delete", floorID, user.ID, RoleOperator, "reason: ", body.Reason)
+
+		// SendModify when admin delete floor
+		err = floor.SendModify(DB)
+		if err != nil {
+			Logger.Error("[notification] SendModify failed: " + err.Error())
+			// return err // only for test
+		}
+	}
+
+	if user.ID != floor.UserID {
+
 	}
 
 	return Serialize(c, &floor)
 }
 
 // GetFloorHistory
-// @Summary Get A Floor's History
+// @Summary Get A Floor's History, admin only
 // @Tags Floor
 // @Produce application/json
 // @Router /floors/{id}/history [get]
@@ -413,6 +467,18 @@ func GetFloorHistory(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
+
+	// get user
+	user, err := GetUser(c)
+	if err != nil {
+		return err
+	}
+
+	// permission
+	if !perm.CheckPermission(user, perm.Admin) {
+		return Forbidden()
+	}
+
 	var histories []FloorHistory
 	result := DB.Where("floor_id = ?", floorID).Find(&histories)
 	if result.Error != nil {
@@ -422,7 +488,7 @@ func GetFloorHistory(c *fiber.Ctx) error {
 }
 
 // RestoreFloor
-// @Summary Restore A Floor
+// @Summary Restore A Floor, admin only
 // @Description Restore A Floor From A History Version
 // @Tags Floor
 // @Router /floors/{id}/restore/{floor_history_id} [post]
@@ -450,8 +516,7 @@ func RestoreFloor(c *fiber.Ctx) error {
 	}
 
 	// get user
-	var user User
-	err = user.GetUser(c)
+	user, err := GetUser(c)
 	if err != nil {
 		return err
 	}

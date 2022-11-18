@@ -161,7 +161,7 @@ func loadFloors(holes []*Hole) error {
 		// last floor
 		// this means all the floors are loaded into hole.HoleFloor.Floors,
 		// so we can just get last floor from hole.HoleFloor.Floors
-		if hole.Reply <= config.Config.HoleFloorSize {
+		if hole.Reply < config.Config.HoleFloorSize {
 			hole.HoleFloor.LastFloor = hole.HoleFloor.Floors[len(hole.HoleFloor.Floors)-1]
 		} else {
 			var floor Floor
@@ -238,26 +238,32 @@ func UpdateHoleCache(notInCache []*Hole) error {
 	return nil
 }
 
-func MakeQuerySet(c *fiber.Ctx) *gorm.DB {
-	var user User
-	_ = user.GetUser(c)
+func MakeQuerySet(c *fiber.Ctx) (*gorm.DB, error) {
+	user, err := GetUser(c)
+	if err != nil {
+		return nil, err
+	}
 	if perm.CheckPermission(user, perm.Admin) {
-		return DB
+		return DB, err
 	} else {
-		return DB.Where("hidden = ?", false)
+		return DB.Where("hidden = ?", false), err
 	}
 }
 
-func (holes Holes) MakeQuerySet(offset utils.CustomTime, size int, order string, c *fiber.Ctx) (tx *gorm.DB) {
-	//if order == "time_created" || order == "created_at" {
-	//	return MakeQuerySet(c).
-	//		Where("created_at < ?", offset.Time).
-	//		Order("created_at desc").Limit(size)
-	//} else {
-	return MakeQuerySet(c).
-		Where("updated_at < ?", offset.Time).
-		Order("updated_at desc").Limit(size)
-	//}
+func (holes Holes) MakeQuerySet(offset utils.CustomTime, size int, order string, c *fiber.Ctx) (*gorm.DB, error) {
+	querySet, err := MakeQuerySet(c)
+	if err != nil {
+		return nil, err
+	}
+	if order == "time_created" || order == "created_at" {
+		return querySet.
+			Where("created_at < ?", offset.Time).
+			Order("created_at desc").Limit(size), nil
+	} else {
+		return querySet.
+			Where("updated_at < ?", offset.Time).
+			Order("updated_at desc").Limit(size), nil
+	}
 }
 
 /************************
