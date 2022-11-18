@@ -2,7 +2,6 @@ package models
 
 import (
 	"fmt"
-	"github.com/gofiber/fiber/v2"
 	"regexp"
 	"strconv"
 	"strings"
@@ -10,6 +9,8 @@ import (
 	"treehole_next/config"
 	"treehole_next/utils"
 	"treehole_next/utils/perm"
+
+	"github.com/gofiber/fiber/v2"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -364,21 +365,14 @@ func (floor *Floor) AfterCreate(tx *gorm.DB) (err error) {
 		return result.Error
 	}
 
-	err = floor.SendFavorite(tx)
-	if err != nil {
-		utils.Logger.Error("[notification] SendFavorite failed: " + err.Error())
-		// return err // only for test
-	}
+	var messages Messages
+	messages = messages.Merge(floor.SendReply(tx))
+	messages = messages.Merge(floor.SendMention(tx))
+	messages = messages.Merge(floor.SendFavorite(tx))
 
-	err = floor.SendReply(tx)
+	err = messages.Send()
 	if err != nil {
-		utils.Logger.Error("[notification] SendReply failed: " + err.Error())
-		// return err // only for test
-	}
-
-	err = floor.SendMention(tx)
-	if err != nil {
-		utils.Logger.Error("[notification] SendMention failed: " + err.Error())
+		utils.Logger.Error("[notification] SendMessage failed: " + err.Error())
 		// return err // only for test
 	}
 
@@ -456,12 +450,12 @@ func (floor *Floor) ModifyLike(c *fiber.Ctx, likeOption int8) error {
 Send Notifications
 ******************/
 
-func (floor *Floor) SendFavorite(tx *gorm.DB) error {
+func (floor *Floor) SendFavorite(tx *gorm.DB) Message {
 	// get recipients
 	var tmpIDs []int
 	result := tx.Raw("SELECT user_id from user_favorites WHERE hole_id = ?", floor.HoleID).Scan(&tmpIDs)
 	if result.Error != nil {
-		return result.Error
+		return nil
 	}
 
 	// filter my id
@@ -473,7 +467,7 @@ func (floor *Floor) SendFavorite(tx *gorm.DB) error {
 	}
 
 	// return if no recipients
-	if userIDs == nil || len(userIDs) == 0 {
+	if len(userIDs) == 0 {
 		return nil
 	}
 
@@ -485,21 +479,15 @@ func (floor *Floor) SendFavorite(tx *gorm.DB) error {
 		"url":        fmt.Sprintf("/api/floors/%d", floor.ID),
 	}
 
-	// Send
-	err := message.Send()
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return message
 }
 
-func (floor *Floor) SendReply(tx *gorm.DB) error {
+func (floor *Floor) SendReply(tx *gorm.DB) Message {
 	// get recipients
 	userID := 0
 	result := tx.Raw("SELECT user_id from hole WHERE id = ?", floor.HoleID).Scan(&userID)
 	if result.Error != nil {
-		return result.Error
+		return nil
 	}
 
 	// return if no recipients or isMe
@@ -517,16 +505,10 @@ func (floor *Floor) SendReply(tx *gorm.DB) error {
 		"url":        fmt.Sprintf("/api/floors/%d", floor.ID),
 	}
 
-	// send
-	err := message.Send()
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return message
 }
 
-func (floor *Floor) SendMention(tx *gorm.DB) error {
+func (floor *Floor) SendMention(tx *gorm.DB) Message {
 	// get recipients
 	var userIDs []int
 	for _, mention := range floor.Mention {
@@ -539,7 +521,7 @@ func (floor *Floor) SendMention(tx *gorm.DB) error {
 	}
 
 	// return if no recipients
-	if userIDs == nil || len(userIDs) == 0 {
+	if len(userIDs) == 0 {
 		return nil
 	}
 
@@ -551,13 +533,7 @@ func (floor *Floor) SendMention(tx *gorm.DB) error {
 		"url":        fmt.Sprintf("/api/floors/%d", floor.ID),
 	}
 
-	// send
-	err := message.Send()
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return message
 }
 
 func (floor *Floor) SendModify(tx *gorm.DB) error {

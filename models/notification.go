@@ -38,6 +38,8 @@ var client = http.Client{Timeout: timeout}
 */
 type Message map[string]any
 
+type Messages []Message
+
 type MessageType string
 
 const (
@@ -70,6 +72,49 @@ func readRespMessage(body io.ReadCloser) Message {
 		return Message{}
 	}
 	return response
+}
+
+func (messages Messages) Merge(newMessage Message) Messages {
+	if newMessage == nil {
+		return messages
+	}
+	if len(messages) == 0 {
+		return Messages{newMessage}
+	}
+
+	new, _ := newMessage["recipients"].([]int)
+	for _, message := range messages {
+		old, _ := message["recipients"].([]int)
+		for id, r2 := range new {
+			for _, r1 := range old {
+				if r1 == r2 {
+					new = append(new[:id], new[id+1:]...)
+				}
+				break
+			}
+		}
+		if len(new) == 0 {
+			return messages
+		}
+	}
+
+	newMessage["recipients"] = new
+	messages = append(messages, newMessage)
+	return messages
+}
+
+func (messages Messages) Send() error {
+	if messages == nil {
+		return nil
+	}
+
+	for _, message := range messages {
+		err := message.Send()
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (message Message) Send() error {
