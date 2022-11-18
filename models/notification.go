@@ -85,12 +85,12 @@ func (messages Messages) Merge(newMessage Message) Messages {
 	new, _ := newMessage["recipients"].([]int)
 	for _, message := range messages {
 		old, _ := message["recipients"].([]int)
-		for id, r2 := range new {
-			for _, r1 := range old {
+		for _, r1 := range old {
+			for id, r2 := range new {
 				if r1 == r2 {
 					new = append(new[:id], new[id+1:]...)
+					break
 				}
-				break
 			}
 		}
 		if len(new) == 0 {
