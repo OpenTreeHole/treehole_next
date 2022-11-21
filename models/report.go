@@ -98,6 +98,10 @@ func (report *Report) AfterUpdate(tx *gorm.DB) (err error) {
 var adminCounter = new(int32)
 
 func (report *Report) SendCreate(tx *gorm.DB) error {
+	if len(adminList) == 0 {
+		return nil
+	}
+
 	// get counter
 	currentCounter := atomic.AddInt32(adminCounter, 1)
 	result := atomic.CompareAndSwapInt32(adminCounter, int32(len(adminList)), 0)

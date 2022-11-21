@@ -1,9 +1,10 @@
 package models
 
 import (
+	"treehole_next/utils"
+
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
-	"treehole_next/utils"
 )
 
 type Division struct {
@@ -18,8 +19,8 @@ type Division struct {
 type Divisions []*Division
 
 func (divisions Divisions) Preprocess(c *fiber.Ctx) error {
-	for _, d := range divisions {
-		err := d.Preprocess(c)
+	for i := 0; i < len(divisions); i++ {
+		err := divisions[i].Preprocess(c)
 		if err != nil {
 			return err
 		}
