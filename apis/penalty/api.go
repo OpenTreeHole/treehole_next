@@ -79,12 +79,12 @@ func BanUser(c *fiber.Ctx) error {
 		days = 1
 	}
 
-	err = banUser(c, body.DivisionID, days, user.ID, floor.UserID)
+	err = banUser(body.DivisionID, days, user.ID, floor.UserID)
 	if err != nil {
 		return err
 	}
 
-	userData, err := getUser(floor.UserID)
+	userData, err := GetUserInfo(floor.UserID)
 	if err != nil {
 		return err
 	}
@@ -94,7 +94,7 @@ func BanUser(c *fiber.Ctx) error {
 
 var client = http.Client{Timeout: time.Second * 10}
 
-func banUser(c *fiber.Ctx, divisionID, days, fromUserID, toUserID int) error {
+func banUser(divisionID, days, fromUserID, toUserID int) error {
 	data := map[string]any{
 		"name":   fmt.Sprintf("ban_treehole_%d", divisionID),
 		"days":   days,
@@ -147,7 +147,7 @@ func banUser(c *fiber.Ctx, divisionID, days, fromUserID, toUserID int) error {
 	return nil
 }
 
-func getUser(toUserID int) (io.Reader, error) {
+func GetUserInfo(toUserID int) (io.Reader, error) {
 	// make request
 	req, err := http.NewRequest(
 		"GET",

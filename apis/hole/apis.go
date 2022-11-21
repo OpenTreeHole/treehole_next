@@ -179,10 +179,15 @@ func CreateHole(c *fiber.Ctx) error {
 		return err
 	}
 
-	// get user
-	user, err := GetUser(c)
+	// get user from auth
+	var user *User
+	user, err = GetUserFromAuth(c)
 	if err != nil {
-		return err
+		Logger.Error(err.Error())
+		user, err = GetUser(c)
+		if err != nil {
+			return err
+		}
 	}
 
 	// permission
@@ -220,10 +225,15 @@ func CreateHoleOld(c *fiber.Ctx) error {
 		return err
 	}
 
-	// get user
-	user, err := GetUser(c)
+	// get user from auth
+	var user *User
+	user, err = GetUserFromAuth(c)
 	if err != nil {
-		return err
+		Logger.Error(err.Error())
+		user, err = GetUser(c)
+		if err != nil {
+			return err
+		}
 	}
 
 	// permission

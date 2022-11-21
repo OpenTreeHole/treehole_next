@@ -1,11 +1,15 @@
 package models
 
 import (
+	"bytes"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
+	"io"
+	"net/http"
 	"strconv"
 	"strings"
 	"treehole_next/config"
@@ -22,7 +26,7 @@ type User struct {
 	BanDivision map[int]bool    `json:"-" gorm:"-:all"`
 	Nickname    string          `json:"nickname" gorm:"-:all"`
 	Config      map[string]any  `json:"config" gorm:"-:all"`
-	Permission  perm.Permission `json:"permission" gorm:"-:all"`
+	Permission  perm.Permission `json:"-" gorm:"-:all"`
 }
 
 type UserFavorites struct {
@@ -85,6 +89,14 @@ func GetUser(c *fiber.Ctx) (*User, error) {
 		return nil, utils.Unauthorized(err.Error())
 	}
 
+	err = user.parsePermission()
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
+}
+
+func (user *User) parsePermission() error {
 	for _, v := range user.Roles {
 		if v == "admin" {
 			user.Permission |= perm.Admin
@@ -93,11 +105,76 @@ func GetUser(c *fiber.Ctx) (*User, error) {
 		} else if strings.HasPrefix(v, "ban_treehole") {
 			banDivisionID, err := strconv.Atoi(v[13:]) // "ban_treehole_{divisionID}"
 			if err != nil {
-				return nil, err
+				return err
 			}
 			user.BanDivision[banDivisionID] = true
 		}
 	}
+	return nil
+}
+
+func GetUserFromAuth(c *fiber.Ctx) (*User, error) {
+	user := &User{
+		Roles:       make([]string, 0, 10),
+		BanDivision: make(map[int]bool),
+		Config:      make(map[string]any),
+		Permission:  0,
+	}
+
+	userID, err := GetUserID(c)
+	if err != nil {
+		return nil, err
+	}
+
+	// make request
+	req, err := http.NewRequest(
+		"GET",
+		fmt.Sprintf("%s/users/%d", config.Config.AuthUrl, userID),
+		bytes.NewBuffer(make([]byte, 0, 10)),
+	)
+	if err != nil {
+		utils.Logger.Error("request make error", zap.Error(err))
+		return nil, err
+	}
+
+	// add headers
+	req.Header.Add("X-Consumer-Username", strconv.Itoa(userID))
+	rsp, err := client.Do(req)
+
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			utils.Logger.Error("close rsp body error")
+		}
+	}(rsp.Body)
+
+	if err != nil {
+		utils.Logger.Error(
+			"auth get user request error",
+			zap.Int("user id", userID),
+		)
+		return nil, err
+	}
+
+	if rsp.StatusCode != 200 {
+		return nil, errors.New("auth get user error, rsp error")
+	}
+
+	userInfo, err := io.ReadAll(rsp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	err = json.Unmarshal(userInfo, user)
+	if err != nil {
+		return nil, err
+	}
+
+	err = user.parsePermission()
+	if err != nil {
+		return nil, err
+	}
+
 	return user, nil
 }
 
