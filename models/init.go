@@ -31,19 +31,24 @@ var DBType DBTypeEnum
 // Read/Write Splitting
 func mysqlDB() (*gorm.DB, error) {
 	DBType = DBTypeMysql
-	db, err := gorm.Open(mysql.Open(config.Config.DbURL), gormConfig)
+
+	// set source databases
+	source := mysql.Open(config.Config.DbURL)
+	db, err := gorm.Open(source, gormConfig)
 	if err != nil {
 		return nil, err
 	}
 	if len(config.Config.MysqlReplicaURLs) == 0 {
 		return db, nil
 	}
+
+	// set replica databases
 	var replicas []gorm.Dialector
 	for _, url := range config.Config.MysqlReplicaURLs {
 		replicas = append(replicas, mysql.Open(url))
 	}
 	err = db.Use(dbresolver.Register(dbresolver.Config{
-		Sources:  []gorm.Dialector{mysql.Open(config.Config.DbURL)},
+		Sources:  []gorm.Dialector{source},
 		Replicas: replicas,
 		Policy:   dbresolver.RandomPolicy{},
 	}))

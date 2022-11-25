@@ -1,6 +1,10 @@
 package main
 
 import (
+	"log"
+	"os"
+	"os/signal"
+	"syscall"
 	"treehole_next/bootstrap"
 	"treehole_next/utils"
 )
@@ -23,9 +27,25 @@ import (
 // @name Authorization
 func main() {
 	app := bootstrap.Init()
-	defer utils.Logger.Sync()
-	err := app.Listen("0.0.0.0:8000")
+	go func() {
+		err := app.Listen("0.0.0.0:8000")
+		if err != nil {
+			log.Fatal(err)
+		}
+	}()
+
+	interrupt := make(chan os.Signal, 1)
+
+	signal.Notify(interrupt, syscall.SIGINT, syscall.SIGTERM)
+	<-interrupt
+	err := app.Shutdown()
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
+
+	err = utils.Logger.Sync()
+	if err != nil {
+		log.Fatal(err)
+	}
+
 }
