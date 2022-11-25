@@ -1,6 +1,7 @@
 package models
 
 import (
+	"gorm.io/plugin/dbresolver"
 	"os"
 	"treehole_next/config"
 
@@ -27,9 +28,34 @@ const (
 
 var DBType DBTypeEnum
 
+// Read/Write Splitting
 func mysqlDB() (*gorm.DB, error) {
 	DBType = DBTypeMysql
-	return gorm.Open(mysql.Open(config.Config.DbUrl), gormConfig)
+
+	// set source databases
+	source := mysql.Open(config.Config.DbURL)
+	db, err := gorm.Open(source, gormConfig)
+	if err != nil {
+		return nil, err
+	}
+	if len(config.Config.MysqlReplicaURLs) == 0 {
+		return db, nil
+	}
+
+	// set replica databases
+	var replicas []gorm.Dialector
+	for _, url := range config.Config.MysqlReplicaURLs {
+		replicas = append(replicas, mysql.Open(url))
+	}
+	err = db.Use(dbresolver.Register(dbresolver.Config{
+		Sources:  []gorm.Dialector{source},
+		Replicas: replicas,
+		Policy:   dbresolver.RandomPolicy{},
+	}))
+	if err != nil {
+		return nil, err
+	}
+	return db, nil
 }
 
 func sqliteDB() (*gorm.DB, error) {
@@ -58,7 +84,7 @@ func InitDB() {
 	case "bench":
 		DB, err = memoryDB()
 	case "dev":
-		if config.Config.DbUrl == "" {
+		if config.Config.DbURL == "" {
 			DB, err = sqliteDB()
 		} else {
 			DB, err = mysqlDB()

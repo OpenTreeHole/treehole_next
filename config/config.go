@@ -2,74 +2,31 @@ package config
 
 import (
 	"fmt"
-	"os"
-	"reflect"
-	"strconv"
-	"strings"
+	"github.com/caarlos0/env/v6"
 )
 
-type MyConfig struct {
-	Mode          string `default:"dev" env:"MODE"`
-	Size          int    `default:"30" env:"SIZE"`
-	MaxSize       int    `default:"50" env:"MAX_SIZE"`
-	TagSize       int    `default:"5" env:"TAG_SIZE"`
-	HoleFloorSize int    `default:"10" env:"HOLE_FLOOR_SIZE"`
-	Debug         bool   `default:"false" env:"DEBUG"`
+var Config struct {
+	Mode          string `env:"MODE" envDefault:"dev"`
+	Size          int    `env:"SIZE" envDefault:"30"`
+	MaxSize       int    `env:"MAX_SIZE" envDefault:"50"`
+	TagSize       int    `env:"TAG_SIZE" envDefault:"5"`
+	HoleFloorSize int    `env:"HOLE_FLOOR_SIZE" envDefault:"10"`
+	Debug         bool   `env:"DEBUG" envDefault:"false"`
 	// example: user:pass@tcp(127.0.0.1:3306)/dbname
 	// for more detail, see https://github.com/go-sql-driver/mysql#dsn-data-source-name
-	DbUrl           string `default:"" env:"DB_URL"`
-	RedisURL        string `default:"" env:"REDIS_URL"` // redis:6379
-	NotificationUrl string `default:"" env:"NOTIFICATION_URL"`
-	AuthUrl         string `default:"" env:"AUTH_URL"`
+	DbURL string `env:"DB_URL"`
+	// example: MYSQL_REPLICA_URL="db1_dsn,db2_dsn", use ',' as separator
+	MysqlReplicaURLs []string `env:"MYSQL_REPLICA_URL"`
+	RedisURL         string   `env:"REDIS_URL"` // redis:6379
+	NotificationUrl  string   `env:"NOTIFICATION_URL"`
+	AuthUrl          string   `env:"AUTH_URL"`
 }
 
-var Config MyConfig
-
 func initConfig() { // load config from environment variables
-	configType := reflect.TypeOf(Config)
-	elem := reflect.ValueOf(&Config).Elem()
-	for i := 0; i < configType.NumField(); i++ {
-		field := configType.Field(i)
-		// get default value
-		defaultValue, defaultValueExists := field.Tag.Lookup("default")
-		// get env variable name
-		envName, ok := field.Tag.Lookup("env")
-		if !ok {
-			envName = strings.ToUpper(field.Name)
-		}
-		// get env variable value
-		env := os.Getenv(envName)
-		envExists := env != ""
-		if !envExists {
-			if !defaultValueExists {
-				panic(fmt.Sprintf("Environment variable %s must be set!", field.Name))
-			}
-			env = defaultValue
-		}
-		var value any
-		var err error
-		switch field.Type.Kind() {
-		case reflect.String:
-			value = env
-		case reflect.Int:
-			value, err = strconv.Atoi(env)
-			if err != nil {
-				panic(fmt.Sprintf("Environment variable %s must be an int!", field.Name))
-			}
-		case reflect.Bool:
-			lower := strings.ToLower(env)
-			if lower == "true" {
-				value = true
-			} else if lower == "false" {
-				value = false
-			} else {
-				panic(fmt.Sprintf("Environment variable %s must be a boolean!", field.Name))
-			}
-		default:
-			panic("Now only supports string, int and bool as config")
-		}
-		elem.FieldByName(field.Name).Set(reflect.ValueOf(value))
+	if err := env.Parse(&Config); err != nil {
+		panic(err)
 	}
+	fmt.Println(Config)
 }
 
 func InitConfig() {

@@ -11,7 +11,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-func Init() *fiber.App {
+func Init() (*fiber.App, chan struct{}) {
 	config.InitConfig()
 	models.InitDB()
 	utils.Logger, _ = utils.InitLog()
@@ -25,7 +25,5 @@ func Init() *fiber.App {
 	middlewares.RegisterMiddlewares(app)
 	apis.RegisterRoutes(app)
 
-	startTasks()
-
-	return app
+	return app, startTasks()
 }
