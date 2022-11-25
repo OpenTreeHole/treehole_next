@@ -26,7 +26,7 @@ import (
 // @in header
 // @name Authorization
 func main() {
-	app := bootstrap.Init()
+	app, taskChan := bootstrap.Init()
 	go func() {
 		err := app.Listen("0.0.0.0:8000")
 		if err != nil {
@@ -36,16 +36,21 @@ func main() {
 
 	interrupt := make(chan os.Signal, 1)
 
+	// wait for CTRL-C interrupt
 	signal.Notify(interrupt, syscall.SIGINT, syscall.SIGTERM)
 	<-interrupt
+
+	// close app
 	err := app.Shutdown()
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
+	// stop tasks
+	close(taskChan)
 
+	// sync logger
 	err = utils.Logger.Sync()
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
-
 }

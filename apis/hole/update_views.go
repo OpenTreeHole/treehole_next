@@ -12,13 +12,16 @@ import (
 
 var holeViewsChan = make(chan int, 100)
 
-func receiveViewsUpdate() {
+func receiveViewsUpdate(done chan struct{}) {
 	for {
 		select {
 		case holeID := <-holeViewsChan:
 			holeViews[holeID]++
+		case <-done:
+			goto EXIT
 		}
 	}
+EXIT:
 }
 
 var holeViews = map[int]int{}
@@ -62,12 +65,20 @@ func updateHoleViews() {
 	}
 }
 
-func UpdateHoleViews() {
-	go receiveViewsUpdate()
+func UpdateHoleViews(done chan struct{}) {
+	go receiveViewsUpdate(done)
 
 	ticker := time.NewTicker(time.Second * 60)
 	defer ticker.Stop()
-	for range ticker.C {
-		updateHoleViews()
+	for {
+		select {
+		case <-ticker.C:
+			updateHoleViews()
+		case <-done:
+			goto EXIT
+		}
 	}
+EXIT:
+	updateHoleViews()
+	fmt.Println("task UpdateHoleViews Stopping...")
 }
