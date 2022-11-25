@@ -3,7 +3,6 @@ module treehole_next
 go 1.18
 
 require (
-	github.com/allegro/bigcache/v3 v3.1.0
 	github.com/caarlos0/env/v6 v6.10.1
 	github.com/creasty/defaults v1.6.0
 	github.com/eko/gocache/v3 v3.1.2
@@ -13,6 +12,7 @@ require (
 	github.com/goccy/go-json v0.9.11
 	github.com/gofiber/fiber/v2 v2.40.1
 	github.com/hetiansu5/urlquery v1.2.7
+	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/stretchr/testify v1.8.1
 	github.com/swaggo/fiber-swagger v1.3.0
 	github.com/swaggo/swag v1.8.8
@@ -26,7 +26,7 @@ require (
 
 require (
 	github.com/KyleBanks/depth v1.2.1 // indirect
-	github.com/XiaoMi/pegasus-go-client v0.0.0-20220519103347-ba0e68465cd5 // indirect
+	github.com/XiaoMi/pegasus-go-client v0.0.0-20210427083443-f3b6b08bc4c2 // indirect
 	github.com/andybalholm/brotli v1.0.4 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bradfitz/gomemcache v0.0.0-20221031212613-62deef7fc822 // indirect
@@ -81,3 +81,5 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	k8s.io/apimachinery v0.25.4 // indirect
 )
+
+replace github.com/pegasus-kv/thrift v0.14.1 => github.com/pegasus-kv/thrift v0.13.0

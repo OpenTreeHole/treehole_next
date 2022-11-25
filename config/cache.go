@@ -1,10 +1,10 @@
 package config
 
 import (
-	"github.com/allegro/bigcache/v3"
 	"github.com/eko/gocache/v3/cache"
 	"github.com/eko/gocache/v3/store"
 	"github.com/go-redis/redis/v8"
+	gocache "github.com/patrickmn/go-cache"
 	"time"
 )
 
@@ -17,8 +17,8 @@ func initCache() {
 		}))
 		Cache = cache.New[[]byte](redisStore)
 	} else {
-		var bigcacheClient, _ = bigcache.NewBigCache(bigcache.DefaultConfig(5 * time.Minute))
-		var bigcacheStore = store.NewBigcache(bigcacheClient)
-		Cache = cache.New[[]byte](bigcacheStore)
+		gocacheClient := gocache.New(5*time.Minute, 10*time.Minute)
+		gocacheStore := store.NewGoCache(gocacheClient)
+		Cache = cache.New[[]byte](gocacheStore)
 	}
 }
