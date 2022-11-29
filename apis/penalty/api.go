@@ -79,7 +79,7 @@ func BanUser(c *fiber.Ctx) error {
 		days = 1
 	}
 
-	err = banUser(body.DivisionID, days, user.ID, floor.UserID)
+	err = banUser(floorID, body.DivisionID, days, user.ID, floor.UserID)
 	if err != nil {
 		return err
 	}
@@ -94,11 +94,11 @@ func BanUser(c *fiber.Ctx) error {
 
 var client = http.Client{Timeout: time.Second * 10}
 
-func banUser(divisionID, days, fromUserID, toUserID int) error {
+func banUser(floorID, divisionID, days, fromUserID, toUserID int) error {
 	data := map[string]any{
 		"name":   fmt.Sprintf("ban_treehole_%d", divisionID),
 		"days":   days,
-		"reason": "ban user",
+		"reason": fmt.Sprintf("ban user(floor_id: %v)\n", floorID),
 	}
 	dataBytes, err := json.Marshal(data)
 	if err != nil {
