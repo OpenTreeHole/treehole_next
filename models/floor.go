@@ -442,6 +442,11 @@ func (floor *Floor) ModifyLike(c *fiber.Ctx, likeOption int8) error {
 
 		floor.Like = like
 		floor.Liked = likeOption
+		if like == 1 {
+			floor.LikedFrontend = true
+		} else if like == -1 {
+			floor.DislikedFrontend = true
+		}
 		return nil
 	})
 }
