@@ -2,6 +2,7 @@ package models
 
 import (
 	"fmt"
+	"gorm.io/plugin/dbresolver"
 	"regexp"
 	"strconv"
 	"strings"
@@ -106,6 +107,7 @@ func (floors Floors) Preprocess(c *fiber.Ctx) error {
 
 	var floorLikes []FloorLike
 	result := DB.
+		Clauses(dbresolver.Write).
 		Where("floor_id IN (?)", floorIDs).
 		Where("user_id = ?", userID).
 		Find(&floorLikes)
@@ -177,16 +179,18 @@ func (floor *Floor) SetMention(tx *gorm.DB, clear bool) error {
 
 	// find mention from floor table
 	mentionIDs = append(mentionIDs, mentionIDs2...)
+	mention := Floors{}
 	if len(mentionIDs) > 0 {
-		err := tx.Find(&(floor.Mention), mentionIDs).Error
+		err := tx.Find(&mention, mentionIDs).Error
 		if err != nil {
 			return err
 		}
 	}
+	floor.Mention = mention
 
 	// set mention to floor_mention table
 	if clear {
-		result := DB.Exec("DELETE FROM floor_mention WHERE floor_id = ?", floor.ID)
+		result := tx.Exec("DELETE FROM floor_mention WHERE floor_id = ?", floor.ID)
 		if result.Error != nil {
 			return result.Error
 		}

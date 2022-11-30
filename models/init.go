@@ -38,9 +38,6 @@ func mysqlDB() (*gorm.DB, error) {
 	if err != nil {
 		return nil, err
 	}
-	if len(config.Config.MysqlReplicaURLs) == 0 {
-		return db, nil
-	}
 
 	// set replica databases
 	var replicas []gorm.Dialector
