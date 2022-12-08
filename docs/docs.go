@@ -38,6 +38,36 @@ const docTemplate = `{
                 }
             }
         },
+        "/config/search": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Search"
+                ],
+                "summary": "change search config",
+                "parameters": [
+                    {
+                        "description": "json",
+                        "name": "json",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/floor.SearchConfigModel"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Map"
+                        }
+                    }
+                }
+            }
+        },
         "/divisions": {
             "get": {
                 "produces": [
@@ -1744,6 +1774,17 @@ const docTemplate = `{
                 "restore_reason": {
                     "type": "string",
                     "maxLength": 32
+                }
+            }
+        },
+        "floor.SearchConfigModel": {
+            "type": "object",
+            "required": [
+                "open"
+            ],
+            "properties": {
+                "open": {
+                    "type": "boolean"
                 }
             }
         },

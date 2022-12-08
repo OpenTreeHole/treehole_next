@@ -18,7 +18,7 @@ type JsonData interface {
 	Map | []Map
 }
 
-var App = bootstrap.Init()
+var App, _ = bootstrap.Init()
 
 // testCommon tests status code and returns response body in bytes
 func testCommon(t *testing.T, method string, route string, statusCode int, data ...Map) []byte {

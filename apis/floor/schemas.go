@@ -64,3 +64,7 @@ type DeleteModel struct {
 type RestoreModel struct {
 	Reason string `json:"restore_reason" validate:"required,max=32"`
 }
+
+type SearchConfigModel struct {
+	Open bool `json:"open" validate:"required"`
+}

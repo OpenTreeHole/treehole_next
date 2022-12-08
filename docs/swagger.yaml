@@ -133,6 +133,13 @@ definitions:
     required:
     - restore_reason
     type: object
+  floor.SearchConfigModel:
+    properties:
+      open:
+        type: boolean
+    required:
+    - open
+    type: object
   hole.CreateModel:
     properties:
       content:
@@ -472,6 +479,25 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/models.MessageModel'
+  /config/search:
+    post:
+      parameters:
+      - description: json
+        in: body
+        name: json
+        required: true
+        schema:
+          $ref: '#/definitions/floor.SearchConfigModel'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Map'
+      summary: change search config
+      tags:
+      - Search
   /divisions:
     get:
       produces:

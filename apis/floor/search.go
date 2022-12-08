@@ -8,6 +8,7 @@ import (
 	. "treehole_next/config"
 	. "treehole_next/models"
 	. "treehole_next/utils"
+	"treehole_next/utils/perm"
 )
 
 type SearchResponse struct {
@@ -52,7 +53,38 @@ func SearchFloors(c *fiber.Ctx) error {
 	return search(c, body)
 }
 
+// SearchConfig
+// @Summary change search config
+// @Tags Search
+// @Produce application/json
+// @Router /config/search [post]
+// @Param json body SearchConfigModel true "json"
+// @Success 200 {object} Map
+func SearchConfig(c *fiber.Ctx) error {
+	body := SearchConfigModel{}
+	err := ValidateBody(c, &body)
+	if err != nil {
+		return err
+	}
+	user, err := GetUserFromAuth(c)
+	if err != nil {
+		return err
+	}
+	if !perm.CheckPermission(user, perm.Admin) {
+		return Forbidden()
+	}
+	if DynamicConfig.OpenSearch.Load() == body.Open {
+		return c.Status(200).JSON(Map{"message": "已经被修改"})
+	} else {
+		DynamicConfig.OpenSearch.Store(body.Open)
+		return c.Status(201).JSON(Map{"message": "修改成功"})
+	}
+}
+
 func SearchFloorsOld(c *fiber.Ctx, query ListOldModel) error {
+	if DynamicConfig.OpenSearch.Load() == false {
+		return Forbidden("树洞流量激增，搜索功能暂缓开放")
+	}
 	floors := Floors{}
 	result := DB.
 		Where("content like ?", "%"+query.Search+"%").

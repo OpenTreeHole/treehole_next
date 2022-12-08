@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"github.com/caarlos0/env/v6"
+	"sync/atomic"
 )
 
 var Config struct {
@@ -20,6 +21,11 @@ var Config struct {
 	RedisURL         string   `env:"REDIS_URL"` // redis:6379
 	NotificationUrl  string   `env:"NOTIFICATION_URL"`
 	AuthUrl          string   `env:"AUTH_URL"`
+	OpenSearch       bool     `env:"OPEN_SEARCH" envDefault:"true"`
+}
+
+var DynamicConfig struct {
+	OpenSearch atomic.Bool
 }
 
 func initConfig() { // load config from environment variables
@@ -27,6 +33,7 @@ func initConfig() { // load config from environment variables
 		panic(err)
 	}
 	fmt.Println(Config)
+	DynamicConfig.OpenSearch.Store(Config.OpenSearch)
 }
 
 func InitConfig() {
