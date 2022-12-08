@@ -66,5 +66,5 @@ type RestoreModel struct {
 }
 
 type SearchConfigModel struct {
-	Open bool `json:"open" validate:"required"`
+	Open bool `json:"open"`
 }

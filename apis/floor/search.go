@@ -61,12 +61,12 @@ func SearchFloors(c *fiber.Ctx) error {
 // @Param json body SearchConfigModel true "json"
 // @Success 200 {object} Map
 func SearchConfig(c *fiber.Ctx) error {
-	body := SearchConfigModel{}
-	err := ValidateBody(c, &body)
+	var body SearchConfigModel
+	err := c.BodyParser(&body)
 	if err != nil {
 		return err
 	}
-	user, err := GetUserFromAuth(c)
+	user, err := GetUser(c)
 	if err != nil {
 		return err
 	}
