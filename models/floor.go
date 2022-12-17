@@ -236,7 +236,7 @@ func (floor *Floor) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 	}
 
 	// get user
-	user, err := GetUser(c)
+	user, err := GetUserFromAuth(c)
 	if err != nil {
 		return err
 	}

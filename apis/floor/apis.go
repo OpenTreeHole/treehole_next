@@ -146,11 +146,8 @@ func CreateFloor(c *fiber.Ctx) error {
 	}
 
 	// get user from auth
-	var user *User
-	user, err = GetUserFromAuth(c)
+	user, err := GetUserFromAuth(c)
 	if err != nil {
-		Logger.Error(err.Error())
-		user, err = GetUser(c)
 		if err != nil {
 			return err
 		}
@@ -199,14 +196,9 @@ func CreateFloorOld(c *fiber.Ctx) error {
 	}
 
 	// get user from auth
-	var user *User
-	user, err = GetUserFromAuth(c)
+	user, err := GetUserFromAuth(c)
 	if err != nil {
-		Logger.Error(err.Error())
-		user, err = GetUser(c)
-		if err != nil {
-			return err
-		}
+		return err
 	}
 
 	// permission
