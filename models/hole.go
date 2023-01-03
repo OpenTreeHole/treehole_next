@@ -24,7 +24,7 @@ type Hole struct {
 	HoleFloor  HoleFloor          `json:"floors" gorm:"-:all"`             // 返回给前端的楼层列表，包括首楼、尾楼和预加载的前 n 个楼层
 	View       int                `json:"view"`                            // 浏览量
 	Reply      int                `json:"reply"`                           // 回复量（即该洞下 floor 的数量）
-	Hidden     bool               `json:"hidden"`                          // 是否隐藏，隐藏的洞用户不可见，管理员可见
+	Hidden     bool               `json:"hidden" gorm:"index"`             // 是否隐藏，隐藏的洞用户不可见，管理员可见
 	Mapping    []AnonynameMapping `json:"-"`                               // 匿名映射表
 }
 
