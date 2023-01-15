@@ -121,6 +121,12 @@ func GetUserFromAuth(c *fiber.Ctx) (*User, error) {
 		Permission:  0,
 	}
 
+	if config.Config.Mode == "dev" || config.Config.Mode == "test" {
+		user.ID = 1
+		user.Permission = perm.Admin + perm.Operator
+		return user, nil
+	}
+
 	userID, err := GetUserID(c)
 	if err != nil {
 		return nil, err

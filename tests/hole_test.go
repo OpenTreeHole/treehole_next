@@ -74,16 +74,18 @@ func TestListHolesByTag(t *testing.T) {
 
 func TestCreateHole(t *testing.T) {
 	content := "abcdef"
-	tagName := []Map{{"name": "a"}, {"name": "ab"}, {"name": "abc"}}
-	data := Map{"content": content, "tags": tagName}
+	data := Map{"content": content, "tags": []Map{{"name": "a"}, {"name": "ab"}, {"name": "abc"}}}
 	testAPI(t, "post", "/api/divisions/1/holes", 201, data)
+	data["tags"] = []Map{{"name": "abcd"}, {"name": "ab"}, {"name": "abc"}} // update temperature or create tapg
 	testAPI(t, "post", "/api/divisions/1/holes", 201, data)
 
-	var holes Holes
-	var tag Tag
+	tag := Tag{}
+	DB.Where("name = ?", "a").First(&tag)
+	assert.EqualValues(t, 1, tag.Temperature)
+	tag = Tag{}
 	DB.Where("name = ?", "abc").First(&tag)
-	DB.Model(&tag).Association("Holes").Find(&holes)
-	assert.EqualValues(t, 2, len(holes))
+	assert.EqualValues(t, 2, tag.Temperature)
+	assert.EqualValues(t, 2, DB.Model(&tag).Association("Holes").Count())
 }
 
 func TestCreateHoleOld(t *testing.T) {

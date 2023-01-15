@@ -103,7 +103,7 @@ func TestCreateFloor(t *testing.T) {
 	DB.Where("hole_id = ?", hole.ID).Find(&floors)
 	assert.EqualValues(t, 2, len(floors))
 
-	testAPIModel(t, "post", "/api/holes/"+strconv.Itoa(largeInt)+"/floors", 201, &getfloor, data)
+	testAPIModel(t, "post", "/api/holes/"+strconv.Itoa(largeInt)+"/floors", 404, &getfloor, data)
 }
 
 func TestCreateFloorOld(t *testing.T) {
@@ -128,7 +128,7 @@ func TestCreateFloorOld(t *testing.T) {
 		assert.EqualValues(t, content, floors[1].Content)
 	}
 
-	testCommon(t, "post", "/api/holes/"+strconv.Itoa(123456)+"/floors", 201, data)
+	testCommon(t, "post", "/api/holes/"+strconv.Itoa(123456)+"/floors", 404, data)
 }
 
 func TestModifyFloor(t *testing.T) {

@@ -51,14 +51,14 @@ type Floor struct {
 type Floors []Floor
 
 type AnonynameMapping struct {
-	HoleID    int    `json:"hole_id" gorm:"primarykey"`
-	UserID    int    `json:"user_id" gorm:"primarykey"`
+	HoleID    int    `json:"hole_id" gorm:"primaryKey"`
+	UserID    int    `json:"user_id" gorm:"primaryKey"`
 	Anonyname string `json:"anonyname" gorm:"index;size:32"`
 }
 
 type FloorLike struct {
-	FloorID  int  `json:"floor_id" gorm:"primarykey"`
-	UserID   int  `json:"user_id" gorm:"primarykey"`
+	FloorID  int  `json:"floor_id" gorm:"primaryKey"`
+	UserID   int  `json:"user_id" gorm:"primaryKey"`
 	LikeData int8 `json:"like_data"`
 }
 

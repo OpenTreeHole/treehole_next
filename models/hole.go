@@ -3,7 +3,6 @@ package models
 import (
 	"fmt"
 	"golang.org/x/exp/slices"
-	"strings"
 	"time"
 	"treehole_next/config"
 	"treehole_next/utils"
@@ -16,16 +15,16 @@ import (
 
 type Hole struct {
 	BaseModel
-	HoleID     int                `json:"hole_id" gorm:"-:all"`            // 兼容旧版 id
-	DivisionID int                `json:"division_id"`                     // 所属 division 的 id
-	UserID     int                `json:"-"`                               // 洞主 id
-	Tags       []*Tag             `json:"tags" gorm:"many2many:hole_tags"` // tag 列表
-	Floors     []Floor            `json:"-"`                               // 楼层列表
-	HoleFloor  HoleFloor          `json:"floors" gorm:"-:all"`             // 返回给前端的楼层列表，包括首楼、尾楼和预加载的前 n 个楼层
-	View       int                `json:"view"`                            // 浏览量
-	Reply      int                `json:"reply"`                           // 回复量（即该洞下 floor 的数量）
-	Hidden     bool               `json:"hidden" gorm:"index"`             // 是否隐藏，隐藏的洞用户不可见，管理员可见
-	Mapping    []AnonynameMapping `json:"-"`                               // 匿名映射表
+	HoleID     int                `json:"hole_id" gorm:"-:all"`                                                          // 兼容旧版 id
+	DivisionID int                `json:"division_id"`                                                                   // 所属 division 的 id
+	UserID     int                `json:"-"`                                                                             // 洞主 id
+	Tags       []*Tag             `json:"tags" gorm:"many2many:hole_tags;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"` // tag 列表
+	Floors     []Floor            `json:"-"`                                                                             // 楼层列表
+	HoleFloor  HoleFloor          `json:"floors" gorm:"-:all"`                                                           // 返回给前端的楼层列表，包括首楼、尾楼和预加载的前 n 个楼层
+	View       int                `json:"view"`                                                                          // 浏览量
+	Reply      int                `json:"reply"`                                                                         // 回复量（即该洞下 floor 的数量）
+	Hidden     bool               `json:"hidden" gorm:"index"`                                                           // 是否隐藏，隐藏的洞用户不可见，管理员可见
+	Mapping    []AnonynameMapping `json:"-"`                                                                             // 匿名映射表
 }
 
 type Holes []Hole
@@ -272,32 +271,18 @@ func (holes Holes) MakeQuerySet(offset utils.CustomTime, size int, order string,
 
 // SetTags sets tags for a hole
 func (hole *Hole) SetTags(tx *gorm.DB, clear bool) error {
+	var err error
 	if clear {
-		// update tag temperature
-		var sql string
-
-		if DBType == DBTypeSqlite {
-			sql = `
-			UPDATE tag
-			SET temperature = temperature - 1 
-			WHERE id IN (
-				SELECT tag_id FROM hole_tags WHERE hole_id = ?
-			)`
-		} else {
-			sql = `
-			UPDATE tag INNER JOIN hole_tags 
-			ON tag.id = hole_tags.tag_id 
-			SET temperature = temperature - 1 
-			WHERE hole_tags.hole_id = ?`
-		}
-		result := tx.Exec(sql, hole.ID)
-		if result.Error != nil {
-			return result.Error
+		err = tx.Exec(`
+			UPDATE tag SET temperature = temperature - 1 
+			WHERE id IN ( SELECT tag_id FROM hole_tags WHERE hole_id = ?)`, hole.ID).Error
+		if err != nil {
+			return err
 		}
 
-		result = tx.Exec("DELETE FROM hole_tags WHERE hole_id = ?", hole.ID)
-		if result.Error != nil {
-			return result.Error
+		err = tx.Exec("DELETE FROM hole_tags WHERE hole_id = ?", hole.ID).Error
+		if err != nil {
+			return err
 		}
 	}
 
@@ -306,63 +291,22 @@ func (hole *Hole) SetTags(tx *gorm.DB, clear bool) error {
 	}
 
 	// create tags
-	result := tx.Clauses(clause.OnConflict{
+	for i := range hole.Tags {
+		hole.Tags[i].Temperature = 1
+	}
+	UpdateTemperatureClause := clause.OnConflict{
 		Columns:   []clause.Column{{Name: "name"}},
-		DoNothing: true,
-	}).Create(&hole.Tags)
-	if result.Error != nil {
-		return result.Error
+		DoUpdates: clause.Assignments(Map{"temperature": gorm.Expr("temperature + 1")}),
 	}
-
-	// find tags
-	tagNames := make([]string, len(hole.Tags))
-	for i, tag := range hole.Tags {
-		tagNames[i] = tag.Name
+	ReturningAllClause := clause.Returning{}
+	err = tx.Clauses(UpdateTemperatureClause, ReturningAllClause).Create(&hole.Tags).Error
+	if err != nil {
+		return err
 	}
-	result = tx.Where("name IN (?)", tagNames).Find(&hole.Tags)
-	if result.Error != nil {
-		return result.Error
+	err = tx.Omit("Tags.*").Select("Tags").Save(&hole).Error
+	if err != nil {
+		return err
 	}
-
-	// create associations
-	tagIDs := make([]int, len(hole.Tags))
-	for i, tag := range hole.Tags {
-		tagIDs[i] = tag.ID
-	}
-	var builder strings.Builder
-
-	if DBType == DBTypeSqlite {
-		builder.WriteString("INSERT INTO")
-	} else {
-		builder.WriteString("INSERT IGNORE INTO")
-	}
-	builder.WriteString(" hole_tags (hole_id, tag_id) VALUES ")
-	for i, tagID := range tagIDs {
-		builder.WriteString(fmt.Sprintf("(%d, %d)", hole.ID, tagID))
-		if i != len(tagIDs)-1 {
-			builder.WriteString(",")
-		}
-	}
-
-	if DBType == DBTypeSqlite {
-		builder.WriteString(" ON CONFLICT DO NOTHING")
-	}
-	result = tx.Exec(builder.String())
-	if result.Error != nil {
-		return result.Error
-	}
-
-	// update tag temperature
-	result = tx.Exec(`
-		UPDATE tag 
-		SET temperature = temperature + 1 
-		WHERE id IN (?)`,
-		tagIDs,
-	)
-	if result.Error != nil {
-		return result.Error
-	}
-
 	return nil
 }
 

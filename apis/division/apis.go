@@ -2,6 +2,7 @@ package division
 
 import (
 	"strconv"
+	"treehole_next/config"
 	. "treehole_next/models"
 	. "treehole_next/utils"
 
@@ -114,7 +115,11 @@ func ModifyDivision(c *fiber.Ctx) error {
 
 	MyLog("Division", "Modify", division.ID, userID, RoleAdmin)
 
-	go refreshCache()
+	if config.Config.Mode != "test" {
+		go refreshCache()
+	} else {
+		refreshCache()
+	}
 
 	return Serialize(c, &division)
 }
