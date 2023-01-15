@@ -3,13 +3,35 @@ package floor
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/gofiber/fiber/v2"
 	"go.uber.org/zap"
+	"log"
 	. "treehole_next/config"
 	. "treehole_next/models"
 	. "treehole_next/utils"
 	"treehole_next/utils/perm"
 )
+
+var ES *elasticsearch.Client
+
+func init() {
+	if Config.Mode == "test" || Config.Mode == "bench" || Config.ElasticsearchUrl == "" {
+		return
+	}
+
+	// export ELASTICSEARCH_URL environment variable to set the ElasticSearch URL
+	// example: http://user:pass@127.0.0.1:9200
+	es, err := elasticsearch.NewClient(elasticsearch.Config{
+		Addresses: []string{Config.ElasticsearchUrl},
+	})
+	if err != nil {
+		panic(err)
+	}
+	log.Println(elasticsearch.Version)
+	log.Println(es.Info())
+	ES = es
+}
 
 type SearchResponse struct {
 	Took     int  `json:"took"`

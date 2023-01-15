@@ -215,14 +215,14 @@ func InitAdminList() {
 
 	// handle err
 	if err != nil {
-		utils.Logger.Error("[getadmin] error sending auth server" + err.Error())
+		utils.Logger.Error("[get admin] error sending auth server" + err.Error())
 		return
 	}
 
 	response := readRespAdmin(resp.Body)
 
 	if resp.StatusCode != 200 || len(response) == 0 {
-		utils.Logger.Error("[getadmin] auth server response failed" + fmt.Sprint(resp))
+		utils.Logger.Error("[get admin] auth server response failed" + fmt.Sprint(resp))
 		return
 	}
 

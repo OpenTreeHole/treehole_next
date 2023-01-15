@@ -21,6 +21,7 @@ var Config struct {
 	RedisURL         string   `env:"REDIS_URL"` // redis:6379
 	NotificationUrl  string   `env:"NOTIFICATION_URL"`
 	AuthUrl          string   `env:"AUTH_URL"`
+	ElasticsearchUrl string   `env:"ELASTICSEARCH_URL"`
 	OpenSearch       bool     `env:"OPEN_SEARCH" envDefault:"true"`
 }
 
@@ -28,16 +29,10 @@ var DynamicConfig struct {
 	OpenSearch atomic.Bool
 }
 
-func initConfig() { // load config from environment variables
+func init() { // load config from environment variables
 	if err := env.Parse(&Config); err != nil {
 		panic(err)
 	}
 	fmt.Println(Config)
 	DynamicConfig.OpenSearch.Store(Config.OpenSearch)
-}
-
-func InitConfig() {
-	initConfig()
-	initCache()
-	initSearch()
 }

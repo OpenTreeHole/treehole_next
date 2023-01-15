@@ -2,7 +2,6 @@ package bootstrap
 
 import (
 	"treehole_next/apis"
-	"treehole_next/config"
 	"treehole_next/middlewares"
 	"treehole_next/models"
 	"treehole_next/utils"
@@ -12,8 +11,6 @@ import (
 )
 
 func Init() (*fiber.App, chan struct{}) {
-	config.InitConfig()
-	models.InitDB()
 	utils.Logger, _ = utils.InitLog()
 	models.InitAdminList()
 

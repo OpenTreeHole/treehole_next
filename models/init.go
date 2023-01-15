@@ -70,7 +70,7 @@ func memoryDB() (*gorm.DB, error) {
 	return gorm.Open(sqlite.Open("file::memory:?cache=shared"), gormConfig)
 }
 
-func InitDB() {
+func init() {
 	var err error
 	switch config.Config.Mode {
 	case "production":
