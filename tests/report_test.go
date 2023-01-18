@@ -40,6 +40,7 @@ func TestGetReport(t *testing.T) {
 	var getReport Report
 	testAPIModel(t, "get", "/api/reports/"+strconv.Itoa(reportID), 200, &getReport)
 	assert.EqualValues(t, report.FloorID, getReport.FloorID)
+	assert.EqualValues(t, report.FloorID, getReport.Floor.FloorID)
 }
 
 func TestListReport(t *testing.T) {

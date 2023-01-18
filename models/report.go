@@ -68,6 +68,16 @@ func (report *Report) AfterCreate(tx *gorm.DB) (err error) {
 		return nil
 	}
 
+	err = tx.Model(report).Association("Floor").Find(&report.Floor)
+	if err != nil {
+		return err
+	}
+
+	err = report.Preprocess(nil)
+	if err != nil {
+		return err
+	}
+
 	err = report.SendCreate(tx)
 	if err != nil {
 		utils.Logger.Error("[notification] SendCreate failed: " + err.Error())
@@ -85,6 +95,16 @@ func (report *Report) AfterFind(tx *gorm.DB) (err error) {
 func (report *Report) AfterUpdate(tx *gorm.DB) (err error) {
 	if config.Config.NotificationUrl == "" {
 		return nil
+	}
+
+	err = tx.Model(report).Association("Floor").Find(&report.Floor)
+	if err != nil {
+		return err
+	}
+
+	err = report.Preprocess(nil)
+	if err != nil {
+		return err
 	}
 
 	err = report.SendModify(tx)
