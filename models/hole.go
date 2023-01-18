@@ -3,6 +3,7 @@ package models
 import (
 	"fmt"
 	"golang.org/x/exp/slices"
+	"strings"
 	"time"
 	"treehole_next/config"
 	"treehole_next/utils"
@@ -291,22 +292,63 @@ func (hole *Hole) SetTags(tx *gorm.DB, clear bool) error {
 	}
 
 	// create tags
-	for i := range hole.Tags {
-		hole.Tags[i].Temperature = 1
-	}
-	UpdateTemperatureClause := clause.OnConflict{
+	result := tx.Clauses(clause.OnConflict{
 		Columns:   []clause.Column{{Name: "name"}},
-		DoUpdates: clause.Assignments(Map{"temperature": gorm.Expr("temperature + 1")}),
+		DoNothing: true,
+	}).Create(&hole.Tags)
+	if result.Error != nil {
+		return result.Error
 	}
-	ReturningAllClause := clause.Returning{}
-	err = tx.Clauses(UpdateTemperatureClause, ReturningAllClause).Create(&hole.Tags).Error
-	if err != nil {
-		return err
+
+	// find tags
+	tagNames := make([]string, len(hole.Tags))
+	for i, tag := range hole.Tags {
+		tagNames[i] = tag.Name
 	}
-	err = tx.Omit("Tags.*").Select("Tags").Save(&hole).Error
-	if err != nil {
-		return err
+	result = tx.Where("name IN (?)", tagNames).Find(&hole.Tags)
+	if result.Error != nil {
+		return result.Error
 	}
+
+	// create associations
+	tagIDs := make([]int, len(hole.Tags))
+	for i, tag := range hole.Tags {
+		tagIDs[i] = tag.ID
+	}
+	var builder strings.Builder
+
+	if DBType == DBTypeSqlite {
+		builder.WriteString("INSERT INTO")
+	} else {
+		builder.WriteString("INSERT IGNORE INTO")
+	}
+	builder.WriteString(" hole_tags (hole_id, tag_id) VALUES ")
+	for i, tagID := range tagIDs {
+		builder.WriteString(fmt.Sprintf("(%d, %d)", hole.ID, tagID))
+		if i != len(tagIDs)-1 {
+			builder.WriteString(",")
+		}
+	}
+
+	if DBType == DBTypeSqlite {
+		builder.WriteString(" ON CONFLICT DO NOTHING")
+	}
+	result = tx.Exec(builder.String())
+	if result.Error != nil {
+		return result.Error
+	}
+
+	// update tag temperature
+	result = tx.Exec(`
+		UPDATE tag 
+		SET temperature = temperature + 1 
+		WHERE id IN (?)`,
+		tagIDs,
+	)
+	if result.Error != nil {
+		return result.Error
+	}
+
 	return nil
 }
 
