@@ -1,8 +1,12 @@
 package bootstrap
 
 import (
+	"github.com/gofiber/fiber/v2/middleware/logger"
+	"github.com/gofiber/fiber/v2/middleware/pprof"
+	"github.com/gofiber/fiber/v2/middleware/recover"
 	"treehole_next/apis"
-	"treehole_next/middlewares"
+	"treehole_next/apis/hole"
+	"treehole_next/config"
 	"treehole_next/models"
 	"treehole_next/utils"
 
@@ -19,8 +23,24 @@ func Init() (*fiber.App, chan struct{}) {
 		JSONEncoder:  json.Marshal,
 		JSONDecoder:  json.Unmarshal,
 	})
-	middlewares.RegisterMiddlewares(app)
+	registerMiddlewares(app)
 	apis.RegisterRoutes(app)
 
 	return app, startTasks()
+}
+
+func registerMiddlewares(app *fiber.App) {
+	app.Use(recover.New(recover.Config{EnableStackTrace: true}))
+	if config.Config.Mode != "bench" {
+		app.Use(logger.New())
+	}
+	if config.Config.Mode == "dev" {
+		app.Use(pprof.New())
+	}
+}
+
+func startTasks() chan struct{} {
+	done := make(chan struct{}, 1)
+	go hole.UpdateHoleViews(done)
+	return done
 }
