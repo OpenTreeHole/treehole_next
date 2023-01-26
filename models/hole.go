@@ -250,7 +250,7 @@ func MakeQuerySet(c *fiber.Ctx) (*gorm.DB, error) {
 	}
 }
 
-func (holes Holes) MakeQuerySet(offset utils.CustomTime, size int, order string, c *fiber.Ctx) (*gorm.DB, error) {
+func (holes Holes) MakeQuerySet(offset CustomTime, size int, order string, c *fiber.Ctx) (*gorm.DB, error) {
 	querySet, err := MakeQuerySet(c)
 	if err != nil {
 		return nil, err

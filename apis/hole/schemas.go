@@ -4,32 +4,31 @@ import (
 	"time"
 	"treehole_next/apis/tag"
 	"treehole_next/models"
-	. "treehole_next/utils"
 )
 
 type QueryTime struct {
 	Size int `json:"size" default:"10" validate:"max=10"`
 	// updated time < offset (default is now)
-	Offset CustomTime `json:"offset" swaggertype:"string"`
+	Offset models.CustomTime `json:"offset" swaggertype:"string"`
 }
 
 func (q *QueryTime) SetDefaults() {
 	if q.Offset.IsZero() {
-		q.Offset = CustomTime{Time: time.Now()}
+		q.Offset = models.CustomTime{Time: time.Now()}
 	}
 }
 
 type ListOldModel struct {
-	Offset     CustomTime `json:"start_time" query:"start_time" swaggertype:"string"`
-	Size       int        `json:"length"     query:"length"      default:"10" validate:"max=10" `
-	Tag        string     `json:"tag"        query:"tag"`
-	DivisionID int        `json:"division_id" query:"division_id"`
-	Order      string     `json:"order" query:"order"`
+	Offset     models.CustomTime `json:"start_time" query:"start_time" swaggertype:"string"`
+	Size       int               `json:"length"     query:"length"      default:"10" validate:"max=10" `
+	Tag        string            `json:"tag"        query:"tag"`
+	DivisionID int               `json:"division_id" query:"division_id"`
+	Order      string            `json:"order" query:"order"`
 }
 
 func (q *ListOldModel) SetDefaults() {
 	if q.Offset.IsZero() {
-		q.Offset = CustomTime{Time: time.Now()}
+		q.Offset = models.CustomTime{Time: time.Now()}
 	}
 }
 
