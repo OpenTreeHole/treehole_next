@@ -38,10 +38,7 @@ func ListFavorites(c *fiber.Ctx) error {
 	} else {
 		// get favorites
 		holes := Holes{}
-		sql := `SELECT * FROM hole 
-		JOIN user_favorites 
-		ON user_favorites.hole_id = hole.id 
-		AND user_favorites.user_id = ?`
+		sql := `SELECT * FROM hole WHERE id IN (SELECT hole_id FROM user_favorites WHERE user_id = ?) ORDER BY id DESC`
 		result := DB.Raw(sql, userID).Scan(&holes)
 		if result.Error != nil {
 			return result.Error
