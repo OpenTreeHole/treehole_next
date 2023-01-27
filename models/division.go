@@ -1,6 +1,7 @@
 package models
 
 import (
+	"time"
 	"treehole_next/utils"
 
 	"github.com/gofiber/fiber/v2"
@@ -8,12 +9,18 @@ import (
 )
 
 type Division struct {
-	BaseModel
-	DivisionID  int      `json:"division_id" gorm:"-:all"`
-	Name        string   `json:"name" gorm:"unique"`
-	Description string   `json:"description"`
-	Pinned      IntArray `json:"-"` // pinned holes in given order
-	Holes       []Hole   `json:"pinned"`
+	ID          int       `json:"id" gorm:"primaryKey"`
+	CreatedAt   time.Time `json:"time_created"`
+	UpdatedAt   time.Time `json:"time_updated"`
+	DivisionID  int       `json:"division_id" gorm:"-:all"`
+	Name        string    `json:"name" gorm:"unique"`
+	Description string    `json:"description"`
+	Pinned      IntArray  `json:"-"` // pinned holes in given order
+	Holes       []Hole    `json:"pinned"`
+}
+
+func (division Division) GetID() int {
+	return division.ID
 }
 
 type Divisions []*Division

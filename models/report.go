@@ -3,6 +3,7 @@ package models
 import (
 	"fmt"
 	"sync/atomic"
+	"time"
 	"treehole_next/config"
 	"treehole_next/utils"
 
@@ -11,16 +12,22 @@ import (
 )
 
 type Report struct {
-	BaseModel
-	ReportID int    `json:"report_id" gorm:"-:all"`
-	FloorID  int    `json:"floor_id"`
-	HoleID   int    `json:"hole_id" gorm:"-:all"`
-	Floor    Floor  `json:"floor"`
-	UserID   int    `json:"-"` // the reporter's id, should keep a secret
-	Reason   string `json:"reason" gorm:"size:128"`
-	Dealt    bool   `json:"dealt"`                  // the report has been dealt
-	DealtBy  int    `json:"dealt_by"`               // who dealt the report
-	Result   string `json:"result" gorm:"size:128"` // deal result
+	ID        int       `json:"id" gorm:"primaryKey"`
+	CreatedAt time.Time `json:"time_created"`
+	UpdatedAt time.Time `json:"time_updated"`
+	ReportID  int       `json:"report_id" gorm:"-:all"`
+	FloorID   int       `json:"floor_id"`
+	HoleID    int       `json:"hole_id" gorm:"-:all"`
+	Floor     Floor     `json:"floor"`
+	UserID    int       `json:"-"` // the reporter's id, should keep a secret
+	Reason    string    `json:"reason" gorm:"size:128"`
+	Dealt     bool      `json:"dealt"`                  // the report has been dealt
+	DealtBy   int       `json:"dealt_by"`               // who dealt the report
+	Result    string    `json:"result" gorm:"size:128"` // deal result
+}
+
+func (report Report) GetID() int {
+	return report.ID
 }
 
 type Reports []Report

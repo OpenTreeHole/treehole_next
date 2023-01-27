@@ -15,7 +15,9 @@ import (
 )
 
 type Hole struct {
-	BaseModel
+	ID         int                `json:"id" gorm:"primaryKey"`
+	CreatedAt  time.Time          `json:"time_created"`
+	UpdatedAt  time.Time          `json:"time_updated"`
 	HoleID     int                `json:"hole_id" gorm:"-:all"`                                                          // 兼容旧版 id
 	DivisionID int                `json:"division_id"`                                                                   // 所属 division 的 id
 	UserID     int                `json:"-"`                                                                             // 洞主 id
@@ -28,17 +30,16 @@ type Hole struct {
 	Mapping    []AnonynameMapping `json:"-"`                                                                             // 匿名映射表
 }
 
+func (hole Hole) GetID() int {
+	return hole.ID
+}
+
 type Holes []Hole
 
 type HoleFloor struct {
 	FirstFloor *Floor   `json:"first_floor"` // 首楼
 	LastFloor  *Floor   `json:"last_floor"`  // 尾楼
 	Floors     []*Floor `json:"prefetch"`    // 预加载的楼层
-}
-
-type HoleTag struct {
-	HoleID int `json:"hole_id"`
-	TagID  int `json:"tag_id"`
 }
 
 /**************

@@ -10,7 +10,7 @@ import (
 )
 
 // @title Open Tree Hole
-// @version 2.0.0
+// @version 2.1.0
 // @description An Anonymous BBS \n Note: PUT methods are used to PARTLY update, and we don't use PATCH method.
 
 // @contact.name Maintainer Ke Chen

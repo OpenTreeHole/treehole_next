@@ -29,9 +29,7 @@ func init() {
 
 	for i := 0; i < DIVISION_MAX; i++ {
 		divisions = append(divisions, Division{
-			BaseModel: BaseModel{
-				ID: i + 1,
-			},
+			ID:          i + 1,
 			Name:        strings.Repeat("d", i+1),
 			Description: strings.Repeat("dd", i+1),
 		})
@@ -40,9 +38,7 @@ func init() {
 	for i := 0; i < TAG_MAX; i++ {
 		content := fmt.Sprintf("%v", rand.Uint64())
 		tags = append(tags, Tag{
-			BaseModel: BaseModel{
-				ID: i + 1,
-			},
+			ID:   i + 1,
 			Name: content,
 		})
 	}
@@ -56,9 +52,7 @@ func init() {
 			return nowtags
 		}
 		holes = append(holes, Hole{
-			BaseModel: BaseModel{
-				ID: i + 1,
-			},
+			ID:         i + 1,
 			UserID:     1,
 			DivisionID: rand.Intn(DIVISION_MAX) + 1,
 			Tags:       generateTag(),
@@ -75,9 +69,7 @@ func init() {
 			return floors
 		}
 		floors = append(floors, Floor{
-			BaseModel: BaseModel{
-				ID: i + 1,
-			},
+			ID:        i + 1,
 			Content:   strings.Repeat(content, rand.Intn(2)),
 			Anonyname: utils.GenerateName([]string{}),
 			HoleID:    rand.Intn(HOLE_MAX) + 1,

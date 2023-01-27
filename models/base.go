@@ -4,20 +4,9 @@ package models
 import (
 	"database/sql/driver"
 	"encoding/json"
-	"time"
 )
 
 type Map = map[string]interface{}
-
-type BaseModel struct {
-	ID        int       `json:"id" gorm:"primaryKey"`
-	CreatedAt time.Time `json:"time_created"`
-	UpdatedAt time.Time `json:"time_updated"`
-}
-
-func (model BaseModel) GetID() int {
-	return model.ID
-}
 
 type IntArray []int
 
