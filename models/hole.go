@@ -412,7 +412,7 @@ func (hole *Hole) Create(c *fiber.Ctx, content string, specialTag string, db ...
 		}
 
 		// create Favorite
-		return UserCreateFavourite(tx, c, false, hole.UserID, []int{hole.ID})
+		return AddUserFavourite(tx, hole.UserID, hole.ID)
 	})
 }
 

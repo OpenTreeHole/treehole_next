@@ -1,6 +1,7 @@
 package favourite
 
 import (
+	"gorm.io/gorm"
 	. "treehole_next/models"
 	. "treehole_next/utils"
 
@@ -31,7 +32,7 @@ func ListFavorites(c *fiber.Ctx) error {
 
 	if query.Plain {
 		// get favorite ids
-		data, err := UserGetFavoriteData(userID)
+		data, err := UserGetFavoriteData(DB, userID)
 		if err != nil {
 			return err
 		}
@@ -49,7 +50,6 @@ func ListFavorites(c *fiber.Ctx) error {
 		}
 		return Serialize(c, &holes)
 	}
-
 }
 
 // AddFavorite
@@ -76,14 +76,19 @@ func AddFavorite(c *fiber.Ctx) error {
 		return err
 	}
 
-	// add favorite
-	err = UserCreateFavourite(DB, c, false, userID, []int{body.HoleID})
-	if err != nil {
-		return err
-	}
+	var data []int
 
-	// create response
-	data, err := UserGetFavoriteData(userID)
+	err = DB.Transaction(func(tx *gorm.DB) error {
+		// add favorite
+		err = AddUserFavourite(tx, userID, body.HoleID)
+		if err != nil {
+			return err
+		}
+
+		// create response
+		data, err = UserGetFavoriteData(tx, userID)
+		return err
+	})
 	if err != nil {
 		return err
 	}
@@ -118,13 +123,13 @@ func ModifyFavorite(c *fiber.Ctx) error {
 	}
 
 	// modify favorite
-	err = UserCreateFavourite(DB, c, true, userID, body.HoleIDs)
+	err = ModifyUserFavourite(DB, userID, body.HoleIDs)
 	if err != nil {
 		return err
 	}
 
 	// create response
-	data, err := UserGetFavoriteData(userID)
+	data, err := UserGetFavoriteData(DB, userID)
 	if err != nil {
 		return err
 	}
@@ -158,14 +163,14 @@ func DeleteFavorite(c *fiber.Ctx) error {
 		return err
 	}
 
-	// modify favorite
-	err = UserDeleteFavorite(userID, []int{body.HoleID})
+	// delete favorite
+	err = DB.Delete(UserFavorite{UserID: userID, HoleID: body.HoleID}).Error
 	if err != nil {
 		return err
 	}
 
 	// create response
-	data, err := UserGetFavoriteData(userID)
+	data, err := UserGetFavoriteData(DB, userID)
 	if err != nil {
 		return err
 	}
