@@ -88,8 +88,7 @@ func init() {
 	case "production":
 		DB, err = mysqlDB()
 	case "test":
-		DB, err = memoryDB()
-		DB = DB.Debug()
+		fallthrough
 	case "bench":
 		DB, err = memoryDB()
 	case "dev":
@@ -98,24 +97,44 @@ func init() {
 		} else {
 			DB, err = mysqlDB()
 		}
-		DB = DB.Debug()
-	default: // sqlite as default
+	default:
 		panic("unknown mode")
 	}
 	if err != nil {
 		panic(err)
 	}
+
+	switch config.Config.Mode {
+	case "test":
+		fallthrough
+	case "dev":
+		DB = DB.Debug()
+	}
+
+	err = DB.SetupJoinTable(&User{}, "UserFavoriteHoles", &UserFavorite{})
+	if err != nil {
+		panic(err)
+	}
+
+	err = DB.SetupJoinTable(&User{}, "UserLikedFloors", &FloorLike{})
+	if err != nil {
+		panic(err)
+	}
+
+	err = DB.SetupJoinTable(&Hole{}, "Mapping", &AnonynameMapping{})
+	if err != nil {
+		panic(err)
+	}
+
 	// models must be registered here to migrate into the database
 	err = DB.AutoMigrate(
 		&Division{},
 		&Tag{},
-		&Hole{},
-		&AnonynameMapping{},
+		&User{},
 		&Floor{},
-		&FloorHistory{},
-		&FloorLike{},
+		&Hole{},
 		&Report{},
-		&UserFavorites{},
+		&Punishment{},
 	)
 	if err != nil {
 		panic(err)

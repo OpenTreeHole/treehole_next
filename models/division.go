@@ -9,14 +9,23 @@ import (
 )
 
 type Division struct {
-	ID          int       `json:"id" gorm:"primaryKey"`
-	CreatedAt   time.Time `json:"time_created"`
-	UpdatedAt   time.Time `json:"time_updated"`
-	DivisionID  int       `json:"division_id" gorm:"-:all"`
-	Name        string    `json:"name" gorm:"unique"`
-	Description string    `json:"description"`
-	Pinned      IntArray  `json:"-"` // pinned holes in given order
-	Holes       []Hole    `json:"pinned"`
+	/// saved fields
+	ID        int       `json:"id" gorm:"primaryKey"`
+	CreatedAt time.Time `json:"time_created" gorm:"not null"`
+	UpdatedAt time.Time `json:"time_updated" gorm:"not null"`
+
+	/// base info
+	Name        string `json:"name" gorm:"unique;size:10"`
+	Description string `json:"description" gorm:"size:64"`
+	Pinned      []int  `json:"-" gorm:"serializer:json;size:100"` // pinned holes in given order
+
+	/// association fields, should add foreign key
+
+	// return pinned hole to frontend
+	Holes []Hole `json:"pinned"`
+
+	/// generated field
+	DivisionID int `json:"division_id" gorm:"-:all"`
 }
 
 func (division Division) GetID() int {

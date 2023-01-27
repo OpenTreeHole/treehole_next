@@ -1,22 +1,22 @@
 package perm
 
-type Permission = int
+type Role = int
 
-// Permission enum
+// Role enum
 const (
-	Admin Permission = 1 << iota
+	Admin Role = 1 << iota
 	Operator
 )
 
 type PermissionOwner interface {
-	GetPermission() Permission
+	GetPermission() Role
 }
 
 // CheckPermission checks user permission
 // Example:
-//  CheckPermission(u, perm.Admin)
-//  CheckPermission(u, perm.Admin | perm.Operator)
 //
-func CheckPermission(u PermissionOwner, p Permission) bool {
+//	CheckPermission(u, perm.Admin)
+//	CheckPermission(u, perm.Admin | perm.Operator)
+func CheckPermission(u PermissionOwner, p Role) bool {
 	return u.GetPermission()&p != 0
 }

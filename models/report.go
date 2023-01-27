@@ -18,12 +18,13 @@ type Report struct {
 	ReportID  int       `json:"report_id" gorm:"-:all"`
 	FloorID   int       `json:"floor_id"`
 	HoleID    int       `json:"hole_id" gorm:"-:all"`
-	Floor     Floor     `json:"floor"`
+	Floor     *Floor    `json:"floor"`
 	UserID    int       `json:"-"` // the reporter's id, should keep a secret
 	Reason    string    `json:"reason" gorm:"size:128"`
-	Dealt     bool      `json:"dealt"`                  // the report has been dealt
-	DealtBy   int       `json:"dealt_by"`               // who dealt the report
-	Result    string    `json:"result" gorm:"size:128"` // deal result
+	Dealt     bool      `json:"dealt"` // the report has been dealt
+	// who dealt the report
+	DealtBy int    `json:"dealt_by"`
+	Result  string `json:"result" gorm:"size:128"` // deal result
 }
 
 func (report Report) GetID() int {

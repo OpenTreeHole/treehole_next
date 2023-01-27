@@ -25,13 +25,14 @@ type PostBody struct {
 }
 
 // BanUser
-// @Summary [Deprecated] Ban publisher of a floor
-// @Deprecated
-// @Tags Penalty
-// @Produce application/json
-// @Router /penalty/{floor_id} [post]
-// @Param json body PostBody true "json"
-// @Success 201 {object} Hole
+//
+//	@Summary	[Deprecated] Ban publisher of a floor
+//	@Deprecated
+//	@Tags		Penalty
+//	@Produce	application/json
+//	@Router		/penalty/{floor_id} [post]
+//	@Param		json	body		PostBody	true	"json"
+//	@Success	201		{object}	Hole
 func BanUser(c *fiber.Ctx) error {
 	// check AuthURL
 	if config.Config.AuthUrl == "" {

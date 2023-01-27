@@ -62,12 +62,13 @@ type SearchFloorResponse struct {
 }
 
 // SearchFloors
-// @Summary SearchFloors In ElasticSearch
-// @Tags Search
-// @Produce application/json
-// @Router /floors/search [post]
-// @Param json body any true "json"
-// @Success 200 {array} models.Floor
+//
+//	@Summary	SearchFloors In ElasticSearch
+//	@Tags		Search
+//	@Produce	application/json
+//	@Router		/floors/search [post]
+//	@Param		json	body	any	true	"json"
+//	@Success	200		{array}	models.Floor
 func SearchFloors(c *fiber.Ctx) error {
 	// forwarding
 	var body bytes.Buffer
@@ -76,12 +77,13 @@ func SearchFloors(c *fiber.Ctx) error {
 }
 
 // SearchConfig
-// @Summary change search config
-// @Tags Search
-// @Produce application/json
-// @Router /config/search [post]
-// @Param json body SearchConfigModel true "json"
-// @Success 200 {object} Map
+//
+//	@Summary	change search config
+//	@Tags		Search
+//	@Produce	application/json
+//	@Router		/config/search [post]
+//	@Param		json	body		SearchConfigModel	true	"json"
+//	@Success	200		{object}	Map
 func SearchConfig(c *fiber.Ctx) error {
 	var body SearchConfigModel
 	err := c.BodyParser(&body)

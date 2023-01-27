@@ -1,10 +1,8 @@
 package favourite
 
-import . "treehole_next/models"
-
 type Response struct {
-	Message string   `json:"message"`
-	Data    IntArray `json:"data"`
+	Message string `json:"message"`
+	Data    []int  `json:"data"`
 }
 
 type ListModel struct {

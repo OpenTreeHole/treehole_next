@@ -15,19 +15,50 @@ import (
 )
 
 type Hole struct {
-	ID         int                `json:"id" gorm:"primaryKey"`
-	CreatedAt  time.Time          `json:"time_created"`
-	UpdatedAt  time.Time          `json:"time_updated"`
-	HoleID     int                `json:"hole_id" gorm:"-:all"`                                                          // 兼容旧版 id
-	DivisionID int                `json:"division_id"`                                                                   // 所属 division 的 id
-	UserID     int                `json:"-"`                                                                             // 洞主 id
-	Tags       []*Tag             `json:"tags" gorm:"many2many:hole_tags;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"` // tag 列表
-	Floors     []Floor            `json:"-"`                                                                             // 楼层列表
-	HoleFloor  HoleFloor          `json:"floors" gorm:"-:all"`                                                           // 返回给前端的楼层列表，包括首楼、尾楼和预加载的前 n 个楼层
-	View       int                `json:"view"`                                                                          // 浏览量
-	Reply      int                `json:"reply"`                                                                         // 回复量（即该洞下 floor 的数量）
-	Hidden     bool               `json:"hidden" gorm:"index"`                                                           // 是否隐藏，隐藏的洞用户不可见，管理员可见
-	Mapping    []AnonynameMapping `json:"-"`                                                                             // 匿名映射表
+	/// saved fields
+	ID        int       `json:"id" gorm:"primaryKey"`
+	CreatedAt time.Time `json:"time_created" gorm:"not null;index:idx_hole_div_cre,priority:2"`
+	UpdatedAt time.Time `json:"time_updated" gorm:"not null;index:idx_hole_div_upd,priority:2"`
+
+	/// base info
+
+	// 浏览量
+	View int `json:"view" gorm:"not null;default:0"`
+
+	// 回复量（即该洞下 floor 的数量 - 1）
+	Reply int `json:"reply" gorm:"not null;default:0"`
+
+	// 是否隐藏，隐藏的洞用户不可见，管理员可见
+	Hidden bool `json:"hidden" gorm:"not null;default:false"`
+
+	/// association info, should add foreign key
+
+	// 所属 division 的 id
+	DivisionID int `json:"division_id" gorm:"not null;index:idx_hole_div_upd,priority:1;index:idx_hole_div_cre,priority:1"`
+
+	// 洞主 id，管理员可见
+	UserID int `json:"user_id;omitempty" gorm:"not null"`
+
+	// tag 列表；不超过 10 个
+	Tags []*Tag `json:"tags" gorm:"many2many:hole_tags;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+
+	// 楼层列表
+	Floors []Floor `json:"-"`
+
+	// 匿名映射表
+	Mapping []*User `json:"-" gorm:"many2many:anonyname_mapping"`
+
+	/// generated field
+
+	// 兼容旧版 id
+	HoleID int `json:"hole_id" gorm:"-:all"`
+
+	// 返回给前端的楼层列表，包括首楼、尾楼和预加载的前 n 个楼层
+	HoleFloor struct {
+		FirstFloor *Floor   `json:"first_floor"` // 首楼
+		LastFloor  *Floor   `json:"last_floor"`  // 尾楼
+		Floors     []*Floor `json:"prefetch"`    // 预加载的楼层
+	} `json:"floors" gorm:"-:all"`
 }
 
 func (hole Hole) GetID() int {
@@ -35,12 +66,6 @@ func (hole Hole) GetID() int {
 }
 
 type Holes []Hole
-
-type HoleFloor struct {
-	FirstFloor *Floor   `json:"first_floor"` // 首楼
-	LastFloor  *Floor   `json:"last_floor"`  // 尾楼
-	Floors     []*Floor `json:"prefetch"`    // 预加载的楼层
-}
 
 /**************
 	get hole methods

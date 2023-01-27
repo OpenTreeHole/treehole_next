@@ -8,13 +8,14 @@ import (
 )
 
 // ListFavorites
-// @Summary List User's Favorites
-// @Tags Favorite
-// @Produce application/json
-// @Router /user/favorites [get]
-// @Param object query ListModel false "query"
-// @Success 200 {object} models.Map
-// @Success 200 {array} models.Hole
+//
+//	@Summary	List User's Favorites
+//	@Tags		Favorite
+//	@Produce	application/json
+//	@Router		/user/favorites [get]
+//	@Param		object	query		ListModel	false	"query"
+//	@Success	200		{object}	models.Map
+//	@Success	200		{array}		models.Hole
 func ListFavorites(c *fiber.Ctx) error {
 	// get userID
 	userID, err := GetUserID(c)
@@ -52,14 +53,15 @@ func ListFavorites(c *fiber.Ctx) error {
 }
 
 // AddFavorite
-// @Summary Add A Favorite
-// @Tags Favorite
-// @Accept application/json
-// @Produce application/json
-// @Router /user/favorites [post]
-// @Param json body AddModel true "json"
-// @Success 201 {object} Response
-// @Success 200 {object} Response
+//
+//	@Summary	Add A Favorite
+//	@Tags		Favorite
+//	@Accept		application/json
+//	@Produce	application/json
+//	@Router		/user/favorites [post]
+//	@Param		json	body		AddModel	true	"json"
+//	@Success	201		{object}	Response
+//	@Success	200		{object}	Response
 func AddFavorite(c *fiber.Ctx) error {
 	// validate body
 	var body AddModel
@@ -93,13 +95,14 @@ func AddFavorite(c *fiber.Ctx) error {
 }
 
 // ModifyFavorite
-// @Summary Modify User's Favorites
-// @Tags Favorite
-// @Produce application/json
-// @Router /user/favorites [put]
-// @Param json body ModifyModel true "json"
-// @Success 200 {object} Response
-// @Failure 404 {object} Response
+//
+//	@Summary	Modify User's Favorites
+//	@Tags		Favorite
+//	@Produce	application/json
+//	@Router		/user/favorites [put]
+//	@Param		json	body		ModifyModel	true	"json"
+//	@Success	200		{object}	Response
+//	@Failure	404		{object}	Response
 func ModifyFavorite(c *fiber.Ctx) error {
 	// validate body
 	var body ModifyModel
@@ -133,13 +136,14 @@ func ModifyFavorite(c *fiber.Ctx) error {
 }
 
 // DeleteFavorite
-// @Summary Delete A Favorite
-// @Tags Favorite
-// @Produce application/json
-// @Router /user/favorites [delete]
-// @Param json body DeleteModel true "json"
-// @Success 200 {object} Response
-// @Failure 404 {object} Response
+//
+//	@Summary	Delete A Favorite
+//	@Tags		Favorite
+//	@Produce	application/json
+//	@Router		/user/favorites [delete]
+//	@Param		json	body		DeleteModel	true	"json"
+//	@Success	200		{object}	Response
+//	@Failure	404		{object}	Response
 func DeleteFavorite(c *fiber.Ctx) error {
 	// validate body
 	var body DeleteModel

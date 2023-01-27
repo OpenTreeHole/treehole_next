@@ -5,11 +5,17 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
 	"strings"
+	"time"
 )
 
-type UserFavorites struct {
-	UserID int `json:"user_id" gorm:"primaryKey"`
-	HoleID int `json:"hole_id" gorm:"primaryKey"`
+type UserFavorite struct {
+	UserID    int       `json:"user_id" gorm:"primaryKey"`
+	HoleID    int       `json:"hole_id" gorm:"primaryKey"`
+	CreatedAt time.Time `json:"time_created"`
+}
+
+func (UserFavorite) TableName() string {
+	return "user_favorites"
 }
 
 func UserCreateFavourite(tx *gorm.DB, c *fiber.Ctx, clear bool, userID int, holeIDs []int) error {

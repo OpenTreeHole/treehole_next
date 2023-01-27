@@ -20,14 +20,73 @@ import (
 )
 
 type User struct {
-	ID          int             `json:"id" gorm:"primaryKey"`
-	CreatedAt   time.Time       `json:"time_created"`
-	UpdatedAt   time.Time       `json:"time_updated"`
-	Roles       []string        `json:"roles" gorm:"-:all"`
-	BanDivision map[int]bool    `json:"-" gorm:"-:all"`
-	Nickname    string          `json:"nickname" gorm:"-:all"`
-	Config      map[string]any  `json:"config" gorm:"-:all"`
-	Permission  perm.Permission `json:"-" gorm:"-:all"`
+	/// base info
+	ID int `json:"id" gorm:"primaryKey"`
+
+	Config struct {
+		// used when notify
+		Notify []string `json:"notify"`
+
+		// 对折叠内容的处理
+		// fold 折叠, hide 隐藏, show 展示
+		ShowFolded string `json:"show_folded"`
+	} `json:"config" gorm:"serializer:json;not null;default:\"{}\""`
+
+	/// association fields, should add foreign key
+
+	// favorite holes of the user
+	UserFavoriteHoles []*Hole `json:"-" gorm:"many2many:user_favorite"`
+
+	// holes owned by the user
+	UserHoles []Hole `json:"-"`
+
+	// floors owned by the user
+	UserFloors []Floor `json:"-"`
+
+	// reports made by the user; a user has many report
+	UserReports []Report `json:"-"`
+
+	// reports dealt by the user, admin only
+	UserDealtReports []Report `json:"-" gorm:"foreignKey:DealtBy"`
+
+	// floors liked by the user
+	UserLikedFloors []*Floor `json:"-" gorm:"many2many:floor_like"`
+
+	// floors disliked by the user
+	UserDislikedFloors []*Floor `json:"-" gorm:"many2many:floor_dislike"`
+
+	// floor history made by the user
+	UserFloorHistory []FloorHistory `json:"-"`
+
+	// user punishments on division
+	UserPunishments []Punishment `json:"-"`
+
+	// punishments made by this user
+	UserMakePunishments []Punishment `json:"-" gorm:"foreignKey:MadeBy"`
+
+	/// dynamically generated field
+
+	Permission struct {
+		// 管理员权限到期时间
+		Admin time.Time `json:"admin"`
+		// key: division_id value: 对应分区禁言解除时间
+		Silence      map[int]time.Time `json:"silence"`
+		OffenseCount int               `json:"offense_count"`
+	} `json:"permission" gorm:"-:all"`
+
+	BanDivision map[int]bool `json:"-" gorm:"-:all"`
+
+	// load from table 'user_favorite'
+	FavoriteData []int `json:"favorite_data" gorm:"-:all"`
+
+	// get from jwt
+	IsAdmin    bool      `json:"is_admin" gorm:"-:all"`
+	JoinedTime time.Time `json:"joined_time" gorm:"-:all"`
+	LastLogin  time.Time `json:"last_login" gorm:"-:all"`
+	Nickname   string    `json:"nickname" gorm:"-:all"`
+
+	// deprecated
+	Role perm.Role `json:"-" gorm:"-:all"`
 }
 
 func (user User) GetID() int {
@@ -61,14 +120,12 @@ func (user *User) parseJWT(token string) error {
 
 func GetUser(c *fiber.Ctx) (*User, error) {
 	user := &User{
-		Roles:       make([]string, 0, 10),
 		BanDivision: make(map[int]bool),
-		Config:      make(map[string]any),
-		Permission:  0,
+		Role:        0,
 	}
 	if config.Config.Mode == "dev" || config.Config.Mode == "test" {
 		user.ID = 1
-		user.Permission = perm.Admin + perm.Operator
+		user.Role = perm.Admin + perm.Operator
 		return user, nil
 	}
 
@@ -97,33 +154,21 @@ func GetUser(c *fiber.Ctx) (*User, error) {
 }
 
 func (user *User) parsePermission() error {
-	for _, v := range user.Roles {
-		if v == "admin" {
-			user.Permission |= perm.Admin
-		} else if v == "operator" {
-			user.Permission |= perm.Operator
-		} else if strings.HasPrefix(v, "ban_treehole") {
-			banDivisionID, err := strconv.Atoi(v[13:]) // "ban_treehole_{divisionID}"
-			if err != nil {
-				return err
-			}
-			user.BanDivision[banDivisionID] = true
-		}
+	if user.IsAdmin {
+		user.Role |= perm.Admin
 	}
 	return nil
 }
 
 func GetUserFromAuth(c *fiber.Ctx) (*User, error) {
 	user := &User{
-		Roles:       make([]string, 0, 10),
 		BanDivision: make(map[int]bool),
-		Config:      make(map[string]any),
-		Permission:  0,
+		Role:        0,
 	}
 
 	if config.Config.Mode == "dev" || config.Config.Mode == "test" {
 		user.ID = 1
-		user.Permission = perm.Admin + perm.Operator
+		user.Role = perm.Admin + perm.Operator
 		return user, nil
 	}
 
@@ -197,6 +242,6 @@ func GetUserID(c *fiber.Ctx) (int, error) {
 	return id, nil
 }
 
-func (user *User) GetPermission() perm.Permission {
-	return user.Permission
+func (user *User) GetPermission() perm.Role {
+	return user.Role
 }

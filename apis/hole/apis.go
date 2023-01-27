@@ -12,15 +12,16 @@ import (
 )
 
 // ListHolesByDivision
-// @Summary List Holes In A Division
-// @Tags Hole
-// @Produce application/json
-// @Router /divisions/{division_id}/holes [get]
-// @Param division_id path int true "division_id"
-// @Param object query QueryTime false "query"
-// @Success 200 {array} Hole
-// @Failure 404 {object} MessageModel
-// @Failure 500 {object} MessageModel
+//
+//	@Summary	List Holes In A Division
+//	@Tags		Hole
+//	@Produce	json
+//	@Router		/divisions/{division_id}/holes [get]
+//	@Param		division_id	path		int			true	"division_id"
+//	@Param		object		query		QueryTime	false	"query"
+//	@Success	200			{array}		Hole
+//	@Failure	404			{object}	MessageModel
+//	@Failure	500			{object}	MessageModel
 func ListHolesByDivision(c *fiber.Ctx) error {
 	var query QueryTime
 	err := ValidateQuery(c, &query)
@@ -47,14 +48,15 @@ func ListHolesByDivision(c *fiber.Ctx) error {
 }
 
 // ListHolesByTag
-// @Summary List Holes By Tag
-// @Tags Hole
-// @Produce application/json
-// @Router /tags/{tag_name}/holes [get]
-// @Param tag_name path string true "tag_name"
-// @Param object query QueryTime false "query"
-// @Success 200 {array} Hole
-// @Failure 404 {object} MessageModel
+//
+//	@Summary	List Holes By Tag
+//	@Tags		Hole
+//	@Produce	json
+//	@Router		/tags/{tag_name}/holes [get]
+//	@Param		tag_name	path		string		true	"tag_name"
+//	@Param		object		query		QueryTime	false	"query"
+//	@Success	200			{array}		Hole
+//	@Failure	404			{object}	MessageModel
 func ListHolesByTag(c *fiber.Ctx) error {
 	var query QueryTime
 	err := ValidateQuery(c, &query)
@@ -86,13 +88,14 @@ func ListHolesByTag(c *fiber.Ctx) error {
 }
 
 // ListHolesOld
-// @Summary Old API for Listing Holes
-// @Deprecated
-// @Tags Hole
-// @Produce application/json
-// @Router /holes [get]
-// @Param object query ListOldModel false "query"
-// @Success 200 {array} Hole
+//
+//	@Summary	Old API for Listing Holes
+//	@Deprecated
+//	@Tags		Hole
+//	@Produce	application/json
+//	@Router		/holes [get]
+//	@Param		object	query	ListOldModel	false	"query"
+//	@Success	200		{array}	Hole
 func ListHolesOld(c *fiber.Ctx) error {
 	var query ListOldModel
 	err := ValidateQuery(c, &query)
@@ -134,13 +137,14 @@ func ListHolesOld(c *fiber.Ctx) error {
 }
 
 // GetHole
-// @Summary Get A Hole
-// @Tags Hole
-// @Produce application/json
-// @Router /holes/{id} [get]
-// @Param id path int true "id"
-// @Success 200 {object} Hole
-// @Failure 404 {object} MessageModel
+//
+//	@Summary	Get A Hole
+//	@Tags		Hole
+//	@Produce	application/json
+//	@Router		/holes/{id} [get]
+//	@Param		id	path		int	true	"id"
+//	@Success	200	{object}	Hole
+//	@Failure	404	{object}	MessageModel
 func GetHole(c *fiber.Ctx) error {
 	id, _ := c.ParamsInt("id")
 
@@ -159,14 +163,15 @@ func GetHole(c *fiber.Ctx) error {
 }
 
 // CreateHole
-// @Summary Create A Hole
-// @Description Create a hole, create tags and floor binding to it and set the name mapping
-// @Tags Hole
-// @Produce application/json
-// @Router /divisions/{division_id}/holes [post]
-// @Param division_id path int true "division id"
-// @Param json body CreateModel true "json"
-// @Success 201 {object} Hole
+//
+//	@Summary		Create A Hole
+//	@Description	Create a hole, create tags and floor binding to it and set the name mapping
+//	@Tags			Hole
+//	@Produce		application/json
+//	@Router			/divisions/{division_id}/holes [post]
+//	@Param			division_id	path		int			true	"division id"
+//	@Param			json		body		CreateModel	true	"json"
+//	@Success		201			{object}	Hole
 func CreateHole(c *fiber.Ctx) error {
 	// validate body
 	var body CreateModel
@@ -207,13 +212,14 @@ func CreateHole(c *fiber.Ctx) error {
 }
 
 // CreateHoleOld
-// @Summary Old API for Creating A Hole
-// @Deprecated
-// @Tags Hole
-// @Produce application/json
-// @Router /holes [post]
-// @Param json body CreateOldModel true "json"
-// @Success 201 {object} CreateOldResponse
+//
+//	@Summary	Old API for Creating A Hole
+//	@Deprecated
+//	@Tags		Hole
+//	@Produce	application/json
+//	@Router		/holes [post]
+//	@Param		json	body		CreateOldModel	true	"json"
+//	@Success	201		{object}	CreateOldResponse
 func CreateHoleOld(c *fiber.Ctx) error {
 	// validate body
 	var body CreateOldModel
@@ -256,14 +262,15 @@ func CreateHoleOld(c *fiber.Ctx) error {
 }
 
 // ModifyHole
-// @Summary Modify A Hole
-// @Tags Hole
-// @Produce application/json
-// @Router /holes/{id} [put]
-// @Param id path int true "id"
-// @Param json body ModifyModel true "json"
-// @Success 200 {object} Hole
-// @Failure 404 {object} MessageModel
+//
+//	@Summary	Modify A Hole
+//	@Tags		Hole
+//	@Produce	application/json
+//	@Router		/holes/{id} [put]
+//	@Param		id		path		int			true	"id"
+//	@Param		json	body		ModifyModel	true	"json"
+//	@Success	200		{object}	Hole
+//	@Failure	404		{object}	MessageModel
 func ModifyHole(c *fiber.Ctx) error {
 	// validate
 	var body ModifyModel
@@ -349,14 +356,15 @@ func ModifyHole(c *fiber.Ctx) error {
 }
 
 // DeleteHole
-// @Summary Delete A Hole
-// @Description Hide a hole, but visible to admins. This may affect many floors, DO NOT ABUSE!!!
-// @Tags Hole
-// @Produce application/json
-// @Router /holes/{id} [delete]
-// @Param id path int true "id"
-// @Success 204
-// @Failure 404 {object} MessageModel
+//
+//	@Summary		Delete A Hole
+//	@Description	Hide a hole, but visible to admins. This may affect many floors, DO NOT ABUSE!!!
+//	@Tags			Hole
+//	@Produce		application/json
+//	@Router			/holes/{id} [delete]
+//	@Param			id	path	int	true	"id"
+//	@Success		204
+//	@Failure		404	{object}	MessageModel
 func DeleteHole(c *fiber.Ctx) error {
 	// validate holeID
 	holeID, err := c.ParamsInt("id")
@@ -401,14 +409,15 @@ func DeleteHole(c *fiber.Ctx) error {
 }
 
 // PatchHole
-// @Summary Patch A Hole
-// @Description Add hole.view
-// @Tags Hole
-// @Produce application/json
-// @Router /holes/{id} [patch]
-// @Param id path int true "id"
-// @Success 204
-// @Failure 404 {object} MessageModel
+//
+//	@Summary		Patch A Hole
+//	@Description	Add hole.view
+//	@Tags			Hole
+//	@Produce		application/json
+//	@Router			/holes/{id} [patch]
+//	@Param			id	path	int	true	"id"
+//	@Success		204
+//	@Failure		404	{object}	MessageModel
 func PatchHole(c *fiber.Ctx) error {
 	holeID, err := c.ParamsInt("id")
 	if err != nil {

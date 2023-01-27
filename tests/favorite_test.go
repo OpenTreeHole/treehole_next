@@ -9,7 +9,7 @@ import (
 )
 
 func init() {
-	userFavorites := make([]UserFavorites, 10)
+	userFavorites := make([]UserFavorite, 10)
 	for i := range userFavorites {
 		userFavorites[i].HoleID = i + 1
 		userFavorites[i].UserID = 1
@@ -33,7 +33,7 @@ func TestModifyFavorites(t *testing.T) {
 	data := Map{"hole_ids": []int{1, 2, 5, 6, 7}}
 	testAPI(t, "put", "/api/user/favorites", 201, data)
 	testAPI(t, "put", "/api/user/favorites", 201, data) // duplicated
-	var userFavorites []UserFavorites
+	var userFavorites []UserFavorite
 	DB.Where("user_id = ?", 1).Find(&userFavorites)
 	assert.EqualValues(t, 5, len(userFavorites))
 }
@@ -41,9 +41,9 @@ func TestModifyFavorites(t *testing.T) {
 func TestDeleteFavorite(t *testing.T) {
 	data := Map{"hole_id": 1}
 	testAPI(t, "delete", "/api/user/favorites", 200, data)
-	var userFavorites []UserFavorites
+	var userFavorites []UserFavorite
 	DB.Where("user_id = ?", 1).Find(&userFavorites)
-	assert.EqualValues(t, false, slices.Contains(userFavorites, UserFavorites{UserID: 1, HoleID: 1}))
+	assert.EqualValues(t, false, slices.Contains(userFavorites, UserFavorite{UserID: 1, HoleID: 1}))
 	favouriteLen := len(userFavorites)
 
 	testAPI(t, "delete", "/api/user/favorites", 200, data) // duplicated
