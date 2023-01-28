@@ -371,7 +371,7 @@ func ModifyFloorLike(c *fiber.Ctx) error {
 	}
 
 	var floor Floor
-	result := DB.First(&floor, floorID)
+	result := DB.Preload("Mention").First(&floor, floorID)
 	if result.Error != nil {
 		return result.Error
 	}
