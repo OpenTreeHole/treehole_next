@@ -372,8 +372,14 @@ func (hole *Hole) Create(tx *gorm.DB) error {
 			return err
 		}
 
-		// Create hole_tags association
+		// Create hole_tags association only
 		err = tx.Omit("Tags.*", "UpdatedAt").Select("Tags").Save(&hole).Error
+		if err != nil {
+			return err
+		}
+
+		// Update tag temperature
+		err = hole.Tags.AddTagTemperature(tx)
 		if err != nil {
 			return err
 		}
@@ -402,6 +408,11 @@ func (hole *Hole) Create(tx *gorm.DB) error {
 }
 
 func (hole *Hole) AfterCreate(_ *gorm.DB) (err error) {
+	hole.HoleID = hole.ID
+	return nil
+}
+
+func (hole *Hole) AfterFind(_ *gorm.DB) (err error) {
 	hole.HoleID = hole.ID
 	return nil
 }

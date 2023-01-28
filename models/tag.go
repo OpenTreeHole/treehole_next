@@ -77,6 +77,7 @@ func loadAllTags(tx *gorm.DB) error {
 var tagUpdateChan = make(chan int, 1000)
 var tagUpdateIDs = make(map[int]bool)
 
+// UpdateTagTemperature is a timed task
 func UpdateTagTemperature(ctx context.Context) {
 	ticker := time.NewTicker(time.Second * 60)
 	for {
@@ -86,14 +87,35 @@ func UpdateTagTemperature(ctx context.Context) {
 		case tagID := <-tagUpdateChan:
 			tagUpdateIDs[tagID] = true
 		case <-ticker.C:
-			go updateTagTemperature(utils.Keys(tagUpdateIDs))
+			keys := utils.Keys(tagUpdateIDs)  // get all the keys
+			tagUpdateIDs = make(map[int]bool) // clear
+			go updateTagTemperature(keys)     // updates
 		}
 	}
 }
 
+// updateTagCacheBytes should be wrapped in tagCache write lock
+// tagCache.Lock() should not be called twice
+func updateTagCacheBytes() error {
+	tagCacheBytes, err := json.Marshal(tagCache.data)
+	if err != nil {
+		return err
+	}
+
+	TagCacheBytes.Store(tagCacheBytes)
+	return nil
+}
+
 func updateTagTemperature(tagIDs []int) {
 	var tags Tags
-	DB.Find(&tags, tagIDs)
+	err := DB.Find(&tags, tagIDs).Error
+	if err != nil {
+		utils.Logger.Error(err.Error())
+		return
+	}
+	if len(tags) == 0 {
+		return
+	}
 
 	tagCache.Lock()
 	defer tagCache.Unlock()
@@ -113,13 +135,10 @@ func updateTagTemperature(tagIDs []int) {
 		return tagCache.data[i].Temperature > tagCache.data[j].Temperature
 	})
 
-	tagCacheBytes, err := json.Marshal(tagCache.data)
+	err = updateTagCacheBytes()
 	if err != nil {
 		utils.Logger.Error(err.Error())
-		return
 	}
-
-	TagCacheBytes.Store(tagCacheBytes)
 }
 
 func (tags Tags) checkTags() Tags {
@@ -142,6 +161,11 @@ func (tags Tags) checkTags() Tags {
 
 func (tags Tags) FindOrCreateTags(tx *gorm.DB) error {
 	newTags := tags.checkTags()
+	defer func() {
+		for _, tag := range tags {
+			tagUpdateChan <- tag.ID
+		}
+	}()
 	if len(newTags) == 0 {
 		return nil
 	}
@@ -171,5 +195,9 @@ func (tags Tags) FindOrCreateTags(tx *gorm.DB) error {
 		tagCache.idIndex[storeTag.ID] = storeTag
 	}
 
-	return nil
+	return updateTagCacheBytes()
+}
+
+func (tags Tags) AddTagTemperature(tx *gorm.DB) error {
+	return tx.Model(&tags).Update("temperature", gorm.Expr("temperature + 1")).Error
 }
