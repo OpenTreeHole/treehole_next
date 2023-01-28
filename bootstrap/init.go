@@ -1,6 +1,7 @@
 package bootstrap
 
 import (
+	"context"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/pprof"
 	"github.com/gofiber/fiber/v2/middleware/recover"
@@ -43,5 +44,6 @@ func registerMiddlewares(app *fiber.App) {
 func startTasks() chan struct{} {
 	done := make(chan struct{}, 1)
 	go hole.UpdateHoleViews(done)
+	go models.UpdateTagTemperature(context.Background())
 	return done
 }

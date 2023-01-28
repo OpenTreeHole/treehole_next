@@ -1,8 +1,14 @@
 package models
 
 import (
+	"context"
+	"encoding/json"
 	"gorm.io/gorm"
+	"sort"
+	"sync"
+	"sync/atomic"
 	"time"
+	"treehole_next/utils"
 )
 
 type Tag struct {
@@ -28,14 +34,142 @@ func (tag *Tag) GetID() int {
 	return tag.ID
 }
 
-func (tag *Tag) AfterFind(tx *gorm.DB) (err error) {
-	_ = tx
+func (tag *Tag) AfterFind(_ *gorm.DB) (err error) {
 	tag.TagID = tag.ID
 	return nil
 }
 
-func (tag *Tag) AfterCreate(tx *gorm.DB) (err error) {
-	_ = tx
+func (tag *Tag) AfterCreate(_ *gorm.DB) (err error) {
 	tag.TagID = tag.ID
+	return nil
+}
+
+var tagCache struct {
+	sync.RWMutex
+	data      Tags
+	nameIndex map[string]*Tag
+	idIndex   map[int]*Tag
+}
+
+var TagCacheBytes atomic.Value
+
+func loadAllTags(tx *gorm.DB) error {
+	tagCache.data = make(Tags, 0, 10000)
+	tagCache.nameIndex = make(map[string]*Tag, 10000)
+	tagCache.idIndex = make(map[int]*Tag, 10000)
+	err := tx.Order("temperature DESC").Find(&tagCache.data).Error
+	if err != nil {
+		return err
+	}
+
+	for _, tag := range tagCache.data {
+		tagCache.nameIndex[tag.Name] = tag
+		tagCache.idIndex[tag.ID] = tag
+	}
+	tagCacheBytes, err := json.Marshal(tagCache.data)
+	if err != nil {
+		return err
+	}
+	TagCacheBytes.Store(tagCacheBytes)
+	return err
+}
+
+var tagUpdateChan = make(chan int, 1000)
+var tagUpdateIDs = make(map[int]bool)
+
+func UpdateTagTemperature(ctx context.Context) {
+	ticker := time.NewTicker(time.Second * 60)
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case tagID := <-tagUpdateChan:
+			tagUpdateIDs[tagID] = true
+		case <-ticker.C:
+			go updateTagTemperature(utils.Keys(tagUpdateIDs))
+		}
+	}
+}
+
+func updateTagTemperature(tagIDs []int) {
+	var tags Tags
+	DB.Find(&tags, tagIDs)
+
+	tagCache.Lock()
+	defer tagCache.Unlock()
+	for _, tag := range tags {
+		originTag, ok := tagCache.idIndex[tag.ID]
+		if !ok {
+			newTag := utils.ValueCopy(tag)
+			tagCache.data = append(tagCache.data, newTag)
+			tagCache.idIndex[tag.ID] = newTag
+			tagCache.nameIndex[tag.Name] = newTag
+		} else {
+			*originTag = *tag
+		}
+	}
+
+	sort.Slice(tagCache.data, func(i, j int) bool {
+		return tagCache.data[i].Temperature > tagCache.data[j].Temperature
+	})
+
+	tagCacheBytes, err := json.Marshal(tagCache.data)
+	if err != nil {
+		utils.Logger.Error(err.Error())
+		return
+	}
+
+	TagCacheBytes.Store(tagCacheBytes)
+}
+
+func (tags Tags) checkTags() Tags {
+	newTags := make(Tags, 0)
+
+	// read lock, concurrence reading
+	tagCache.RLock()
+	defer tagCache.RUnlock()
+
+	for _, tag := range tags {
+		cachedTag, ok := tagCache.nameIndex[tag.Name]
+		if ok {
+			*tag = *cachedTag
+		} else {
+			newTags = append(newTags, tag)
+		}
+	}
+	return newTags
+}
+
+func (tags Tags) FindOrCreateTags(tx *gorm.DB) error {
+	newTags := tags.checkTags()
+	if len(newTags) == 0 {
+		return nil
+	}
+
+	// write lock
+	tagCache.Lock()
+	defer tagCache.Unlock()
+
+	// check whether newTags have been inserted
+	tagsNeedInsert := make(Tags, 0, len(newTags))
+	for _, tag := range newTags {
+		if _, ok := tagCache.nameIndex[tag.Name]; !ok {
+			tagsNeedInsert = append(tagsNeedInsert, tag)
+		}
+	}
+
+	err := tx.Create(&tagsNeedInsert).Error
+	if err != nil {
+		return err
+	}
+
+	// update cache and index
+	for _, newTag := range tagsNeedInsert {
+		storeTag := utils.ValueCopy(newTag)
+		tagCache.data = append(tagCache.data, storeTag)
+		tagCache.nameIndex[storeTag.Name] = storeTag
+		tagCache.idIndex[storeTag.ID] = storeTag
+	}
+
 	return nil
 }

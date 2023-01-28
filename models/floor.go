@@ -2,13 +2,11 @@ package models
 
 import (
 	"fmt"
+	"github.com/gofiber/fiber/v2"
 	"gorm.io/plugin/dbresolver"
 	"time"
 	"treehole_next/config"
 	"treehole_next/utils"
-	"treehole_next/utils/perm"
-
-	"github.com/gofiber/fiber/v2"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -197,30 +195,11 @@ func (floor *Floor) SetMention(tx *gorm.DB, clear bool) error {
 Create
 *******************************/
 
-func (floor *Floor) Create(c *fiber.Ctx, db ...*gorm.DB) error {
-	var tx *gorm.DB
-	if len(db) > 0 {
-		tx = db[0]
-	} else {
-		tx = DB
-	}
-
-	// get user
-	user, err := GetUserFromAuth(c)
-	if err != nil {
-		return err
-	}
-	floor.UserID = user.ID
-	floor.IsMe = true
-
+func (floor *Floor) Create(tx *gorm.DB) error {
 	return tx.Transaction(func(tx *gorm.DB) error {
 		// permission
 		var hole Hole
 		tx.Select("division_id").First(&hole, floor.HoleID)
-		if user.BanDivision[hole.DivisionID] ||
-			floor.SpecialTag != "" && !perm.CheckPermission(user, perm.Admin|perm.Operator) {
-			return utils.Forbidden()
-		}
 
 		// get anonymous name
 		var mapping AnonynameMapping

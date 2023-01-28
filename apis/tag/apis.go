@@ -23,12 +23,15 @@ func ListTags(c *fiber.Ctx) error {
 		return err
 	}
 
-	var tags []Tag
-	querySet := DB.Order("temperature DESC")
-	if query.Search != "" {
-		querySet = querySet.Where("name LIKE ?", "%"+query.Search+"%")
+	if query.Search == "" {
+		return c.Send(TagCacheBytes.Load().([]byte))
 	}
-	querySet = querySet.Find(&tags)
+	tags := Tags{}
+	err = DB.Where("name LIKE ?", "%"+query.Search+"%").
+		Order("temperature DESC").Find(&tags).Error
+	if err != nil {
+		return err
+	}
 	return c.JSON(&tags)
 }
 

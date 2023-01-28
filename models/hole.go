@@ -64,6 +64,10 @@ func (hole *Hole) GetID() int {
 	return hole.ID
 }
 
+func (hole *Hole) IDString() string {
+	return fmt.Sprintf(fmt.Sprintf("hole_%d", hole.ID))
+}
+
 type Holes []*Hole
 
 /**************
@@ -204,11 +208,11 @@ func (hole *Hole) Preprocess(c *fiber.Ctx) error {
 }
 
 func (holes Holes) Preprocess(_ *fiber.Ctx) error {
-	notInCache := make([]*Hole, 0, len(holes))
+	notInCache := make(Holes, 0, len(holes))
 
 	for i := 0; i < len(holes); i++ {
 		hole := new(Hole)
-		ok := utils.GetCache(fmt.Sprintf("hole_%d", holes[i].ID), &hole)
+		ok := utils.GetCache(hole.IDString(), &hole)
 		if !ok {
 			notInCache = append(notInCache, holes[i])
 		} else {
@@ -226,25 +230,25 @@ func (holes Holes) Preprocess(_ *fiber.Ctx) error {
 	return nil
 }
 
-func UpdateHoleCache(notInCache []*Hole) error {
-	err := loadFloors(notInCache)
+func UpdateHoleCache(holes Holes) error {
+	err := loadFloors(holes)
 	if err != nil {
 		return err
 	}
 
-	err = loadTags(notInCache)
+	err = loadTags(holes)
 	if err != nil {
 		return err
 	}
 
-	for i := range notInCache {
-		notInCache[i].HoleID = notInCache[i].ID
+	for i := range holes {
+		holes[i].HoleID = holes[i].ID
 	}
 
-	for i := 0; i < len(notInCache); i++ {
+	for i := range holes {
 		err = utils.SetCache(
-			fmt.Sprintf("hole_%d", notInCache[i].ID),
-			notInCache[i],
+			holes[i].IDString(),
+			holes[i],
 			HoleCacheExpire,
 		)
 		if err != nil {
@@ -341,35 +345,43 @@ func (hole *Hole) SetTags(tx *gorm.DB, clear bool) error {
 	return err
 }
 
-func (hole *Hole) Create(c *fiber.Ctx, content string, specialTag string, db ...*gorm.DB) error {
-	var tx *gorm.DB
-	if len(db) > 0 {
-		tx = db[0]
-	} else {
-		tx = DB
+func (hole *Hole) SetHoleFloor() {
+	holeFloorSize := len(hole.Floors)
+	if holeFloorSize == 0 {
+		return
+	}
+	hole.HoleFloor.Floors = hole.Floors
+	hole.HoleFloor.FirstFloor = hole.Floors[0]
+	hole.HoleFloor.LastFloor = hole.Floors[holeFloorSize-1]
+	if holeFloorSize > config.Config.HoleFloorSize {
+		hole.HoleFloor.Floors = hole.Floors[:holeFloorSize-1]
+	}
+}
+
+func (hole *Hole) Create(tx *gorm.DB) error {
+	// Create hole.Tags, in different sql session
+	err := hole.Tags.FindOrCreateTags(tx)
+	if err != nil {
+		return err
 	}
 
-	hole.UserID, _ = GetUserID(c)
-
-	return tx.Transaction(func(tx *gorm.DB) error {
+	err = tx.Transaction(func(tx *gorm.DB) error {
 		// Create hole
-		hole.Reply = -1
-		result := tx.Omit("Tags").Create(hole) // tags are created in AfterCreate hook
-		if result.Error != nil {
-			return result.Error
+		err = tx.Omit(clause.Associations).Create(hole).Error
+		if err != nil {
+			return err
 		}
-		hole.Reply = 0
 
-		// Bind and Create floor
-		floor := Floor{
-			HoleID:     hole.ID,
-			Content:    content,
-			UserID:     hole.UserID,
-			SpecialTag: specialTag,
+		// Create hole_tags association
+		err = tx.Omit("Tags.*", "UpdatedAt").Select("Tags").Save(&hole).Error
+		if err != nil {
+			return err
 		}
+
+		// todo: new Anonyname mapping
 
 		// create floor
-		err := floor.Create(c, tx)
+		err = hole.Floors[0].Create(tx)
 		if err != nil {
 			return err
 		}
@@ -377,9 +389,19 @@ func (hole *Hole) Create(c *fiber.Ctx, content string, specialTag string, db ...
 		// create Favorite
 		return AddUserFavourite(tx, hole.UserID, hole.ID)
 	})
+	// transaction commit here
+	if err != nil {
+		return err
+	}
+
+	// set hole.HoleFloor
+	hole.SetHoleFloor()
+
+	// store into cache
+	return utils.SetCache(hole.IDString(), hole, HoleCacheExpire)
 }
 
-func (hole *Hole) AfterCreate(tx *gorm.DB) (err error) {
+func (hole *Hole) AfterCreate(_ *gorm.DB) (err error) {
 	hole.HoleID = hole.ID
-	return hole.SetTags(tx, false)
+	return nil
 }

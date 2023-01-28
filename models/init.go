@@ -125,4 +125,9 @@ func InitDB() {
 	if err != nil {
 		panic(err)
 	}
+
+	err = loadAllTags(DB)
+	if err != nil {
+		panic(err)
+	}
 }

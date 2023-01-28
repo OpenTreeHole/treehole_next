@@ -32,8 +32,16 @@ func (q *ListOldModel) SetDefaults() {
 	}
 }
 
-type tags struct {
-	Tags []tag.CreateModel // All users
+type TagCreateModelSlice struct {
+	Tags []*tag.CreateModel // All users
+}
+
+func (tagCreateModelSlice TagCreateModelSlice) ToTags() models.Tags {
+	tags := make(models.Tags, 0, len(tagCreateModelSlice.Tags))
+	for _, tagCreateModel := range tagCreateModelSlice.Tags {
+		tags = append(tags, &models.Tag{Name: tagCreateModel.Name})
+	}
+	return tags
 }
 
 type divisionID struct {
@@ -42,7 +50,7 @@ type divisionID struct {
 
 type CreateModel struct {
 	Content string `json:"content" validate:"required"`
-	tags
+	TagCreateModelSlice
 	// Admin and Operator only
 	SpecialTag string `json:"special_tag" validate:"max=16"`
 }
@@ -58,7 +66,7 @@ type CreateOldResponse struct {
 }
 
 type ModifyModel struct {
-	tags
+	TagCreateModelSlice
 	divisionID
 	Unhidden bool `json:"unhidden"`
 }

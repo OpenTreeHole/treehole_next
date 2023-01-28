@@ -29,3 +29,20 @@ func ReText2IntArray(IDs [][]string) ([]int, error) {
 	}
 	return ansIDs, nil
 }
+
+type PointerConstraint[T any] interface {
+	*T
+}
+
+func ValueCopy[T any, PT PointerConstraint[T]](value PT) PT {
+	newValue := new(T)
+	*newValue = *value
+	return newValue
+}
+
+func Keys[T comparable, S any](m map[T]S) (s []T) {
+	for k := range m {
+		s = append(s, k)
+	}
+	return s
+}

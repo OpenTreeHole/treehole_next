@@ -184,6 +184,7 @@ func CreateHole(c *fiber.Ctx) error {
 		return err
 	}
 
+	// todo: check permission
 	// get user from auth
 	user, err := GetUserFromAuth(c)
 	if err != nil {
@@ -196,17 +197,17 @@ func CreateHole(c *fiber.Ctx) error {
 	}
 
 	hole := Hole{
+		Tags:       body.ToTags(),
+		Floors:     Floors{{UserID: user.ID, Content: body.Content, SpecialTag: body.SpecialTag, IsMe: true}},
+		UserID:     user.ID,
 		DivisionID: divisionID,
 	}
-	for _, tag := range body.Tags {
-		hole.Tags = append(hole.Tags, &Tag{Name: tag.Name})
-	}
-	err = hole.Create(c, body.Content, body.SpecialTag)
+	err = hole.Create(DB)
 	if err != nil {
 		return err
 	}
 
-	return Serialize(c.Status(201), &hole)
+	return c.Status(201).JSON(&hole)
 }
 
 // CreateHoleOld
@@ -226,6 +227,7 @@ func CreateHoleOld(c *fiber.Ctx) error {
 		return err
 	}
 
+	// todo: check permission
 	// get user from auth
 	user, err := GetUserFromAuth(c)
 	if err != nil {
@@ -239,20 +241,16 @@ func CreateHoleOld(c *fiber.Ctx) error {
 
 	// create hole
 	hole := Hole{
+		Tags:       body.ToTags(),
+		Floors:     Floors{{UserID: user.ID, Content: body.Content, SpecialTag: body.SpecialTag, IsMe: true}},
+		UserID:     user.ID,
 		DivisionID: body.DivisionID,
 	}
-	for _, tag := range body.Tags {
-		hole.Tags = append(hole.Tags, &Tag{Name: tag.Name})
-	}
-	err = hole.Create(c, body.Content, body.SpecialTag)
+	err = hole.Create(DB)
 	if err != nil {
 		return err
 	}
 
-	err = hole.Preprocess(c)
-	if err != nil {
-		return err
-	}
 	return c.Status(201).JSON(&CreateOldResponse{
 		Data:    hole,
 		Message: "发表成功",
