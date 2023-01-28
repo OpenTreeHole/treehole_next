@@ -15,6 +15,7 @@ import (
 )
 
 func Init() (*fiber.App, chan struct{}) {
+	models.InitDB()
 	utils.Logger, _ = utils.InitLog()
 	models.InitAdminList()
 

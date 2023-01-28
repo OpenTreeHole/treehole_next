@@ -18,18 +18,18 @@ func (UserFavorite) TableName() string {
 	return "user_favorites"
 }
 
-func makeUserFavorites(userID int, holeIDs []int) UserFavorites {
-	userFavorites := make(UserFavorites, 0, len(holeIDs))
-	for _, holeID := range holeIDs {
-		userFavorites = append(userFavorites, UserFavorite{
-			UserID: userID,
-			HoleID: holeID,
-		})
-	}
-	return userFavorites
-}
+//func makeUserFavorites(userID int, holeIDs []int) UserFavorites {
+//	userFavorites := make(UserFavorites, 0, len(holeIDs))
+//	for _, holeID := range holeIDs {
+//		userFavorites = append(userFavorites, UserFavorite{
+//			UserID: userID,
+//			HoleID: holeID,
+//		})
+//	}
+//	return userFavorites
+//}
 
-func ModifyUserFavourite(tx *gorm.DB, userID int, holeIDs []int) error {
+func ModifyUserFavourite(_ *gorm.DB, _ int, holeIDs []int) error {
 
 	if len(holeIDs) == 0 {
 		return nil
@@ -41,7 +41,7 @@ func ModifyUserFavourite(tx *gorm.DB, userID int, holeIDs []int) error {
 func AddUserFavourite(tx *gorm.DB, userID int, holeID int) error {
 	return tx.Clauses(clause.OnConflict{
 		DoUpdates: clause.Assignments(Map{"created_at": time.Now()}),
-	}).Create(UserFavorite{
+	}).Create(&UserFavorite{
 		UserID: userID,
 		HoleID: holeID}).Error
 }

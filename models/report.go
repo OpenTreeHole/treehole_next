@@ -27,13 +27,13 @@ type Report struct {
 	Result  string `json:"result" gorm:"size:128"` // deal result
 }
 
-func (report Report) GetID() int {
+func (report *Report) GetID() int {
 	return report.ID
 }
 
-type Reports []Report
+type Reports []*Report
 
-func (report *Report) Preprocess(c *fiber.Ctx) error {
+func (report *Report) Preprocess(_ *fiber.Ctx) error {
 	report.Floor.SetDefaults()
 	for i := range report.Floor.Mention {
 		report.Floor.Mention[i].SetDefaults()
@@ -94,7 +94,7 @@ func (report *Report) AfterCreate(tx *gorm.DB) (err error) {
 	return nil
 }
 
-func (report *Report) AfterFind(tx *gorm.DB) (err error) {
+func (report *Report) AfterFind(_ *gorm.DB) (err error) {
 	report.ReportID = report.ID
 
 	return nil
@@ -125,7 +125,7 @@ func (report *Report) AfterUpdate(tx *gorm.DB) (err error) {
 
 var adminCounter = new(int32)
 
-func (report *Report) SendCreate(tx *gorm.DB) error {
+func (report *Report) SendCreate(_ *gorm.DB) error {
 	if len(adminList) == 0 {
 		return nil
 	}
@@ -134,7 +134,7 @@ func (report *Report) SendCreate(tx *gorm.DB) error {
 	currentCounter := atomic.AddInt32(adminCounter, 1)
 	result := atomic.CompareAndSwapInt32(adminCounter, int32(len(adminList)), 0)
 	if result {
-		utils.Logger.Info("[getadmin] adminCounter Reset")
+		utils.Logger.Info("[get admin] adminCounter Reset")
 	}
 	userIDs := []int{adminList[currentCounter-1]}
 
@@ -155,7 +155,7 @@ func (report *Report) SendCreate(tx *gorm.DB) error {
 	return nil
 }
 
-func (report *Report) SendModify(tx *gorm.DB) error {
+func (report *Report) SendModify(_ *gorm.DB) error {
 	// get recipients
 	userIDs := []int{report.UserID}
 

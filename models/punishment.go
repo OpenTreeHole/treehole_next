@@ -41,3 +41,5 @@ type Punishment struct {
 	// reason
 	Reason string `json:"reason" gorm:"size:128"`
 }
+
+type Punishments []*Punishment

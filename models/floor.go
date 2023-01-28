@@ -35,13 +35,16 @@ type Floor struct {
 	ReplyTo int `json:"reply_to"`
 
 	// like number
-	Like int `json:"like"`
+	Like int `json:"like" gorm:"not null:default:0"`
 
 	// dislike number
-	Dislike int `json:"dislike"`
+	Dislike int `json:"dislike" gorm:"not null:default:0"`
 
 	// whether the floor is deleted
-	Deleted bool `json:"deleted"`
+	Deleted bool `json:"deleted" gorm:"not null;default:false"`
+
+	// the modification times of floor.content
+	Modified int `json:"modified" gorm:"not null;default:0"`
 
 	// fold reason
 	Fold string `json:"fold_v2"`
@@ -58,14 +61,14 @@ type Floor struct {
 	HoleID int `json:"hole_id" gorm:"not null;uniqueIndex:idx_hole_ranking,priority:1"`
 
 	// many to many mentions (in different holes)
-	Mention []Floor `json:"mention" gorm:"many2many:floor_mention"`
+	Mention Floors `json:"mention" gorm:"many2many:floor_mention"`
 
-	LikedUsers []*User `json:"-" gorm:"many2many:floor_like"`
+	LikedUsers Users `json:"-" gorm:"many2many:floor_like"`
 
-	DislikedUsers []*User `json:"-" gorm:"many2many:floor_dislike"`
+	DislikedUsers Users `json:"-" gorm:"many2many:floor_dislike"`
 
 	// a floor has many history
-	History []FloorHistory `json:"-"`
+	History FloorHistorySlice `json:"-"`
 
 	/// dynamically generated fields
 
@@ -88,27 +91,18 @@ type Floor struct {
 	IsMe bool `json:"is_me" gorm:"-:all"`
 }
 
-func (floor Floor) GetID() int {
+func (floor *Floor) GetID() int {
 	return floor.ID
 }
 
-type Floors []Floor
+type Floors []*Floor
 
 /******************************
 Get and List
 *******************************/
 
 func (floor *Floor) Preprocess(c *fiber.Ctx) error {
-	floors := Floors{*floor}
-
-	err := floors.Preprocess(c)
-	if err != nil {
-		return err
-	}
-
-	*floor = floors[0]
-
-	return nil
+	return Floors{floor}.Preprocess(c)
 }
 
 func (floors Floors) Preprocess(c *fiber.Ctx) error {
@@ -125,7 +119,7 @@ func (floors Floors) Preprocess(c *fiber.Ctx) error {
 			floors[i].IsMe = true
 		}
 		floorIDs[i] = floor.ID
-		IDFloorMapping[floor.ID] = &floors[i]
+		IDFloorMapping[floor.ID] = floors[i]
 	}
 
 	var floorLikes []FloorLike
@@ -161,7 +155,7 @@ func (floors Floors) Preprocess(c *fiber.Ctx) error {
 
 func (floor *Floor) SetDefaults() {
 	if floor.Mention == nil {
-		floor.Mention = []Floor{}
+		floor.Mention = Floors{}
 	}
 
 	floor.FloorID = floor.ID
@@ -437,7 +431,7 @@ func (floor *Floor) SendReply(tx *gorm.DB) Message {
 	return message
 }
 
-func (floor *Floor) SendMention(tx *gorm.DB) Message {
+func (floor *Floor) SendMention(_ *gorm.DB) Message {
 	// get recipients
 	var userIDs []int
 	for _, mention := range floor.Mention {
@@ -465,7 +459,7 @@ func (floor *Floor) SendMention(tx *gorm.DB) Message {
 	return message
 }
 
-func (floor *Floor) SendModify(tx *gorm.DB) error {
+func (floor *Floor) SendModify(_ *gorm.DB) error {
 	// get recipients
 	userIDs := []int{floor.UserID}
 

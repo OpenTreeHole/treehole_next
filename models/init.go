@@ -31,19 +31,8 @@ var gormConfig = &gorm.Config{
 	),
 }
 
-type DBTypeEnum uint
-
-const (
-	DBTypeMysql DBTypeEnum = iota
-	DBTypeSqlite
-)
-
-var DBType DBTypeEnum
-
 // Read/Write Splitting
 func mysqlDB() (*gorm.DB, error) {
-	DBType = DBTypeMysql
-
 	// set source databases
 	source := mysql.Open(config.Config.DbURL)
 	db, err := gorm.Open(source, gormConfig)
@@ -68,21 +57,18 @@ func mysqlDB() (*gorm.DB, error) {
 }
 
 func sqliteDB() (*gorm.DB, error) {
-	DBType = DBTypeSqlite
 	err := os.MkdirAll("data", 0750)
 	if err != nil {
 		panic(err)
 	}
-	DBType = DBTypeSqlite
 	return gorm.Open(sqlite.Open("data/sqlite.db"), gormConfig)
 }
 
 func memoryDB() (*gorm.DB, error) {
-	DBType = DBTypeSqlite
 	return gorm.Open(sqlite.Open("file::memory:?cache=shared"), gormConfig)
 }
 
-func init() {
+func InitDB() {
 	var err error
 	switch config.Config.Mode {
 	case "production":

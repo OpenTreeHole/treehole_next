@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"math/rand"
 	"net/http"
 	"time"
@@ -60,7 +59,7 @@ func readRespMessage(body io.ReadCloser) Message {
 		}
 	}(body)
 
-	data, err := ioutil.ReadAll(body)
+	data, err := io.ReadAll(body)
 	if err != nil {
 		utils.Logger.Error("[notification] Read body failed: " + err.Error())
 		return Message{}
@@ -172,19 +171,19 @@ func readRespAdmin(body io.ReadCloser) []Admin {
 	defer func(body io.ReadCloser) {
 		err := body.Close()
 		if err != nil {
-			utils.Logger.Error("[getadmin] Close error: " + err.Error())
+			utils.Logger.Error("[get admin] Close error: " + err.Error())
 		}
 	}(body)
 
-	data, err := ioutil.ReadAll(body)
+	data, err := io.ReadAll(body)
 	if err != nil {
-		utils.Logger.Error("[getadmin] Read body failed: " + err.Error())
+		utils.Logger.Error("[get admin] Read body failed: " + err.Error())
 		return []Admin{}
 	}
 	var response []Admin
 	err = json.Unmarshal(data, &response)
 	if err != nil {
-		utils.Logger.Error("[getadmin] Unmarshal body failed: " + err.Error())
+		utils.Logger.Error("[get admin] Unmarshal body failed: " + err.Error())
 		return []Admin{}
 	}
 	return response

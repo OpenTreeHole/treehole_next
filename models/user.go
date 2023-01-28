@@ -35,34 +35,34 @@ type User struct {
 	/// association fields, should add foreign key
 
 	// favorite holes of the user
-	UserFavoriteHoles []*Hole `json:"-" gorm:"many2many:user_favorite"`
+	UserFavoriteHoles Holes `json:"-" gorm:"many2many:user_favorite"`
 
 	// holes owned by the user
-	UserHoles []Hole `json:"-"`
+	UserHoles Holes `json:"-"`
 
 	// floors owned by the user
-	UserFloors []Floor `json:"-"`
+	UserFloors Floors `json:"-"`
 
 	// reports made by the user; a user has many report
-	UserReports []Report `json:"-"`
+	UserReports Reports `json:"-"`
 
 	// reports dealt by the user, admin only
-	UserDealtReports []Report `json:"-" gorm:"foreignKey:DealtBy"`
+	UserDealtReports Reports `json:"-" gorm:"foreignKey:DealtBy"`
 
 	// floors liked by the user
-	UserLikedFloors []*Floor `json:"-" gorm:"many2many:floor_like"`
+	UserLikedFloors Floors `json:"-" gorm:"many2many:floor_like"`
 
 	// floors disliked by the user
-	UserDislikedFloors []*Floor `json:"-" gorm:"many2many:floor_dislike"`
+	UserDislikedFloors Floors `json:"-" gorm:"many2many:floor_dislike"`
 
 	// floor history made by the user
-	UserFloorHistory []FloorHistory `json:"-"`
+	UserFloorHistory FloorHistorySlice `json:"-"`
 
 	// user punishments on division
-	UserPunishments []Punishment `json:"-"`
+	UserPunishments Punishments `json:"-"`
 
 	// punishments made by this user
-	UserMakePunishments []Punishment `json:"-" gorm:"foreignKey:MadeBy"`
+	UserMakePunishments Punishments `json:"-" gorm:"foreignKey:MadeBy"`
 
 	/// dynamically generated field
 
@@ -89,7 +89,9 @@ type User struct {
 	Role perm.Role `json:"-" gorm:"-:all"`
 }
 
-func (user User) GetID() int {
+type Users []*User
+
+func (user *User) GetID() int {
 	return user.ID
 }
 

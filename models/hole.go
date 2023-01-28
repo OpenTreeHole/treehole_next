@@ -3,7 +3,6 @@ package models
 import (
 	"fmt"
 	"golang.org/x/exp/slices"
-	"strings"
 	"time"
 	"treehole_next/config"
 	"treehole_next/utils"
@@ -40,13 +39,13 @@ type Hole struct {
 	UserID int `json:"user_id;omitempty" gorm:"not null"`
 
 	// tag 列表；不超过 10 个
-	Tags []*Tag `json:"tags" gorm:"many2many:hole_tags;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	Tags Tags `json:"tags" gorm:"many2many:hole_tags;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 
 	// 楼层列表
-	Floors []Floor `json:"-"`
+	Floors Floors `json:"-"`
 
 	// 匿名映射表
-	Mapping []*User `json:"-" gorm:"many2many:anonyname_mapping"`
+	Mapping Users `json:"-" gorm:"many2many:anonyname_mapping"`
 
 	/// generated field
 
@@ -55,17 +54,17 @@ type Hole struct {
 
 	// 返回给前端的楼层列表，包括首楼、尾楼和预加载的前 n 个楼层
 	HoleFloor struct {
-		FirstFloor *Floor   `json:"first_floor"` // 首楼
-		LastFloor  *Floor   `json:"last_floor"`  // 尾楼
-		Floors     []*Floor `json:"prefetch"`    // 预加载的楼层
+		FirstFloor *Floor `json:"first_floor"` // 首楼
+		LastFloor  *Floor `json:"last_floor"`  // 尾楼
+		Floors     Floors `json:"prefetch"`    // 预加载的楼层
 	} `json:"floors" gorm:"-:all"`
 }
 
-func (hole Hole) GetID() int {
+func (hole *Hole) GetID() int {
 	return hole.ID
 }
 
-type Holes []Hole
+type Holes []*Hole
 
 /**************
 	get hole methods
@@ -201,26 +200,17 @@ func loadFloors(holes []*Hole) error {
 }
 
 func (hole *Hole) Preprocess(c *fiber.Ctx) error {
-	holes := Holes{*hole}
-
-	err := holes.Preprocess(c)
-	if err != nil {
-		return err
-	}
-
-	*hole = holes[0]
-
-	return nil
+	return Holes{hole}.Preprocess(c)
 }
 
-func (holes Holes) Preprocess(c *fiber.Ctx) error {
+func (holes Holes) Preprocess(_ *fiber.Ctx) error {
 	notInCache := make([]*Hole, 0, len(holes))
 
 	for i := 0; i < len(holes); i++ {
-		var hole Hole
+		hole := new(Hole)
 		ok := utils.GetCache(fmt.Sprintf("hole_%d", holes[i].ID), &hole)
 		if !ok {
-			notInCache = append(notInCache, &holes[i])
+			notInCache = append(notInCache, holes[i])
 		} else {
 			holes[i] = hole
 		}
@@ -337,45 +327,18 @@ func (hole *Hole) SetTags(tx *gorm.DB, clear bool) error {
 	}
 
 	// create associations
-	tagIDs := make([]int, len(hole.Tags))
-	for i, tag := range hole.Tags {
-		tagIDs[i] = tag.ID
+	holeTags := make([]HoleTag, 0, len(hole.Tags))
+	for _, tag := range hole.Tags {
+		holeTags = append(holeTags, HoleTag{hole.ID, tag.ID})
 	}
-	var builder strings.Builder
-
-	if DBType == DBTypeSqlite {
-		builder.WriteString("INSERT INTO")
-	} else {
-		builder.WriteString("INSERT IGNORE INTO")
-	}
-	builder.WriteString(" hole_tags (hole_id, tag_id) VALUES ")
-	for i, tagID := range tagIDs {
-		builder.WriteString(fmt.Sprintf("(%d, %d)", hole.ID, tagID))
-		if i != len(tagIDs)-1 {
-			builder.WriteString(",")
-		}
+	err = tx.Clauses(clause.OnConflict{DoNothing: true}).Create(holeTags).Error
+	if err != nil {
+		return err
 	}
 
-	if DBType == DBTypeSqlite {
-		builder.WriteString(" ON CONFLICT DO NOTHING")
-	}
-	result = tx.Exec(builder.String())
-	if result.Error != nil {
-		return result.Error
-	}
-
-	// update tag temperature
-	result = tx.Exec(`
-		UPDATE tag 
-		SET temperature = temperature + 1 
-		WHERE id IN (?)`,
-		tagIDs,
-	)
-	if result.Error != nil {
-		return result.Error
-	}
-
-	return nil
+	// update tag temperature and updated_at
+	err = tx.Model(&hole.Tags).Update("temperature", gorm.Expr("temperature + 1")).Error
+	return err
 }
 
 func (hole *Hole) Create(c *fiber.Ctx, content string, specialTag string, db ...*gorm.DB) error {

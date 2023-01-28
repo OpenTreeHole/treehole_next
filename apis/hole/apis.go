@@ -187,9 +187,7 @@ func CreateHole(c *fiber.Ctx) error {
 	// get user from auth
 	user, err := GetUserFromAuth(c)
 	if err != nil {
-		if err != nil {
-			return err
-		}
+		return err
 	}
 
 	// permission

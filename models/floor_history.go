@@ -13,3 +13,5 @@ type FloorHistory struct {
 	// The one who modified the floor
 	UserID int `json:"user_id"`
 }
+
+type FloorHistorySlice []*FloorHistory

@@ -17,18 +17,20 @@ type Division struct {
 	/// base info
 	Name        string `json:"name" gorm:"unique;size:10"`
 	Description string `json:"description" gorm:"size:64"`
-	Pinned      []int  `json:"-" gorm:"serializer:json;size:100"` // pinned holes in given order
+
+	// pinned holes in given order
+	Pinned []int `json:"-" gorm:"serializer:json;size:100"`
 
 	/// association fields, should add foreign key
 
 	// return pinned hole to frontend
-	Holes []Hole `json:"pinned"`
+	Holes Holes `json:"pinned"`
 
 	/// generated field
 	DivisionID int `json:"division_id" gorm:"-:all"`
 }
 
-func (division Division) GetID() int {
+func (division *Division) GetID() int {
 	return division.ID
 }
 
@@ -45,9 +47,9 @@ func (divisions Divisions) Preprocess(c *fiber.Ctx) error {
 }
 
 func (division *Division) Preprocess(c *fiber.Ctx) error {
-	var pinned = []int(division.Pinned)
+	var pinned = division.Pinned
 	if len(pinned) == 0 {
-		division.Holes = []Hole{}
+		division.Holes = Holes{}
 		return nil
 	}
 	var holes Holes
@@ -61,12 +63,12 @@ func (division *Division) Preprocess(c *fiber.Ctx) error {
 	return nil
 }
 
-func (division *Division) AfterFind(tx *gorm.DB) (err error) {
+func (division *Division) AfterFind(_ *gorm.DB) (err error) {
 	division.DivisionID = division.ID
 	return nil
 }
 
-func (division *Division) AfterCreate(tx *gorm.DB) (err error) {
+func (division *Division) AfterCreate(_ *gorm.DB) (err error) {
 	division.DivisionID = division.ID
 	return nil
 }

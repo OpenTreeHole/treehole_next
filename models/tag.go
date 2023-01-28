@@ -16,13 +16,15 @@ type Tag struct {
 	Temperature int    `json:"temperature" gorm:"not null;default:0"`
 
 	/// association info, should add foreign key
-	Holes []*Hole `json:"-" gorm:"many2many:hole_tags;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	Holes Holes `json:"-" gorm:"many2many:hole_tags;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 
 	/// generated field
 	TagID int `json:"tag_id" gorm:"-:all"`
 }
 
-func (tag Tag) GetID() int {
+type Tags []*Tag
+
+func (tag *Tag) GetID() int {
 	return tag.ID
 }
 
