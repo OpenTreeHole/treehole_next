@@ -44,8 +44,7 @@ func GetReport(c *fiber.Ctx) error {
 //	@Failure	404		{object}	MessageModel
 func ListReports(c *fiber.Ctx) error {
 	// validate query
-	var query ListModel
-	err := ValidateQuery(c, &query)
+	query, err := ValidateQuery[ListModel](c)
 	if err != nil {
 		return err
 	}
@@ -82,8 +81,7 @@ func ListReports(c *fiber.Ctx) error {
 //	@Failure		400	{object}	utils.HttpError
 func AddReport(c *fiber.Ctx) error {
 	// validate body
-	var body AddModel
-	err := ValidateBody(c, &body)
+	body, err := ValidateBody[AddModel](c)
 	if err != nil {
 		return err
 	}
@@ -121,8 +119,7 @@ func DeleteReport(c *fiber.Ctx) error {
 	}
 
 	// validate body
-	var body DeleteModel
-	err = ValidateBody(c, &body)
+	body, err := ValidateBody[DeleteModel](c)
 	if err != nil {
 		return err
 	}

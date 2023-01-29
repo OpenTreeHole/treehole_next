@@ -1,9 +1,9 @@
 package utils
 
 import (
-	"encoding/json"
 	"github.com/creasty/defaults"
 	"github.com/go-playground/validator/v10"
+	"github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v2"
 	"reflect"
 	"strings"
@@ -52,28 +52,30 @@ func Validate(model any) error {
 	return nil
 }
 
-func ValidateQuery(c *fiber.Ctx, model any) error {
+func ValidateQuery[T any](c *fiber.Ctx) (*T, error) {
+	model := new(T)
 	if err := c.QueryParser(model); err != nil {
-		return err
+		return nil, err
 	}
 	if err := defaults.Set(model); err != nil {
-		return err
+		return nil, err
 	}
-	return Validate(model)
+	return model, Validate(model)
 }
 
 // ValidateBody supports json only
-func ValidateBody(c *fiber.Ctx, model any) error {
+func ValidateBody[T any](c *fiber.Ctx) (*T, error) {
 	body := c.Body()
+	model := new(T)
 	if len(body) == 0 {
-		return defaults.Set(model)
+		return model, defaults.Set(model)
 	} else {
 		if err := json.Unmarshal(body, model); err != nil {
-			return err
+			return nil, err
 		}
 		if err := defaults.Set(model); err != nil {
-			return err
+			return nil, err
 		}
-		return Validate(model)
+		return model, Validate(model)
 	}
 }

@@ -2,8 +2,8 @@ package models
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
+	"github.com/goccy/go-json"
 	"gorm.io/gorm"
 	"sort"
 	"sync"

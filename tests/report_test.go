@@ -46,7 +46,7 @@ func TestGetReport(t *testing.T) {
 func TestListReport(t *testing.T) {
 	data := Map{}
 
-	var getReports []Report
+	var getReports Reports
 	testAPIModelWithQuery(t, "get", "/api/reports", 200, &getReports, data)
 	log.Printf("getReports: %+v\n", getReports)
 

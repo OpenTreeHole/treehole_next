@@ -17,7 +17,7 @@ import (
 //	@contact.email	dev@fduhole.com
 
 //	@license.name	Apache 2.0
-//	@license.url	http://www.apache.org/licenses/LICENSE-2.0.html
+//	@license.url	https://www.apache.org/licenses/LICENSE-2.0.html
 
 //	@host
 //	@BasePath	/api

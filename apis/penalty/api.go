@@ -3,9 +3,9 @@ package penalty
 
 import (
 	"bytes"
-	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/goccy/go-json"
 	"io"
 	"net/http"
 	"strconv"
@@ -40,8 +40,7 @@ func BanUser(c *fiber.Ctx) error {
 	}
 
 	// validate body
-	var body PostBody
-	err := ValidateBody(c, &body)
+	body, err := ValidateBody[PostBody](c)
 	if err != nil {
 		return err
 	}

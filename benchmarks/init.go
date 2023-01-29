@@ -2,7 +2,6 @@ package benchmarks
 
 import (
 	"fmt"
-	"gorm.io/gorm/clause"
 	"gorm.io/gorm/logger"
 	"math/rand"
 	"strings"
@@ -22,13 +21,13 @@ func init() {
 	DB.Logger = logger.Default.LogMode(logger.Silent)
 
 	rand.Seed(time.Now().UnixMicro())
-	divisions := make([]Division, 0, DIVISION_MAX)
-	tags := make([]Tag, 0, TAG_MAX)
-	holes := make([]Hole, 0, HOLE_MAX)
-	floors := make([]Floor, 0, FLOOR_MAX)
+	divisions := make(Divisions, 0, DIVISION_MAX)
+	tags := make(Tags, 0, TAG_MAX)
+	holes := make(Holes, 0, HOLE_MAX)
+	floors := make(Floors, 0, FLOOR_MAX)
 
 	for i := 0; i < DIVISION_MAX; i++ {
-		divisions = append(divisions, Division{
+		divisions = append(divisions, &Division{
 			ID:          i + 1,
 			Name:        strings.Repeat("d", i+1),
 			Description: strings.Repeat("dd", i+1),
@@ -37,21 +36,21 @@ func init() {
 
 	for i := 0; i < TAG_MAX; i++ {
 		content := fmt.Sprintf("%v", rand.Uint64())
-		tags = append(tags, Tag{
+		tags = append(tags, &Tag{
 			ID:   i + 1,
 			Name: content,
 		})
 	}
 
 	for i := 0; i < HOLE_MAX; i++ {
-		generateTag := func() []*Tag {
-			nowtags := make([]*Tag, rand.Intn(10))
-			for i := range nowtags {
-				nowtags[i] = &tags[rand.Intn(TAG_MAX)]
+		generateTag := func() Tags {
+			nowTags := make(Tags, rand.Intn(10))
+			for i := range nowTags {
+				nowTags[i] = tags[rand.Intn(TAG_MAX)]
 			}
-			return nowtags
+			return nowTags
 		}
-		holes = append(holes, Hole{
+		holes = append(holes, &Hole{
 			ID:         i + 1,
 			UserID:     1,
 			DivisionID: rand.Intn(DIVISION_MAX) + 1,
@@ -61,14 +60,14 @@ func init() {
 
 	for i := 0; i < FLOOR_MAX; i++ {
 		content := fmt.Sprintf("%v", rand.Uint64())
-		generateMention := func() []Floor {
-			floors := make([]Floor, rand.Intn(10))
-			for i := range floors {
-				floors[i].ID = rand.Intn(FLOOR_MAX) + 1
+		generateMention := func() Floors {
+			floorMentions := make(Floors, 0, rand.Intn(10))
+			for j := range floorMentions {
+				floorMentions[j] = &Floor{ID: rand.Intn(FLOOR_MAX) + 1}
 			}
-			return floors
+			return floorMentions
 		}
-		floors = append(floors, Floor{
+		floors = append(floors, &Floor{
 			ID:        i + 1,
 			Content:   strings.Repeat(content, rand.Intn(2)),
 			Anonyname: utils.GenerateName([]string{}),
@@ -78,23 +77,21 @@ func init() {
 		holes[floors[i].HoleID-1].Reply += 1
 	}
 
-	createClause := clause.OnConflict{
-		UpdateAll: true,
+	var err error
+	err = DB.Create(divisions).Error
+	if err != nil {
+		panic(err)
 	}
-	result := DB.Clauses(createClause).Create(divisions)
-	if result.Error != nil {
-		fmt.Println(result.Error)
+	err = DB.Create(tags).Error
+	if err != nil {
+		panic(err)
 	}
-	result = DB.Clauses(createClause).Create(tags)
-	if result.Error != nil {
-		fmt.Println(result.Error)
+	err = DB.Create(holes).Error
+	if err != nil {
+		panic(err)
 	}
-	result = DB.Clauses(createClause).Create(holes)
-	if result.Error != nil {
-		fmt.Println(result.Error)
-	}
-	result = DB.Clauses(createClause).Create(floors)
-	if result.Error != nil {
-		fmt.Println(result.Error)
+	err = DB.Create(floors).Error
+	if err != nil {
+		panic(err)
 	}
 }

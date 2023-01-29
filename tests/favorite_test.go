@@ -18,7 +18,7 @@ func init() {
 }
 
 func TestListFavorites(t *testing.T) {
-	var holes []Hole
+	var holes Holes
 	testAPIModel(t, "get", "/api/user/favorites", 200, &holes)
 	assert.EqualValues(t, 10, len(holes))
 }

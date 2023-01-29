@@ -42,7 +42,7 @@ func init() {
 }
 
 func TestGetHoleInDivision(t *testing.T) {
-	var holes []Hole
+	var holes Holes
 	var ids, respIDs []int
 
 	DB.Raw("SELECT id FROM hole WHERE division_id = 6 AND hidden = 0 ORDER BY updated_at DESC").Scan(&ids)
@@ -60,16 +60,19 @@ func TestGetHoleInDivision(t *testing.T) {
 func TestListHolesByTag(t *testing.T) {
 	var tag Tag
 	DB.Where("name = ?", "114").First(&tag)
-	var holes []Hole
-	DB.Model(&tag).Association("Holes").Find(&holes)
+	var holes Holes
+	err := DB.Model(&tag).Association("Holes").Find(&holes)
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	var getholes []Hole
-	testAPIModel(t, "get", "/api/tags/114/holes", 200, &getholes)
-	assert.EqualValues(t, len(holes), len(getholes))
+	var getHoles Holes
+	testAPIModel(t, "get", "/api/tags/114/holes", 200, &getHoles)
+	assert.EqualValues(t, len(holes), len(getHoles))
 
 	// empty holes
-	testAPIModel(t, "get", "/api/tags/115/holes", 200, &getholes)
-	assert.EqualValues(t, Holes{}, getholes)
+	testAPIModel(t, "get", "/api/tags/115/holes", 200, &getHoles)
+	assert.EqualValues(t, Holes{}, getHoles)
 }
 
 func TestCreateHole(t *testing.T) {
@@ -101,14 +104,20 @@ func TestCreateHoleOld(t *testing.T) {
 	var holes Holes
 	var tag Tag
 	DB.Where("name = ?", "def").First(&tag)
-	DB.Model(&tag).Association("Holes").Find(&holes)
+	err := DB.Model(&tag).Association("Holes").Find(&holes)
+	if err != nil {
+		t.Fatal(err)
+	}
 }
 
 func TestModifyHole(t *testing.T) {
 	var tag Tag
 	DB.Where("name = ?", "111").First(&tag)
 	var holes Holes
-	DB.Model(&tag).Association("Holes").Find(&holes)
+	err := DB.Model(&tag).Association("Holes").Find(&holes)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	tagName := []Map{{"name": "d"}, {"name": "de"}, {"name": "def"}, {"name": "defg"}}
 	division_id := 5

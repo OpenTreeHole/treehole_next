@@ -19,7 +19,7 @@ type Division struct {
 	Description string `json:"description" gorm:"size:64"`
 
 	// pinned holes in given order
-	Pinned []int `json:"-" gorm:"serializer:json;size:100"`
+	Pinned []int `json:"-" gorm:"serializer:json;size:100;not null;default:\"[]\""`
 
 	/// association fields, should add foreign key
 
@@ -37,8 +37,8 @@ func (division *Division) GetID() int {
 type Divisions []*Division
 
 func (divisions Divisions) Preprocess(c *fiber.Ctx) error {
-	for i := 0; i < len(divisions); i++ {
-		err := divisions[i].Preprocess(c)
+	for _, division := range divisions {
+		err := division.Preprocess(c)
 		if err != nil {
 			return err
 		}

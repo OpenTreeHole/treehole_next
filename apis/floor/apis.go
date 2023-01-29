@@ -26,8 +26,7 @@ func ListFloorsInAHole(c *fiber.Ctx) error {
 		return err
 	}
 
-	var query ListModel
-	err = ValidateQuery(c, &query)
+	query, err := ValidateQuery[ListModel](c)
 	if err != nil {
 		return err
 	}
@@ -56,19 +55,12 @@ func ListFloorsInAHole(c *fiber.Ctx) error {
 //	@Success	200		{array}	Floor
 func ListFloorsOld(c *fiber.Ctx) error {
 	// validate
-	var query ListOldModel
-
-	// parse and validate query manually
-	err := c.QueryParser(&query)
-	if err != nil {
-		return err
-	}
-	err = Validate(&query)
+	query, err := ValidateQuery[ListOldModel](c)
 	if err != nil {
 		return err
 	}
 
-	if query.Search != "" {
+	if query.Search != nil {
 		return SearchFloorsOld(c, query)
 	}
 
@@ -131,8 +123,7 @@ func GetFloor(c *fiber.Ctx) error {
 //	@Param		json	body		CreateModel	true	"json"
 //	@Success	201		{object}	Floor
 func CreateFloor(c *fiber.Ctx) error {
-	var body CreateModel
-	err := ValidateBody(c, &body)
+	body, err := ValidateBody[CreateModel](c)
 	if err != nil {
 		return err
 	}
@@ -190,8 +181,7 @@ func CreateFloor(c *fiber.Ctx) error {
 //	@Param		json	body		CreateOldModel	true	"json"
 //	@Success	201		{object}	CreateOldResponse
 func CreateFloorOld(c *fiber.Ctx) error {
-	var body CreateOldModel
-	err := ValidateBody(c, &body)
+	body, err := ValidateBody[CreateOldModel](c)
 	if err != nil {
 		return err
 	}
@@ -248,8 +238,7 @@ func CreateFloorOld(c *fiber.Ctx) error {
 //	@Failure		404		{object}	MessageModel
 func ModifyFloor(c *fiber.Ctx) error {
 	// validate request body
-	var body ModifyModel
-	err := ValidateBody(c, &body)
+	body, err := ValidateBody[ModifyModel](c)
 	if err != nil {
 		return err
 	}
@@ -407,8 +396,7 @@ func ModifyFloorLike(c *fiber.Ctx) error {
 //	@Failure	404		{object}	MessageModel
 func DeleteFloor(c *fiber.Ctx) error {
 	// validate body
-	var body DeleteModel
-	err := ValidateBody(c, &body)
+	body, err := ValidateBody[DeleteModel](c)
 	if err != nil {
 		return err
 	}
@@ -512,8 +500,7 @@ func GetFloorHistory(c *fiber.Ctx) error {
 //	@Failure		404					{object}	MessageModel
 func RestoreFloor(c *fiber.Ctx) error {
 	// validate body
-	var body RestoreModel
-	err := ValidateBody(c, &body)
+	body, err := ValidateBody[RestoreModel](c)
 	if err != nil {
 		return err
 	}

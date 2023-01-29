@@ -11,12 +11,12 @@ const docTemplate = `{
         "description": "{{escape .Description}}",
         "title": "{{.Title}}",
         "contact": {
-            "name": "Maintainer Shi Yue",
-            "email": "hasbai@fduhole.com"
+            "name": "Maintainer Ke Chen",
+            "email": "dev@fduhole.com"
         },
         "license": {
             "name": "Apache 2.0",
-            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+            "url": "https://www.apache.org/licenses/LICENSE-2.0.html"
         },
         "version": "{{.Version}}"
     },
@@ -353,7 +353,6 @@ const docTemplate = `{
                         "maximum": 50,
                         "minimum": 0,
                         "type": "integer",
-                        "default": 30,
                         "name": "length",
                         "in": "query"
                     },
@@ -794,12 +793,11 @@ const docTemplate = `{
                     },
                     {
                         "enum": [
-                            "storey",
                             "id",
                             "like"
                         ],
                         "type": "string",
-                        "default": "storey",
+                        "default": "id",
                         "description": "SQL ORDER BY field",
                         "name": "orderBy",
                         "in": "query"
@@ -1062,12 +1060,6 @@ const docTemplate = `{
                         "default": "id",
                         "description": "SQL ORDER BY field",
                         "name": "orderBy",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Range, 0: not dealt, 1: dealt, 2: all",
-                        "name": "range",
                         "in": "query"
                     },
                     {
@@ -1779,9 +1771,6 @@ const docTemplate = `{
         },
         "floor.SearchConfigModel": {
             "type": "object",
-            "required": [
-                "open"
-            ],
             "properties": {
                 "open": {
                     "type": "boolean"
@@ -1877,15 +1866,19 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "division_id": {
+                    "description": "/ generated field",
                     "type": "integer"
                 },
                 "id": {
+                    "description": "/ saved fields",
                     "type": "integer"
                 },
                 "name": {
+                    "description": "/ base info",
                     "type": "string"
                 },
                 "pinned": {
+                    "description": "return pinned hole to frontend",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/models.Hole"
@@ -1907,18 +1900,23 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "content": {
-                    "description": "content of the floor",
+                    "description": "content of the floor, no more than 15000",
                     "type": "string"
                 },
                 "deleted": {
                     "description": "whether the floor is deleted",
                     "type": "boolean"
                 },
+                "dislike": {
+                    "description": "dislike number",
+                    "type": "integer"
+                },
                 "disliked": {
-                    "description": "whether the user has disliked the floor, dynamically generated",
+                    "description": "whether the user has disliked the floor",
                     "type": "boolean"
                 },
                 "floor_id": {
+                    "description": "old version compatibility",
                     "type": "integer"
                 },
                 "fold": {
@@ -1937,38 +1935,43 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "id": {
+                    "description": "/ saved fields",
                     "type": "integer"
                 },
                 "is_me": {
-                    "description": "whether the user is the author of the floor, dynamically generated",
+                    "description": "whether the user is the author of the floor",
                     "type": "boolean"
                 },
                 "like": {
-                    "description": "like number - dislike number",
+                    "description": "like number",
                     "type": "integer"
                 },
                 "liked": {
-                    "description": "whether the user has liked the floor, dynamically generated",
+                    "description": "whether the user has liked the floor",
                     "type": "boolean"
                 },
                 "mention": {
-                    "description": "many to many mentions (in different holes)",
+                    "description": "many to many mentions",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/models.Floor"
                     }
                 },
-                "path": {
-                    "description": "storey path e.g. /1/2/3/",
-                    "type": "string"
+                "modified": {
+                    "description": "the modification times of floor.content",
+                    "type": "integer"
+                },
+                "ranking": {
+                    "description": "the ranking of this floor in the hole",
+                    "type": "integer"
+                },
+                "reply_to": {
+                    "description": "floor_id that it replies to, for dialog mode, in the same hole",
+                    "type": "integer"
                 },
                 "special_tag": {
                     "description": "additional info, like \"树洞管理团队\"",
                     "type": "string"
-                },
-                "storey": {
-                    "description": "the sequence of floors in a hole",
-                    "type": "integer"
                 },
                 "time_created": {
                     "type": "string"
@@ -1988,6 +1991,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "id": {
+                    "description": "/ base info",
                     "type": "integer"
                 },
                 "reason": {
@@ -2014,7 +2018,32 @@ const docTemplate = `{
                 },
                 "floors": {
                     "description": "返回给前端的楼层列表，包括首楼、尾楼和预加载的前 n 个楼层",
-                    "$ref": "#/definitions/models.HoleFloor"
+                    "type": "object",
+                    "properties": {
+                        "first_floor": {
+                            "description": "首楼",
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/models.Floor"
+                                }
+                            ]
+                        },
+                        "last_floor": {
+                            "description": "尾楼",
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/models.Floor"
+                                }
+                            ]
+                        },
+                        "prefetch": {
+                            "description": "预加载的楼层",
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Floor"
+                            }
+                        }
+                    }
                 },
                 "hidden": {
                     "description": "是否隐藏，隐藏的洞用户不可见，管理员可见",
@@ -2025,14 +2054,15 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "id": {
+                    "description": "/ saved fields",
                     "type": "integer"
                 },
                 "reply": {
-                    "description": "回复量（即该洞下 floor 的数量）",
+                    "description": "回复量（即该洞下 floor 的数量 - 1）",
                     "type": "integer"
                 },
                 "tags": {
-                    "description": "tag 列表",
+                    "description": "tag 列表；不超过 10 个",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/models.Tag"
@@ -2047,26 +2077,6 @@ const docTemplate = `{
                 "view": {
                     "description": "浏览量",
                     "type": "integer"
-                }
-            }
-        },
-        "models.HoleFloor": {
-            "type": "object",
-            "properties": {
-                "first_floor": {
-                    "description": "首楼",
-                    "$ref": "#/definitions/models.Floor"
-                },
-                "last_floor": {
-                    "description": "尾楼",
-                    "$ref": "#/definitions/models.Floor"
-                },
-                "prefetch": {
-                    "description": "预加载的楼层",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/models.Floor"
-                    }
                 }
             }
         },
@@ -2127,22 +2137,19 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "id": {
+                    "description": "/ saved fields",
                     "type": "integer"
                 },
                 "name": {
+                    "description": "/ base info",
                     "type": "string"
                 },
                 "tag_id": {
+                    "description": "/ generated field",
                     "type": "integer"
                 },
                 "temperature": {
                     "type": "integer"
-                },
-                "time_created": {
-                    "type": "string"
-                },
-                "time_updated": {
-                    "type": "string"
                 }
             }
         },
@@ -2185,6 +2192,19 @@ const docTemplate = `{
                     "maxLength": 128
                 }
             }
+        },
+        "report.Range": {
+            "type": "integer",
+            "enum": [
+                0,
+                1,
+                2
+            ],
+            "x-enum-varnames": [
+                "RangeNotDealt",
+                "RangeDealt",
+                "RangeAll"
+            ]
         },
         "tag.CreateModel": {
             "type": "object",
@@ -2248,19 +2268,12 @@ const docTemplate = `{
                 }
             }
         }
-    },
-    "securityDefinitions": {
-        "ApiKeyAuth": {
-            "type": "apiKey",
-            "name": "Authorization",
-            "in": "header"
-        }
     }
 }`
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
-	Version:          "2.0.0",
+	Version:          "2.1.0",
 	Host:             "",
 	BasePath:         "/api",
 	Schemes:          []string{},

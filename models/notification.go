@@ -2,9 +2,9 @@ package models
 
 import (
 	"bytes"
-	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/goccy/go-json"
 	"io"
 	"math/rand"
 	"net/http"

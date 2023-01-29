@@ -5,5 +5,5 @@ type Map = map[string]interface{}
 
 type Models interface {
 	Division | Hole | Floor | Tag | User | Report |
-		[]Division | []Hole | []Floor | []Tag | []User | []Report
+		Divisions | Holes | Floors | Tags | Users | Reports
 }

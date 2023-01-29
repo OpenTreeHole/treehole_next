@@ -17,8 +17,7 @@ import (
 //	@Router		/tags [get]
 //	@Success	200	{array}	Tag
 func ListTags(c *fiber.Ctx) error {
-	var query SearchModel
-	err := ValidateQuery(c, &query)
+	query, err := ValidateQuery[SearchModel](c)
 	if err != nil {
 		return err
 	}
@@ -67,8 +66,7 @@ func GetTag(c *fiber.Ctx) error {
 func CreateTag(c *fiber.Ctx) error {
 	// validate body
 	var tag Tag
-	var body CreateModel
-	err := ValidateBody(c, &body)
+	body, err := ValidateBody[CreateModel](c)
 	if err != nil {
 		return err
 	}
@@ -96,8 +94,7 @@ func CreateTag(c *fiber.Ctx) error {
 //	@Failure	404		{object}	MessageModel
 func ModifyTag(c *fiber.Ctx) error {
 	// validate body
-	var body ModifyModel
-	err := ValidateBody(c, &body)
+	body, err := ValidateBody[ModifyModel](c)
 	if err != nil {
 		return err
 	}
@@ -135,8 +132,7 @@ func ModifyTag(c *fiber.Ctx) error {
 //	@Failure		404		{object}	MessageModel
 func DeleteTag(c *fiber.Ctx) error {
 	// validate body
-	var body DeleteModel
-	err := ValidateBody(c, &body)
+	body, err := ValidateBody[DeleteModel](c)
 	if err != nil {
 		return err
 	}

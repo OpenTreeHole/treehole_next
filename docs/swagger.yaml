@@ -137,8 +137,6 @@ definitions:
     properties:
       open:
         type: boolean
-    required:
-    - open
     type: object
   hole.CreateModel:
     properties:
@@ -202,12 +200,16 @@ definitions:
       description:
         type: string
       division_id:
+        description: / generated field
         type: integer
       id:
+        description: / saved fields
         type: integer
       name:
+        description: / base info
         type: string
       pinned:
+        description: return pinned hole to frontend
         items:
           $ref: '#/definitions/models.Hole'
         type: array
@@ -222,15 +224,19 @@ definitions:
         description: a random username
         type: string
       content:
-        description: content of the floor
+        description: content of the floor, no more than 15000
         type: string
       deleted:
         description: whether the floor is deleted
         type: boolean
+      dislike:
+        description: dislike number
+        type: integer
       disliked:
-        description: whether the user has disliked the floor, dynamically generated
+        description: whether the user has disliked the floor
         type: boolean
       floor_id:
+        description: old version compatibility
         type: integer
       fold:
         description: fold reason, for v1
@@ -244,30 +250,34 @@ definitions:
         description: the hole it belongs to
         type: integer
       id:
+        description: / saved fields
         type: integer
       is_me:
-        description: whether the user is the author of the floor, dynamically generated
+        description: whether the user is the author of the floor
         type: boolean
       like:
-        description: like number - dislike number
+        description: like number
         type: integer
       liked:
-        description: whether the user has liked the floor, dynamically generated
+        description: whether the user has liked the floor
         type: boolean
       mention:
-        description: many to many mentions (in different holes)
+        description: many to many mentions
         items:
           $ref: '#/definitions/models.Floor'
         type: array
-      path:
-        description: storey path e.g. /1/2/3/
-        type: string
+      modified:
+        description: the modification times of floor.content
+        type: integer
+      ranking:
+        description: the ranking of this floor in the hole
+        type: integer
+      reply_to:
+        description: floor_id that it replies to, for dialog mode, in the same hole
+        type: integer
       special_tag:
         description: additional info, like "树洞管理团队"
         type: string
-      storey:
-        description: the sequence of floors in a hole
-        type: integer
       time_created:
         type: string
       time_updated:
@@ -280,6 +290,7 @@ definitions:
       floor_id:
         type: integer
       id:
+        description: / base info
         type: integer
       reason:
         type: string
@@ -297,8 +308,22 @@ definitions:
         description: 所属 division 的 id
         type: integer
       floors:
-        $ref: '#/definitions/models.HoleFloor'
         description: 返回给前端的楼层列表，包括首楼、尾楼和预加载的前 n 个楼层
+        properties:
+          first_floor:
+            allOf:
+            - $ref: '#/definitions/models.Floor'
+            description: 首楼
+          last_floor:
+            allOf:
+            - $ref: '#/definitions/models.Floor'
+            description: 尾楼
+          prefetch:
+            description: 预加载的楼层
+            items:
+              $ref: '#/definitions/models.Floor'
+            type: array
+        type: object
       hidden:
         description: 是否隐藏，隐藏的洞用户不可见，管理员可见
         type: boolean
@@ -306,12 +331,13 @@ definitions:
         description: 兼容旧版 id
         type: integer
       id:
+        description: / saved fields
         type: integer
       reply:
-        description: 回复量（即该洞下 floor 的数量）
+        description: 回复量（即该洞下 floor 的数量 - 1）
         type: integer
       tags:
-        description: tag 列表
+        description: tag 列表；不超过 10 个
         items:
           $ref: '#/definitions/models.Tag'
         type: array
@@ -322,20 +348,6 @@ definitions:
       view:
         description: 浏览量
         type: integer
-    type: object
-  models.HoleFloor:
-    properties:
-      first_floor:
-        $ref: '#/definitions/models.Floor'
-        description: 首楼
-      last_floor:
-        $ref: '#/definitions/models.Floor'
-        description: 尾楼
-      prefetch:
-        description: 预加载的楼层
-        items:
-          $ref: '#/definitions/models.Floor'
-        type: array
     type: object
   models.Map:
     additionalProperties: true
@@ -376,17 +388,16 @@ definitions:
   models.Tag:
     properties:
       id:
+        description: / saved fields
         type: integer
       name:
+        description: / base info
         type: string
       tag_id:
+        description: / generated field
         type: integer
       temperature:
         type: integer
-      time_created:
-        type: string
-      time_updated:
-        type: string
     type: object
   penalty.PostBody:
     properties:
@@ -415,6 +426,16 @@ definitions:
     required:
     - result
     type: object
+  report.Range:
+    enum:
+    - 0
+    - 1
+    - 2
+    type: integer
+    x-enum-varnames:
+    - RangeNotDealt
+    - RangeDealt
+    - RangeAll
   tag.CreateModel:
     properties:
       name:
@@ -460,15 +481,15 @@ definitions:
     type: object
 info:
   contact:
-    email: hasbai@fduhole.com
-    name: Maintainer Shi Yue
+    email: dev@fduhole.com
+    name: Maintainer Ke Chen
   description: 'An Anonymous BBS \n Note: PUT methods are used to PARTLY update, and
     we don''t use PATCH method.'
   license:
     name: Apache 2.0
-    url: http://www.apache.org/licenses/LICENSE-2.0.html
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
   title: Open Tree Hole
-  version: 2.0.0
+  version: 2.1.0
 paths:
   /:
     get:
@@ -680,8 +701,7 @@ paths:
       - in: query
         name: hole_id
         type: integer
-      - default: 30
-        in: query
+      - in: query
         maximum: 50
         minimum: 0
         name: length
@@ -971,10 +991,9 @@ paths:
         minimum: 0
         name: offset
         type: integer
-      - default: storey
+      - default: id
         description: SQL ORDER BY field
         enum:
-        - storey
         - id
         - like
         in: query
@@ -1154,10 +1173,6 @@ paths:
         in: query
         name: orderBy
         type: string
-      - description: 'Range, 0: not dealt, 1: dealt, 2: all'
-        in: query
-        name: range
-        type: integer
       - default: 30
         description: length of object array
         in: query
@@ -1498,9 +1513,4 @@ paths:
       summary: Modify User's Favorites
       tags:
       - Favorite
-securityDefinitions:
-  ApiKeyAuth:
-    in: header
-    name: Authorization
-    type: apiKey
 swagger: "2.0"

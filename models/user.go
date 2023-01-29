@@ -3,9 +3,9 @@ package models
 import (
 	"bytes"
 	"encoding/base64"
-	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/goccy/go-json"
 	"go.uber.org/zap"
 	"io"
 	"net/http"

@@ -2,8 +2,8 @@ package floor
 
 import (
 	"bytes"
-	"encoding/json"
 	"github.com/elastic/go-elasticsearch/v8"
+	"github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v2"
 	"go.uber.org/zap"
 	"log"
@@ -105,13 +105,13 @@ func SearchConfig(c *fiber.Ctx) error {
 	}
 }
 
-func SearchFloorsOld(c *fiber.Ctx, query ListOldModel) error {
+func SearchFloorsOld(c *fiber.Ctx, query *ListOldModel) error {
 	if DynamicConfig.OpenSearch.Load() == false {
 		return Forbidden("树洞流量激增，搜索功能暂缓开放")
 	}
 	floors := Floors{}
 	result := DB.
-		Where("content like ?", "%"+query.Search+"%").
+		Where("content like ?", "%"+*query.Search+"%").
 		Where("hole_id in (?)", DB.Table("hole").Select("id").Where("hidden = false")).
 		Offset(query.Offset).Limit(query.Size).Order("id desc").
 		Preload("Mention").Find(&floors)

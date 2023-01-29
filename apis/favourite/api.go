@@ -24,8 +24,7 @@ func ListFavorites(c *fiber.Ctx) error {
 		return err
 	}
 
-	var query ListModel
-	err = ValidateQuery(c, &query)
+	query, err := ValidateQuery[ListModel](c)
 	if err != nil {
 		return err
 	}
@@ -64,8 +63,7 @@ func ListFavorites(c *fiber.Ctx) error {
 //	@Success	200		{object}	Response
 func AddFavorite(c *fiber.Ctx) error {
 	// validate body
-	var body AddModel
-	err := ValidateBody(c, &body)
+	body, err := ValidateBody[AddModel](c)
 	if err != nil {
 		return err
 	}
@@ -110,8 +108,7 @@ func AddFavorite(c *fiber.Ctx) error {
 //	@Failure	404		{object}	Response
 func ModifyFavorite(c *fiber.Ctx) error {
 	// validate body
-	var body ModifyModel
-	err := ValidateBody(c, &body)
+	body, err := ValidateBody[ModifyModel](c)
 	if err != nil {
 		return err
 	}
@@ -151,8 +148,7 @@ func ModifyFavorite(c *fiber.Ctx) error {
 //	@Failure	404		{object}	Response
 func DeleteFavorite(c *fiber.Ctx) error {
 	// validate body
-	var body DeleteModel
-	err := ValidateBody(c, &body)
+	body, err := ValidateBody[DeleteModel](c)
 	if err != nil {
 		return err
 	}

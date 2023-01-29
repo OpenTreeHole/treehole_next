@@ -23,8 +23,7 @@ import (
 //	@Failure	404			{object}	MessageModel
 //	@Failure	500			{object}	MessageModel
 func ListHolesByDivision(c *fiber.Ctx) error {
-	var query QueryTime
-	err := ValidateQuery(c, &query)
+	query, err := ValidateQuery[QueryTime](c)
 	if err != nil {
 		return err
 	}
@@ -58,8 +57,7 @@ func ListHolesByDivision(c *fiber.Ctx) error {
 //	@Success	200			{array}		Hole
 //	@Failure	404			{object}	MessageModel
 func ListHolesByTag(c *fiber.Ctx) error {
-	var query QueryTime
-	err := ValidateQuery(c, &query)
+	query, err := ValidateQuery[QueryTime](c)
 	if err != nil {
 		return err
 	}
@@ -97,8 +95,7 @@ func ListHolesByTag(c *fiber.Ctx) error {
 //	@Param		object	query	ListOldModel	false	"query"
 //	@Success	200		{array}	Hole
 func ListHolesOld(c *fiber.Ctx) error {
-	var query ListOldModel
-	err := ValidateQuery(c, &query)
+	query, err := ValidateQuery[ListOldModel](c)
 	if err != nil {
 		return err
 	}
@@ -174,8 +171,7 @@ func GetHole(c *fiber.Ctx) error {
 //	@Success		201			{object}	Hole
 func CreateHole(c *fiber.Ctx) error {
 	// validate body
-	var body CreateModel
-	err := ValidateBody(c, &body)
+	body, err := ValidateBody[CreateModel](c)
 	if err != nil {
 		return err
 	}
@@ -221,8 +217,7 @@ func CreateHole(c *fiber.Ctx) error {
 //	@Success	201		{object}	CreateOldResponse
 func CreateHoleOld(c *fiber.Ctx) error {
 	// validate body
-	var body CreateOldModel
-	err := ValidateBody(c, &body)
+	body, err := ValidateBody[CreateOldModel](c)
 	if err != nil {
 		return err
 	}
@@ -269,8 +264,7 @@ func CreateHoleOld(c *fiber.Ctx) error {
 //	@Failure	404		{object}	MessageModel
 func ModifyHole(c *fiber.Ctx) error {
 	// validate
-	var body ModifyModel
-	err := ValidateBody(c, &body)
+	body, err := ValidateBody[ModifyModel](c)
 	if err != nil {
 		return err
 	}

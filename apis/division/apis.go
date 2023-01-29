@@ -22,16 +22,16 @@ import (
 //	@Success	200		{object}	models.Division
 func AddDivision(c *fiber.Ctx) error {
 	// validate body
-	var body CreateModel
-	err := ValidateBody(c, &body)
+	body, err := ValidateBody[CreateModel](c)
 	if err != nil {
 		return err
 	}
 
 	// bind division
-	var division Division
-	division.Name = body.Name
-	division.Description = body.Description
+	division := Division{
+		Name:        body.Name,
+		Description: body.Description,
+	}
 	result := DB.FirstOrCreate(&division, Division{Name: body.Name})
 	if result.RowsAffected == 0 {
 		c.Status(200)
@@ -83,7 +83,7 @@ func GetDivision(c *fiber.Ctx) error {
 //
 //	@Summary	Modify A Division
 //	@Tags		Division
-//	@Produce	application/json
+//	@Produce	json
 //	@Router		/divisions/{id} [put]
 //	@Param		id		path		int			true	"id"
 //	@Param		json	body		ModifyModel	true	"json"
@@ -91,8 +91,7 @@ func GetDivision(c *fiber.Ctx) error {
 //	@Failure	404		{object}	MessageModel
 func ModifyDivision(c *fiber.Ctx) error {
 	// validate body
-	var body ModifyModel
-	err := ValidateBody(c, &body)
+	body, err := ValidateBody[ModifyModel](c)
 	if err != nil {
 		return err
 	}
@@ -141,12 +140,11 @@ func ModifyDivision(c *fiber.Ctx) error {
 //	@Failure		404	{object}	MessageModel
 func DeleteDivision(c *fiber.Ctx) error {
 	// validate body
-	id, err := c.ParamsInt("id")
+	body, err := ValidateBody[DeleteModel](c)
 	if err != nil {
 		return err
 	}
-	var body DeleteModel
-	err = ValidateBody(c, &body)
+	id, err := c.ParamsInt("id")
 	if err != nil {
 		return err
 	}
