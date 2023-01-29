@@ -3,6 +3,7 @@ package models
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"gorm.io/gorm"
 	"sort"
 	"sync"
@@ -94,13 +95,14 @@ func UpdateTagTemperature(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
+			fmt.Println("task UpdateTagTemperature stopped")
 			return
 		case tagID := <-tagUpdateChan:
 			tagUpdateIDs[tagID] = true
 		case <-ticker.C:
 			keys := utils.Keys(tagUpdateIDs)  // get all the keys
 			tagUpdateIDs = make(map[int]bool) // clear
-			go updateTagTemperature(keys)     // updates
+			updateTagTemperature(keys)        // updates
 		}
 	}
 }
@@ -207,8 +209,4 @@ func (tags Tags) FindOrCreateTags(tx *gorm.DB) error {
 	}
 
 	return updateTagCacheBytes()
-}
-
-func (tags Tags) AddTagTemperature(tx *gorm.DB) error {
-	return tx.Model(&tags).Update("temperature", gorm.Expr("temperature + 1")).Error
 }

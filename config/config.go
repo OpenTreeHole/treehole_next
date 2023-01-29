@@ -32,7 +32,7 @@ var DynamicConfig struct {
 	OpenSearch atomic.Bool
 }
 
-func init() { // load config from environment variables
+func InitConfig() { // load config from environment variables
 	if err := env.Parse(&Config); err != nil {
 		panic(err)
 	}

@@ -15,7 +15,8 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-func Init() (*fiber.App, chan struct{}) {
+func Init() (*fiber.App, context.CancelFunc) {
+	config.InitConfig()
 	models.InitDB()
 	utils.Logger, _ = utils.InitLog()
 	models.InitAdminList()
@@ -41,9 +42,9 @@ func registerMiddlewares(app *fiber.App) {
 	}
 }
 
-func startTasks() chan struct{} {
-	done := make(chan struct{}, 1)
-	go hole.UpdateHoleViews(done)
-	go models.UpdateTagTemperature(context.Background())
-	return done
+func startTasks() context.CancelFunc {
+	ctx, cancel := context.WithCancel(context.Background())
+	go hole.UpdateHoleViews(ctx)
+	go models.UpdateTagTemperature(ctx)
+	return cancel
 }

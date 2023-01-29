@@ -65,7 +65,7 @@ func (hole *Hole) GetID() int {
 }
 
 func (hole *Hole) CacheName() string {
-	return fmt.Sprintf(fmt.Sprintf("hole_%d", hole.ID))
+	return fmt.Sprintf("hole_%d", hole.ID)
 }
 
 type Holes []*Hole
@@ -134,7 +134,7 @@ func loadFloors(holes Holes) error {
 			// UNION, remove duplications
 			// use index(idx_hole_ranking), type eq_ref
 			DB.Model(&Floor{}).Where(
-				"(hole_id, ranking) in ?",
+				"(hole_id, ranking) in (?)",
 				// use index(PRIMARY), type range
 				DB.Model(&Hole{}).Select("id", "reply").Where("id in ?", holeIDs),
 			),
@@ -188,13 +188,13 @@ func (hole *Hole) Preprocess(c *fiber.Ctx) error {
 func (holes Holes) Preprocess(_ *fiber.Ctx) error {
 	notInCache := make(Holes, 0, len(holes))
 
-	for _, hole := range holes {
+	for i, hole := range holes {
 		cachedHole := new(Hole)
-		ok := utils.GetCache(cachedHole.CacheName(), &cachedHole)
+		ok := utils.GetCache(hole.CacheName(), &cachedHole)
 		if !ok {
 			notInCache = append(notInCache, hole)
 		} else {
-			hole = cachedHole
+			holes[i] = cachedHole
 		}
 	}
 
@@ -355,7 +355,7 @@ func (hole *Hole) Create(tx *gorm.DB) error {
 		}
 
 		// Update tag temperature
-		err = hole.Tags.AddTagTemperature(tx)
+		err = tx.Model(&hole.Tags).Update("temperature", gorm.Expr("temperature + 1")).Error
 		if err != nil {
 			return err
 		}
@@ -382,6 +382,9 @@ func (hole *Hole) Create(tx *gorm.DB) error {
 
 	// set hole.HoleFloor
 	hole.SetHoleFloor()
+
+	// half preprocess hole.Floor
+	hole.Floors[0].SetDefaults()
 
 	// store into cache
 	return utils.SetCache(hole.CacheName(), hole, HoleCacheExpire)

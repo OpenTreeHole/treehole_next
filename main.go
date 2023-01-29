@@ -23,7 +23,7 @@ import (
 //	@BasePath	/api
 
 func main() {
-	app, taskChan := bootstrap.Init()
+	app, cancel := bootstrap.Init()
 	go func() {
 		err := app.Listen("0.0.0.0:8000")
 		if err != nil {
@@ -43,7 +43,7 @@ func main() {
 		log.Println(err)
 	}
 	// stop tasks
-	close(taskChan)
+	cancel()
 
 	// sync logger
 	err = utils.Logger.Sync()

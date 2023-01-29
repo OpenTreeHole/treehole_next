@@ -51,8 +51,8 @@ type Floor struct {
 
 	/// association info, should add foreign key
 
-	// the user who wrote it, hidden to user but available to admin
-	UserID int `json:"user_id;omitempty"`
+	// the user who wrote it
+	UserID int `json:"-" gorm:"not null"`
 
 	// the hole it belongs to
 	HoleID int `json:"hole_id" gorm:"not null;uniqueIndex:idx_hole_ranking,priority:1"`
