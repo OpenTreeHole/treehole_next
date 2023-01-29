@@ -1,12 +1,13 @@
 package models
 
 import (
-	"gorm.io/gorm/logger"
-	"gorm.io/plugin/dbresolver"
 	"log"
 	"os"
 	"time"
 	"treehole_next/config"
+
+	"gorm.io/gorm/logger"
+	"gorm.io/plugin/dbresolver"
 
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/sqlite"
@@ -121,6 +122,7 @@ func InitDB() {
 		&Hole{},
 		&Report{},
 		&Punishment{},
+		&Message{},
 	)
 	if err != nil {
 		panic(err)

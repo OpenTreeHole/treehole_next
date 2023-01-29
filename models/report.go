@@ -142,7 +142,7 @@ func (report *Report) SendCreate(_ *gorm.DB) error {
 	message := Notification{
 		"data":       report,
 		"recipients": userIDs,
-		"type":       NotificationTypeReport,
+		"type":       MessageTypeReport,
 		"url":        fmt.Sprintf("/api/reports/%d", report.ID),
 	}
 
@@ -163,7 +163,7 @@ func (report *Report) SendModify(_ *gorm.DB) error {
 	message := Notification{
 		"data":       report,
 		"recipients": userIDs,
-		"type":       NotificationTypeReportDealt,
+		"type":       MessageTypeReportDealt,
 		"url":        fmt.Sprintf("/api/reports/%d", report.ID),
 	}
 

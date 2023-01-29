@@ -2,14 +2,16 @@ package bootstrap
 
 import (
 	"context"
-	"github.com/gofiber/fiber/v2/middleware/logger"
-	"github.com/gofiber/fiber/v2/middleware/pprof"
-	"github.com/gofiber/fiber/v2/middleware/recover"
 	"treehole_next/apis"
 	"treehole_next/apis/hole"
+	"treehole_next/apis/message"
 	"treehole_next/config"
 	"treehole_next/models"
 	"treehole_next/utils"
+
+	"github.com/gofiber/fiber/v2/middleware/logger"
+	"github.com/gofiber/fiber/v2/middleware/pprof"
+	"github.com/gofiber/fiber/v2/middleware/recover"
 
 	"github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v2"
@@ -46,5 +48,6 @@ func startTasks() context.CancelFunc {
 	ctx, cancel := context.WithCancel(context.Background())
 	go hole.UpdateHoleViews(ctx)
 	go models.UpdateTagTemperature(ctx)
+	go message.PurgeMessage()
 	return cancel
 }

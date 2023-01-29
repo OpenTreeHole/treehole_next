@@ -4,6 +4,6 @@ package models
 type Map = map[string]interface{}
 
 type Models interface {
-	Division | Hole | Floor | Tag | User | Report |
-		Divisions | Holes | Floors | Tags | Users | Reports
+	Division | Hole | Floor | Tag | User | Report | Message |
+		Divisions | Holes | Floors | Tags | Users | Reports | Messages
 }
