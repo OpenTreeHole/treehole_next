@@ -64,7 +64,7 @@ func (hole *Hole) GetID() int {
 	return hole.ID
 }
 
-func (hole *Hole) IDString() string {
+func (hole *Hole) CacheName() string {
 	return fmt.Sprintf(fmt.Sprintf("hole_%d", hole.ID))
 }
 
@@ -212,7 +212,7 @@ func (holes Holes) Preprocess(_ *fiber.Ctx) error {
 
 	for i := 0; i < len(holes); i++ {
 		hole := new(Hole)
-		ok := utils.GetCache(hole.IDString(), &hole)
+		ok := utils.GetCache(hole.CacheName(), &hole)
 		if !ok {
 			notInCache = append(notInCache, holes[i])
 		} else {
@@ -247,7 +247,7 @@ func UpdateHoleCache(holes Holes) error {
 
 	for i := range holes {
 		err = utils.SetCache(
-			holes[i].IDString(),
+			holes[i].CacheName(),
 			holes[i],
 			HoleCacheExpire,
 		)
@@ -365,12 +365,16 @@ func (hole *Hole) Create(tx *gorm.DB) error {
 		return err
 	}
 
+	// Find floor.Mentions, in different sql session
+	hole.Floors[0].Mention, err = LoadFloorMentions(tx, hole.Floors[0].Content)
+
 	err = tx.Transaction(func(tx *gorm.DB) error {
 		// Create hole
-		err = tx.Omit(clause.Associations).Create(hole).Error
+		err = tx.Omit(clause.Associations).Create(&hole).Error
 		if err != nil {
 			return err
 		}
+		hole.Floors[0].HoleID = hole.ID
 
 		// Create hole_tags association only
 		err = tx.Omit("Tags.*", "UpdatedAt").Select("Tags").Save(&hole).Error
@@ -384,10 +388,14 @@ func (hole *Hole) Create(tx *gorm.DB) error {
 			return err
 		}
 
-		// todo: new Anonyname mapping
+		// new anonyname
+		hole.Floors[0].Anonyname, err = NewAnonyname(tx, hole.ID, hole.UserID)
+		if err != nil {
+			return err
+		}
 
-		// create floor
-		err = hole.Floors[0].Create(tx)
+		// create floor, set floor_mention association in AfterCreate hook
+		err = tx.Omit(clause.Associations).Create(&hole.Floors[0]).Error
 		if err != nil {
 			return err
 		}
@@ -404,7 +412,7 @@ func (hole *Hole) Create(tx *gorm.DB) error {
 	hole.SetHoleFloor()
 
 	// store into cache
-	return utils.SetCache(hole.IDString(), hole, HoleCacheExpire)
+	return utils.SetCache(hole.CacheName(), hole, HoleCacheExpire)
 }
 
 func (hole *Hole) AfterCreate(_ *gorm.DB) (err error) {

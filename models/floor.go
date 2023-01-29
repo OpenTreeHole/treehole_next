@@ -5,7 +5,6 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/plugin/dbresolver"
 	"time"
-	"treehole_next/config"
 	"treehole_next/utils"
 
 	"gorm.io/gorm"
@@ -29,7 +28,7 @@ type Floor struct {
 	// the ranking of this floor in the hole
 	Ranking int `json:"ranking" gorm:"default:0;not null;uniqueIndex:idx_hole_ranking,priority:2"`
 
-	// floor_id that it replies to, for dialog mode
+	// floor_id that it replies to, for dialog mode, in the same hole
 	ReplyTo int `json:"reply_to"`
 
 	// like number
@@ -58,7 +57,7 @@ type Floor struct {
 	// the hole it belongs to
 	HoleID int `json:"hole_id" gorm:"not null;uniqueIndex:idx_hole_ranking,priority:1"`
 
-	// many to many mentions (in different holes)
+	// many to many mentions
 	Mention Floors `json:"mention" gorm:"many2many:floor_mention"`
 
 	LikedUsers Users `json:"-" gorm:"many2many:floor_like"`
@@ -113,9 +112,7 @@ func (floors Floors) Preprocess(c *fiber.Ctx) error {
 	floorIDs := make([]int, len(floors))
 	IDFloorMapping := make(map[int]*Floor)
 	for i, floor := range floors {
-		if userID == floor.UserID {
-			floors[i].IsMe = true
-		}
+		floors[i].IsMe = userID == floor.UserID
 		floorIDs[i] = floor.ID
 		IDFloorMapping[floor.ID] = floors[i]
 	}
@@ -142,11 +139,8 @@ func (floors Floors) Preprocess(c *fiber.Ctx) error {
 	}
 
 	// set some default values
-	for i := range floors {
-		floors[i].SetDefaults()
-		for j := range floors[i].Mention {
-			floors[i].Mention[j].SetDefaults()
-		}
+	for _, floor := range floors {
+		floor.SetDefaults()
 	}
 	return nil
 }
@@ -154,9 +148,11 @@ func (floors Floors) Preprocess(c *fiber.Ctx) error {
 func (floor *Floor) SetDefaults() {
 	if floor.Mention == nil {
 		floor.Mention = Floors{}
+	} else if len(floor.Mention) > 0 {
+		for _, mentionFloor := range floor.Mention {
+			mentionFloor.SetDefaults()
+		}
 	}
-
-	floor.FloorID = floor.ID
 
 	if floor.Fold != "" {
 		floor.FoldFrontend = []string{floor.Fold}
@@ -166,100 +162,78 @@ func (floor *Floor) SetDefaults() {
 }
 
 func (floor *Floor) SetMention(tx *gorm.DB, clear bool) error {
-	// find mention IDs
-	mentionIDs, err := parseFloorMentions(tx, floor.Content)
-	if err != nil {
-		return err
-	}
-
-	// find mention from floor table
-	mention := Floors{}
-	if len(mentionIDs) > 0 {
-		err := tx.Find(&mention, mentionIDs).Error
-		if err != nil {
-			return err
-		}
-	}
-	floor.Mention = mention
 
 	// set mention to floor_mention table
 	if clear {
-		if err = deleteFloorMentions(tx, floor.ID); err != nil {
+		if err := deleteFloorMentions(tx, floor.ID); err != nil {
 			return err
 		}
 	}
-	return insertFloorMentions(tx, newFloorMentions(floor.ID, mentionIDs))
+	return nil
 }
 
 /******************************
 Create
 *******************************/
 
-func (floor *Floor) Create(tx *gorm.DB) error {
-	return tx.Transaction(func(tx *gorm.DB) error {
-		// permission
-		var hole Hole
-		tx.Select("division_id").First(&hole, floor.HoleID)
+func (floor *Floor) Create(tx *gorm.DB) (err error) {
+	// load floor mention, in another session
+	floor.Mention, err = LoadFloorMentions(DB, floor.Content)
+	if err != nil {
+		return err
+	}
+	var hole Hole
 
+	err = tx.Transaction(func(tx *gorm.DB) error {
 		// get anonymous name
-		var mapping AnonynameMapping
-		result := tx.
-			Where("hole_id = ?", floor.HoleID).
-			Where("user_id = ?", floor.UserID).
-			Take(&mapping)
-
-		if result.Error != nil {
-			// no mapping exists, generate anonyname
-			var names []string
-			result = tx.Clauses(clause.Locking{
-				Strength: "UPDATE",
-			}).Raw(`
-				SELECT anonyname FROM anonyname_mapping 
-				WHERE hole_id = ? 
-				ORDER BY anonyname`, floor.HoleID,
-			).Scan(&names)
-			if result.Error != nil {
-				return result.Error
-			}
-
-			floor.Anonyname = utils.GenerateName(names)
-			result = tx.Create(&AnonynameMapping{
-				UserID:    floor.UserID,
-				HoleID:    floor.HoleID,
-				Anonyname: floor.Anonyname,
-			})
-			if result.Error != nil {
-				return result.Error
-			}
-		} else {
-			floor.Anonyname = mapping.Anonyname
+		floor.Anonyname, err = FindOrGenerateAnonyname(tx, floor.HoleID, floor.UserID)
+		if err != nil {
+			return err
 		}
 
-		// create floor
-		result = tx.Omit("Mention").Create(floor)
-		if result.Error != nil {
-			return result.Error
+		// get and lock hole for updating reply
+		err = tx.Clauses(clause.Locking{Strength: "UPDATE"}).Take(&hole, floor.HoleID).Error
+		if err != nil {
+			return err
 		}
 
-		if hole.Reply < config.Config.HoleFloorSize {
-			return utils.DeleteCache(fmt.Sprintf("hole_%d", floor.HoleID))
+		hole.Reply++
+		floor.Ranking = hole.Reply
+
+		// create floor, set floor_mention association in AfterCreate hook
+		err = tx.Omit(clause.Associations).Create(&floor).Error
+		if err != nil {
+			return err
 		}
-		return nil
+
+		// update hole reply and update_at
+		return tx.Omit(clause.Associations).Save(&hole).Error
 	})
-}
 
-func (floor *Floor) AfterCreate(tx *gorm.DB) (err error) {
-
-	// floor set Mention
-	err = floor.SetMention(tx, false)
 	if err != nil {
 		return err
 	}
 
-	// update reply and update_at
-	result := tx.Exec("UPDATE hole SET reply = reply + 1, updated_at = ? WHERE id = ?", time.Now(), floor.HoleID)
-	if result.Error != nil {
-		return result.Error
+	floor.SetDefaults()
+
+	// delete cache
+	return utils.DeleteCache(hole.CacheName())
+}
+
+func (floor *Floor) AfterFind(_ *gorm.DB) (err error) {
+	floor.FloorID = floor.ID
+	return nil
+}
+
+func (floor *Floor) AfterCreate(tx *gorm.DB) (err error) {
+	floor.FloorID = floor.ID
+
+	// create floor mention association
+	if len(floor.Mention) > 0 {
+		err = tx.Omit("Mention.*", "UpdatedAt").Select("Mention").Save(&floor).Error
+		if err != nil {
+			return err
+		}
 	}
 
 	var messages Messages

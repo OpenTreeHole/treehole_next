@@ -142,6 +142,8 @@ func CreateFloor(c *fiber.Ctx) error {
 		return err
 	}
 
+	// todo: check permission
+
 	// get divisionID
 	var divisionID int
 	result := DB.Table("hole").Select("division_id").Where("id = ?", holeID).Take(&divisionID)
@@ -168,13 +170,14 @@ func CreateFloor(c *fiber.Ctx) error {
 		Content:    body.Content,
 		ReplyTo:    body.ReplyTo,
 		SpecialTag: body.SpecialTag,
+		IsMe:       true,
 	}
-	err = floor.Create(c)
+	err = floor.Create(DB)
 	if err != nil {
 		return err
 	}
 
-	return Serialize(c.Status(201), &floor)
+	return c.Status(201).JSON(&floor)
 }
 
 // CreateFloorOld
@@ -193,11 +196,13 @@ func CreateFloorOld(c *fiber.Ctx) error {
 		return err
 	}
 
+	// todo: check permission
+
 	// get divisionID
-	var divisionID int
-	result := DB.Table("hole").Select("division_id").Where("id = ?", body.HoleID).Take(&divisionID)
-	if result.Error != nil {
-		return result.Error
+	var hole Hole
+	err = DB.Take(&hole, body.HoleID).Error
+	if err != nil {
+		return err
 	}
 
 	// get user from auth
@@ -207,7 +212,7 @@ func CreateFloorOld(c *fiber.Ctx) error {
 	}
 
 	// permission
-	if user.BanDivision[divisionID] {
+	if user.BanDivision[hole.DivisionID] {
 		return Forbidden("您没有权限在此板块发言")
 	}
 
@@ -217,13 +222,9 @@ func CreateFloorOld(c *fiber.Ctx) error {
 		Content:    body.Content,
 		ReplyTo:    body.ReplyTo,
 		SpecialTag: body.SpecialTag,
+		IsMe:       true,
 	}
-	err = floor.Create(c)
-	if err != nil {
-		return err
-	}
-
-	err = floor.Preprocess(c)
+	err = floor.Create(DB)
 	if err != nil {
 		return err
 	}

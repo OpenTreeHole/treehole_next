@@ -2,7 +2,6 @@ package models
 
 import (
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 	"regexp"
 	"treehole_next/utils"
 )
@@ -16,55 +15,44 @@ func (FloorMention) TableName() string {
 	return "floor_mention"
 }
 
-func newFloorMentions(floorID int, mentionIDs []int) []FloorMention {
-	floorMentions := make([]FloorMention, 0, len(mentionIDs))
-	for _, mentionID := range mentionIDs {
-		floorMentions = append(floorMentions, FloorMention{
-			FloorID:   floorID,
-			MentionID: mentionID,
-		})
-	}
-	return floorMentions
-}
-
 func deleteFloorMentions(tx *gorm.DB, floorID int) error {
 	return tx.Where("floor_id = ?", floorID).Delete(&FloorMention{}).Error
-}
-
-func insertFloorMentions(tx *gorm.DB, floorMentions []FloorMention) error {
-	if len(floorMentions) == 0 {
-		return nil
-	}
-	return tx.Clauses(clause.OnConflict{DoNothing: true}).Create(floorMentions).Error
 }
 
 var reHole = regexp.MustCompile(`[^#]#(\d+)`)
 var reFloor = regexp.MustCompile(`##(\d+)`)
 
-func parseFloorMentions(tx *gorm.DB, content string) ([]int, error) {
-	// find mention IDs
+func parseMentionIDs(content string) (holeIDs []int, floorIDs []int, err error) {
+	// todo: parse replyTo
+
+	// find mentioned holeIDs
 	holeIDsText := reHole.FindAllStringSubmatch(" "+content, -1)
-	holeIds, err := utils.ReText2IntArray(holeIDsText)
+	holeIDs, err = utils.RegText2IntArray(holeIDsText)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	var mentionIDs = make([]int, 0)
-	if len(holeIds) != 0 {
-		err := tx.
-			Raw("SELECT MIN(id) FROM floor WHERE hole_id IN ? GROUP BY hole_id", holeIds).
-			Scan(&mentionIDs).Error
-		if err != nil {
-			return nil, err
-		}
-	}
-
+	// find mentioned floorIDs
 	floorIDsText := reFloor.FindAllStringSubmatch(" "+content, -1)
-	mentionIDs2, err := utils.ReText2IntArray(floorIDsText)
+	floorIDs, err = utils.RegText2IntArray(floorIDsText)
+	return holeIDs, floorIDs, err
+}
+
+func LoadFloorMentions(tx *gorm.DB, content string) (Floors, error) {
+	holeIDs, floorIDs, err := parseMentionIDs(content)
 	if err != nil {
 		return nil, err
 	}
 
-	mentionIDs = append(mentionIDs, mentionIDs2...)
-	return mentionIDs, nil
+	queryGetHoleFloors := tx.Model(&Floor{}).Where("hole_id in ? and ranking = 0", holeIDs)
+	queryGetFloors := tx.Model(&Floor{}).Where("id in ?", floorIDs)
+	mentionFloors := Floors{}
+	if len(holeIDs) > 0 && len(floorIDs) > 0 {
+		err = tx.Raw(`? UNION ?`, queryGetHoleFloors, queryGetFloors).Scan(&mentionFloors).Error
+	} else if len(holeIDs) > 0 {
+		err = queryGetHoleFloors.Scan(&mentionFloors).Error
+	} else if len(floorIDs) > 0 {
+		err = queryGetFloors.Scan(&mentionFloors).Error
+	}
+	return mentionFloors, err
 }
