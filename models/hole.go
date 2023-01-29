@@ -35,8 +35,8 @@ type Hole struct {
 	// 所属 division 的 id
 	DivisionID int `json:"division_id" gorm:"not null;index:idx_hole_div_upd,priority:1;index:idx_hole_div_cre,priority:1"`
 
-	// 洞主 id，管理员可见
-	UserID int `json:"user_id;omitempty" gorm:"not null"`
+	// 洞主 id，管理员不可见
+	UserID int `json:"-" gorm:"not null"`
 
 	// tag 列表；不超过 10 个
 	Tags Tags `json:"tags" gorm:"many2many:hole_tags;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
@@ -76,44 +76,32 @@ type Holes []*Hole
 
 const HoleCacheExpire = time.Minute * 10
 
-func loadTags(holes []*Hole) error {
-	holeIDs := make([]int, len(holes))
-	for i, hole := range holes {
-		holeIDs[i] = hole.ID
-		hole.Tags = make([]*Tag, 0, config.Config.TagSize)
+func loadTags(holes Holes) (err error) {
+	if len(holes) == 0 {
+		return nil
+	}
+	holeIDs := utils.Models2IDSlice(holes)
+	for _, hole := range holes {
+		hole.Tags = Tags{}
 	}
 
-	var holeTags []*HoleTag
-	result := DB.Raw(`
-		SELECT * FROM hole_tags
-		WHERE hole_id IN (?)`, holeIDs,
-	).Scan(&holeTags)
-	if result.Error != nil {
-		return result.Error
+	var holeTags HoleTags
+	err = DB.Where("hole_id in ?", holeIDs).Find(&holeTags).Error
+	if err != nil {
+		return err
 	}
 
 	mapping := make(map[int][]int)
-	tagIDs := make([]int, len(holeTags))
-	for i, holeTag := range holeTags {
+	tagIDs := make(map[int]bool)
+	for _, holeTag := range holeTags {
 		mapping[holeTag.HoleID] = append(mapping[holeTag.HoleID], holeTag.TagID)
-		tagIDs[i] = holeTag.TagID
+		tagIDs[holeTag.TagID] = true
 	}
 
-	var tags []*Tag
-	result = DB.Raw(`
-		SELECT * FROM tag
-		WHERE id IN (?)`, tagIDs,
-	).Scan(&tags)
-	if result.Error != nil {
-		return result.Error
-	}
-	if len(tags) == 0 {
-		return nil
-	}
+	tags := LoadTagsByID(utils.Keys(tagIDs))
 
 	tagMap := make(map[int]*Tag)
 	for _, tag := range tags {
-		tag.TagID = tag.ID
 		tagMap[tag.ID] = tag
 	}
 
@@ -126,26 +114,33 @@ func loadTags(holes []*Hole) error {
 	return nil
 }
 
-func loadFloors(holes []*Hole) error {
-	holeIDs := make([]int, len(holes))
-	for i, hole := range holes {
-		holeIDs[i] = hole.ID
-		hole.HoleFloor.Floors = make([]*Floor, 0, config.Config.HoleFloorSize)
+func loadFloors(holes Holes) error {
+	if len(holes) == 0 {
+		return nil
 	}
+	holeIDs := utils.Models2IDSlice(holes)
 
-	var floors []*Floor
-	result := DB.Raw(`
-		SELECT *
-		FROM (
-			SELECT *, rank() over
-			(PARTITION BY hole_id ORDER BY id) AS ranking
-			FROM floor
-		) AS a 
-		WHERE hole_id IN (?) AND ranking <= ?`,
-		holeIDs, config.Config.HoleFloorSize,
-	).Scan(&floors)
-	if result.Error != nil {
-		return result.Error
+	// load all floors with holeIDs and ranking < HoleFloorSize or the last floor
+	// sorted by hole_id asc first and ranking asc second
+	var floors Floors
+	err := DB.
+		// using mysql file sort
+		Order("hole_id, ranking").
+		Raw(
+			`? UNION ?`,
+			// use index(idx_hole_ranking), type range, use MRR
+			DB.Model(&Floor{}).Where("hole_id in ? and ranking < ?", holeIDs, config.Config.HoleFloorSize),
+
+			// UNION, remove duplications
+			// use index(idx_hole_ranking), type eq_ref
+			DB.Model(&Floor{}).Where(
+				"(hole_id, ranking) in ?",
+				// use index(PRIMARY), type range
+				DB.Model(&Hole{}).Select("id", "reply").Where("id in ?", holeIDs),
+			),
+		).Scan(&floors).Error
+	if err != nil {
+		return err
 	}
 	if len(floors) == 0 {
 		return nil
@@ -169,7 +164,7 @@ func loadFloors(holes []*Hole) error {
 	for _, floor := range floors {
 		floor.SetDefaults()
 		if floor.HoleID != holes[index].ID {
-			holes[index].HoleFloor.Floors = floors[left:right]
+			holes[index].Floors = floors[left:right]
 			left = right
 			index = slices.IndexFunc(holes, func(hole *Hole) bool {
 				return hole.ID == floor.HoleID
@@ -177,27 +172,10 @@ func loadFloors(holes []*Hole) error {
 		}
 		right++
 	}
-	holes[index].HoleFloor.Floors = floors[left:right]
+	holes[index].Floors = floors[left:right]
 
 	for _, hole := range holes {
-		if len(hole.HoleFloor.Floors) == 0 {
-			return nil
-		}
-
-		// first floor
-		hole.HoleFloor.FirstFloor = hole.HoleFloor.Floors[0]
-
-		// last floor
-		// this means all the floors are loaded into hole.HoleFloor.Floors,
-		// so we can just get last floor from hole.HoleFloor.Floors
-		if hole.Reply < config.Config.HoleFloorSize {
-			hole.HoleFloor.LastFloor = hole.HoleFloor.Floors[len(hole.HoleFloor.Floors)-1]
-		} else {
-			var floor Floor
-			DB.Where("hole_id = ?", hole.ID).Last(&floor)
-			floor.SetDefaults()
-			hole.HoleFloor.LastFloor = &floor
-		}
+		hole.SetHoleFloor()
 	}
 
 	return nil
@@ -210,13 +188,13 @@ func (hole *Hole) Preprocess(c *fiber.Ctx) error {
 func (holes Holes) Preprocess(_ *fiber.Ctx) error {
 	notInCache := make(Holes, 0, len(holes))
 
-	for i := 0; i < len(holes); i++ {
-		hole := new(Hole)
-		ok := utils.GetCache(hole.CacheName(), &hole)
+	for _, hole := range holes {
+		cachedHole := new(Hole)
+		ok := utils.GetCache(cachedHole.CacheName(), &cachedHole)
 		if !ok {
-			notInCache = append(notInCache, holes[i])
+			notInCache = append(notInCache, hole)
 		} else {
-			holes[i] = hole
+			hole = cachedHole
 		}
 	}
 
@@ -241,16 +219,8 @@ func UpdateHoleCache(holes Holes) error {
 		return err
 	}
 
-	for i := range holes {
-		holes[i].HoleID = holes[i].ID
-	}
-
-	for i := range holes {
-		err = utils.SetCache(
-			holes[i].CacheName(),
-			holes[i],
-			HoleCacheExpire,
-		)
+	for _, hole := range holes {
+		err = utils.SetCache(hole.CacheName(), hole, HoleCacheExpire)
 		if err != nil {
 			return err
 		}
@@ -350,10 +320,12 @@ func (hole *Hole) SetHoleFloor() {
 	if holeFloorSize == 0 {
 		return
 	}
-	hole.HoleFloor.Floors = hole.Floors
+
 	hole.HoleFloor.FirstFloor = hole.Floors[0]
 	hole.HoleFloor.LastFloor = hole.Floors[holeFloorSize-1]
-	if holeFloorSize > config.Config.HoleFloorSize {
+	if holeFloorSize <= config.Config.HoleFloorSize {
+		hole.HoleFloor.Floors = hole.Floors
+	} else {
 		hole.HoleFloor.Floors = hole.Floors[:holeFloorSize-1]
 	}
 }

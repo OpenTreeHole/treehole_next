@@ -74,6 +74,17 @@ func loadAllTags(tx *gorm.DB) error {
 	return err
 }
 
+func LoadTagsByID(tagIDs []int) (tags Tags) {
+	tagCache.RLock()
+	defer tagCache.RUnlock()
+	for _, tagID := range tagIDs {
+		if tag, ok := tagCache.idIndex[tagID]; ok {
+			tags = append(tags, utils.ValueCopy(tag))
+		}
+	}
+	return tags
+}
+
 var tagUpdateChan = make(chan int, 1000)
 var tagUpdateIDs = make(map[int]bool)
 

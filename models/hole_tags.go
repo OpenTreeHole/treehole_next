@@ -8,3 +8,5 @@ type HoleTag struct {
 func (HoleTag) TableName() string {
 	return "hole_tags"
 }
+
+type HoleTags []*HoleTag
