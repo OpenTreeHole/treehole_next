@@ -2,10 +2,11 @@ package models
 
 import (
 	"fmt"
-	"github.com/gofiber/fiber/v2"
-	"gorm.io/plugin/dbresolver"
 	"time"
 	"treehole_next/utils"
+
+	"github.com/gofiber/fiber/v2"
+	"gorm.io/plugin/dbresolver"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -236,14 +237,14 @@ func (floor *Floor) AfterCreate(tx *gorm.DB) (err error) {
 		}
 	}
 
-	var messages Messages
+	var messages Notifications
 	messages = messages.Merge(floor.SendReply(tx))
 	messages = messages.Merge(floor.SendMention(tx))
 	messages = messages.Merge(floor.SendFavorite(tx))
 
 	err = messages.Send()
 	if err != nil {
-		utils.Logger.Error("[notification] SendMessage failed: " + err.Error())
+		utils.Logger.Error("[notification] SendNotification failed: " + err.Error())
 		// return err // only for test
 	}
 
@@ -326,7 +327,7 @@ func (floor *Floor) ModifyLike(c *fiber.Ctx, likeOption int8) error {
 Send Notifications
 ******************/
 
-func (floor *Floor) SendFavorite(tx *gorm.DB) Message {
+func (floor *Floor) SendFavorite(tx *gorm.DB) Notification {
 	// get recipients
 	var tmpIDs []int
 	result := tx.Raw("SELECT user_id from user_favorites WHERE hole_id = ?", floor.HoleID).Scan(&tmpIDs)
@@ -347,18 +348,18 @@ func (floor *Floor) SendFavorite(tx *gorm.DB) Message {
 		return nil
 	}
 
-	// Construct Message
-	message := Message{
+	// Construct Notification
+	message := Notification{
 		"data":       floor,
 		"recipients": userIDs,
-		"type":       MessageTypeFavorite,
+		"type":       NotificationTypeFavorite,
 		"url":        fmt.Sprintf("/api/floors/%d", floor.ID),
 	}
 
 	return message
 }
 
-func (floor *Floor) SendReply(tx *gorm.DB) Message {
+func (floor *Floor) SendReply(tx *gorm.DB) Notification {
 	// get recipients
 	userID := 0
 	result := tx.Raw("SELECT user_id from hole WHERE id = ?", floor.HoleID).Scan(&userID)
@@ -374,17 +375,17 @@ func (floor *Floor) SendReply(tx *gorm.DB) Message {
 	userIDs := []int{userID}
 
 	// construct message
-	message := Message{
+	message := Notification{
 		"data":       floor,
 		"recipients": userIDs,
-		"type":       MessageTypeReply,
+		"type":       NotificationTypeReply,
 		"url":        fmt.Sprintf("/api/floors/%d", floor.ID),
 	}
 
 	return message
 }
 
-func (floor *Floor) SendMention(_ *gorm.DB) Message {
+func (floor *Floor) SendMention(_ *gorm.DB) Notification {
 	// get recipients
 	var userIDs []int
 	for _, mention := range floor.Mention {
@@ -402,10 +403,10 @@ func (floor *Floor) SendMention(_ *gorm.DB) Message {
 	}
 
 	// construct message
-	message := Message{
+	message := Notification{
 		"data":       floor,
 		"recipients": userIDs,
-		"type":       MessageTypeMention,
+		"type":       NotificationTypeMention,
 		"url":        fmt.Sprintf("/api/floors/%d", floor.ID),
 	}
 
@@ -417,10 +418,10 @@ func (floor *Floor) SendModify(_ *gorm.DB) error {
 	userIDs := []int{floor.UserID}
 
 	// construct message
-	message := Message{
+	message := Notification{
 		"data":       floor,
 		"recipients": userIDs,
-		"type":       MessageTypeModify,
+		"type":       NotificationTypeModify,
 		"url":        fmt.Sprintf("/api/floors/%d", floor.ID),
 	}
 

@@ -139,10 +139,10 @@ func (report *Report) SendCreate(_ *gorm.DB) error {
 	userIDs := []int{adminList[currentCounter-1]}
 
 	// construct message
-	message := Message{
+	message := Notification{
 		"data":       report,
 		"recipients": userIDs,
-		"type":       MessageTypeReport,
+		"type":       NotificationTypeReport,
 		"url":        fmt.Sprintf("/api/reports/%d", report.ID),
 	}
 
@@ -160,10 +160,10 @@ func (report *Report) SendModify(_ *gorm.DB) error {
 	userIDs := []int{report.UserID}
 
 	// construct message
-	message := Message{
+	message := Notification{
 		"data":       report,
 		"recipients": userIDs,
-		"type":       MessageTypeReportDealt,
+		"type":       NotificationTypeReportDealt,
 		"url":        fmt.Sprintf("/api/reports/%d", report.ID),
 	}
 
