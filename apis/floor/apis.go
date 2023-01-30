@@ -267,7 +267,7 @@ func ModifyFloor(c *fiber.Ctx) error {
 		if user.ID == floor.UserID {
 			reason = "该内容已被作者修改"
 			MyLog("Floor", "Modify", floorID, user.ID, RoleOwner, "content")
-		} else if perm.CheckPermission(user, perm.Admin) {
+		} else if perm.GetPermission(user, perm.Admin) {
 			reason = "该内容已被管理员修改"
 			MyLog("Floor", "Modify", floorID, user.ID, RoleAdmin, "content")
 		} else {
@@ -287,7 +287,7 @@ func ModifyFloor(c *fiber.Ctx) error {
 	}
 
 	if body.Fold == "" && body.FoldFrontend != nil {
-		if !perm.CheckPermission(user, perm.Admin) {
+		if !perm.GetPermission(user, perm.Admin) {
 			return Forbidden()
 		}
 		if len(body.FoldFrontend) == 0 {
@@ -301,7 +301,7 @@ func ModifyFloor(c *fiber.Ctx) error {
 	}
 
 	if body.Fold != "" {
-		if !perm.CheckPermission(user, perm.Admin) {
+		if !perm.GetPermission(user, perm.Admin) {
 			return Forbidden()
 		}
 		floor.Fold = body.Fold
@@ -310,7 +310,7 @@ func ModifyFloor(c *fiber.Ctx) error {
 
 	if body.SpecialTag != "" {
 		// operator can modify specialTag
-		if !perm.CheckPermission(user, perm.Admin|perm.Operator) {
+		if !perm.GetPermission(user, perm.Admin|perm.Operator) {
 			return Forbidden()
 		}
 		floor.SpecialTag = body.SpecialTag
@@ -419,7 +419,7 @@ func DeleteFloor(c *fiber.Ctx) error {
 	}
 
 	// permission
-	if !(user.ID == floor.UserID || perm.CheckPermission(user, perm.Admin)) {
+	if !(user.ID == floor.UserID || perm.GetPermission(user, perm.Admin)) {
 		return Forbidden()
 	}
 
@@ -475,7 +475,7 @@ func GetFloorHistory(c *fiber.Ctx) error {
 	}
 
 	// permission
-	if !perm.CheckPermission(user, perm.Admin) {
+	if !perm.GetPermission(user, perm.Admin) {
 		return Forbidden()
 	}
 
@@ -522,7 +522,7 @@ func RestoreFloor(c *fiber.Ctx) error {
 	}
 
 	// permission check
-	if !perm.CheckPermission(user, perm.Admin) {
+	if !perm.GetPermission(user, perm.Admin) {
 		return Forbidden()
 	}
 

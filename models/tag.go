@@ -86,7 +86,17 @@ func LoadTagsByID(tagIDs []int) (tags Tags) {
 	return tags
 }
 
-var tagUpdateChan = make(chan int, 1000)
+func LoadTagByName(name string) (*Tag, error) {
+	tagCache.RLock()
+	defer tagCache.RUnlock()
+	if tag, ok := tagCache.nameIndex[name]; ok {
+		return utils.ValueCopy(tag), nil
+	} else {
+		return nil, gorm.ErrRecordNotFound
+	}
+}
+
+var TagUpdateChan = make(chan int, 1000)
 var tagUpdateIDs = make(map[int]bool)
 
 // UpdateTagTemperature is a timed task
@@ -97,7 +107,7 @@ func UpdateTagTemperature(ctx context.Context) {
 		case <-ctx.Done():
 			fmt.Println("task UpdateTagTemperature stopped")
 			return
-		case tagID := <-tagUpdateChan:
+		case tagID := <-TagUpdateChan:
 			tagUpdateIDs[tagID] = true
 		case <-ticker.C:
 			keys := utils.Keys(tagUpdateIDs)  // get all the keys
@@ -176,7 +186,7 @@ func (tags Tags) FindOrCreateTags(tx *gorm.DB) error {
 	newTags := tags.checkTags()
 	defer func() {
 		for _, tag := range tags {
-			tagUpdateChan <- tag.ID
+			TagUpdateChan <- tag.ID
 		}
 	}()
 	if len(newTags) == 0 {

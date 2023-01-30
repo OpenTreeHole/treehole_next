@@ -8,7 +8,7 @@ import (
 
 type ListModel struct {
 	models.Query
-	OrderBy string `query:"order_by" default:"id" validate:"oneof=id like"` // SQL ORDER BY field
+	OrderBy string `json:"order_by" query:"order_by" default:"id" validate:"oneof=id like"` // SQL ORDER BY field
 }
 
 func (q *ListModel) BaseQuery() *gorm.DB {

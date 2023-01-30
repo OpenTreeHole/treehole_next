@@ -17,7 +17,7 @@ const (
 type ListModel struct {
 	Query
 	// Sort order, default is desc
-	Sort string `query:"sort" default:"desc" validate:"oneof=asc desc"`
+	Sort string `json:"sort" query:"sort" default:"desc" validate:"oneof=asc desc"`
 	// Range, 0: not dealt, 1: dealt, 2: all
 	Range Range `json:"range"`
 }

@@ -94,7 +94,7 @@ func SearchConfig(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	if !perm.CheckPermission(user, perm.Admin) {
+	if !perm.GetPermission(user, perm.Admin) {
 		return Forbidden()
 	}
 	if DynamicConfig.OpenSearch.Load() == body.Open {

@@ -57,7 +57,7 @@ func BanUser(c *fiber.Ctx) error {
 	}
 
 	// permission
-	if !perm.CheckPermission(user, perm.Admin) {
+	if !perm.GetPermission(user, perm.Admin) {
 		return Forbidden()
 	}
 
