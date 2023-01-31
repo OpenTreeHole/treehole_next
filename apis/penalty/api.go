@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/goccy/go-json"
 	"io"
 	"net/http"
 	"strconv"
@@ -14,6 +13,8 @@ import (
 	. "treehole_next/models"
 	. "treehole_next/utils"
 	"treehole_next/utils/perm"
+
+	"github.com/goccy/go-json"
 
 	"github.com/gofiber/fiber/v2"
 	"go.uber.org/zap"
@@ -85,6 +86,27 @@ func BanUser(c *fiber.Ctx) error {
 	}
 
 	userData, err := GetUserInfo(floor.UserID)
+	if err != nil {
+		return err
+	}
+
+	// construct message for user
+	message := Notification{
+		"data":       floor,
+		"recipients": floor.UserID,
+		"description": fmt.Sprintf(
+			"分区：%d，时间：%d天，原因：%s",
+			body.DivisionID,
+			days,
+			floor.Content,
+		),
+		"title": "你的权限被禁止了",
+		"type":  MessageTypePermission,
+		"url":   fmt.Sprintf("/api/floors/%d", floor.ID),
+	}
+
+	// send
+	_, err = message.Send()
 	if err != nil {
 		return err
 	}
