@@ -6,6 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/goccy/go-json"
+	"github.com/gofiber/fiber/v2"
+	"go.uber.org/zap"
 	"io"
 	"net/http"
 	"strconv"
@@ -13,10 +15,6 @@ import (
 	"treehole_next/config"
 	. "treehole_next/models"
 	. "treehole_next/utils"
-	"treehole_next/utils/perm"
-
-	"github.com/gofiber/fiber/v2"
-	"go.uber.org/zap"
 )
 
 type PostBody struct {
@@ -57,7 +55,7 @@ func BanUser(c *fiber.Ctx) error {
 	}
 
 	// permission
-	if !perm.GetPermission(user, perm.Admin) {
+	if !user.IsAdmin {
 		return Forbidden()
 	}
 

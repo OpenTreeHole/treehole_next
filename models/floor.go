@@ -62,8 +62,6 @@ type Floor struct {
 
 	LikedUsers Users `json:"-" gorm:"many2many:floor_like"`
 
-	DislikedUsers Users `json:"-" gorm:"many2many:floor_dislike"`
-
 	// a floor has many history
 	History FloorHistorySlice `json:"-"`
 
@@ -161,17 +159,6 @@ func (floor *Floor) SetDefaults() {
 	}
 }
 
-func (floor *Floor) SetMention(tx *gorm.DB, clear bool) error {
-
-	// set mention to floor_mention table
-	if clear {
-		if err := deleteFloorMentions(tx, floor.ID); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 /******************************
 Create
 *******************************/
@@ -267,59 +254,47 @@ func (floor *Floor) Backup(c *fiber.Ctx, reason string) error {
 	return DB.Create(&history).Error
 }
 
-func (floor *Floor) ModifyLike(c *fiber.Ctx, likeOption int8) error {
-	// validate like option
-	if likeOption > 1 || likeOption < -1 {
-		return utils.BadRequest("like option must be -1, 0 or 1")
+// ModifyLike do in transaction only
+func (floor *Floor) ModifyLike(tx *gorm.DB, userID int, likeOption int8) (err error) {
+	if userID == floor.UserID {
+		floor.IsMe = true
+	}
+	floorLike := &FloorLike{
+		FloorID: floor.ID,
+		UserID:  userID,
+	}
+	if likeOption == 0 {
+		err = tx.Delete(&floorLike).Error
+		if err != nil {
+			return err
+		}
+	} else {
+		floorLike.LikeData = likeOption
+		err = tx.Clauses(clause.OnConflict{UpdateAll: true}).Create(&floorLike).Error
+		if err != nil {
+			return err
+		}
 	}
 
-	// get userID
-	userID, err := GetUserID(c)
+	var like, dislike int64
+	err = tx.Model(&FloorLike{}).Where("floor_id = ? and like_data = ?", floor.ID, 1).Count(&like).Error
 	if err != nil {
 		return err
 	}
-	if floor.UserID == userID {
-		floor.IsMe = true
+	err = tx.Model(&FloorLike{}).Where("floor_id = ? and like_data = ?", floor.ID, 1).Count(&dislike).Error
+	if err != nil {
+		return err
 	}
 
-	return DB.Transaction(func(tx *gorm.DB) error {
-
-		result := tx.Exec("DELETE FROM floor_like WHERE floor_id = ? AND user_id = ?", floor.ID, userID)
-		if result.Error != nil {
-			return result.Error
-		}
-
-		if likeOption != 0 {
-			result = tx.Create(&FloorLike{
-				FloorID:  floor.ID,
-				UserID:   userID,
-				LikeData: likeOption,
-			})
-			if result.Error != nil {
-				return err
-			}
-		}
-
-		var like int
-		result = tx.Raw(`
-			SELECT IFNULL(SUM(like_data), 0)
-			FROM floor_like 
-			WHERE floor_id = ?`,
-			floor.ID,
-		).Scan(&like)
-		if result.Error != nil {
-			return result.Error
-		}
-
-		floor.Like = like
-		floor.Liked = likeOption
-		if like == 1 {
-			floor.LikedFrontend = true
-		} else if like == -1 {
-			floor.DislikedFrontend = true
-		}
-		return nil
-	})
+	floor.Like = int(like)
+	floor.Dislike = int(dislike)
+	floor.Liked = likeOption
+	if likeOption == 1 {
+		floor.LikedFrontend = true
+	} else if likeOption == -1 {
+		floor.DislikedFrontend = true
+	}
+	return nil
 }
 
 /***************************

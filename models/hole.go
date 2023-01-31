@@ -2,15 +2,13 @@ package models
 
 import (
 	"fmt"
+	"github.com/gofiber/fiber/v2"
 	"golang.org/x/exp/slices"
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	"time"
 	"treehole_next/config"
 	"treehole_next/utils"
-	"treehole_next/utils/perm"
-
-	"github.com/gofiber/fiber/v2"
-	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 )
 
 type Hole struct {
@@ -233,7 +231,7 @@ func MakeQuerySet(c *fiber.Ctx) (*gorm.DB, error) {
 	if err != nil {
 		return nil, err
 	}
-	if perm.GetPermission(user, perm.Admin) {
+	if user.IsAdmin {
 		return DB, err
 	} else {
 		return DB.Where("hidden = ?", false), err

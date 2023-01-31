@@ -2,14 +2,12 @@ package hole
 
 import (
 	"fmt"
+	"github.com/gofiber/fiber/v2"
+	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"strconv"
 	. "treehole_next/models"
 	. "treehole_next/utils"
-	"treehole_next/utils/perm"
-
-	"github.com/gofiber/fiber/v2"
-	"gorm.io/gorm"
 )
 
 // ListHolesByDivision
@@ -180,15 +178,14 @@ func CreateHole(c *fiber.Ctx) error {
 		return err
 	}
 
-	// todo: check permission
 	// get user from auth
-	user, err := GetUserFromAuth(c)
+	user, err := GetUser(c)
 	if err != nil {
 		return err
 	}
 
 	// permission
-	if user.BanDivision[divisionID] {
+	if user.BanDivision[divisionID] != nil {
 		return Forbidden("您没有权限在此板块发言")
 	}
 
@@ -222,15 +219,14 @@ func CreateHoleOld(c *fiber.Ctx) error {
 		return err
 	}
 
-	// todo: check permission
 	// get user from auth
-	user, err := GetUserFromAuth(c)
+	user, err := GetUser(c)
 	if err != nil {
 		return err
 	}
 
 	// permission
-	if user.BanDivision[body.DivisionID] {
+	if user.BanDivision[body.DivisionID] != nil {
 		return Forbidden("您没有权限在此板块发言")
 	}
 
@@ -292,7 +288,7 @@ func ModifyHole(c *fiber.Ctx) error {
 	body.HoleUserID = hole.UserID
 
 	// check user permission
-	err = perm.CheckPermission(user, body)
+	err = body.CheckPermission(user)
 	if err != nil {
 		return err
 	}
@@ -425,7 +421,7 @@ func DeleteHole(c *fiber.Ctx) error {
 	}
 
 	// permission
-	if !perm.GetPermission(user, perm.Admin) {
+	if !user.IsAdmin {
 		return Forbidden()
 	}
 
