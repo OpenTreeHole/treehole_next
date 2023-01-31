@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"fmt"
 	"log"
 	"strconv"
 	"testing"
@@ -9,33 +10,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const (
-	REPORT_BASE_ID       = 1
-	REPORT_FLOOR_BASE_ID = 1001
-)
-
-func init() {
-	floors := make([]Floor, 20)
-	for i := range floors {
-		floors[i].ID = REPORT_FLOOR_BASE_ID + i
-	}
-	reports := make([]Report, 10)
-	for i := range reports {
-		reports[i].ID = REPORT_BASE_ID + i
-		reports[i].FloorID = REPORT_FLOOR_BASE_ID + i
-		if i < 5 {
-			reports[i].Dealt = true
-		}
-	}
-
-	DB.Create(&floors)
-	DB.Create(&reports)
-}
-
 func TestGetReport(t *testing.T) {
 	reportID := REPORT_BASE_ID
 	var report Report
 	DB.First(&report, reportID)
+	fmt.Println(report)
 
 	var getReport Report
 	testAPIModel(t, "get", "/api/reports/"+strconv.Itoa(reportID), 200, &getReport)

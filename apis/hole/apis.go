@@ -343,7 +343,7 @@ func ModifyHole(c *fiber.Ctx) error {
 			}
 
 			// insert or set new tags
-			err = hole.Tags.FindOrCreateTags(DB)
+			err = hole.Tags.FindOrCreateTags(tx)
 			if err != nil {
 				return err
 			}
@@ -391,7 +391,6 @@ func ModifyHole(c *fiber.Ctx) error {
 		if err != nil {
 			return err
 		}
-		c.Status(201)
 	}
 
 	return c.JSON(&hole)

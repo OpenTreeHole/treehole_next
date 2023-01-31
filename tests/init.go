@@ -12,6 +12,12 @@ func init() {
 	initTestFloors()
 	initTestTags()
 	initTestFavorites()
+	initTestReports()
+
+	err := LoadAllTags(DB)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func initTestDivision() {
@@ -130,6 +136,44 @@ func initTestFavorites() {
 		userFavorites[i].UserID = 1
 	}
 	err := DB.Create(&userFavorites).Error
+	if err != nil {
+		panic(err)
+	}
+}
+
+const (
+	REPORT_BASE_ID       = 1
+	REPORT_FLOOR_BASE_ID = 1001
+)
+
+func initTestReports() {
+	hole := Hole{ID: 1000}
+	floors := make(Floors, 20)
+	for i := range floors {
+		floors[i] = &Floor{
+			ID:      REPORT_FLOOR_BASE_ID + i,
+			HoleID:  1000,
+			Ranking: i,
+		}
+	}
+	reports := make([]Report, 10)
+	for i := range reports {
+		reports[i].ID = REPORT_BASE_ID + i
+		reports[i].FloorID = REPORT_FLOOR_BASE_ID + i
+		if i < 5 {
+			reports[i].Dealt = true
+		}
+	}
+
+	err := DB.Create(&hole).Error
+	if err != nil {
+		panic(err)
+	}
+	err = DB.Create(&floors).Error
+	if err != nil {
+		panic(err)
+	}
+	err = DB.Create(&reports).Error
 	if err != nil {
 		panic(err)
 	}

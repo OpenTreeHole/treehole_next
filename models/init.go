@@ -32,12 +32,12 @@ var gormConfig = &gorm.Config{
 }
 
 // Read/Write Splitting
-func mysqlDB() (*gorm.DB, error) {
+func mysqlDB() *gorm.DB {
 	// set source databases
 	source := mysql.Open(config.Config.DbURL)
 	db, err := gorm.Open(source, gormConfig)
 	if err != nil {
-		return nil, err
+		panic(err)
 	}
 
 	// set replica databases
@@ -51,43 +51,60 @@ func mysqlDB() (*gorm.DB, error) {
 		Policy:   dbresolver.RandomPolicy{},
 	}))
 	if err != nil {
-		return nil, err
+		panic(err)
 	}
-	return db, nil
+	return db
 }
 
-func sqliteDB() (*gorm.DB, error) {
+func sqliteDB() *gorm.DB {
 	err := os.MkdirAll("data", 0750)
 	if err != nil {
 		panic(err)
 	}
-	return gorm.Open(sqlite.Open("data/sqlite.db"), gormConfig)
+	db, err := gorm.Open(sqlite.Open("data/sqlite.db"), gormConfig)
+	if err != nil {
+		panic(err)
+	}
+	// https://github.com/go-gorm/gorm/issues/3709
+	phyDB, err := db.DB()
+	if err != nil {
+		panic(err)
+	}
+	phyDB.SetMaxOpenConns(1)
+	return db
 }
 
-func memoryDB() (*gorm.DB, error) {
-	return gorm.Open(sqlite.Open("file::memory:?cache=shared"), gormConfig)
+func memoryDB() *gorm.DB {
+	db, err := gorm.Open(sqlite.Open("file::memory:?cache=shared"), gormConfig)
+	if err != nil {
+		panic(err)
+	}
+	// https://github.com/go-gorm/gorm/issues/3709
+	phyDB, err := db.DB()
+	if err != nil {
+		panic(err)
+	}
+	phyDB.SetMaxOpenConns(1)
+	return db
 }
 
 func InitDB() {
 	var err error
 	switch config.Config.Mode {
 	case "production":
-		DB, err = mysqlDB()
+		DB = mysqlDB()
 	case "test":
 		fallthrough
 	case "bench":
-		DB, err = memoryDB()
+		DB = memoryDB()
 	case "dev":
 		if config.Config.DbURL == "" {
-			DB, err = sqliteDB()
+			DB = sqliteDB()
 		} else {
-			DB, err = mysqlDB()
+			DB = mysqlDB()
 		}
 	default:
 		panic("unknown mode")
-	}
-	if err != nil {
-		panic(err)
 	}
 
 	switch config.Config.Mode {
@@ -127,7 +144,7 @@ func InitDB() {
 		panic(err)
 	}
 
-	err = loadAllTags(DB)
+	err = LoadAllTags(DB)
 	if err != nil {
 		panic(err)
 	}

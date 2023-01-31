@@ -275,7 +275,7 @@ func ModifyFloor(c *fiber.Ctx) error {
 	}
 
 	err = DB.Transaction(func(tx *gorm.DB) error {
-		err = tx.Clauses(clause.Locking{Strength: "UPDATE"}).Take(&floor, floorID).Error
+		err = tx.Clauses(clause.Locking{Strength: "UPDATE"}).Take(&floor).Error
 		if err != nil {
 			return err
 		}
@@ -292,14 +292,14 @@ func ModifyFloor(c *fiber.Ctx) error {
 			} else {
 				return Forbidden()
 			}
-			err = floor.Backup(c, reason)
+			err = floor.Backup(tx, user.ID, reason)
 			if err != nil {
 				return err
 			}
 			floor.Content = *body.Content
 
 			// update floor.mention after update floor.content
-			err = DB.Where("floor_id = ?", floorID).Delete(&FloorMention{}).Error
+			err = tx.Where("floor_id = ?", floorID).Delete(&FloorMention{}).Error
 			if err != nil {
 				return err
 			}
@@ -354,7 +354,7 @@ func ModifyFloor(c *fiber.Ctx) error {
 
 		// save all maybe-modified fields above
 		// including Like when Like == 0
-		return tx.Model(&floor).Select("Content", "Fold", "SpecialTag", "Like").Updates(&floor).Error
+		return tx.Model(&floor).Select("Content", "Fold", "SpecialTag", "Like", "DisLike").Updates(&floor).Error
 	})
 
 	// SendModify only when operator or admin modify content or fold
@@ -418,7 +418,7 @@ func ModifyFloorLike(c *fiber.Ctx) error {
 		}
 
 		// save like only
-		return tx.Model(&floor).Select("Like").Updates(&floor).Error
+		return tx.Model(&floor).Select("Like", "Dislike").Updates(&floor).Error
 	})
 	if err != nil {
 		return err
@@ -466,7 +466,7 @@ func DeleteFloor(c *fiber.Ctx) error {
 		return Forbidden()
 	}
 
-	err = floor.Backup(c, body.Reason)
+	err = floor.Backup(DB, user.ID, body.Reason)
 	if err != nil {
 		return err
 	}
@@ -583,7 +583,7 @@ func RestoreFloor(c *fiber.Ctx) error {
 		return BadRequest(fmt.Sprintf("%v 不是 #%v 的历史版本", floorHistoryID, floorID))
 	}
 	reason := body.Reason
-	err = floor.Backup(c, reason)
+	err = floor.Backup(DB, user.ID, reason)
 	if err != nil {
 		return err
 	}

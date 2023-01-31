@@ -151,9 +151,9 @@ func TestModifyFloor(t *testing.T) {
 	DB.Find(&getFloor, floor.ID)
 	assert.EqualValues(t, "test_test", getFloor.Fold)
 
-	// test6: fold == nil, fold_v2 == "": do nothing
+	// test6: fold == nil, fold_v2 == "": do nothing; 无效请求
 	data = Map{}
-	testAPI(t, "put", "/api/floors/"+strconv.Itoa(floor.ID), 200, data)
+	testAPI(t, "put", "/api/floors/"+strconv.Itoa(floor.ID), 400, data)
 	DB.Find(&getFloor, floor.ID)
 	assert.EqualValues(t, "test_test", getFloor.Fold)
 
@@ -182,13 +182,15 @@ func TestModifyFloorLike(t *testing.T) {
 	}
 	DB.First(&floor, floor.ID)
 	assert.EqualValues(t, 1, floor.Like)
+	assert.EqualValues(t, 0, floor.Dislike)
 
 	// dislike
 	for i := 0; i < 15; i++ {
 		testAPI(t, "post", "/api/floors/"+strconv.Itoa(floor.ID)+"/like/-1", 200)
 	}
 	DB.First(&floor, floor.ID)
-	assert.EqualValues(t, -1, floor.Like)
+	assert.EqualValues(t, 0, floor.Like)
+	assert.EqualValues(t, 1, floor.Dislike)
 
 	// reset
 	testAPI(t, "post", "/api/floors/"+strconv.Itoa(floor.ID)+"/like/0", 200)

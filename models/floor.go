@@ -239,19 +239,14 @@ func (floor *Floor) AfterCreate(tx *gorm.DB) (err error) {
 
 //	Update and Modify
 
-func (floor *Floor) Backup(c *fiber.Ctx, reason string) error {
-	userID, err := GetUserID(c)
-	if err != nil {
-		return err
-	}
-
+func (floor *Floor) Backup(tx *gorm.DB, userID int, reason string) error {
 	history := FloorHistory{
 		Content: floor.Content,
 		Reason:  reason,
 		FloorID: floor.ID,
 		UserID:  userID,
 	}
-	return DB.Create(&history).Error
+	return tx.Create(&history).Error
 }
 
 // ModifyLike do in transaction only
@@ -281,7 +276,7 @@ func (floor *Floor) ModifyLike(tx *gorm.DB, userID int, likeOption int8) (err er
 	if err != nil {
 		return err
 	}
-	err = tx.Model(&FloorLike{}).Where("floor_id = ? and like_data = ?", floor.ID, 1).Count(&dislike).Error
+	err = tx.Model(&FloorLike{}).Where("floor_id = ? and like_data = ?", floor.ID, -1).Count(&dislike).Error
 	if err != nil {
 		return err
 	}

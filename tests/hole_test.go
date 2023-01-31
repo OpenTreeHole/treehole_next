@@ -11,10 +11,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func init() {
-
-}
-
 func TestListHoleInADivision(t *testing.T) {
 	var holes Holes
 	var ids []int
@@ -90,7 +86,7 @@ func TestModifyHole(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	tagName := []Map{{"name": "d"}, {"name": "de"}, {"name": "def"}, {"name": "defg"}}
+	tagName := []Map{{"name": "111"}, {"name": "d"}, {"name": "de"}, {"name": "def"}}
 	division_id := 5
 	data := Map{"tags": tagName, "division_id": division_id}
 	testAPI(t, "put", "/api/holes/"+strconv.Itoa(holes[0].ID), 200, data)

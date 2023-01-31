@@ -54,7 +54,7 @@ var tagCache struct {
 
 var TagCacheBytes atomic.Value
 
-func loadAllTags(tx *gorm.DB) error {
+func LoadAllTags(tx *gorm.DB) error {
 	tagCache.data = make(Tags, 0, 10000)
 	tagCache.nameIndex = make(map[string]*Tag, 10000)
 	tagCache.idIndex = make(map[int]*Tag, 10000)
