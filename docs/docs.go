@@ -792,13 +792,6 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
-                        "type": "string",
-                        "default": "id",
-                        "description": "SQL ORDER BY field",
-                        "name": "orderBy",
-                        "in": "query"
-                    },
-                    {
                         "enum": [
                             "id",
                             "like"
@@ -1058,14 +1051,12 @@ const docTemplate = `{
                         "minimum": 0,
                         "type": "integer",
                         "default": 0,
-                        "description": "offset of object array",
                         "name": "offset",
                         "in": "query"
                     },
                     {
                         "type": "string",
                         "default": "id",
-                        "description": "SQL ORDER BY field",
                         "name": "orderBy",
                         "in": "query"
                     },
@@ -1074,7 +1065,6 @@ const docTemplate = `{
                         "minimum": 0,
                         "type": "integer",
                         "default": 30,
-                        "description": "length of object array",
                         "name": "size",
                         "in": "query"
                     },
