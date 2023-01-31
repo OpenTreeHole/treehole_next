@@ -3,17 +3,13 @@ package floor
 import (
 	"treehole_next/models"
 	"treehole_next/utils"
-
-	"gorm.io/gorm"
 )
 
 type ListModel struct {
-	models.Query
+	Size    int    `json:"size" query:"size" default:"30" validate:"min=0,max=50"`          // length of object array
+	Offset  int    `json:"offset" query:"offset" default:"0" validate:"min=0"`              // offset of object array
+	Sort    string `json:"sort" query:"sort" default:"asc" validate:"oneof=asc desc"`       // Sort order
 	OrderBy string `json:"order_by" query:"order_by" default:"id" validate:"oneof=id like"` // SQL ORDER BY field
-}
-
-func (q *ListModel) BaseQuery() *gorm.DB {
-	return models.DB.Limit(q.Size).Offset(q.Offset).Order(q.OrderBy + " " + q.Sort)
 }
 
 type ListOldModel struct {
@@ -21,10 +17,6 @@ type ListOldModel struct {
 	Size   int     `query:"length"      json:"length"     validate:"min=0,max=50" `
 	Offset int     `query:"start_floor" json:"start_floor"`
 	Search *string `query:"s"           json:"s"`
-}
-
-func (q *ListOldModel) BaseQuery() *gorm.DB {
-	return models.DB.Limit(q.Size).Offset(q.Offset)
 }
 
 type CreateModel struct {

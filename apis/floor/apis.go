@@ -32,8 +32,9 @@ func ListFloorsInAHole(c *fiber.Ctx) error {
 
 	// get floors
 	var floors Floors
-	result := query.BaseQuery().
-		Where("hole_id = ?", holeID).
+	result := DB.Limit(query.Size).Order(query.OrderBy+" "+query.Sort).
+		// use ranking field to locate faster
+		Where("hole_id = ? and ranking >= ?", holeID, query.Offset).
 		Preload("Mention").
 		Find(&floors)
 	if result.Error != nil {
@@ -70,7 +71,7 @@ func ListFloorsOld(c *fiber.Ctx) error {
 		if query.Size == 0 {
 			query.Size = 30
 		}
-		querySet = query.BaseQuery()
+		querySet = DB.Limit(query.Size).Where("ranking >= ?", query.Offset)
 	}
 
 	// get floors
