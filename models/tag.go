@@ -101,7 +101,7 @@ var tagUpdateIDs = make(map[int]bool)
 
 // UpdateTagTemperature is a timed task
 func UpdateTagTemperature(ctx context.Context) {
-	ticker := time.NewTicker(time.Second * 60)
+	ticker := time.NewTicker(5 * time.Minute)
 	for {
 		select {
 		case <-ctx.Done():
@@ -110,9 +110,7 @@ func UpdateTagTemperature(ctx context.Context) {
 		case tagID := <-TagUpdateChan:
 			tagUpdateIDs[tagID] = true
 		case <-ticker.C:
-			keys := utils.Keys(tagUpdateIDs)  // get all the keys
-			tagUpdateIDs = make(map[int]bool) // clear
-			updateTagTemperature(keys)        // updates
+			updateTagTemperature()
 		}
 	}
 }
@@ -129,7 +127,9 @@ func updateTagCacheBytes() error {
 	return nil
 }
 
-func updateTagTemperature(tagIDs []int) {
+func updateTagTemperature() {
+	tagIDs := utils.Keys(tagUpdateIDs)
+	tagUpdateIDs = make(map[int]bool)
 	var tags Tags
 	err := DB.Find(&tags, tagIDs).Error
 	if err != nil {
