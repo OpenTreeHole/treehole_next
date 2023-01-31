@@ -5,6 +5,7 @@ import (
 	"treehole_next/apis/favourite"
 	"treehole_next/apis/floor"
 	"treehole_next/apis/hole"
+	"treehole_next/apis/message"
 	"treehole_next/apis/penalty"
 	"treehole_next/apis/report"
 	"treehole_next/apis/tag"
@@ -36,4 +37,5 @@ func RegisterRoutes(app *fiber.App) {
 	report.RegisterRoutes(group)
 	favourite.RegisterRoutes(group)
 	penalty.RegisterRoutes(group)
+	message.RegisterRoutes(group)
 }

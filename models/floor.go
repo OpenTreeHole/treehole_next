@@ -350,10 +350,12 @@ func (floor *Floor) SendFavorite(tx *gorm.DB) Notification {
 
 	// Construct Notification
 	message := Notification{
-		"data":       floor,
-		"recipients": userIDs,
-		"type":       MessageTypeFavorite,
-		"url":        fmt.Sprintf("/api/floors/%d", floor.ID),
+		"data":        floor,
+		"recipients":  userIDs,
+		"description": floor.Content,
+		"title":       "你收藏的树洞有新回复",
+		"type":        MessageTypeFavorite,
+		"url":         fmt.Sprintf("/api/floors/%d", floor.ID),
 	}
 
 	return message
@@ -376,10 +378,12 @@ func (floor *Floor) SendReply(tx *gorm.DB) Notification {
 
 	// construct message
 	message := Notification{
-		"data":       floor,
-		"recipients": userIDs,
-		"type":       MessageTypeReply,
-		"url":        fmt.Sprintf("/api/floors/%d", floor.ID),
+		"data":        floor,
+		"recipients":  userIDs,
+		"description": floor.Content,
+		"title":       "你的帖子被回复了",
+		"type":        MessageTypeReply,
+		"url":         fmt.Sprintf("/api/floors/%d", floor.ID),
 	}
 
 	return message
@@ -404,10 +408,12 @@ func (floor *Floor) SendMention(_ *gorm.DB) Notification {
 
 	// construct message
 	message := Notification{
-		"data":       floor,
-		"recipients": userIDs,
-		"type":       MessageTypeMention,
-		"url":        fmt.Sprintf("/api/floors/%d", floor.ID),
+		"data":        floor,
+		"recipients":  userIDs,
+		"description": floor.Content,
+		"title":       "你的帖子被引用了",
+		"type":        MessageTypeMention,
+		"url":         fmt.Sprintf("/api/floors/%d", floor.ID),
 	}
 
 	return message
@@ -419,14 +425,16 @@ func (floor *Floor) SendModify(_ *gorm.DB) error {
 
 	// construct message
 	message := Notification{
-		"data":       floor,
-		"recipients": userIDs,
-		"type":       MessageTypeModify,
-		"url":        fmt.Sprintf("/api/floors/%d", floor.ID),
+		"data":        floor,
+		"recipients":  userIDs,
+		"description": floor.Content,
+		"title":       "你的帖子被修改了",
+		"type":        MessageTypeModify,
+		"url":         fmt.Sprintf("/api/floors/%d", floor.ID),
 	}
 
 	// send
-	err := message.Send()
+	_, err := message.Send()
 	if err != nil {
 		return err
 	}

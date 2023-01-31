@@ -1,3 +1,4 @@
+// Should be same as message in notification project
 package models
 
 import (
@@ -72,6 +73,7 @@ const (
 	MessageTypePermission  MessageType = "permission"
 	MessageTypeReport      MessageType = "report"
 	MessageTypeReportDealt MessageType = "report_dealt"
+	MessageTypeMail        MessageType = "mail"
 )
 
 func (messages Messages) Preprocess(c *fiber.Ctx) error {

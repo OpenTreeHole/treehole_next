@@ -3,6 +3,7 @@ package message
 import "github.com/gofiber/fiber/v2"
 
 func RegisterRoutes(app fiber.Router) {
+	app.Post("/mail", SendMail)
 	app.Get("/messages", ListMessages)
 	app.Post("/messages/clear", ClearMessages)
 	app.Put("/messages", ClearMessagesDeprecated)

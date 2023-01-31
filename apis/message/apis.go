@@ -3,6 +3,7 @@ package message
 import (
 	. "treehole_next/models"
 	. "treehole_next/utils"
+	"treehole_next/utils/perm"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -42,6 +43,48 @@ func ListMessages(c *fiber.Ctx) error {
 	}
 
 	return Serialize(c, &messages)
+}
+
+// SendMail
+// @Summary Send a mail
+// @Description Send to multiple recipients and save to db, admin only.
+// @Tags Message
+// @Produce application/json
+// @Param json body CreateModel true "json"
+// @Router /messages [post]
+// @Success 201 {object} Message
+func SendMail(c *fiber.Ctx) error {
+	body, err := ValidateBody[CreateModel](c)
+	if err != nil {
+		return err
+	}
+
+	// get user
+	user, err := GetUser(c)
+	if err != nil {
+		return err
+	}
+
+	// permission
+	if !perm.CheckPermission(user, perm.Admin) {
+		return Forbidden()
+	}
+
+	// construct mail
+	mail := Notification{
+		"description": body.Description,
+		"recipients":  body.Recipients,
+		"title":       "你有一封站内信",
+		"type":        MessageTypeMail,
+	}
+
+	// send
+	message, err := mail.Send()
+	if err != nil {
+		return err
+	}
+
+	return Serialize(c.Status(201), &message)
 }
 
 // ClearMessages

@@ -142,12 +142,18 @@ func (report *Report) SendCreate(_ *gorm.DB) error {
 	message := Notification{
 		"data":       report,
 		"recipients": userIDs,
-		"type":       MessageTypeReport,
-		"url":        fmt.Sprintf("/api/reports/%d", report.ID),
+		"description": fmt.Sprintf(
+			"理由：%s，内容：%s",
+			report.Reason,
+			report.Floor.Content,
+		),
+		"title": "有帖子被举报了",
+		"type":  MessageTypeReport,
+		"url":   fmt.Sprintf("/api/reports/%d", report.ID),
 	}
 
 	// send
-	err := message.Send()
+	_, err := message.Send()
 	if err != nil {
 		return err
 	}
@@ -163,12 +169,18 @@ func (report *Report) SendModify(_ *gorm.DB) error {
 	message := Notification{
 		"data":       report,
 		"recipients": userIDs,
-		"type":       MessageTypeReportDealt,
-		"url":        fmt.Sprintf("/api/reports/%d", report.ID),
+		"description": fmt.Sprintf(
+			"结果：%s，内容：%s",
+			report.Result,
+			report.Floor.Content,
+		),
+		"title": "有帖子被举报了",
+		"type":  MessageTypeReportDealt,
+		"url":   fmt.Sprintf("/api/reports/%d", report.ID),
 	}
 
 	// send
-	err := message.Send()
+	_, err := message.Send()
 	if err != nil {
 		return err
 	}
