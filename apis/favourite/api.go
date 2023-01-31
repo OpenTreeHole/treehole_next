@@ -91,7 +91,7 @@ func AddFavorite(c *fiber.Ctx) error {
 		return err
 	}
 
-	return c.JSON(&Response{
+	return c.Status(201).JSON(&Response{
 		Message: "收藏成功",
 		Data:    data,
 	})
@@ -131,7 +131,7 @@ func ModifyFavorite(c *fiber.Ctx) error {
 		return err
 	}
 
-	return c.JSON(&Response{
+	return c.Status(201).JSON(&Response{
 		Message: "修改成功",
 		Data:    data,
 	})

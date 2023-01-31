@@ -121,6 +121,7 @@ func InitDB() {
 		&Hole{},
 		&Report{},
 		&Punishment{},
+		&FloorHistory{},
 	)
 	if err != nil {
 		panic(err)

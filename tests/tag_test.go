@@ -9,32 +9,7 @@ import (
 )
 
 func init() {
-	holes := make([]Hole, 5)
-	tags := make([]Tag, 6)
-	hole_tags := [][]int{
-		{0, 1, 2},
-		{3},
-		{0, 4},
-		{1, 0, 2},
-		{2, 3, 4},
-		{0, 4},
-	} // int[tag_id][hole_id]
 
-	for i := range holes {
-		holes[i].DivisionID = 8
-	}
-
-	for i := range tags {
-		tags[i].Name = strconv.Itoa(i + 1)
-		for _, v := range hole_tags[i] {
-			tags[i].Holes = append(tags[i].Holes, &holes[v])
-		}
-	}
-
-	tags[0].Temperature = 5
-	tags[2].Temperature = 25
-	tags[5].Temperature = 34
-	DB.Create(&tags)
 }
 
 func TestListTag(t *testing.T) {

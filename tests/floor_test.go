@@ -11,32 +11,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func init() {
-	holes := make([]Hole, 10)
-	for i := 0; i < 10; i++ {
-		holes[i] = Hole{
-			DivisionID: 7,
-		}
-	}
-	for i := 1; i <= 50; i++ {
-		holes[0].Floors = append(holes[0].Floors, &Floor{Content: strings.Repeat("1", i)})
-	}
-	holes[0].Floors[10].Mention = Floors{
-		{HoleID: 102},
-		{HoleID: 304},
-	}
-	holes[0].Floors[11].Mention = Floors{
-		{HoleID: 506},
-		{HoleID: 708},
-	}
-	holes[1].Floors = Floors{{Content: "123456789"}}                                           // for TestCreate
-	holes[2].Floors = Floors{{Content: "123456789"}}                                           // for TestCreate
-	holes[3].Floors = Floors{{Content: "123456789"}}                                           // for TestModify
-	holes[4].Floors = Floors{{Content: "123456789"}}                                           // for TestModify like
-	holes[5].Floors = Floors{{Content: "123456789", UserID: 1}, {Content: "23333", UserID: 5}} // for TestDelete
-	DB.Create(&holes)
-}
-
 func TestListFloorsInAHole(t *testing.T) {
 	var hole Hole
 	DB.Where("division_id = ?", 7).First(&hole)
