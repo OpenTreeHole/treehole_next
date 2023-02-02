@@ -336,7 +336,7 @@ func ModifyHole(c *fiber.Ctx) error {
 	}
 
 	// save
-	DB.Omit("Tags").Save(&hole)
+	DB.Omit("Tags").Omit("UpdatedAt").Save(&hole)
 
 	// update cache
 	updateHoles := []*Hole{&hole}
