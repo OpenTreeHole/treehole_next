@@ -31,22 +31,22 @@ type Punishment struct {
 	Duration time.Duration `json:"duration" gorm:"not null"`
 
 	// user punished
-	UserID int `json:"user_id" gorm:"index:idx_user_div,priority:1;uniqueIndex:idx_user_floor,priority:1"`
+	UserID int `json:"user_id" gorm:"not null;index:idx_user_div,priority:1"`
 
 	// admin user_id who made this punish
 	MadeBy int `json:"made_by"`
 
 	// punished because of this floor
-	FloorID int `json:"floor_id" gorm:"uniqueIndex:idx_user_floor,priority:2"`
+	FloorID int `json:"floor_id" gorm:"not null;uniqueIndex:idx_user_floor,priority:2"`
 
 	Floor *Floor `json:"floor"` // foreign key
 
-	DivisionID int `json:"division_id" gorm:"index:idx_user_div,priority:2"`
+	DivisionID int `json:"division_id" gorm:"not null"`
 
 	Division *Division `json:"division"` // foreign key
 
 	// reason
-	Reason string `json:"reason" gorm:"size:128"`
+	Reason *string `json:"reason" gorm:"size:128"`
 }
 
 type Punishments []*Punishment

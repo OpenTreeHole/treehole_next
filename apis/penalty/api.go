@@ -9,9 +9,10 @@ import (
 )
 
 type PostBody struct {
-	PenaltyLevel *int `json:"penalty_level" validate:"omitempty"` // low priority, deprecated
-	Days         *int `json:"days" validate:"omitempty,min=1"`    // high priority
-	DivisionID   int  `json:"division_id" validate:"required,min=1"`
+	PenaltyLevel *int    `json:"penalty_level" validate:"omitempty"` // low priority, deprecated
+	Days         *int    `json:"days" validate:"omitempty,min=1"`    // high priority
+	DivisionID   int     `json:"division_id" validate:"required,min=1"`
+	Reason       *string `json:"reason"` // optional
 }
 
 // BanUser
@@ -76,7 +77,7 @@ func BanUser(c *fiber.Ctx) error {
 		FloorID:    floor.ID,
 		DivisionID: body.DivisionID,
 		Duration:   time.Duration(days) * 24 * time.Hour,
-		Reason:     "",
+		Reason:     body.Reason,
 	}
 	user, err = punishment.Create()
 	if err != nil {
