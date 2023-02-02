@@ -67,9 +67,6 @@ type User struct {
 		OffenseCount int                `json:"offense_count"`
 	} `json:"permission" gorm:"-:all"`
 
-	// load from table 'user_favorite'
-	FavoriteData []int `json:"favorite_data" gorm:"-:all"`
-
 	// get from jwt
 	IsAdmin    bool      `json:"is_admin" gorm:"-:all"`
 	JoinedTime time.Time `json:"joined_time" gorm:"-:all"`
@@ -229,9 +226,4 @@ func (user *User) LoadUserByID(userID int) error {
 
 		return nil
 	})
-}
-
-func (user *User) Preprocess(_ *fiber.Ctx) (err error) {
-	user.FavoriteData, err = UserGetFavoriteData(DB, user.ID)
-	return err
 }

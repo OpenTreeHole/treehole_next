@@ -24,7 +24,7 @@ func GetCurrentUser(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	return utils.Serialize(c, user)
+	return c.JSON(&user)
 }
 
 // GetUserByID
@@ -56,5 +56,5 @@ func GetUserByID(c *fiber.Ctx) error {
 		return err
 	}
 
-	return utils.Serialize(c, &getUser)
+	return c.JSON(&getUser)
 }

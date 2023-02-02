@@ -187,13 +187,13 @@ func (hole *Hole) Preprocess(c *fiber.Ctx) error {
 func (holes Holes) Preprocess(_ *fiber.Ctx) error {
 	notInCache := make(Holes, 0, len(holes))
 
-	for i, hole := range holes {
+	for _, hole := range holes {
 		cachedHole := new(Hole)
 		ok := utils.GetCache(hole.CacheName(), &cachedHole)
 		if !ok {
 			notInCache = append(notInCache, hole)
 		} else {
-			holes[i] = cachedHole
+			*hole = *cachedHole
 		}
 	}
 

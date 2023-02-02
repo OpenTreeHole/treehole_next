@@ -1,7 +1,7 @@
 package tag
 
 type CreateModel struct {
-	Name string `json:"name,omitempty" gorm:"unique;size:32"` // Admin only
+	Name string `json:"name,omitempty" validate:"max=32"` // Admin only
 }
 
 type ModifyModel struct {
@@ -16,5 +16,5 @@ type DeleteModel struct {
 }
 
 type SearchModel struct {
-	Search string `json:"s" query:"s"` // search tag by name
+	Search string `json:"s" query:"s" validate:"max=32"` // search tag by name
 }

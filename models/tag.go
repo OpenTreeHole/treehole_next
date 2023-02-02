@@ -130,6 +130,9 @@ func updateTagCacheBytes() error {
 func updateTagTemperature() {
 	tagIDs := utils.Keys(tagUpdateIDs)
 	tagUpdateIDs = make(map[int]bool)
+	if len(tagUpdateIDs) == 0 {
+		return
+	}
 	var tags Tags
 	err := DB.Find(&tags, tagIDs).Error
 	if err != nil {

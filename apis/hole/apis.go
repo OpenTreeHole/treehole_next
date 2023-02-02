@@ -375,7 +375,7 @@ func ModifyHole(c *fiber.Ctx) error {
 
 		// save
 		if changed {
-			err = tx.Omit("Tags", "UpdatedAt").Save(&hole).Error
+			err = tx.Model(&hole).Omit("Tags", "UpdatedAt").Updates(&hole).Error
 			if err != nil {
 				return err
 			}
