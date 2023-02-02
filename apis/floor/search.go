@@ -14,7 +14,7 @@ import (
 
 var ES *elasticsearch.Client
 
-func init() {
+func InitSearch() {
 	if Config.Mode == "test" || Config.Mode == "bench" || Config.ElasticsearchUrl == "" {
 		return
 	}

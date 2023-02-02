@@ -6,6 +6,7 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/pprof"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"treehole_next/apis"
+	"treehole_next/apis/floor"
 	"treehole_next/apis/hole"
 	"treehole_next/config"
 	"treehole_next/models"
@@ -17,6 +18,8 @@ import (
 
 func Init() (*fiber.App, context.CancelFunc) {
 	config.InitConfig()
+	utils.InitCache()
+	floor.InitSearch()
 	models.InitDB()
 	utils.Logger, _ = utils.InitLog()
 	models.InitAdminList()

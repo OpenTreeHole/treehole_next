@@ -294,6 +294,7 @@ func ModifyFloor(c *fiber.Ctx) error {
 			} else {
 				return Forbidden()
 			}
+			floor.Modified += 1
 			err = floor.Backup(tx, user.ID, reason)
 			if err != nil {
 				return err
@@ -356,7 +357,9 @@ func ModifyFloor(c *fiber.Ctx) error {
 
 		// save all maybe-modified fields above
 		// including Like when Like == 0
-		return tx.Model(&floor).Select("Content", "Fold", "SpecialTag", "Like", "DisLike").Updates(&floor).Error
+		return tx.Model(&floor).
+			Select("Content", "Fold", "SpecialTag", "Like", "DisLike", "Modified").
+			Updates(&floor).Error
 	})
 
 	// SendModify only when operator or admin modify content or fold
