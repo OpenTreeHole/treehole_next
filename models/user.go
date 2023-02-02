@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
+	"gorm.io/plugin/dbresolver"
 	"io"
 	"net/http"
 	"strconv"
@@ -246,6 +247,7 @@ func UserDeleteFavorite(userID int, holeIDs []int) error {
 
 func UserGetFavoriteData(userID int) ([]int, error) {
 	data := make([]int, 0, 10)
-	err := DB.Raw("SELECT hole_id FROM user_favorites WHERE user_id = ? order by hole_id desc", userID).Scan(&data).Error
+	err := DB.Clauses(dbresolver.Write).
+		Raw("SELECT hole_id FROM user_favorites WHERE user_id = ? order by hole_id desc", userID).Scan(&data).Error
 	return data, err
 }
