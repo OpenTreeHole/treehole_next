@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v2"
+	"gorm.io/gorm"
 	"strconv"
 	"strings"
 	"time"
@@ -16,14 +17,7 @@ type User struct {
 	/// base info
 	ID int `json:"id" gorm:"primaryKey"`
 
-	Config struct {
-		// used when notify
-		Notify []string `json:"notify"`
-
-		// 对折叠内容的处理
-		// fold 折叠, hide 隐藏, show 展示
-		ShowFolded string `json:"show_folded"`
-	} `json:"config" gorm:"serializer:json;not null;default:\"{}\""`
+	Config UserConfig `json:"config" gorm:"serializer:json;not null;default:\"{}\""`
 
 	BanDivision map[int]*time.Time `json:"-" gorm:"serializer:json;not null;default:\"{}\""`
 
@@ -81,6 +75,20 @@ type User struct {
 
 type Users []*User
 
+type UserConfig struct {
+	// used when notify
+	Notify []string `json:"notify"`
+
+	// 对折叠内容的处理
+	// fold 折叠, hide 隐藏, show 展示
+	ShowFolded string `json:"show_folded"`
+}
+
+var defaultUserConfig = UserConfig{
+	Notify:     []string{"mention", "favorite", "report"},
+	ShowFolded: "fold",
+}
+
 func (user *User) GetID() int {
 	return user.ID
 }
@@ -126,9 +134,27 @@ func GetUser(c *fiber.Ctx) (*User, error) {
 		return nil, err
 	}
 
+	// parse JWT first
+	tokenString := c.Get("Authorization")
+	if tokenString == "" { // token can be in either header or cookie
+		tokenString = c.Cookies("access")
+	}
+	err = user.parseJWT(tokenString)
+	if err != nil {
+		return nil, utils.Unauthorized(err.Error())
+	}
+
 	// load user from database
 	err = DB.Preload("UserPunishments").Take(&user, userID).Error
-	if err != nil {
+	if err == gorm.ErrRecordNotFound {
+		// insert user if not found
+		user.ID = userID
+		user.Config = defaultUserConfig
+		err = DB.Create(&user).Error
+		if err != nil {
+			return nil, err
+		}
+	} else {
 		return nil, err
 	}
 
@@ -154,16 +180,6 @@ func GetUser(c *fiber.Ctx) (*User, error) {
 		if err != nil {
 			return nil, err
 		}
-	}
-
-	// parse JWT
-	tokenString := c.Get("Authorization")
-	if tokenString == "" { // token can be in either header or cookie
-		tokenString = c.Cookies("access")
-	}
-	err = user.parseJWT(tokenString)
-	if err != nil {
-		return nil, utils.Unauthorized(err.Error())
 	}
 
 	return user, nil
