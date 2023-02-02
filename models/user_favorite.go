@@ -88,6 +88,6 @@ func AddUserFavourite(tx *gorm.DB, userID int, holeID int) error {
 
 func UserGetFavoriteData(tx *gorm.DB, userID int) ([]int, error) {
 	data := make([]int, 0, 10)
-	err := tx.Raw("SELECT hole_id FROM user_favorites WHERE user_id = ?", userID).Scan(&data).Error
+	err := tx.Clauses(dbresolver.Write).Raw("SELECT hole_id FROM user_favorites WHERE user_id = ?", userID).Scan(&data).Error
 	return data, err
 }

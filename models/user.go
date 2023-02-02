@@ -63,8 +63,8 @@ type User struct {
 		// 管理员权限到期时间
 		Admin time.Time `json:"admin"`
 		// key: division_id value: 对应分区禁言解除时间
-		Silence      map[int]time.Time `json:"silence"`
-		OffenseCount int               `json:"offense_count"`
+		Silence      map[int]*time.Time `json:"silence"`
+		OffenseCount int                `json:"offense_count"`
 	} `json:"permission" gorm:"-:all"`
 
 	// load from table 'user_favorite'
@@ -122,6 +122,20 @@ func (user *User) parseJWT(token string) error {
 	return nil
 }
 
+var (
+	maxTime time.Time
+	minTime time.Time
+)
+
+func init() {
+	var err error
+	maxTime, err = time.Parse(time.RFC3339, "9999-01-01T00:00:00+00:00")
+	if err != nil {
+		panic(err)
+	}
+	minTime = time.Unix(0, 0)
+}
+
 func GetUser(c *fiber.Ctx) (*User, error) {
 	user := &User{
 		BanDivision: make(map[int]*time.Time),
@@ -151,6 +165,13 @@ func GetUser(c *fiber.Ctx) (*User, error) {
 	// load user from database in transaction
 	err = user.LoadUserByID(userID)
 
+	if user.IsAdmin {
+		user.Permission.Admin = maxTime
+	} else {
+		user.Permission.Admin = minTime
+	}
+	user.Permission.Silence = user.BanDivision
+	user.Permission.OffenseCount = user.OffenceCount
 	return user, err
 }
 
@@ -208,4 +229,9 @@ func (user *User) LoadUserByID(userID int) error {
 
 		return nil
 	})
+}
+
+func (user *User) Preprocess(_ *fiber.Ctx) (err error) {
+	user.FavoriteData, err = UserGetFavoriteData(DB, user.ID)
+	return err
 }
