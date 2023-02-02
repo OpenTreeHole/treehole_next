@@ -6,7 +6,8 @@ type Response struct {
 }
 
 type ListModel struct {
-	Plain bool `default:"false" query:"plain"`
+	Order string `json:"order" query:"order" validate:"omitempty,oneof=id time_created hole_time_updated" default:"time_created"`
+	Plain bool   `json:"plain" default:"false" query:"plain"`
 }
 
 type AddModel struct {

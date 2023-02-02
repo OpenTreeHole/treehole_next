@@ -38,15 +38,24 @@ func ListFavorites(c *fiber.Ctx) error {
 		}
 		return c.JSON(Map{"data": data})
 	} else {
+		// get order
+		var order string
+		switch query.Order {
+		case "id":
+			order = "hole.id desc"
+		case "time_created":
+			order = "user_favorites.created_at desc, hole.id desc"
+		case "hole_time_updated":
+			order = "hole.updated_at desc"
+		}
+
 		// get favorites
-		holes := Holes{}
-		sql := `SELECT * FROM hole 
-		JOIN user_favorites 
-		ON user_favorites.hole_id = hole.id 
-		AND user_favorites.user_id = ?`
-		result := DB.Raw(sql, userID).Scan(&holes)
-		if result.Error != nil {
-			return result.Error
+		holes := make(Holes, 0)
+		err = DB.
+			Joins("JOIN user_favorites ON user_favorites.hole_id = hole.id AND user_favorites.user_id = ?", userID).
+			Order(order).Find(&holes).Error
+		if err != nil {
+			return err
 		}
 		return Serialize(c, &holes)
 	}
