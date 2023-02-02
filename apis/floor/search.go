@@ -110,7 +110,7 @@ func SearchFloorsOld(c *fiber.Ctx, query *ListOldModel) error {
 	}
 	floors := Floors{}
 	result := DB.
-		Where("content like ?", "%"+*query.Search+"%").
+		Where("content like ?", "%"+query.Search+"%").
 		Where("hole_id in (?)", DB.Table("hole").Select("id").Where("hidden = false")).
 		Offset(query.Offset).Limit(query.Size).Order("id desc").
 		Preload("Mention").Find(&floors)

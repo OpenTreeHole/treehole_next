@@ -61,7 +61,7 @@ func ListFloorsOld(c *fiber.Ctx) error {
 		return err
 	}
 
-	if query.Search != nil {
+	if query.Search != "" {
 		return SearchFloorsOld(c, query)
 	}
 
@@ -157,6 +157,7 @@ func CreateFloor(c *fiber.Ctx) error {
 	// create floor
 	floor := Floor{
 		HoleID:     holeID,
+		UserID:     user.ID,
 		Content:    body.Content,
 		ReplyTo:    body.ReplyTo,
 		SpecialTag: body.SpecialTag,
@@ -206,6 +207,7 @@ func CreateFloorOld(c *fiber.Ctx) error {
 	// create floor
 	floor := Floor{
 		HoleID:     body.HoleID,
+		UserID:     user.ID,
 		Content:    body.Content,
 		ReplyTo:    body.ReplyTo,
 		SpecialTag: body.SpecialTag,

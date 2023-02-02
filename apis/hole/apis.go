@@ -150,7 +150,7 @@ func GetHole(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	result := querySet.First(&hole, id)
+	result := querySet.Take(&hole, id)
 	if result.Error != nil {
 		return result.Error
 	}
@@ -375,7 +375,10 @@ func ModifyHole(c *fiber.Ctx) error {
 
 		// save
 		if changed {
-			err = tx.Model(&hole).Omit("Tags", "UpdatedAt").Updates(&hole).Error
+			err = tx.Model(&hole).
+				Omit(clause.Associations, "UpdatedAt").
+				Select("DivisionID", "Hidden").
+				Updates(&hole).Error
 			if err != nil {
 				return err
 			}
@@ -427,7 +430,7 @@ func DeleteHole(c *fiber.Ctx) error {
 
 	var hole Hole
 	hole.ID = holeID
-	result := DB.Model(&hole).Select("Hidden").Updates(Hole{Hidden: true})
+	result := DB.Model(&hole).Select("Hidden").Omit("UpdatedAt").Updates(Hole{Hidden: true})
 	if result.RowsAffected == 0 {
 		return gorm.ErrRecordNotFound
 	}
@@ -436,12 +439,12 @@ func DeleteHole(c *fiber.Ctx) error {
 	MyLog("Hole", "Delete", holeID, user.ID, RoleAdmin)
 
 	// find hole and update cache
-	result = DB.First(&hole, holeID)
-	if result.Error != nil {
-		return result.Error
+	err = DB.Take(&hole).Error
+	if err != nil {
+		return err
 	}
 
-	updateHoles := []*Hole{&hole}
+	updateHoles := Holes{&hole}
 	err = UpdateHoleCache(updateHoles)
 	if err != nil {
 		return err

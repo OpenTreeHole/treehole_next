@@ -194,7 +194,10 @@ func (floor *Floor) Create(tx *gorm.DB) (err error) {
 		}
 
 		// update hole reply and update_at
-		return tx.Omit(clause.Associations).Save(&hole).Error
+		return tx.Model(&hole).
+			Omit(clause.Associations).
+			Select("Reply").
+			Updates(&hole).Error
 	})
 
 	if err != nil {

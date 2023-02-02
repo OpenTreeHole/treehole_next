@@ -13,10 +13,10 @@ type ListModel struct {
 }
 
 type ListOldModel struct {
-	HoleID int     `query:"hole_id"     json:"hole_id"`
-	Size   int     `query:"length"      json:"length"     validate:"min=0,max=50" `
-	Offset int     `query:"start_floor" json:"start_floor"`
-	Search *string `query:"s"           json:"s"`
+	HoleID int    `query:"hole_id"     json:"hole_id"`
+	Size   int    `query:"length"      json:"length"     validate:"min=0,max=50" `
+	Offset int    `query:"start_floor" json:"start_floor"`
+	Search string `query:"s"           json:"s"`
 }
 
 type CreateModel struct {
