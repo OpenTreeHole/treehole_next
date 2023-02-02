@@ -1,6 +1,7 @@
 package tag
 
 import (
+	"gorm.io/plugin/dbresolver"
 	. "treehole_next/models"
 	. "treehole_next/utils"
 
@@ -155,7 +156,7 @@ func DeleteTag(c *fiber.Ctx) error {
 
 	newTag.Temperature += tag.Temperature
 
-	err = DB.Transaction(func(tx *gorm.DB) error {
+	err = DB.Clauses(dbresolver.Write).Transaction(func(tx *gorm.DB) error {
 		result = tx.Exec(`
 			DELETE FROM hole_tags WHERE tag_id = ? AND hole_id IN
 				(SELECT a.hole_id FROM

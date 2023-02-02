@@ -5,6 +5,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+	"gorm.io/plugin/dbresolver"
 	. "treehole_next/models"
 	. "treehole_next/utils"
 )
@@ -275,7 +276,7 @@ func ModifyFloor(c *fiber.Ctx) error {
 		return err
 	}
 
-	err = DB.Transaction(func(tx *gorm.DB) error {
+	err = DB.Clauses(dbresolver.Write).Transaction(func(tx *gorm.DB) error {
 		err = tx.Clauses(clause.Locking{Strength: "UPDATE"}).Take(&floor).Error
 		if err != nil {
 			return err
@@ -406,7 +407,7 @@ func ModifyFloorLike(c *fiber.Ctx) error {
 	}
 
 	var floor Floor
-	err = DB.Transaction(func(tx *gorm.DB) error {
+	err = DB.Clauses(dbresolver.Write).Transaction(func(tx *gorm.DB) error {
 		result := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&floor, floorID)
 		if result.Error != nil {
 			return result.Error

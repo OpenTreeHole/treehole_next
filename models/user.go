@@ -6,6 +6,8 @@ import (
 	"github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
+	"gorm.io/plugin/dbresolver"
 	"strconv"
 	"strings"
 	"time"
@@ -20,6 +22,8 @@ type User struct {
 	Config UserConfig `json:"config" gorm:"serializer:json;not null;default:\"{}\""`
 
 	BanDivision map[int]*time.Time `json:"-" gorm:"serializer:json;not null;default:\"{}\""`
+
+	OffenceCount int `json:"-" gorm:"not null;default:0"`
 
 	/// association fields, should add foreign key
 
@@ -144,45 +148,10 @@ func GetUser(c *fiber.Ctx) (*User, error) {
 		return nil, utils.Unauthorized(err.Error())
 	}
 
-	// load user from database
-	err = DB.Preload("UserPunishments").Take(&user, userID).Error
-	if err == gorm.ErrRecordNotFound {
-		// insert user if not found
-		user.ID = userID
-		user.Config = defaultUserConfig
-		err = DB.Create(&user).Error
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		return nil, err
-	}
+	// load user from database in transaction
+	err = user.LoadUserByID(userID)
 
-	// check permission
-	modified := false
-	for divisionID := range user.BanDivision {
-		// get the latest punishments in divisionID
-		var latestPunishment *Punishment
-		for _, punishment := range user.UserPunishments {
-			if punishment.DivisionID == divisionID {
-				latestPunishment = punishment
-			}
-		}
-
-		if latestPunishment == nil || latestPunishment.EndTime.Before(time.Now()) {
-			delete(user.BanDivision, divisionID)
-			modified = true
-		}
-	}
-
-	if modified {
-		err = DB.Select("BanDivision").Save(&user).Error
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return user, nil
+	return user, err
 }
 
 func GetUserID(c *fiber.Ctx) (int, error) {
@@ -196,4 +165,47 @@ func GetUserID(c *fiber.Ctx) (int, error) {
 	}
 
 	return id, nil
+}
+
+func (user *User) LoadUserByID(userID int) error {
+	return DB.Clauses(dbresolver.Write).Transaction(func(tx *gorm.DB) error {
+		err := tx.Preload("UserPunishments").Clauses(clause.Locking{Strength: "UPDATE"}).Take(&user, userID).Error
+		if err == gorm.ErrRecordNotFound {
+			// insert user if not found
+			user.ID = userID
+			user.Config = defaultUserConfig
+			err = tx.Create(&user).Error
+			if err != nil {
+				return err
+			}
+		} else {
+			return err
+		}
+
+		// check permission
+		modified := false
+		for divisionID := range user.BanDivision {
+			// get the latest punishments in divisionID
+			var latestPunishment *Punishment
+			for _, punishment := range user.UserPunishments {
+				if punishment.DivisionID == divisionID {
+					latestPunishment = punishment
+				}
+			}
+
+			if latestPunishment == nil || latestPunishment.EndTime.Before(time.Now()) {
+				delete(user.BanDivision, divisionID)
+				modified = true
+			}
+		}
+
+		if modified {
+			err = tx.Select("BanDivision").Save(&user).Error
+			if err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
 }

@@ -5,6 +5,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+	"gorm.io/plugin/dbresolver"
 	"strconv"
 	. "treehole_next/models"
 	. "treehole_next/utils"
@@ -295,7 +296,7 @@ func ModifyHole(c *fiber.Ctx) error {
 
 	changed := false
 
-	err = DB.Transaction(func(tx *gorm.DB) error {
+	err = DB.Clauses(dbresolver.Write).Transaction(func(tx *gorm.DB) error {
 		// lock for update
 		err = tx.Clauses(clause.Locking{Strength: "UPDATE"}).Take(&hole, holeID).Error
 		if err != nil {

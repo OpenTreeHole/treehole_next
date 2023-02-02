@@ -3,6 +3,7 @@ package models
 import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+	"gorm.io/plugin/dbresolver"
 	"time"
 	"treehole_next/utils"
 )
@@ -23,7 +24,7 @@ func ModifyUserFavourite(tx *gorm.DB, userID int, holeIDs []int) error {
 	if len(holeIDs) == 0 {
 		return nil
 	}
-	return tx.Transaction(func(tx *gorm.DB) error {
+	return tx.Clauses(dbresolver.Write).Transaction(func(tx *gorm.DB) error {
 		var oldHoleIDs []int
 		err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Model(&UserFavorite{}).Select("hole_id").Scan(&oldHoleIDs).Error
 		if err != nil {

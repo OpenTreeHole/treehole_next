@@ -6,6 +6,7 @@ import (
 	"golang.org/x/exp/slices"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+	"gorm.io/plugin/dbresolver"
 	"time"
 	"treehole_next/config"
 	"treehole_next/utils"
@@ -283,7 +284,7 @@ func (hole *Hole) Create(tx *gorm.DB) error {
 	// Find floor.Mentions, in different sql session
 	hole.Floors[0].Mention, err = LoadFloorMentions(tx, hole.Floors[0].Content)
 
-	err = tx.Transaction(func(tx *gorm.DB) error {
+	err = tx.Clauses(dbresolver.Write).Transaction(func(tx *gorm.DB) error {
 		// Create hole
 		err = tx.Omit(clause.Associations).Create(&hole).Error
 		if err != nil {

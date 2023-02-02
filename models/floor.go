@@ -171,7 +171,7 @@ func (floor *Floor) Create(tx *gorm.DB) (err error) {
 	}
 	var hole Hole
 
-	err = tx.Transaction(func(tx *gorm.DB) error {
+	err = tx.Clauses(dbresolver.Write).Transaction(func(tx *gorm.DB) error {
 		// get anonymous name
 		floor.Anonyname, err = FindOrGenerateAnonyname(tx, floor.HoleID, floor.UserID)
 		if err != nil {

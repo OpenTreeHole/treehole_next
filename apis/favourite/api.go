@@ -2,6 +2,7 @@ package favourite
 
 import (
 	"gorm.io/gorm"
+	"gorm.io/plugin/dbresolver"
 	. "treehole_next/models"
 	. "treehole_next/utils"
 
@@ -76,7 +77,7 @@ func AddFavorite(c *fiber.Ctx) error {
 
 	var data []int
 
-	err = DB.Transaction(func(tx *gorm.DB) error {
+	err = DB.Clauses(dbresolver.Write).Transaction(func(tx *gorm.DB) error {
 		// add favorite
 		err = AddUserFavourite(tx, userID, body.HoleID)
 		if err != nil {
