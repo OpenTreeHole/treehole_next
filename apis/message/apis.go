@@ -3,7 +3,6 @@ package message
 import (
 	. "treehole_next/models"
 	. "treehole_next/utils"
-	"treehole_next/utils/perm"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -71,7 +70,7 @@ func SendMail(c *fiber.Ctx) error {
 	}
 
 	// permission
-	if !perm.CheckPermission(user, perm.Admin) {
+	if !user.IsAdmin {
 		return Forbidden()
 	}
 

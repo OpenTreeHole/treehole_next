@@ -799,7 +799,7 @@ const docTemplate = `{
                         "type": "string",
                         "default": "id",
                         "description": "SQL ORDER BY field",
-                        "name": "orderBy",
+                        "name": "order_by",
                         "in": "query"
                     },
                     {
@@ -1051,14 +1051,12 @@ const docTemplate = `{
                         "minimum": 0,
                         "type": "integer",
                         "default": 0,
-                        "description": "offset of object array",
                         "name": "offset",
                         "in": "query"
                     },
                     {
                         "type": "string",
                         "default": "id",
-                        "description": "SQL ORDER BY field",
                         "name": "orderBy",
                         "in": "query"
                     },
@@ -1067,7 +1065,6 @@ const docTemplate = `{
                         "minimum": 0,
                         "type": "integer",
                         "default": 30,
-                        "description": "length of object array",
                         "name": "size",
                         "in": "query"
                     },
@@ -1810,7 +1807,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "division_id": {
-                    "description": "Admin only",
                     "type": "integer",
                     "minimum": 1
                 },
@@ -1843,7 +1839,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "division_id": {
-                    "description": "Admin only",
+                    "description": "Admin and owner only",
                     "type": "integer",
                     "minimum": 1
                 },

@@ -149,18 +149,32 @@ func DeleteDivision(c *fiber.Ctx) error {
 		return err
 	}
 
-	if id == body.To {
-		return BadRequest("The deleted division can't be the same as to.")
-	}
-	DB.Exec("UPDATE hole SET division_id = ? WHERE division_id = ?", body.To, id)
-	DB.Delete(&Division{}, id)
-
-	// log
-	userID, err := GetUserID(c)
+	// get user
+	user, err := GetUser(c)
 	if err != nil {
 		return err
 	}
-	MyLog("Division", "Delete", id, userID, RoleAdmin, "To: ", strconv.Itoa(body.To))
+	if !user.IsAdmin {
+		return Forbidden()
+	}
+
+	if id == body.To {
+		return BadRequest("The deleted division can't be the same as to.")
+	}
+	err = DB.Exec("UPDATE hole SET division_id = ? WHERE division_id = ?", body.To, id).Error
+	if err != nil {
+		return err
+	}
+	err = DB.Delete(&Division{ID: id}).Error
+	if err != nil {
+		return err
+	}
+
+	// log
+	if err != nil {
+		return err
+	}
+	MyLog("Division", "Delete", id, user.ID, RoleAdmin, "To: ", strconv.Itoa(body.To))
 
 	go refreshCache()
 

@@ -3,6 +3,7 @@ package bootstrap
 import (
 	"context"
 	"treehole_next/apis"
+	"treehole_next/apis/floor"
 	"treehole_next/apis/hole"
 	"treehole_next/apis/message"
 	"treehole_next/config"
@@ -19,6 +20,8 @@ import (
 
 func Init() (*fiber.App, context.CancelFunc) {
 	config.InitConfig()
+	utils.InitCache()
+	floor.InitSearch()
 	models.InitDB()
 	utils.Logger, _ = utils.InitLog()
 	models.InitAdminList()

@@ -8,15 +8,6 @@ import (
 	"golang.org/x/exp/slices"
 )
 
-func init() {
-	userFavorites := make([]UserFavorite, 10)
-	for i := range userFavorites {
-		userFavorites[i].HoleID = i + 1
-		userFavorites[i].UserID = 1
-	}
-	DB.Create(&userFavorites)
-}
-
 func TestListFavorites(t *testing.T) {
 	var holes Holes
 	testAPIModel(t, "get", "/api/user/favorites", 200, &holes)
@@ -26,7 +17,7 @@ func TestListFavorites(t *testing.T) {
 func TestAddFavorite(t *testing.T) {
 	data := Map{"hole_id": 11}
 	testAPI(t, "post", "/api/user/favorites", 201, data)
-	testAPI(t, "post", "/api/user/favorites", 200, data) // duplicated
+	testAPI(t, "post", "/api/user/favorites", 201, data) // duplicated, refresh updated_at
 }
 
 func TestModifyFavorites(t *testing.T) {

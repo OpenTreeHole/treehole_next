@@ -5,11 +5,11 @@ import (
 	. "treehole_next/models"
 	"treehole_next/utils"
 	. "treehole_next/utils"
-	"treehole_next/utils/perm"
-
-	"gorm.io/gorm"
 
 	"github.com/gofiber/fiber/v2"
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
+	"gorm.io/plugin/dbresolver"
 )
 
 // ListFloorsInAHole
@@ -35,8 +35,9 @@ func ListFloorsInAHole(c *fiber.Ctx) error {
 
 	// get floors
 	var floors Floors
-	result := query.BaseQuery().
-		Where("hole_id = ?", holeID).
+	result := DB.Limit(query.Size).Order(query.OrderBy+" "+query.Sort).
+		// use ranking field to locate faster
+		Where("hole_id = ? and ranking >= ?", holeID, query.Offset).
 		Preload("Mention").
 		Find(&floors)
 	if result.Error != nil {
@@ -62,7 +63,7 @@ func ListFloorsOld(c *fiber.Ctx) error {
 		return err
 	}
 
-	if query.Search != nil {
+	if query.Search != "" {
 		return SearchFloorsOld(c, query)
 	}
 
@@ -73,7 +74,7 @@ func ListFloorsOld(c *fiber.Ctx) error {
 		if query.Size == 0 {
 			query.Size = 30
 		}
-		querySet = query.BaseQuery()
+		querySet = DB.Limit(query.Size).Where("ranking >= ?", query.Offset)
 	}
 
 	// get floors
@@ -135,8 +136,6 @@ func CreateFloor(c *fiber.Ctx) error {
 		return err
 	}
 
-	// todo: check permission
-
 	// get divisionID
 	var divisionID int
 	result := DB.Table("hole").Select("division_id").Where("id = ?", holeID).Take(&divisionID)
@@ -145,7 +144,7 @@ func CreateFloor(c *fiber.Ctx) error {
 	}
 
 	// get user from auth
-	user, err := GetUserFromAuth(c)
+	user, err := GetUser(c)
 	if err != nil {
 		if err != nil {
 			return err
@@ -153,13 +152,14 @@ func CreateFloor(c *fiber.Ctx) error {
 	}
 
 	// permission
-	if user.BanDivision[divisionID] {
+	if user.BanDivision[divisionID] != nil {
 		return Forbidden("您没有权限在此板块发言")
 	}
 
 	// create floor
 	floor := Floor{
 		HoleID:     holeID,
+		UserID:     user.ID,
 		Content:    body.Content,
 		ReplyTo:    body.ReplyTo,
 		SpecialTag: body.SpecialTag,
@@ -200,8 +200,6 @@ func CreateFloorOld(c *fiber.Ctx) error {
 		return err
 	}
 
-	// todo: check permission
-
 	// get divisionID
 	var hole Hole
 	err = DB.Take(&hole, body.HoleID).Error
@@ -210,19 +208,20 @@ func CreateFloorOld(c *fiber.Ctx) error {
 	}
 
 	// get user from auth
-	user, err := GetUserFromAuth(c)
+	user, err := GetUser(c)
 	if err != nil {
 		return err
 	}
 
 	// permission
-	if user.BanDivision[hole.DivisionID] {
+	if user.BanDivision[hole.DivisionID] != nil {
 		return Forbidden("您没有权限在此板块发言")
 	}
 
 	// create floor
 	floor := Floor{
 		HoleID:     body.HoleID,
+		UserID:     user.ID,
 		Content:    body.Content,
 		ReplyTo:    body.ReplyTo,
 		SpecialTag: body.SpecialTag,
@@ -269,16 +268,28 @@ func ModifyFloor(c *fiber.Ctx) error {
 		return err
 	}
 
-	// find floor
+	if body.DoNothing() {
+		return BadRequest("无效请求")
+	}
+
+	// parse floor_id
 	floorID, err := c.ParamsInt("id")
 	if err != nil {
 		return err
 	}
 
+	// find floor user_id
 	var floor Floor
-	result := DB.Preload("Mention").First(&floor, floorID)
-	if result.Error != nil {
-		return result.Error
+	err = DB.Select("id", "user_id", "hole_id").Take(&floor, floorID).Error
+	if err != nil {
+		return err
+	}
+
+	// find division_id
+	var divisionID int
+	err = DB.Model(&Hole{}).Select("division_id").Where("id = ?", floor.HoleID).Scan(&divisionID).Error
+	if err != nil {
+		return err
 	}
 
 	// get user
@@ -287,78 +298,101 @@ func ModifyFloor(c *fiber.Ctx) error {
 		return err
 	}
 
-	// partially modify floor
-	if body.Content != "" {
-		var reason string
-		if user.ID == floor.UserID {
-			reason = "该内容已被作者修改"
-			MyLog("Floor", "Modify", floorID, user.ID, RoleOwner, "content")
-		} else if perm.CheckPermission(user, perm.Admin) {
-			reason = "该内容已被管理员修改"
-			MyLog("Floor", "Modify", floorID, user.ID, RoleAdmin, "content")
-		} else {
-			return Forbidden()
-		}
-		err = floor.Backup(c, reason)
-		if err != nil {
-			return err
-		}
-		floor.Content = body.Content
-
-		// update floor_mention after update floor.content
-		err = floor.SetMention(DB, true)
-		if err != nil {
-			return err
-		}
-	}
-
-	if body.Fold == "" && body.FoldFrontend != nil {
-		if !perm.CheckPermission(user, perm.Admin) {
-			return Forbidden()
-		}
-		if len(body.FoldFrontend) == 0 {
-			// reset floor.Fold
-			floor.Fold = ""
-			MyLog("Floor", "Modify", floorID, user.ID, RoleAdmin, "fold reset")
-		} else {
-			// set floor.Fold
-			body.Fold = body.FoldFrontend[0]
-		}
-	}
-
-	if body.Fold != "" {
-		if !perm.CheckPermission(user, perm.Admin) {
-			return Forbidden()
-		}
-		floor.Fold = body.Fold
-		MyLog("Floor", "Modify", floorID, user.ID, RoleAdmin, "fold")
-	}
-
-	if body.SpecialTag != "" {
-		// operator can modify specialTag
-		if !perm.CheckPermission(user, perm.Admin|perm.Operator) {
-			return Forbidden()
-		}
-		floor.SpecialTag = body.SpecialTag
-		MyLog("Floor", "Modify", floorID, user.ID, RoleOperator, "specialTag to: ", fmt.Sprintf("%v", floor.SpecialTag))
-	}
-
-	if body.Like == "add" {
-		err = floor.ModifyLike(c, 1)
-	} else if body.Like == "cancel" {
-		err = floor.ModifyLike(c, 0)
-	}
+	// check permission
+	err = body.CheckPermission(user, floor.UserID, divisionID)
 	if err != nil {
 		return err
 	}
 
-	// save all fields except Mention
-	// including Like when Like == 0
-	DB.Model(&floor).Select("*").Omit("Mention").Updates(&floor)
+	err = DB.Clauses(dbresolver.Write).Transaction(func(tx *gorm.DB) error {
+		err = tx.Clauses(clause.Locking{Strength: "UPDATE"}).Take(&floor).Error
+		if err != nil {
+			return err
+		}
+
+		// partially modify floor
+		if body.Content != nil && *body.Content != "" {
+			var reason string
+			if user.ID == floor.UserID {
+				reason = "该内容已被作者修改"
+				MyLog("Floor", "Modify", floorID, user.ID, RoleOwner, "content")
+			} else if user.IsAdmin {
+				reason = "该内容已被管理员修改"
+				MyLog("Floor", "Modify", floorID, user.ID, RoleAdmin, "content")
+			} else {
+				return Forbidden()
+			}
+			floor.Modified += 1
+			err = floor.Backup(tx, user.ID, reason)
+			if err != nil {
+				return err
+			}
+			floor.Content = *body.Content
+
+			// update floor.mention after update floor.content
+			err = tx.Where("floor_id = ?", floorID).Delete(&FloorMention{}).Error
+			if err != nil {
+				return err
+			}
+
+			floor.Mention, err = LoadFloorMentions(tx, floor.Content)
+			if err != nil {
+				return err
+			}
+
+			// save floor_mention association
+			if len(floor.Mention) > 0 {
+				err = tx.Omit("Mention.*", "UpdatedAt").Select("Mention").Save(&floor).Error
+				if err != nil {
+					return err
+				}
+			}
+		}
+
+		if body.Fold != nil {
+			if *body.Fold != "" {
+				floor.Fold = *body.Fold
+				MyLog("Floor", "Modify", floorID, user.ID, RoleAdmin, "fold")
+			} else {
+				floor.Fold = ""
+				MyLog("Floor", "Modify", floorID, user.ID, RoleAdmin, "fold reset")
+			}
+		} else if body.FoldFrontend != nil {
+			if len(body.FoldFrontend) != 0 {
+				floor.Fold = body.FoldFrontend[0]
+				MyLog("Floor", "Modify", floorID, user.ID, RoleAdmin, "fold")
+			} else {
+				floor.Fold = ""
+				MyLog("Floor", "Modify", floorID, user.ID, RoleAdmin, "fold reset")
+			}
+		}
+
+		if body.SpecialTag != nil && *body.SpecialTag != "" {
+			floor.SpecialTag = *body.SpecialTag
+			MyLog("Floor", "Modify", floorID, user.ID, RoleAdmin, "specialTag to: ", fmt.Sprintf("%v", floor.SpecialTag))
+		}
+
+		if body.Like != nil {
+			if *body.Like == "add" {
+				err = floor.ModifyLike(tx, user.ID, 1)
+			} else if *body.Like == "cancel" {
+				err = floor.ModifyLike(tx, user.ID, 0)
+			}
+			if err != nil {
+				return err
+			}
+		}
+
+		// save all maybe-modified fields above
+		// including Like when Like == 0
+		return tx.Model(&floor).
+			Select("Content", "Fold", "SpecialTag", "Like", "DisLike", "Modified").
+			Updates(&floor).Error
+	})
 
 	// SendModify only when operator or admin modify content or fold
-	if (body.Content != "" ||
-		body.Fold != "") &&
+	if ((body.Content != nil && *body.Content != "") ||
+		body.Fold != nil || body.FoldFrontend != nil) &&
 		user.ID != floor.UserID {
 		err = floor.SendModify(DB)
 		if err != nil {
@@ -387,25 +421,41 @@ func ModifyFloorLike(c *fiber.Ctx) error {
 		return err
 	}
 
-	// find floor
+	// validate like option
+	if likeOption > 1 || likeOption < -1 {
+		return BadRequest("like option must be -1, 0 or 1")
+	}
+
+	// parse floor_id
 	floorID, err := c.ParamsInt("id")
 	if err != nil {
 		return err
 	}
 
-	var floor Floor
-	result := DB.First(&floor, floorID)
-	if result.Error != nil {
-		return result.Error
-	}
-
-	// modify like
-	err = floor.ModifyLike(c, int8(likeOption))
+	userID, err := GetUserID(c)
 	if err != nil {
 		return err
 	}
 
-	DB.Save(&floor)
+	var floor Floor
+	err = DB.Clauses(dbresolver.Write).Transaction(func(tx *gorm.DB) error {
+		result := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&floor, floorID)
+		if result.Error != nil {
+			return result.Error
+		}
+
+		// modify like
+		err = floor.ModifyLike(tx, userID, int8(likeOption))
+		if err != nil {
+			return err
+		}
+
+		// save like only
+		return tx.Model(&floor).Select("Like", "Dislike").Updates(&floor).Error
+	})
+	if err != nil {
+		return err
+	}
 
 	return Serialize(c, &floor)
 }
@@ -445,11 +495,11 @@ func DeleteFloor(c *fiber.Ctx) error {
 	}
 
 	// permission
-	if !(user.ID == floor.UserID || perm.CheckPermission(user, perm.Admin)) {
+	if !(user.ID == floor.UserID || user.IsAdmin) {
 		return Forbidden()
 	}
 
-	err = floor.Backup(c, body.Reason)
+	err = floor.Backup(DB, user.ID, body.Reason)
 	if err != nil {
 		return err
 	}
@@ -497,7 +547,7 @@ func GetFloorHistory(c *fiber.Ctx) error {
 	}
 
 	// permission
-	if !perm.CheckPermission(user, perm.Admin) {
+	if !user.IsAdmin {
 		return Forbidden()
 	}
 
@@ -544,7 +594,7 @@ func RestoreFloor(c *fiber.Ctx) error {
 	}
 
 	// permission check
-	if !perm.CheckPermission(user, perm.Admin) {
+	if !user.IsAdmin {
 		return Forbidden()
 	}
 
@@ -562,7 +612,7 @@ func RestoreFloor(c *fiber.Ctx) error {
 		return BadRequest(fmt.Sprintf("%v 不是 #%v 的历史版本", floorHistoryID, floorID))
 	}
 	reason := body.Reason
-	err = floor.Backup(c, reason)
+	err = floor.Backup(DB, user.ID, reason)
 	if err != nil {
 		return err
 	}

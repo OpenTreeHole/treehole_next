@@ -159,7 +159,6 @@ definitions:
       content:
         type: string
       division_id:
-        description: Admin only
         minimum: 1
         type: integer
       special_tag:
@@ -184,7 +183,7 @@ definitions:
   hole.ModifyModel:
     properties:
       division_id:
-        description: Admin only
+        description: Admin and owner only
         minimum: 1
         type: integer
       tags:
@@ -997,7 +996,7 @@ paths:
         - id
         - like
         in: query
-        name: orderBy
+        name: order_by
         type: string
       - default: 30
         description: length of object array
@@ -1163,18 +1162,15 @@ paths:
     get:
       parameters:
       - default: 0
-        description: offset of object array
         in: query
         minimum: 0
         name: offset
         type: integer
       - default: id
-        description: SQL ORDER BY field
         in: query
         name: orderBy
         type: string
       - default: 30
-        description: length of object array
         in: query
         maximum: 50
         minimum: 0

@@ -9,6 +9,7 @@ import (
 	"treehole_next/apis/penalty"
 	"treehole_next/apis/report"
 	"treehole_next/apis/tag"
+	"treehole_next/apis/user"
 	_ "treehole_next/docs"
 
 	"github.com/gofiber/fiber/v2"
@@ -37,5 +38,6 @@ func RegisterRoutes(app *fiber.App) {
 	report.RegisterRoutes(group)
 	favourite.RegisterRoutes(group)
 	penalty.RegisterRoutes(group)
+	user.RegisterRoutes(group)
 	message.RegisterRoutes(group)
 }

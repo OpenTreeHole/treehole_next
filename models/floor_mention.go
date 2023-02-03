@@ -15,10 +15,6 @@ func (FloorMention) TableName() string {
 	return "floor_mention"
 }
 
-func deleteFloorMentions(tx *gorm.DB, floorID int) error {
-	return tx.Where("floor_id = ?", floorID).Delete(&FloorMention{}).Error
-}
-
 var reHole = regexp.MustCompile(`[^#]#(\d+)`)
 var reFloor = regexp.MustCompile(`##(\d+)`)
 

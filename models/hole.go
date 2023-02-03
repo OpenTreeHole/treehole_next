@@ -2,15 +2,14 @@ package models
 
 import (
 	"fmt"
+	"github.com/gofiber/fiber/v2"
 	"golang.org/x/exp/slices"
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
+	"gorm.io/plugin/dbresolver"
 	"time"
 	"treehole_next/config"
 	"treehole_next/utils"
-	"treehole_next/utils/perm"
-
-	"github.com/gofiber/fiber/v2"
-	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 )
 
 type Hole struct {
@@ -188,13 +187,13 @@ func (hole *Hole) Preprocess(c *fiber.Ctx) error {
 func (holes Holes) Preprocess(_ *fiber.Ctx) error {
 	notInCache := make(Holes, 0, len(holes))
 
-	for i, hole := range holes {
+	for _, hole := range holes {
 		cachedHole := new(Hole)
 		ok := utils.GetCache(hole.CacheName(), &cachedHole)
 		if !ok {
 			notInCache = append(notInCache, hole)
 		} else {
-			holes[i] = cachedHole
+			*hole = *cachedHole
 		}
 	}
 
@@ -233,7 +232,7 @@ func MakeQuerySet(c *fiber.Ctx) (*gorm.DB, error) {
 	if err != nil {
 		return nil, err
 	}
-	if perm.CheckPermission(user, perm.Admin) {
+	if user.IsAdmin {
 		return DB, err
 	} else {
 		return DB.Where("hidden = ?", false), err
@@ -260,61 +259,6 @@ func (holes Holes) MakeQuerySet(offset CustomTime, size int, order string, c *fi
 	create and modify hole methods
  ************************/
 
-// SetTags sets tags for a hole
-func (hole *Hole) SetTags(tx *gorm.DB, clear bool) error {
-	var err error
-	if clear {
-		err = tx.Exec(`
-			UPDATE tag SET temperature = temperature - 1 
-			WHERE id IN ( SELECT tag_id FROM hole_tags WHERE hole_id = ?)`, hole.ID).Error
-		if err != nil {
-			return err
-		}
-
-		err = tx.Exec("DELETE FROM hole_tags WHERE hole_id = ?", hole.ID).Error
-		if err != nil {
-			return err
-		}
-	}
-
-	if len(hole.Tags) == 0 {
-		return nil
-	}
-
-	// create tags
-	result := tx.Clauses(clause.OnConflict{
-		Columns:   []clause.Column{{Name: "name"}},
-		DoNothing: true,
-	}).Create(&hole.Tags)
-	if result.Error != nil {
-		return result.Error
-	}
-
-	// find tags
-	tagNames := make([]string, len(hole.Tags))
-	for i, tag := range hole.Tags {
-		tagNames[i] = tag.Name
-	}
-	result = tx.Where("name IN (?)", tagNames).Find(&hole.Tags)
-	if result.Error != nil {
-		return result.Error
-	}
-
-	// create associations
-	holeTags := make([]HoleTag, 0, len(hole.Tags))
-	for _, tag := range hole.Tags {
-		holeTags = append(holeTags, HoleTag{hole.ID, tag.ID})
-	}
-	err = tx.Clauses(clause.OnConflict{DoNothing: true}).Create(holeTags).Error
-	if err != nil {
-		return err
-	}
-
-	// update tag temperature and updated_at
-	err = tx.Model(&hole.Tags).Update("temperature", gorm.Expr("temperature + 1")).Error
-	return err
-}
-
 func (hole *Hole) SetHoleFloor() {
 	holeFloorSize := len(hole.Floors)
 	if holeFloorSize == 0 {
@@ -340,7 +284,7 @@ func (hole *Hole) Create(tx *gorm.DB) error {
 	// Find floor.Mentions, in different sql session
 	hole.Floors[0].Mention, err = LoadFloorMentions(tx, hole.Floors[0].Content)
 
-	err = tx.Transaction(func(tx *gorm.DB) error {
+	err = tx.Clauses(dbresolver.Write).Transaction(func(tx *gorm.DB) error {
 		// Create hole
 		err = tx.Omit(clause.Associations).Create(&hole).Error
 		if err != nil {
@@ -360,19 +304,19 @@ func (hole *Hole) Create(tx *gorm.DB) error {
 			return err
 		}
 
-		// new anonyname
+		// New anonyname
 		hole.Floors[0].Anonyname, err = NewAnonyname(tx, hole.ID, hole.UserID)
 		if err != nil {
 			return err
 		}
 
-		// create floor, set floor_mention association in AfterCreate hook
+		// Create floor, set floor_mention association in AfterCreate hook
 		err = tx.Omit(clause.Associations).Create(&hole.Floors[0]).Error
 		if err != nil {
 			return err
 		}
 
-		// create Favorite
+		// Create Favorite
 		return AddUserFavourite(tx, hole.UserID, hole.ID)
 	})
 	// transaction commit here

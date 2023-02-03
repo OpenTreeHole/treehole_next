@@ -6,52 +6,19 @@ import (
 	"testing"
 	. "treehole_next/config"
 	. "treehole_next/models"
+	"treehole_next/utils"
 
 	"github.com/stretchr/testify/assert"
 )
 
-const HOLE_BASE = 21
-
-func init() {
-	holes := make([]Hole, 10)
-	for i := 0; i < 10; i++ {
-		holes[i] = Hole{
-			DivisionID: 6,
-		}
-		// holes[i].ID = HOLE_BASE + i
-	}
-	tag := Tag{
-		Name:        "114",
-		Temperature: 15,
-	}
-	holes[1].Tags = []*Tag{&tag}
-	holes[2].Tags = []*Tag{&tag}
-	holes[3].Tags = []*Tag{
-		{
-			Name:        "111",
-			Temperature: 23,
-		},
-		{
-			Name:        "222",
-			Temperature: 45,
-		},
-	}
-	DB.Create(&holes)
-	tag = Tag{Name: "115"}
-	DB.Create(&tag)
-}
-
-func TestGetHoleInDivision(t *testing.T) {
+func TestListHoleInADivision(t *testing.T) {
 	var holes Holes
-	var ids, respIDs []int
+	var ids []int
 
 	DB.Raw("SELECT id FROM hole WHERE division_id = 6 AND hidden = 0 ORDER BY updated_at DESC").Scan(&ids)
 
 	testAPIModel(t, "get", "/api/divisions/6/holes", 200, &holes)
-	for _, hole := range holes {
-		respIDs = append(respIDs, hole.ID)
-	}
-	assert.Equal(t, ids[:Config.HoleFloorSize], respIDs)
+	assert.Equal(t, ids[:Config.HoleFloorSize], utils.Models2IDSlice(holes))
 
 	testAPIModel(t, "get", "/api/divisions/"+strconv.Itoa(largeInt)+"/holes", 200, &holes)        // return empty holes
 	testAPI(t, "get", "/api/divisions/"+strings.Repeat(strconv.Itoa(largeInt), 15)+"/holes", 500) // huge divisionID
@@ -119,7 +86,7 @@ func TestModifyHole(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	tagName := []Map{{"name": "d"}, {"name": "de"}, {"name": "def"}, {"name": "defg"}}
+	tagName := []Map{{"name": "111"}, {"name": "d"}, {"name": "de"}, {"name": "def"}}
 	division_id := 5
 	data := Map{"tags": tagName, "division_id": division_id}
 	testAPI(t, "put", "/api/holes/"+strconv.Itoa(holes[0].ID), 200, data)
@@ -131,9 +98,10 @@ func TestModifyHole(t *testing.T) {
 		getTagName = append(getTagName, Map{"name": v.Name})
 	}
 	assert.EqualValues(t, tagName, getTagName)
+	assert.EqualValues(t, division_id, holes[0].DivisionID)
 
 	// default schemas
-	testAPI(t, "put", "/api/holes/"+strconv.Itoa(holes[0].ID), 200, Map{})
+	testAPI(t, "put", "/api/holes/"+strconv.Itoa(holes[0].ID), 400, Map{}) // bad request if modify nothing
 	DB.Where("id = ?", holes[0].ID).Find(&holes[0])
 	assert.Equal(t, division_id, holes[0].DivisionID)
 }

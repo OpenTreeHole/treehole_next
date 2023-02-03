@@ -1,7 +1,12 @@
 package models
 
 import (
+	"errors"
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
+	"gorm.io/plugin/dbresolver"
 	"time"
+	"treehole_next/utils"
 )
 
 // Punishment
@@ -23,23 +28,75 @@ type Punishment struct {
 	// end_time of this punishment
 	EndTime time.Time `json:"end_time" gorm:"not null"`
 
+	Duration time.Duration `json:"duration" gorm:"not null"`
+
 	// user punished
-	UserID int `json:"user_id" gorm:"index:idx_user_div,priority:1;index:idx_user_floor,priority:1"`
+	UserID int `json:"user_id" gorm:"not null;index:idx_user_div,priority:1"`
 
 	// admin user_id who made this punish
 	MadeBy int `json:"made_by"`
 
 	// punished because of this floor
-	FloorID int `json:"floor_id" gorm:"index:idx_user_floor,priority:2"`
+	FloorID int `json:"floor_id" gorm:"not null;uniqueIndex:idx_user_floor,priority:2"`
 
 	Floor *Floor `json:"floor"` // foreign key
 
-	DivisionID int `json:"division_id" gorm:"index:idx_user_div,priority:2"`
+	DivisionID int `json:"division_id" gorm:"not null"`
 
 	Division *Division `json:"division"` // foreign key
 
 	// reason
-	Reason string `json:"reason" gorm:"size:128"`
+	Reason *string `json:"reason" gorm:"size:128"`
 }
 
 type Punishments []*Punishment
+
+func (punishment *Punishment) Create() (*User, error) {
+	var user User
+
+	err := DB.Clauses(dbresolver.Write).Transaction(func(tx *gorm.DB) error {
+		err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Take(&user, punishment.UserID).Error
+		if err != nil {
+			return err
+		}
+
+		var floorPunishment Punishment
+		err = tx.Where("user_id = ? and floor_id = ?", user.ID, punishment.FloorID).Take(&floorPunishment).Error
+		if err == nil {
+			return utils.BadRequest("该用户已被禁言")
+		} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return err
+		}
+
+		var lastPunishment Punishment
+		err = tx.Where("user_id = ?", user.ID).Last(&lastPunishment).Error
+		if err == nil {
+			if lastPunishment.EndTime.Before(time.Now()) {
+				punishment.StartTime = time.Now()
+			} else {
+				punishment.StartTime = lastPunishment.EndTime
+			}
+		} else if errors.Is(err, gorm.ErrRecordNotFound) {
+			punishment.StartTime = time.Now()
+		} else {
+			return err
+		}
+
+		punishment.EndTime = punishment.StartTime.Add(punishment.Duration)
+		user.BanDivision[punishment.DivisionID] = &punishment.EndTime
+		user.OffenceCount += 1
+
+		err = tx.Create(&punishment).Error
+		if err != nil {
+			return err
+		}
+
+		err = tx.Select("BanDivision", "OffenceCount").Save(&user).Error
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+	return &user, err
+}

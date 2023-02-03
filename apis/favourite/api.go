@@ -2,6 +2,7 @@ package favourite
 
 import (
 	"gorm.io/gorm"
+	"gorm.io/plugin/dbresolver"
 	. "treehole_next/models"
 	. "treehole_next/utils"
 
@@ -37,15 +38,24 @@ func ListFavorites(c *fiber.Ctx) error {
 		}
 		return c.JSON(Map{"data": data})
 	} else {
+		// get order
+		var order string
+		switch query.Order {
+		case "id":
+			order = "hole.id desc"
+		case "time_created":
+			order = "user_favorites.created_at desc, hole.id desc"
+		case "hole_time_updated":
+			order = "hole.updated_at desc"
+		}
+
 		// get favorites
-		holes := Holes{}
-		sql := `SELECT * FROM hole 
-		JOIN user_favorites 
-		ON user_favorites.hole_id = hole.id 
-		AND user_favorites.user_id = ?`
-		result := DB.Raw(sql, userID).Scan(&holes)
-		if result.Error != nil {
-			return result.Error
+		holes := make(Holes, 0)
+		err = DB.
+			Joins("JOIN user_favorites ON user_favorites.hole_id = hole.id AND user_favorites.user_id = ?", userID).
+			Order(order).Find(&holes).Error
+		if err != nil {
+			return err
 		}
 		return Serialize(c, &holes)
 	}
@@ -76,7 +86,7 @@ func AddFavorite(c *fiber.Ctx) error {
 
 	var data []int
 
-	err = DB.Transaction(func(tx *gorm.DB) error {
+	err = DB.Clauses(dbresolver.Write).Transaction(func(tx *gorm.DB) error {
 		// add favorite
 		err = AddUserFavourite(tx, userID, body.HoleID)
 		if err != nil {
@@ -91,7 +101,7 @@ func AddFavorite(c *fiber.Ctx) error {
 		return err
 	}
 
-	return c.JSON(&Response{
+	return c.Status(201).JSON(&Response{
 		Message: "收藏成功",
 		Data:    data,
 	})
@@ -131,7 +141,7 @@ func ModifyFavorite(c *fiber.Ctx) error {
 		return err
 	}
 
-	return c.JSON(&Response{
+	return c.Status(201).JSON(&Response{
 		Message: "修改成功",
 		Data:    data,
 	})

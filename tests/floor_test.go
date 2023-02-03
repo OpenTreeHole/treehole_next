@@ -11,32 +11,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func init() {
-	holes := make([]Hole, 10)
-	for i := 0; i < 10; i++ {
-		holes[i] = Hole{
-			DivisionID: 7,
-		}
-	}
-	for i := 1; i <= 50; i++ {
-		holes[0].Floors = append(holes[0].Floors, &Floor{Content: strings.Repeat("1", i)})
-	}
-	holes[0].Floors[10].Mention = Floors{
-		{HoleID: 102},
-		{HoleID: 304},
-	}
-	holes[0].Floors[11].Mention = Floors{
-		{HoleID: 506},
-		{HoleID: 708},
-	}
-	holes[1].Floors = Floors{{Content: "123456789"}}                                           // for TestCreate
-	holes[2].Floors = Floors{{Content: "123456789"}}                                           // for TestCreate
-	holes[3].Floors = Floors{{Content: "123456789"}}                                           // for TestModify
-	holes[4].Floors = Floors{{Content: "123456789"}}                                           // for TestModify like
-	holes[5].Floors = Floors{{Content: "123456789", UserID: 1}, {Content: "23333", UserID: 5}} // for TestDelete
-	DB.Create(&holes)
-}
-
 func TestListFloorsInAHole(t *testing.T) {
 	var hole Hole
 	DB.Where("division_id = ?", 7).First(&hole)
@@ -177,9 +151,9 @@ func TestModifyFloor(t *testing.T) {
 	DB.Find(&getFloor, floor.ID)
 	assert.EqualValues(t, "test_test", getFloor.Fold)
 
-	// test6: fold == nil, fold_v2 == "": do nothing
+	// test6: fold == nil, fold_v2 == "": do nothing; 无效请求
 	data = Map{}
-	testAPI(t, "put", "/api/floors/"+strconv.Itoa(floor.ID), 200, data)
+	testAPI(t, "put", "/api/floors/"+strconv.Itoa(floor.ID), 400, data)
 	DB.Find(&getFloor, floor.ID)
 	assert.EqualValues(t, "test_test", getFloor.Fold)
 
@@ -208,13 +182,15 @@ func TestModifyFloorLike(t *testing.T) {
 	}
 	DB.First(&floor, floor.ID)
 	assert.EqualValues(t, 1, floor.Like)
+	assert.EqualValues(t, 0, floor.Dislike)
 
 	// dislike
 	for i := 0; i < 15; i++ {
 		testAPI(t, "post", "/api/floors/"+strconv.Itoa(floor.ID)+"/like/-1", 200)
 	}
 	DB.First(&floor, floor.ID)
-	assert.EqualValues(t, -1, floor.Like)
+	assert.EqualValues(t, 0, floor.Like)
+	assert.EqualValues(t, 1, floor.Dislike)
 
 	// reset
 	testAPI(t, "post", "/api/floors/"+strconv.Itoa(floor.ID)+"/like/0", 200)

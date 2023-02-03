@@ -10,12 +10,11 @@ import (
 	. "treehole_next/config"
 	. "treehole_next/models"
 	. "treehole_next/utils"
-	"treehole_next/utils/perm"
 )
 
 var ES *elasticsearch.Client
 
-func init() {
+func InitSearch() {
 	if Config.Mode == "test" || Config.Mode == "bench" || Config.ElasticsearchUrl == "" {
 		return
 	}
@@ -94,7 +93,7 @@ func SearchConfig(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	if !perm.CheckPermission(user, perm.Admin) {
+	if !user.IsAdmin {
 		return Forbidden()
 	}
 	if DynamicConfig.OpenSearch.Load() == body.Open {
@@ -111,7 +110,7 @@ func SearchFloorsOld(c *fiber.Ctx, query *ListOldModel) error {
 	}
 	floors := Floors{}
 	result := DB.
-		Where("content like ?", "%"+*query.Search+"%").
+		Where("content like ?", "%"+query.Search+"%").
 		Where("hole_id in (?)", DB.Table("hole").Select("id").Where("hidden = false")).
 		Offset(query.Offset).Limit(query.Size).Order("id desc").
 		Preload("Mention").Find(&floors)

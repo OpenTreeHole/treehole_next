@@ -2,44 +2,30 @@
 package penalty
 
 import (
-	"bytes"
-	"errors"
 	"fmt"
-	"io"
-	"net/http"
-	"strconv"
 	"time"
-	"treehole_next/config"
 	. "treehole_next/models"
 	. "treehole_next/utils"
-	"treehole_next/utils/perm"
-
-	"github.com/goccy/go-json"
 
 	"github.com/gofiber/fiber/v2"
-	"go.uber.org/zap"
 )
 
 type PostBody struct {
-	PenaltyLevel int `json:"penalty_level"`
-	DivisionID   int `json:"division_id"`
+	PenaltyLevel *int    `json:"penalty_level" validate:"omitempty"` // low priority, deprecated
+	Days         *int    `json:"days" validate:"omitempty,min=1"`    // high priority
+	DivisionID   int     `json:"division_id" validate:"required,min=1"`
+	Reason       *string `json:"reason"` // optional
 }
 
 // BanUser
 //
-//	@Summary	[Deprecated] Ban publisher of a floor
-//	@Deprecated
+//	@Summary	Ban publisher of a floor
 //	@Tags		Penalty
-//	@Produce	application/json
+//	@Produce	json
 //	@Router		/penalty/{floor_id} [post]
 //	@Param		json	body		PostBody	true	"json"
-//	@Success	201		{object}	Hole
+//	@Success	201		{object}	User
 func BanUser(c *fiber.Ctx) error {
-	// check AuthURL
-	if config.Config.AuthUrl == "" {
-		return BadRequest("No AuthURL")
-	}
-
 	// validate body
 	body, err := ValidateBody[PostBody](c)
 	if err != nil {
@@ -58,34 +44,44 @@ func BanUser(c *fiber.Ctx) error {
 	}
 
 	// permission
-	if !perm.CheckPermission(user, perm.Admin) {
+	if !user.IsAdmin {
 		return Forbidden()
 	}
 
 	var floor Floor
-	result := DB.First(&floor, floorID)
-	if result.Error != nil {
-		return result.Error
-	}
-
-	var days int
-	switch body.PenaltyLevel {
-	case 1:
-		days = 1
-	case 2:
-		days = 5
-	case 3:
-		days = 999
-	default:
-		days = 1
-	}
-
-	err = banUser(floorID, body.DivisionID, days, user.ID, floor.UserID)
+	err = DB.Take(&floor, floorID).Error
 	if err != nil {
 		return err
 	}
 
-	userData, err := GetUserInfo(floor.UserID)
+	var days int
+	if body.Days != nil {
+		days = *body.Days
+		if days <= 0 {
+			days = 1
+		}
+	} else if body.PenaltyLevel != nil {
+		switch *body.PenaltyLevel {
+		case 1:
+			days = 1
+		case 2:
+			days = 5
+		case 3:
+			days = 999
+		default:
+			days = 1
+		}
+	}
+
+	punishment := Punishment{
+		UserID:     floor.UserID,
+		MadeBy:     user.ID,
+		FloorID:    floor.ID,
+		DivisionID: body.DivisionID,
+		Duration:   time.Duration(days) * 24 * time.Hour,
+		Reason:     body.Reason,
+	}
+	user, err = punishment.Create()
 	if err != nil {
 		return err
 	}
@@ -98,7 +94,7 @@ func BanUser(c *fiber.Ctx) error {
 			"分区：%d，时间：%d天，原因：%s",
 			body.DivisionID,
 			days,
-			floor.Content,
+			body.Reason,
 		),
 		"title": "您的权限被禁止了",
 		"type":  MessageTypePermission,
@@ -111,108 +107,7 @@ func BanUser(c *fiber.Ctx) error {
 		return err
 	}
 
-	return c.SendStream(userData)
-}
-
-var client = http.Client{Timeout: time.Second * 10}
-
-func banUser(floorID, divisionID, days, fromUserID, toUserID int) error {
-	data := map[string]any{
-		"name":   fmt.Sprintf("ban_treehole_%d", divisionID),
-		"days":   days,
-		"reason": fmt.Sprintf("ban user(floor_id: %v)\n", floorID),
-	}
-	dataBytes, err := json.Marshal(data)
-	if err != nil {
-		return err
-	}
-
-	// make request
-	req, err := http.NewRequest(
-		"POST",
-		fmt.Sprintf("%s/users/%d/permissions", config.Config.AuthUrl, toUserID),
-		bytes.NewBuffer(dataBytes),
-	)
-	if err != nil {
-		Logger.Error("req make err", zap.Error(err))
-		return err
-	}
-
-	// add headers
-	req.Header.Add("Content-Type", "application/json")
-	req.Header.Add("X-Consumer-Username", strconv.Itoa(fromUserID))
-	res, err := client.Do(req)
-
-	defer func(body io.Closer) {
-		err := body.Close()
-		if err != nil {
-			Logger.Error("close request body error", zap.Error(err))
-		}
-	}(res.Body)
-
-	// error handling
-	if err != nil {
-		Logger.Error(
-			"auth add permission error, request error",
-			zap.Int("user id", toUserID),
-		)
-		return err
-	}
-	if res.StatusCode != 200 {
-		Logger.Error(
-			"auth add permission error, response error",
-			zap.Int("user id", toUserID),
-		)
-		return fiber.ErrInternalServerError
-	}
-
-	return nil
-}
-
-func GetUserInfo(toUserID int) (io.Reader, error) {
-	// make request
-	req, err := http.NewRequest(
-		"GET",
-		fmt.Sprintf("%s/users/%d", config.Config.AuthUrl, toUserID),
-		bytes.NewBuffer(make([]byte, 0, 10)),
-	)
-	if err != nil {
-		Logger.Error("request make error", zap.Error(err))
-		return nil, err
-	}
-
-	// add headers
-	req.Header.Add("X-Consumer-Username", strconv.Itoa(toUserID))
-	rsp, err := client.Do(req)
-
-	if err == nil && rsp.StatusCode == 200 {
-		// do not close body. io.Reader will send to fiber context
-		return rsp.Body, nil
-	}
-
-	closeErr := rsp.Body.Close()
-	if closeErr != nil {
-		Logger.Error("close request body error", zap.Error(closeErr))
-	}
-
-	// error handling
-	if err != nil {
-		Logger.Error(
-			"auth get user error, request error",
-			zap.Int("user id", toUserID),
-		)
-		return nil, err
-	}
-
-	if rsp.StatusCode != 200 {
-		Logger.Error(
-			"auth get user error, rsp error",
-			zap.Int("user id", toUserID),
-		)
-		return nil, errors.New("auth get user error, rsp error")
-	}
-
-	return nil, fiber.ErrInternalServerError
+	return c.JSON(user)
 }
 
 func RegisterRoutes(app fiber.Router) {

@@ -1,36 +1,29 @@
 package models
 
 import (
-	"bytes"
 	"encoding/base64"
 	"errors"
-	"fmt"
 	"github.com/goccy/go-json"
-	"go.uber.org/zap"
-	"io"
-	"net/http"
+	"github.com/gofiber/fiber/v2"
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
+	"gorm.io/plugin/dbresolver"
 	"strconv"
 	"strings"
 	"time"
 	"treehole_next/config"
 	"treehole_next/utils"
-	"treehole_next/utils/perm"
-
-	"github.com/gofiber/fiber/v2"
 )
 
 type User struct {
 	/// base info
 	ID int `json:"id" gorm:"primaryKey"`
 
-	Config struct {
-		// used when notify
-		Notify []string `json:"notify"`
+	Config UserConfig `json:"config" gorm:"serializer:json;not null;default:\"{}\""`
 
-		// 对折叠内容的处理
-		// fold 折叠, hide 隐藏, show 展示
-		ShowFolded string `json:"show_folded"`
-	} `json:"config" gorm:"serializer:json;not null;default:\"{}\""`
+	BanDivision map[int]*time.Time `json:"-" gorm:"serializer:json;not null;default:\"{}\""`
+
+	OffenceCount int `json:"-" gorm:"not null;default:0"`
 
 	/// association fields, should add foreign key
 
@@ -70,26 +63,32 @@ type User struct {
 		// 管理员权限到期时间
 		Admin time.Time `json:"admin"`
 		// key: division_id value: 对应分区禁言解除时间
-		Silence      map[int]time.Time `json:"silence"`
-		OffenseCount int               `json:"offense_count"`
+		Silence      map[int]*time.Time `json:"silence"`
+		OffenseCount int                `json:"offense_count"`
 	} `json:"permission" gorm:"-:all"`
-
-	BanDivision map[int]bool `json:"-" gorm:"-:all"`
-
-	// load from table 'user_favorite'
-	FavoriteData []int `json:"favorite_data" gorm:"-:all"`
 
 	// get from jwt
 	IsAdmin    bool      `json:"is_admin" gorm:"-:all"`
 	JoinedTime time.Time `json:"joined_time" gorm:"-:all"`
 	LastLogin  time.Time `json:"last_login" gorm:"-:all"`
 	Nickname   string    `json:"nickname" gorm:"-:all"`
-
-	// deprecated
-	Role perm.Role `json:"-" gorm:"-:all"`
 }
 
 type Users []*User
+
+type UserConfig struct {
+	// used when notify
+	Notify []string `json:"notify"`
+
+	// 对折叠内容的处理
+	// fold 折叠, hide 隐藏, show 展示
+	ShowFolded string `json:"show_folded"`
+}
+
+var defaultUserConfig = UserConfig{
+	Notify:     []string{"mention", "favorite", "report"},
+	ShowFolded: "fold",
+}
 
 func (user *User) GetID() int {
 	return user.ID
@@ -120,25 +119,37 @@ func (user *User) parseJWT(token string) error {
 	return nil
 }
 
+var (
+	maxTime time.Time
+	minTime time.Time
+)
+
+func init() {
+	var err error
+	maxTime, err = time.Parse(time.RFC3339, "9999-01-01T00:00:00+00:00")
+	if err != nil {
+		panic(err)
+	}
+	minTime = time.Unix(0, 0)
+}
+
 func GetUser(c *fiber.Ctx) (*User, error) {
 	user := &User{
-		BanDivision: make(map[int]bool),
-		Role:        0,
+		BanDivision: make(map[int]*time.Time),
 	}
 	if config.Config.Mode == "dev" || config.Config.Mode == "test" {
 		user.ID = 1
-		user.Role = perm.Admin + perm.Operator
+		user.IsAdmin = true
 		return user, nil
 	}
 
 	// get id
-	id, err := GetUserID(c)
+	userID, err := GetUserID(c)
 	if err != nil {
 		return nil, err
 	}
-	user.ID = id
 
-	// parse JWT
+	// parse JWT first
 	tokenString := c.Get("Authorization")
 	if tokenString == "" { // token can be in either header or cookie
 		tokenString = c.Cookies("access")
@@ -148,87 +159,17 @@ func GetUser(c *fiber.Ctx) (*User, error) {
 		return nil, utils.Unauthorized(err.Error())
 	}
 
-	err = user.parsePermission()
-	if err != nil {
-		return nil, err
-	}
-	return user, nil
-}
+	// load user from database in transaction
+	err = user.LoadUserByID(userID)
 
-func (user *User) parsePermission() error {
 	if user.IsAdmin {
-		user.Role |= perm.Admin
+		user.Permission.Admin = maxTime
+	} else {
+		user.Permission.Admin = minTime
 	}
-	return nil
-}
-
-func GetUserFromAuth(c *fiber.Ctx) (*User, error) {
-	user := &User{
-		BanDivision: make(map[int]bool),
-		Role:        0,
-	}
-
-	if config.Config.Mode == "dev" || config.Config.Mode == "test" {
-		user.ID = 1
-		user.Role = perm.Admin + perm.Operator
-		return user, nil
-	}
-
-	userID, err := GetUserID(c)
-	if err != nil {
-		return nil, err
-	}
-
-	// make request
-	req, err := http.NewRequest(
-		"GET",
-		fmt.Sprintf("%s/users/%d", config.Config.AuthUrl, userID),
-		bytes.NewBuffer(make([]byte, 0, 10)),
-	)
-	if err != nil {
-		utils.Logger.Error("request make error", zap.Error(err))
-		return nil, err
-	}
-
-	// add headers
-	req.Header.Add("X-Consumer-Username", strconv.Itoa(userID))
-	rsp, err := client.Do(req)
-
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-			utils.Logger.Error("close rsp body error")
-		}
-	}(rsp.Body)
-
-	if err != nil {
-		utils.Logger.Error(
-			"auth get user request error",
-			zap.Int("user id", userID),
-		)
-		return nil, err
-	}
-
-	if rsp.StatusCode != 200 {
-		return nil, errors.New("auth get user error, rsp error")
-	}
-
-	userInfo, err := io.ReadAll(rsp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	err = json.Unmarshal(userInfo, user)
-	if err != nil {
-		return nil, err
-	}
-
-	err = user.parsePermission()
-	if err != nil {
-		return nil, err
-	}
-
-	return user, nil
+	user.Permission.Silence = user.BanDivision
+	user.Permission.OffenseCount = user.OffenceCount
+	return user, err
 }
 
 func GetUserID(c *fiber.Ctx) (int, error) {
@@ -244,6 +185,45 @@ func GetUserID(c *fiber.Ctx) (int, error) {
 	return id, nil
 }
 
-func (user *User) GetPermission() perm.Role {
-	return user.Role
+func (user *User) LoadUserByID(userID int) error {
+	return DB.Clauses(dbresolver.Write).Transaction(func(tx *gorm.DB) error {
+		err := tx.Preload("UserPunishments").Clauses(clause.Locking{Strength: "UPDATE"}).Take(&user, userID).Error
+		if err == gorm.ErrRecordNotFound {
+			// insert user if not found
+			user.ID = userID
+			user.Config = defaultUserConfig
+			err = tx.Create(&user).Error
+			if err != nil {
+				return err
+			}
+		} else {
+			return err
+		}
+
+		// check permission
+		modified := false
+		for divisionID := range user.BanDivision {
+			// get the latest punishments in divisionID
+			var latestPunishment *Punishment
+			for _, punishment := range user.UserPunishments {
+				if punishment.DivisionID == divisionID {
+					latestPunishment = punishment
+				}
+			}
+
+			if latestPunishment == nil || latestPunishment.EndTime.Before(time.Now()) {
+				delete(user.BanDivision, divisionID)
+				modified = true
+			}
+		}
+
+		if modified {
+			err = tx.Select("BanDivision").Save(&user).Error
+			if err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
 }

@@ -8,24 +8,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func init() {
-	divisions := make([]Division, 10)
-	for i := 1; i <= 10; i++ {
-		divisions[i-1].ID = i
-		divisions[i-1].Name = strconv.Itoa(i)
-		divisions[i-1].Description = strconv.Itoa(i)
-	}
-	holes := make([]Hole, 10)
-	for i := 0; i < 9; i++ {
-		holes[i] = Hole{
-			DivisionID: 1,
-		}
-	}
-	holes[9] = Hole{DivisionID: 4} // for TestDeleteDivisionDefaultValue
-	DB.Create(&divisions)
-	DB.Create(&holes)
-}
-
 func TestGetDivision(t *testing.T) {
 	var divisionPinned = []int{0, 2, 3, 1, largeInt}
 
@@ -106,12 +88,12 @@ func TestDeleteDivisionDefaultValue(t *testing.T) {
 	toID := 1
 
 	// if create hole here, say database lock, pending enquiry
-	hole := Hole{}
+	var hole, getHole Hole
 	DB.Where("division_id = ?", id).First(&hole)
 	testAPI(t, "delete", "/api/divisions/"+strconv.Itoa(id), 204, Map{})
 
 	// hole moved
-	DB.First(&hole, hole.ID)
-	assert.Equal(t, toID, hole.DivisionID)
+	DB.Take(&getHole, hole.ID)
+	assert.Equal(t, toID, getHole.DivisionID)
 
 }
