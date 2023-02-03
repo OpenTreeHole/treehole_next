@@ -123,6 +123,7 @@ func InitDB() {
 		&Report{},
 		&Punishment{},
 		&Message{},
+		&MessageUser{},
 	)
 	if err != nil {
 		panic(err)

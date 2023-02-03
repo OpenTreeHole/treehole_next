@@ -342,7 +342,7 @@ func (floor *Floor) SendFavorite(tx *gorm.DB) Notification {
 		"data":        floor,
 		"recipients":  userIDs,
 		"description": floor.Content,
-		"title":       "你收藏的树洞有新回复",
+		"title":       "您收藏的树洞有新回复",
 		"type":        MessageTypeFavorite,
 		"url":         fmt.Sprintf("/api/floors/%d", floor.ID),
 	}
@@ -370,7 +370,7 @@ func (floor *Floor) SendReply(tx *gorm.DB) Notification {
 		"data":        floor,
 		"recipients":  userIDs,
 		"description": floor.Content,
-		"title":       "你的帖子被回复了",
+		"title":       "您的帖子被回复了",
 		"type":        MessageTypeReply,
 		"url":         fmt.Sprintf("/api/floors/%d", floor.ID),
 	}
@@ -400,7 +400,7 @@ func (floor *Floor) SendMention(_ *gorm.DB) Notification {
 		"data":        floor,
 		"recipients":  userIDs,
 		"description": floor.Content,
-		"title":       "你的帖子被引用了",
+		"title":       "您的帖子被引用了",
 		"type":        MessageTypeMention,
 		"url":         fmt.Sprintf("/api/floors/%d", floor.ID),
 	}
@@ -417,7 +417,7 @@ func (floor *Floor) SendModify(_ *gorm.DB) error {
 		"data":        floor,
 		"recipients":  userIDs,
 		"description": floor.Content,
-		"title":       "你的帖子被修改了",
+		"title":       "您的帖子被修改了",
 		"type":        MessageTypeModify,
 		"url":         fmt.Sprintf("/api/floors/%d", floor.ID),
 	}

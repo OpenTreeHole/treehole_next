@@ -22,6 +22,11 @@ func ListMessages(c *fiber.Ctx) error {
 		return err
 	}
 
+	userID, err := GetUserID(c)
+	if err != nil {
+		return err
+	}
+
 	messages := Messages{}
 
 	if query.NotRead {
@@ -30,7 +35,7 @@ func ListMessages(c *fiber.Ctx) error {
 			INNER JOIN message_user 
 			WHERE message.id = message_user.message_id and message_user.user_id = ? and message_user.has_read = false
 			ORDER BY updated_at DESC`,
-			c.Locals("userID").(int),
+			userID,
 		).Scan(&messages)
 	} else {
 		DB.Raw(`
@@ -38,7 +43,7 @@ func ListMessages(c *fiber.Ctx) error {
 			INNER JOIN message_user
 			WHERE message.id = message_user.message_id and message_user.user_id = ?
 			ORDER BY updated_at DESC`,
-			c.Locals("userID").(int),
+			userID,
 		).Scan(&messages)
 	}
 
@@ -46,7 +51,7 @@ func ListMessages(c *fiber.Ctx) error {
 }
 
 // SendMail
-// @Summary Send a mail
+// @Summary Send a Mail
 // @Description Send to multiple recipients and save to db, admin only.
 // @Tags Message
 // @Produce application/json
@@ -74,7 +79,7 @@ func SendMail(c *fiber.Ctx) error {
 	mail := Notification{
 		"description": body.Description,
 		"recipients":  body.Recipients,
-		"title":       "你有一封站内信",
+		"title":       "您有一封站内信",
 		"type":        MessageTypeMail,
 	}
 
@@ -94,9 +99,14 @@ func SendMail(c *fiber.Ctx) error {
 // @Router /messages/clear [post]
 // @Success 204
 func ClearMessages(c *fiber.Ctx) error {
+	userID, err := GetUserID(c)
+	if err != nil {
+		return err
+	}
+
 	result := DB.Exec(
 		"UPDATE message_user SET has_read = true WHERE user_id = ?",
-		c.Locals("userID").(int),
+		userID,
 	)
 	if result.Error != nil {
 		return result.Error
@@ -122,10 +132,15 @@ func ClearMessagesDeprecated(c *fiber.Ctx) error {
 // @Param id path int true "message id"
 // @Success 204
 func DeleteMessage(c *fiber.Ctx) error {
+	userID, err := GetUserID(c)
+	if err != nil {
+		return err
+	}
+
 	id, _ := c.ParamsInt("id")
 	result := DB.Exec(
 		"UPDATE message_user SET has_read = true WHERE user_id = ?  AND message_id = ?",
-		c.Locals("userID").(int), id,
+		userID, id,
 	)
 	if result.Error != nil {
 		return result.Error

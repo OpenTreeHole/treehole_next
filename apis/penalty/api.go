@@ -100,7 +100,7 @@ func BanUser(c *fiber.Ctx) error {
 			days,
 			floor.Content,
 		),
-		"title": "你的权限被禁止了",
+		"title": "您的权限被禁止了",
 		"type":  MessageTypePermission,
 		"url":   fmt.Sprintf("/api/floors/%d", floor.ID),
 	}

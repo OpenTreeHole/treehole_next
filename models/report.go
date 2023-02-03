@@ -129,7 +129,7 @@ func (report *Report) SendCreate(_ *gorm.DB) error {
 			report.Reason,
 			report.Floor.Content,
 		),
-		"title": "有帖子被举报了",
+		"title": "您有帖子被举报了",
 		"type":  MessageTypeReport,
 		"url":   fmt.Sprintf("/api/reports/%d", report.ID),
 	}
@@ -156,7 +156,7 @@ func (report *Report) SendModify(_ *gorm.DB) error {
 			report.Result,
 			report.Floor.Content,
 		),
-		"title": "有帖子被举报了",
+		"title": "您的举报被处理了",
 		"type":  MessageTypeReportDealt,
 		"url":   fmt.Sprintf("/api/reports/%d", report.ID),
 	}

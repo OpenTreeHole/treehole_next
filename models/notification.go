@@ -112,11 +112,15 @@ func (message Notification) Send() (Message, error) {
 	}
 
 	// construct http request
-	req, _ := http.NewRequest(
+	req, err := http.NewRequest(
 		"POST",
 		fmt.Sprintf("%s/messages", config.Config.NotificationUrl),
 		bytes.NewBuffer(form),
 	)
+	if err != nil {
+		utils.Logger.Error("[notification] error making request" + err.Error())
+		return Message{}, err
+	}
 	req.Header.Add("Content-Type", "application/json")
 
 	// bench and simulation
