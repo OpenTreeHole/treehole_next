@@ -2,10 +2,12 @@ package floor
 
 import (
 	"fmt"
-	"gorm.io/gorm"
 	. "treehole_next/models"
+	"treehole_next/utils"
 	. "treehole_next/utils"
 	"treehole_next/utils/perm"
+
+	"gorm.io/gorm"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -168,6 +170,18 @@ func CreateFloor(c *fiber.Ctx) error {
 		return err
 	}
 
+	// Send Notification
+	var messages Notifications
+	messages = messages.Merge(floor.SendReply(DB))
+	messages = messages.Merge(floor.SendMention(DB))
+	messages = messages.Merge(floor.SendFavorite(DB))
+
+	err = messages.Send()
+	if err != nil {
+		utils.Logger.Error("[notification] SendNotification failed: " + err.Error())
+		// return err // only for test
+	}
+
 	return c.Status(201).JSON(&floor)
 }
 
@@ -217,6 +231,18 @@ func CreateFloorOld(c *fiber.Ctx) error {
 	err = floor.Create(DB)
 	if err != nil {
 		return err
+	}
+
+	// Send Notification
+	var messages Notifications
+	messages = messages.Merge(floor.SendReply(DB))
+	messages = messages.Merge(floor.SendMention(DB))
+	messages = messages.Merge(floor.SendFavorite(DB))
+
+	err = messages.Send()
+	if err != nil {
+		utils.Logger.Error("[notification] SendNotification failed: " + err.Error())
+		// return err // only for test
 	}
 
 	return c.Status(201).JSON(&CreateOldResponse{
@@ -444,10 +470,6 @@ func DeleteFloor(c *fiber.Ctx) error {
 			Logger.Error("[notification] SendModify failed: " + err.Error())
 			// return err // only for test
 		}
-	}
-
-	if user.ID != floor.UserID {
-
 	}
 
 	return Serialize(c, &floor)

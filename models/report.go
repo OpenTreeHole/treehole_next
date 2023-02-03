@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"sync/atomic"
 	"time"
-	"treehole_next/config"
 	"treehole_next/utils"
 
 	"github.com/gofiber/fiber/v2"
@@ -72,9 +71,6 @@ func (report *Report) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 
 func (report *Report) AfterCreate(tx *gorm.DB) (err error) {
 	report.ReportID = report.ID
-	if config.Config.NotificationUrl == "" {
-		return nil
-	}
 
 	err = tx.Model(report).Association("Floor").Find(&report.Floor)
 	if err != nil {
@@ -86,11 +82,6 @@ func (report *Report) AfterCreate(tx *gorm.DB) (err error) {
 		return err
 	}
 
-	err = report.SendCreate(tx)
-	if err != nil {
-		utils.Logger.Error("[notification] SendCreate failed: " + err.Error())
-		// return err // only for test
-	}
 	return nil
 }
 
@@ -101,10 +92,6 @@ func (report *Report) AfterFind(_ *gorm.DB) (err error) {
 }
 
 func (report *Report) AfterUpdate(tx *gorm.DB) (err error) {
-	if config.Config.NotificationUrl == "" {
-		return nil
-	}
-
 	err = tx.Model(report).Association("Floor").Find(&report.Floor)
 	if err != nil {
 		return err
@@ -115,11 +102,6 @@ func (report *Report) AfterUpdate(tx *gorm.DB) (err error) {
 		return err
 	}
 
-	err = report.SendModify(tx)
-	if err != nil {
-		utils.Logger.Error("[notification] SendModify failed: " + err.Error())
-		// return err // only for test
-	}
 	return nil
 }
 

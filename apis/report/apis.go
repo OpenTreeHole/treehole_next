@@ -2,6 +2,7 @@ package report
 
 import (
 	. "treehole_next/models"
+	"treehole_next/utils"
 	. "treehole_next/utils"
 
 	"github.com/gofiber/fiber/v2"
@@ -97,6 +98,13 @@ func AddReport(c *fiber.Ctx) error {
 		return err
 	}
 
+	// Send Notification
+	err = report.SendCreate(DB)
+	if err != nil {
+		utils.Logger.Error("[notification] SendCreate failed: " + err.Error())
+		// return err // only for test
+	}
+
 	return c.Status(204).JSON(nil)
 }
 
@@ -142,6 +150,13 @@ func DeleteReport(c *fiber.Ctx) error {
 	DB.Omit("Floor").Save(&report)
 
 	MyLog("Report", "Delete", reportID, userID, RoleAdmin)
+
+	// Send Notification
+	err = report.SendModify(DB)
+	if err != nil {
+		utils.Logger.Error("[notification] SendModify failed: " + err.Error())
+		// return err // only for test
+	}
 
 	return Serialize(c, &report)
 }

@@ -237,17 +237,6 @@ func (floor *Floor) AfterCreate(tx *gorm.DB) (err error) {
 		}
 	}
 
-	var messages Notifications
-	messages = messages.Merge(floor.SendReply(tx))
-	messages = messages.Merge(floor.SendMention(tx))
-	messages = messages.Merge(floor.SendFavorite(tx))
-
-	err = messages.Send()
-	if err != nil {
-		utils.Logger.Error("[notification] SendNotification failed: " + err.Error())
-		// return err // only for test
-	}
-
 	return nil
 }
 
