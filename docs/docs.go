@@ -792,6 +792,13 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "type": "string",
+                        "default": "id",
+                        "description": "SQL ORDER BY field",
+                        "name": "orderBy",
+                        "in": "query"
+                    },
+                    {
                         "enum": [
                             "id",
                             "like"
@@ -799,7 +806,7 @@ const docTemplate = `{
                         "type": "string",
                         "default": "id",
                         "description": "SQL ORDER BY field",
-                        "name": "orderBy",
+                        "name": "order_by",
                         "in": "query"
                     },
                     {
@@ -1810,7 +1817,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "division_id": {
-                    "description": "Admin only",
                     "type": "integer",
                     "minimum": 1
                 },
@@ -1843,7 +1849,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "division_id": {
-                    "description": "Admin only",
+                    "description": "Admin and owner only",
                     "type": "integer",
                     "minimum": 1
                 },

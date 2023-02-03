@@ -12,10 +12,8 @@ import (
 	"treehole_next/config"
 	. "treehole_next/models"
 	. "treehole_next/utils"
-	"treehole_next/utils/perm"
 
 	"github.com/goccy/go-json"
-
 	"github.com/gofiber/fiber/v2"
 	"go.uber.org/zap"
 )
@@ -58,7 +56,7 @@ func BanUser(c *fiber.Ctx) error {
 	}
 
 	// permission
-	if !perm.CheckPermission(user, perm.Admin) {
+	if !user.IsAdmin {
 		return Forbidden()
 	}
 

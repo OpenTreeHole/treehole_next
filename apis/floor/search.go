@@ -10,7 +10,6 @@ import (
 	. "treehole_next/config"
 	. "treehole_next/models"
 	. "treehole_next/utils"
-	"treehole_next/utils/perm"
 )
 
 var ES *elasticsearch.Client
@@ -94,7 +93,7 @@ func SearchConfig(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	if !perm.CheckPermission(user, perm.Admin) {
+	if !user.IsAdmin {
 		return Forbidden()
 	}
 	if DynamicConfig.OpenSearch.Load() == body.Open {
