@@ -15,7 +15,6 @@ import (
 // @Success 200 {array} Message
 // @Param object query ListModel false "query"
 func ListMessages(c *fiber.Ctx) error {
-	// swagger里面的query是错误的，应该使用not_read而不是notRead
 	query, err := ValidateQuery[ListModel](c)
 	if err != nil {
 		return err

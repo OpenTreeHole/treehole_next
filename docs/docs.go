@@ -1006,6 +1006,120 @@ const docTemplate = `{
                 }
             }
         },
+        "/messages": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Message"
+                ],
+                "summary": "List Messages of a User",
+                "parameters": [
+                    {
+                        "type": "boolean",
+                        "default": false,
+                        "name": "not_read",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Message"
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Message"
+                ],
+                "summary": "Clear Messages Deprecated",
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            },
+            "post": {
+                "description": "Send to multiple recipients and save to db, admin only.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Message"
+                ],
+                "summary": "Send a Mail",
+                "parameters": [
+                    {
+                        "description": "json",
+                        "name": "json",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/message.CreateModel"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/models.Message"
+                        }
+                    }
+                }
+            }
+        },
+        "/messages/clear": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Message"
+                ],
+                "summary": "Clear Messages of a User",
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            }
+        },
+        "/messages/{id}": {
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Message"
+                ],
+                "summary": "Delete a message of a user",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "message id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            }
+        },
         "/penalty/{floor_id}": {
             "post": {
                 "produces": [
@@ -1014,8 +1128,7 @@ const docTemplate = `{
                 "tags": [
                     "Penalty"
                 ],
-                "summary": "[Deprecated] Ban publisher of a floor",
-                "deprecated": true,
+                "summary": "Ban publisher of a floor",
                 "parameters": [
                     {
                         "description": "json",
@@ -1031,7 +1144,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/models.Hole"
+                            "$ref": "#/definitions/models.User"
                         }
                     }
                 }
@@ -1218,6 +1331,7 @@ const docTemplate = `{
                 "summary": "List All Tags",
                 "parameters": [
                     {
+                        "maxLength": 32,
                         "type": "string",
                         "description": "search tag by name",
                         "name": "s",
@@ -1449,6 +1563,17 @@ const docTemplate = `{
                 "summary": "List User's Favorites",
                 "parameters": [
                     {
+                        "enum": [
+                            "id",
+                            "time_created",
+                            "hole_time_updated"
+                        ],
+                        "type": "string",
+                        "default": "time_created",
+                        "name": "order",
+                        "in": "query"
+                    },
+                    {
                         "type": "boolean",
                         "default": false,
                         "name": "plain",
@@ -1572,6 +1697,46 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/users/me": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "get current user",
+                "deprecated": true,
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.User"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/{user_id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "get user by id, owner or admin",
+                "deprecated": true,
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.User"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -1661,7 +1826,8 @@ const docTemplate = `{
             ],
             "properties": {
                 "content": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 15000
                 },
                 "reply_to": {
                     "description": "id of the floor to which replied",
@@ -1682,7 +1848,8 @@ const docTemplate = `{
             ],
             "properties": {
                 "content": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 15000
                 },
                 "hole_id": {
                     "type": "integer",
@@ -1791,6 +1958,8 @@ const docTemplate = `{
                 "tags": {
                     "description": "All users",
                     "type": "array",
+                    "maxItems": 10,
+                    "minItems": 1,
                     "items": {
                         "$ref": "#/definitions/tag.CreateModel"
                     }
@@ -1818,6 +1987,8 @@ const docTemplate = `{
                 "tags": {
                     "description": "All users",
                     "type": "array",
+                    "maxItems": 10,
+                    "minItems": 1,
                     "items": {
                         "$ref": "#/definitions/tag.CreateModel"
                     }
@@ -1846,12 +2017,32 @@ const docTemplate = `{
                 "tags": {
                     "description": "All users",
                     "type": "array",
+                    "maxItems": 10,
+                    "minItems": 1,
                     "items": {
                         "$ref": "#/definitions/tag.CreateModel"
                     }
                 },
                 "unhidden": {
                     "type": "boolean"
+                }
+            }
+        },
+        "message.CreateModel": {
+            "type": "object",
+            "required": [
+                "recipients"
+            ],
+            "properties": {
+                "description": {
+                    "description": "MessageTypeMail",
+                    "type": "string"
+                },
+                "recipients": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
                 }
             }
         },
@@ -2080,6 +2271,47 @@ const docTemplate = `{
             "type": "object",
             "additionalProperties": true
         },
+        "models.Message": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "$ref": "#/definitions/models.MessageType"
+                },
+                "data": {},
+                "description": {
+                    "type": "string"
+                },
+                "has_read": {
+                    "description": "兼容旧版, 永远为false，以MessageUser的HasRead为准",
+                    "type": "boolean"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "message_id": {
+                    "description": "兼容旧版 id",
+                    "type": "integer"
+                },
+                "time_created": {
+                    "type": "string"
+                },
+                "time_updated": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
+                },
+                "user": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.User"
+                    }
+                }
+            }
+        },
         "models.MessageModel": {
             "type": "object",
             "properties": {
@@ -2087,6 +2319,32 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
+        },
+        "models.MessageType": {
+            "type": "string",
+            "enum": [
+                "favorite",
+                "reply",
+                "mention",
+                "modify",
+                "permission",
+                "report",
+                "report_dealt",
+                "mail"
+            ],
+            "x-enum-comments": {
+                "MessageTypeModify": "including fold and delete"
+            },
+            "x-enum-varnames": [
+                "MessageTypeFavorite",
+                "MessageTypeReply",
+                "MessageTypeMention",
+                "MessageTypeModify",
+                "MessageTypePermission",
+                "MessageTypeReport",
+                "MessageTypeReportDealt",
+                "MessageTypeMail"
+            ]
         },
         "models.Report": {
             "type": "object",
@@ -2149,14 +2407,88 @@ const docTemplate = `{
                 }
             }
         },
-        "penalty.PostBody": {
+        "models.User": {
             "type": "object",
             "properties": {
-                "division_id": {
+                "config": {
+                    "$ref": "#/definitions/models.UserConfig"
+                },
+                "id": {
+                    "description": "/ base info",
                     "type": "integer"
                 },
+                "is_admin": {
+                    "description": "get from jwt",
+                    "type": "boolean"
+                },
+                "joined_time": {
+                    "type": "string"
+                },
+                "last_login": {
+                    "type": "string"
+                },
+                "nickname": {
+                    "type": "string"
+                },
+                "permission": {
+                    "type": "object",
+                    "properties": {
+                        "admin": {
+                            "description": "管理员权限到期时间",
+                            "type": "string"
+                        },
+                        "offense_count": {
+                            "type": "integer"
+                        },
+                        "silence": {
+                            "description": "key: division_id value: 对应分区禁言解除时间",
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "models.UserConfig": {
+            "type": "object",
+            "properties": {
+                "notify": {
+                    "description": "used when notify",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "show_folded": {
+                    "description": "对折叠内容的处理\nfold 折叠, hide 隐藏, show 展示",
+                    "type": "string"
+                }
+            }
+        },
+        "penalty.PostBody": {
+            "type": "object",
+            "required": [
+                "division_id"
+            ],
+            "properties": {
+                "days": {
+                    "description": "high priority",
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "division_id": {
+                    "type": "integer",
+                    "minimum": 1
+                },
                 "penalty_level": {
+                    "description": "low priority, deprecated",
                     "type": "integer"
+                },
+                "reason": {
+                    "description": "optional",
+                    "type": "string"
                 }
             }
         },
@@ -2207,7 +2539,8 @@ const docTemplate = `{
             "properties": {
                 "name": {
                     "description": "Admin only",
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 32
                 }
             }
         },
@@ -2225,7 +2558,8 @@ const docTemplate = `{
             "properties": {
                 "name": {
                     "description": "Admin only",
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 32
                 },
                 "temperature": {
                     "description": "Admin only",

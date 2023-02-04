@@ -7,5 +7,5 @@ type CreateModel struct {
 }
 
 type ListModel struct {
-	NotRead bool `default:"false" query:"not_read"`
+	NotRead bool `json:"not_read" default:"false" query:"not_read"`
 }
