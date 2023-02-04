@@ -76,8 +76,7 @@ func (messages Notifications) Merge(newNotification Notification) Notifications 
 	}
 
 	newNotification.Recipients = newMerge
-	messages = append(messages, newNotification)
-	return messages
+	return append(messages, newNotification)
 }
 
 func (messages Notifications) Send() error {

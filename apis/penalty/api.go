@@ -11,10 +11,10 @@ import (
 )
 
 type PostBody struct {
-	PenaltyLevel *int    `json:"penalty_level" validate:"omitempty"` // low priority, deprecated
-	Days         *int    `json:"days" validate:"omitempty,min=1"`    // high priority
-	DivisionID   int     `json:"division_id" validate:"required,min=1"`
-	Reason       *string `json:"reason"` // optional
+	PenaltyLevel *int   `json:"penalty_level" validate:"omitempty"` // low priority, deprecated
+	Days         *int   `json:"days" validate:"omitempty,min=1"`    // high priority
+	DivisionID   int    `json:"division_id" validate:"required,min=1"`
+	Reason       string `json:"reason"` // optional
 }
 
 // BanUser

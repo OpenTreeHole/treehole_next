@@ -1,5 +1,6 @@
-// Should be same as message in notification project
 package models
+
+// Should be same as message in notification project
 
 import (
 	"time"
@@ -59,11 +60,11 @@ func (message *Message) Preprocess(_ *fiber.Ctx) error {
 	return nil
 }
 
-func (m *Message) AfterCreate(tx *gorm.DB) (err error) {
-	mapping := make([]MessageUser, len(m.Recipients))
-	for i, userID := range m.Recipients {
+func (message *Message) AfterCreate(tx *gorm.DB) (err error) {
+	mapping := make([]MessageUser, len(message.Recipients))
+	for i, userID := range message.Recipients {
 		mapping[i] = MessageUser{
-			MessageID: m.ID,
+			MessageID: message.ID,
 			UserID:    userID,
 		}
 	}

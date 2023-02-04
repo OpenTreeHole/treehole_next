@@ -339,7 +339,7 @@ func (floor *Floor) SendReply(tx *gorm.DB) Notification {
 	}
 
 	// return if no recipients or isMe
-	userIDs := []int{}
+	var userIDs []int
 	if userID != 0 && userID != floor.UserID {
 		userIDs = []int{userID}
 	}

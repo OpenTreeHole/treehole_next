@@ -46,7 +46,7 @@ type Punishment struct {
 	Division *Division `json:"division"` // foreign key
 
 	// reason
-	Reason *string `json:"reason" gorm:"size:128"`
+	Reason string `json:"reason" gorm:"size:128"`
 }
 
 type Punishments []*Punishment
