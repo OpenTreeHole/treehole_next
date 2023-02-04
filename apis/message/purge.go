@@ -20,26 +20,6 @@ func purgeMessage() error {
 			return result.Error
 		}
 
-		// delete message
-		result = tx.Exec(`
-			DELETE message FROM message
-			LEFT JOIN message_user ON id = message_id
-			WHERE message_id IS NULL
-		`)
-		if result.Error != nil {
-			return result.Error
-		}
-
-		// delete message_user
-		result = tx.Exec(`
-			DELETE message_user FROM message
-			LEFT JOIN message_user ON id = message_id
-			WHERE id IS NULL
-		`)
-		if result.Error != nil {
-			return result.Error
-		}
-
 		return nil
 	})
 }

@@ -60,3 +60,7 @@ func Min[T numbers](x T, y T) T {
 		return x
 	}
 }
+
+func StripContent(content string, contentMaxSize int) string {
+	return content[:Min(len(content), contentMaxSize)]
+}

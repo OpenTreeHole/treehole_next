@@ -20,17 +20,14 @@ const (
 
 var client = http.Client{Timeout: timeout}
 
-// should be same as Message model
-type Notification map[string]any
-
 type Notifications []Notification
 
-type NotificationModel struct {
+type Notification struct {
 	// Should be same as CrateModel in notification project
 	Type        MessageType `json:"type" validate:"required"`
 	Title       string      `json:"title"`
 	Description string      `json:"description"`
-	Data        JSON        `json:"data"`
+	Data        any         `json:"data" gorm:"serializer:json" `
 	URL         string      `json:"url"`
 	Recipients  []int       `json:"recipients" validate:"required"`
 }
@@ -58,30 +55,27 @@ func readRespNotification(body io.ReadCloser) Notification {
 }
 
 func (messages Notifications) Merge(newNotification Notification) Notifications {
-	if newNotification == nil {
+	if len(newNotification.Recipients) == 0 {
 		return messages
 	}
-	if len(messages) == 0 {
-		return Notifications{newNotification}
-	}
 
-	new, _ := newNotification["recipients"].([]int)
+	newMerge := newNotification.Recipients
 	for _, message := range messages {
-		old, _ := message["recipients"].([]int)
+		old := message.Recipients
 		for _, r1 := range old {
-			for id, r2 := range new {
+			for id, r2 := range newMerge {
 				if r1 == r2 {
-					new = append(new[:id], new[id+1:]...)
+					newMerge = append(newMerge[:id], newMerge[id+1:]...)
 					break
 				}
 			}
 		}
-		if len(new) == 0 {
+		if len(newMerge) == 0 {
 			return messages
 		}
 	}
 
-	newNotification["recipients"] = new
+	newNotification.Recipients = newMerge
 	messages = append(messages, newNotification)
 	return messages
 }
@@ -107,7 +101,7 @@ func (message Notification) Send() (Message, error) {
 	// construct form
 	form, err := json.Marshal(message)
 	if err != nil {
-		utils.Logger.Error("[notification] error encoding notification" + err.Error())
+		utils.Logger.Error("[notification] error encoding notification: " + err.Error())
 		return Message{}, err
 	}
 
@@ -118,7 +112,7 @@ func (message Notification) Send() (Message, error) {
 		bytes.NewBuffer(form),
 	)
 	if err != nil {
-		utils.Logger.Error("[notification] error making request" + err.Error())
+		utils.Logger.Error("[notification] error making request: " + err.Error())
 		return Message{}, err
 	}
 	req.Header.Add("Content-Type", "application/json")
@@ -132,31 +126,28 @@ func (message Notification) Send() (Message, error) {
 	// get response
 	resp, err := client.Do(req)
 	if err != nil {
-		utils.Logger.Error("[notification] error sending notification" + err.Error())
+		utils.Logger.Error("[notification] error sending notification: " + err.Error())
 		return Message{}, err
 	}
 
 	response := readRespNotification(resp.Body)
 	if resp.StatusCode != 201 {
-		utils.Logger.Error("[notification] notification response failed" + fmt.Sprint(response))
+		utils.Logger.Error("[notification] notification response failed: " + fmt.Sprint(response))
 		return Message{}, errors.New(fmt.Sprint(response))
 	}
 
 	// save to database
-	create := new(NotificationModel)
-	if err := json.Unmarshal(form, create); err != nil {
-		return Message{}, err
-	}
 	body := Message{
-		Type:        create.Type,
-		Title:       create.Title,
-		Description: create.Description,
-		Data:        create.Data,
-		URL:         create.URL,
-		Recipients:  create.Recipients,
+		Type:        message.Type,
+		Title:       utils.StripContent(message.Title, 32),       //varchar(32)
+		Description: utils.StripContent(message.Description, 64), //varchar(64)
+		Data:        message.Data,
+		URL:         message.URL,
+		Recipients:  message.Recipients,
 	}
 	err = DB.Create(&body).Error
 	if err != nil {
+		utils.Logger.Error("[notification] message save failed: " + err.Error())
 		return Message{}, err
 	}
 

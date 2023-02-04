@@ -24,7 +24,7 @@ var Config struct {
 	MysqlReplicaURLs []string `env:"MYSQL_REPLICA_URL"`
 	RedisURL         string   `env:"REDIS_URL"` // redis:6379
 	NotificationUrl  string   `env:"NOTIFICATION_URL"`
-	MessagePurgeDays int      `default:"7" env:"MESSAGE_PURGE_DAYS"`
+	MessagePurgeDays int      `envDefault:"7" env:"MESSAGE_PURGE_DAYS"`
 	AuthUrl          string   `env:"AUTH_URL"`
 	ElasticsearchUrl string   `env:"ELASTICSEARCH_URL"`
 	OpenSearch       bool     `env:"OPEN_SEARCH" envDefault:"true"`

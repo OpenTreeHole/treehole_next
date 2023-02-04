@@ -3,7 +3,6 @@ package floor
 import (
 	"fmt"
 	. "treehole_next/models"
-	"treehole_next/utils"
 	. "treehole_next/utils"
 
 	"github.com/gofiber/fiber/v2"
@@ -170,18 +169,6 @@ func CreateFloor(c *fiber.Ctx) error {
 		return err
 	}
 
-	// Send Notification
-	var messages Notifications
-	messages = messages.Merge(floor.SendReply(DB))
-	messages = messages.Merge(floor.SendMention(DB))
-	messages = messages.Merge(floor.SendFavorite(DB))
-
-	err = messages.Send()
-	if err != nil {
-		utils.Logger.Error("[notification] SendNotification failed: " + err.Error())
-		// return err // only for test
-	}
-
 	return c.Status(201).JSON(&floor)
 }
 
@@ -230,18 +217,6 @@ func CreateFloorOld(c *fiber.Ctx) error {
 	err = floor.Create(DB)
 	if err != nil {
 		return err
-	}
-
-	// Send Notification
-	var messages Notifications
-	messages = messages.Merge(floor.SendReply(DB))
-	messages = messages.Merge(floor.SendMention(DB))
-	messages = messages.Merge(floor.SendFavorite(DB))
-
-	err = messages.Send()
-	if err != nil {
-		utils.Logger.Error("[notification] SendNotification failed: " + err.Error())
-		// return err // only for test
 	}
 
 	return c.Status(201).JSON(&CreateOldResponse{

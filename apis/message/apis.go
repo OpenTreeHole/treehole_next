@@ -76,10 +76,10 @@ func SendMail(c *fiber.Ctx) error {
 
 	// construct mail
 	mail := Notification{
-		"description": body.Description,
-		"recipients":  body.Recipients,
-		"title":       "您有一封站内信",
-		"type":        MessageTypeMail,
+		Description: body.Description,
+		Recipients:  body.Recipients,
+		Title:       "您有一封站内信",
+		Type:        MessageTypeMail,
 	}
 
 	// send

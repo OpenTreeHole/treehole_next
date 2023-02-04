@@ -88,17 +88,17 @@ func BanUser(c *fiber.Ctx) error {
 
 	// construct message for user
 	message := Notification{
-		"data":       floor,
-		"recipients": floor.UserID,
-		"description": fmt.Sprintf(
+		Data:       floor,
+		Recipients: []int{floor.UserID},
+		Description: fmt.Sprintf(
 			"分区：%d，时间：%d天，原因：%s",
 			body.DivisionID,
 			days,
 			body.Reason,
 		),
-		"title": "您的权限被禁止了",
-		"type":  MessageTypePermission,
-		"url":   fmt.Sprintf("/api/floors/%d", floor.ID),
+		Title: "您的权限被禁止了",
+		Type:  MessageTypePermission,
+		URL:   fmt.Sprintf("/api/floors/%d", floor.ID),
 	}
 
 	// send
