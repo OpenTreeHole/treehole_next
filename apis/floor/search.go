@@ -1,84 +1,17 @@
 package floor
 
 import (
-	"bytes"
-	"github.com/elastic/go-elasticsearch/v8"
-	"github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v2"
-	"io"
-	"log"
-	"strconv"
-	"strings"
 	. "treehole_next/config"
+	"treehole_next/elastic"
 	. "treehole_next/models"
 	. "treehole_next/utils"
 )
 
-var ES *elasticsearch.Client
-
-func InitSearch() {
-
-	if Config.Mode == "test" || Config.Mode == "bench" || Config.ElasticsearchUrl == "" {
-		return
-	}
-
-	// export ELASTICSEARCH_URL environment variable to set the ElasticSearch URL
-	// example: http://user:pass@127.0.0.1:9200
-	var err error
-	es, err := elasticsearch.NewClient(elasticsearch.Config{
-		Addresses: []string{Config.ElasticsearchUrl},
-	})
-	if err != nil {
-		log.Fatalf("Error creating elasticsearch client: %s", err)
-	}
-
-	res, err := ES.Info()
-	if err != nil {
-		log.Fatalf("Error getting elasticsearch response: %s", err)
-	}
-	defer func(Body io.ReadCloser) {
-		_ = Body.Close()
-	}(res.Body)
-	if res.IsError() {
-		log.Fatalf("Error: %s", res.String())
-	}
-	var r Map
-	if err = json.NewDecoder(res.Body).Decode(&r); err != nil {
-		log.Fatalf("Error parsing the elasticsearch response body: %s", err.Error())
-	}
-
-	// print Client and Server Info
-	log.Printf("elasticsearch Client: %s\n", elasticsearch.Version)
-	log.Printf("elasticsearch Server: %s", r["version"].(map[string]interface{})["number"])
-	log.Println(strings.Repeat("~", 37))
-	ES = es
-}
-
-type SearchResponse struct {
-	Took     int  `json:"took"`
-	TimedOut bool `json:"timed_out"`
-	Shards   struct {
-		Total      int `json:"total"`
-		Successful int `json:"successful"`
-		Failed     int `json:"failed"`
-		Skipped    int `json:"skipped"`
-	} `json:"_shards"`
-	Hits struct {
-		Total struct {
-			Value    int    `json:"value"`
-			Relation string `json:"relation"`
-		} `json:"total"`
-		Hits []struct {
-			Index  string              `json:"_index"`
-			ID     string              `json:"_id"`
-			Score  float64             `json:"_score"`
-			Source SearchFloorResponse `json:"_source"`
-		} `json:"hits"`
-	} `json:"hits"`
-}
-
-type SearchFloorResponse struct {
-	Content string `json:"content"`
+type SearchQuery struct {
+	Search string `json:"search" query:"search" validate:"required"`
+	Size   int    `json:"size" query:"size" validate:"min=0" default:"10"`
+	Offset int    `json:"offset" query:"offset" validate:"min=0" default:"0"`
 }
 
 // SearchFloors
@@ -86,14 +19,21 @@ type SearchFloorResponse struct {
 //	@Summary	SearchFloors In ElasticSearch
 //	@Tags		Search
 //	@Produce	application/json
-//	@Router		/floors/search [post]
-//	@Param		json	body	any	true	"json"
+//	@Router		/floors/search [get]
+//	@Param		object	query	SearchQuery	true	"search_query"
 //	@Success	200		{array}	models.Floor
 func SearchFloors(c *fiber.Ctx) error {
-	// forwarding
-	var body bytes.Buffer
-	body.Write(c.Body())
-	return search(c, body)
+	query, err := ValidateQuery[SearchQuery](c)
+	if err != nil {
+		return err
+	}
+
+	floors, err := elastic.Search(query.Search, query.Size, query.Offset)
+	if err != nil {
+		return err
+	}
+
+	return Serialize(c, floors)
 }
 
 // SearchConfig
@@ -129,67 +69,10 @@ func SearchFloorsOld(c *fiber.Ctx, query *ListOldModel) error {
 	if DynamicConfig.OpenSearch.Load() == false {
 		return Forbidden("树洞流量激增，搜索功能暂缓开放")
 	}
-	floors := Floors{}
-	result := DB.
-		Where("content like ?", "%"+query.Search+"%").
-		Where("hole_id in (?)", DB.Table("hole").Select("id").Where("hidden = false")).
-		Offset(query.Offset).Limit(query.Size).Order("id desc").
-		Preload("Mention").Find(&floors)
-	if result.Error != nil {
-		return result.Error
-	}
-	return Serialize(c, &floors)
-}
 
-func search(c *fiber.Ctx, body bytes.Buffer) error {
-	res, err := ES.Search(
-		ES.Search.WithIndex("floor"),
-		ES.Search.WithBody(&body),
-	)
+	floors, err := elastic.Search(query.Search, query.Size, query.Offset)
 	if err != nil {
 		return err
-	}
-
-	defer func(Body io.ReadCloser) {
-		_ = Body.Close()
-	}(res.Body)
-
-	if res.IsError() {
-		e := Map{}
-		err = json.NewDecoder(res.Body).Decode(&e)
-		if err != nil {
-			return err
-		} else {
-			return c.Status(502).JSON(&e)
-		}
-	}
-
-	var response SearchResponse
-	err = json.NewDecoder(res.Body).Decode(&response)
-	if err != nil {
-		return err
-	}
-
-	floorIDs := make([]int, len(response.Hits.Hits))
-	for i, hit := range response.Hits.Hits {
-		floorIDs[i], err = strconv.Atoi(hit.ID)
-		if err != nil {
-			return c.Status(500).JSON(MessageModel{Message: "error parse floor_id from elasticsearch ID"})
-		}
-	}
-	log.Printf("search response: %d\n", floorIDs)
-
-	// get floors
-	floors := Floors{}
-	if len(floorIDs) > 0 {
-
-		result := DB.Preload("Mention").Find(&floors, floorIDs)
-		if result.Error != nil {
-			return result.Error
-		}
-
-		// order
-		floors = OrderInGivenOrder(floors, floorIDs)
 	}
 
 	return Serialize(c, &floors)

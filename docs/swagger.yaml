@@ -1030,14 +1030,22 @@ paths:
       tags:
       - Floor
   /floors/search:
-    post:
+    get:
       parameters:
-      - description: json
-        in: body
-        name: json
+      - default: 0
+        in: query
+        minimum: 0
+        name: offset
+        type: integer
+      - in: query
+        name: search
         required: true
-        schema:
-          type: object
+        type: string
+      - default: 10
+        in: query
+        minimum: 0
+        name: size
+        type: integer
       produces:
       - application/json
       responses:

@@ -410,7 +410,7 @@ const docTemplate = `{
             }
         },
         "/floors/search": {
-            "post": {
+            "get": {
                 "produces": [
                     "application/json"
                 ],
@@ -420,13 +420,24 @@ const docTemplate = `{
                 "summary": "SearchFloors In ElasticSearch",
                 "parameters": [
                     {
-                        "description": "json",
-                        "name": "json",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "object"
-                        }
+                        "minimum": 0,
+                        "type": "integer",
+                        "default": 0,
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "name": "search",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "minimum": 0,
+                        "type": "integer",
+                        "default": 10,
+                        "name": "size",
+                        "in": "query"
                     }
                 ],
                 "responses": {
