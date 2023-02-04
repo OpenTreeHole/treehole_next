@@ -130,6 +130,11 @@ func InitDB() {
 		panic(err)
 	}
 
+	err = DB.SetupJoinTable(&Message{}, "Users", &MessageUser{})
+	if err != nil {
+		panic(err)
+	}
+
 	// models must be registered here to migrate into the database
 	err = DB.AutoMigrate(
 		&Division{},
@@ -140,7 +145,6 @@ func InitDB() {
 		&Report{},
 		&Punishment{},
 		&Message{},
-		&MessageUser{},
 		&FloorHistory{},
 	)
 	if err != nil {
