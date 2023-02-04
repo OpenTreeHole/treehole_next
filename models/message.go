@@ -2,49 +2,16 @@
 package models
 
 import (
-	"database/sql/driver"
 	"time"
 
-	"github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
-	"gorm.io/gorm/schema"
 )
-
-type JSON map[string]any
-
-func (t JSON) Value() (driver.Value, error) {
-	return json.Marshal(t)
-}
-
-func (t *JSON) Scan(input any) error {
-	return json.Unmarshal(input.([]byte), t)
-}
-
-// GormDataType gorm common data type
-func (JSON) GormDataType() string {
-	return "json"
-}
-
-// GormDBDataType gorm db data type
-//
-//goland:noinspection GoUnusedParameter
-func (JSON) GormDBDataType(db *gorm.DB, field *schema.Field) string {
-	switch db.Dialector.Name() {
-	case "sqlite":
-		return "JSON"
-	case "mysql":
-		return "JSON"
-	case "postgres":
-		return "JSONB"
-	}
-	return ""
-}
 
 type Messages []Message
 
 type Message struct {
-	ID          int         `gorm:"primarykey" json:"id"`
+	ID          int         `gorm:"primaryKey" json:"id"`
 	CreatedAt   time.Time   `json:"time_created"`
 	UpdatedAt   time.Time   `json:"time_updated"`
 	Title       string      `json:"message" gorm:"size:32;not null"`
@@ -87,7 +54,7 @@ func (messages Messages) Preprocess(c *fiber.Ctx) error {
 	return nil
 }
 
-func (message *Message) Preprocess(c *fiber.Ctx) error {
+func (message *Message) Preprocess(_ *fiber.Ctx) error {
 	message.MessageID = message.ID
 	return nil
 }

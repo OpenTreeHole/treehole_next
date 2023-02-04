@@ -20,7 +20,7 @@ type ListOldModel struct {
 }
 
 type CreateModel struct {
-	Content string `json:"content" validate:"required"`
+	Content string `json:"content" validate:"required,max=15000"`
 	// Admin and Operator only
 	SpecialTag string `json:"special_tag" validate:"omitempty,max=16"`
 	// id of the floor to which replied
@@ -77,4 +77,8 @@ type RestoreModel struct {
 
 type SearchConfigModel struct {
 	Open bool `json:"open"`
+}
+
+type SearchRequest struct {
+	Search string `json:"search" query:"search" validate:"required,min=1"`
 }
