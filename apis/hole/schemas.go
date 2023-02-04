@@ -34,7 +34,7 @@ func (q *ListOldModel) SetDefaults() {
 }
 
 type TagCreateModelSlice struct {
-	Tags []tag.CreateModel `json:"tags" validate:"omitempty,min=1,max=10,dive"` // All users
+	Tags []tag.CreateModel `json:"tags" validate:"min=1,max=10,dive"` // All users
 }
 
 func (tagCreateModelSlice TagCreateModelSlice) ToTags() models.Tags {
@@ -46,7 +46,7 @@ func (tagCreateModelSlice TagCreateModelSlice) ToTags() models.Tags {
 }
 
 type CreateModel struct {
-	Content string `json:"content" validate:"required"`
+	Content string `json:"content" validate:"required,max=15000"`
 	TagCreateModelSlice
 	// Admin and Operator only
 	SpecialTag string `json:"special_tag" validate:"max=16"`
@@ -54,7 +54,7 @@ type CreateModel struct {
 
 type CreateOldModel struct {
 	CreateModel
-	DivisionID int `json:"division_id" validate:"omitempty,min=1"`
+	DivisionID int `json:"division_id" validate:"omitempty,min=1" default:"1"`
 }
 
 type CreateOldResponse struct {

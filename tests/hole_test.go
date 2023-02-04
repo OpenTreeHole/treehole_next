@@ -46,7 +46,7 @@ func TestCreateHole(t *testing.T) {
 	content := "abcdef"
 	data := Map{"content": content, "tags": []Map{{"name": "a"}, {"name": "ab"}, {"name": "abc"}}}
 	testAPI(t, "post", "/api/divisions/1/holes", 201, data)
-	data["tags"] = []Map{{"name": "abcd"}, {"name": "ab"}, {"name": "abc"}} // update temperature or create tapg
+	data["tags"] = []Map{{"name": "abcd"}, {"name": "ab"}, {"name": "abc"}} // update temperature or create tag
 	testAPI(t, "post", "/api/divisions/1/holes", 201, data)
 
 	tag := Tag{}
@@ -56,6 +56,20 @@ func TestCreateHole(t *testing.T) {
 	DB.Where("name = ?", "abc").First(&tag)
 	assert.EqualValues(t, 2, tag.Temperature)
 	assert.EqualValues(t, 2, DB.Model(&tag).Association("Holes").Count())
+
+	data = Map{"content": content}
+	testAPI(t, "post", "/api/divisions/1/holes", 400, data) // at least one tag
+
+	content = strings.Repeat("~", 15001)
+	data = Map{"content": content, "tags": []Map{{"name": "a"}, {"name": "ab"}, {"name": "abc"}}}
+	testAPI(t, "post", "/api/divisions/1/holes", 400, data) // data no more than 15000
+
+	tags := make([]Map, 11)
+	for i := range tags {
+		tags[i] = Map{"name": strconv.Itoa(i)}
+	}
+	data = Map{"content": "123456789", "tags": tags} // at most 10 tags
+	testAPI(t, "post", "/api/divisions/1/holes", 400, data)
 }
 
 func TestCreateHoleOld(t *testing.T) {

@@ -39,7 +39,7 @@ type CreateOldResponse struct {
 
 type ModifyModel struct {
 	// Owner or admin, the original content should be moved to  floor_history
-	Content *string `json:"content" validate:"omitempty"`
+	Content *string `json:"content" validate:"omitempty,max=15000"`
 	// Admin and Operator only
 	SpecialTag *string `json:"special_tag" validate:"omitempty,max=16"`
 	// All user, deprecated, "add" is like, "cancel" is reset
@@ -77,8 +77,4 @@ type RestoreModel struct {
 
 type SearchConfigModel struct {
 	Open bool `json:"open"`
-}
-
-type SearchRequest struct {
-	Search string `json:"search" query:"search" validate:"required,min=1"`
 }
