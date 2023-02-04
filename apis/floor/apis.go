@@ -2,12 +2,13 @@ package floor
 
 import (
 	"fmt"
+	. "treehole_next/models"
+	. "treehole_next/utils"
+
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"gorm.io/plugin/dbresolver"
-	. "treehole_next/models"
-	. "treehole_next/utils"
 )
 
 // ListFloorsInAHole
@@ -494,10 +495,6 @@ func DeleteFloor(c *fiber.Ctx) error {
 			Logger.Error("[notification] SendModify failed: " + err.Error())
 			// return err // only for test
 		}
-	}
-
-	if user.ID != floor.UserID {
-
 	}
 
 	return Serialize(c, &floor)

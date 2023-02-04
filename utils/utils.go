@@ -46,3 +46,21 @@ func Keys[T comparable, S any](m map[T]S) (s []T) {
 	}
 	return s
 }
+
+type numbers interface {
+	int | uint | int8 | uint8 |
+		int16 | uint16 | int32 | uint32 |
+		int64 | uint64 | float32 | float64
+}
+
+func Min[T numbers](x T, y T) T {
+	if x > y {
+		return y
+	} else {
+		return x
+	}
+}
+
+func StripContent(content string, contentMaxSize int) string {
+	return content[:Min(len(content), contentMaxSize)]
+}

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"sync/atomic"
 	"time"
-	"treehole_next/config"
 	"treehole_next/utils"
 
 	"github.com/gofiber/fiber/v2"
@@ -72,9 +71,6 @@ func (report *Report) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 
 func (report *Report) AfterCreate(tx *gorm.DB) (err error) {
 	report.ReportID = report.ID
-	if config.Config.NotificationUrl == "" {
-		return nil
-	}
 
 	err = tx.Model(report).Association("Floor").Find(&report.Floor)
 	if err != nil {
@@ -86,11 +82,6 @@ func (report *Report) AfterCreate(tx *gorm.DB) (err error) {
 		return err
 	}
 
-	err = report.SendCreate(tx)
-	if err != nil {
-		utils.Logger.Error("[notification] SendCreate failed: " + err.Error())
-		// return err // only for test
-	}
 	return nil
 }
 
@@ -101,10 +92,6 @@ func (report *Report) AfterFind(_ *gorm.DB) (err error) {
 }
 
 func (report *Report) AfterUpdate(tx *gorm.DB) (err error) {
-	if config.Config.NotificationUrl == "" {
-		return nil
-	}
-
 	err = tx.Model(report).Association("Floor").Find(&report.Floor)
 	if err != nil {
 		return err
@@ -115,11 +102,6 @@ func (report *Report) AfterUpdate(tx *gorm.DB) (err error) {
 		return err
 	}
 
-	err = report.SendModify(tx)
-	if err != nil {
-		utils.Logger.Error("[notification] SendModify failed: " + err.Error())
-		// return err // only for test
-	}
 	return nil
 }
 
@@ -139,15 +121,21 @@ func (report *Report) SendCreate(_ *gorm.DB) error {
 	userIDs := []int{adminList[currentCounter-1]}
 
 	// construct message
-	message := Message{
-		"data":       report,
-		"recipients": userIDs,
-		"type":       MessageTypeReport,
-		"url":        fmt.Sprintf("/api/reports/%d", report.ID),
+	message := Notification{
+		Data:       report,
+		Recipients: userIDs,
+		Description: fmt.Sprintf(
+			"理由：%s，内容：%s",
+			report.Reason,
+			report.Floor.Content,
+		),
+		Title: "您有举报需要处理",
+		Type:  MessageTypeReport,
+		URL:   fmt.Sprintf("/api/reports/%d", report.ID),
 	}
 
 	// send
-	err := message.Send()
+	_, err := message.Send()
 	if err != nil {
 		return err
 	}
@@ -160,15 +148,21 @@ func (report *Report) SendModify(_ *gorm.DB) error {
 	userIDs := []int{report.UserID}
 
 	// construct message
-	message := Message{
-		"data":       report,
-		"recipients": userIDs,
-		"type":       MessageTypeReportDealt,
-		"url":        fmt.Sprintf("/api/reports/%d", report.ID),
+	message := Notification{
+		Data:       report,
+		Recipients: userIDs,
+		Description: fmt.Sprintf(
+			"结果：%s，内容：%s",
+			report.Result,
+			report.Floor.Content,
+		),
+		Title: "您的举报被处理了",
+		Type:  MessageTypeReportDealt,
+		URL:   fmt.Sprintf("/api/reports/%d", report.ID),
 	}
 
 	// send
-	err := message.Send()
+	_, err := message.Send()
 	if err != nil {
 		return err
 	}

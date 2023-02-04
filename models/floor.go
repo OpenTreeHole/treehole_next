@@ -2,10 +2,11 @@ package models
 
 import (
 	"fmt"
-	"github.com/gofiber/fiber/v2"
-	"gorm.io/plugin/dbresolver"
 	"time"
 	"treehole_next/utils"
+
+	"github.com/gofiber/fiber/v2"
+	"gorm.io/plugin/dbresolver"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -206,6 +207,18 @@ func (floor *Floor) Create(tx *gorm.DB) (err error) {
 
 	floor.SetDefaults()
 
+	// Send Notification
+	var messages Notifications
+	messages = messages.Merge(floor.SendReply(tx))
+	messages = messages.Merge(floor.SendMention(tx))
+	messages = messages.Merge(floor.SendFavorite(tx))
+
+	err = messages.Send()
+	if err != nil {
+		utils.Logger.Error("[notification] SendNotification failed: " + err.Error())
+		// return err // only for test
+	}
+
 	// delete cache
 	return utils.DeleteCache(hole.CacheName())
 }
@@ -224,17 +237,6 @@ func (floor *Floor) AfterCreate(tx *gorm.DB) (err error) {
 		if err != nil {
 			return err
 		}
-	}
-
-	var messages Messages
-	messages = messages.Merge(floor.SendReply(tx))
-	messages = messages.Merge(floor.SendMention(tx))
-	messages = messages.Merge(floor.SendFavorite(tx))
-
-	err = messages.Send()
-	if err != nil {
-		utils.Logger.Error("[notification] SendMessage failed: " + err.Error())
-		// return err // only for test
 	}
 
 	return nil
@@ -299,12 +301,12 @@ func (floor *Floor) ModifyLike(tx *gorm.DB, userID int, likeOption int8) (err er
 Send Notifications
 ******************/
 
-func (floor *Floor) SendFavorite(tx *gorm.DB) Message {
+func (floor *Floor) SendFavorite(tx *gorm.DB) Notification {
 	// get recipients
 	var tmpIDs []int
 	result := tx.Raw("SELECT user_id from user_favorites WHERE hole_id = ?", floor.HoleID).Scan(&tmpIDs)
 	if result.Error != nil {
-		return nil
+		tmpIDs = []int{}
 	}
 
 	// filter my id
@@ -315,49 +317,47 @@ func (floor *Floor) SendFavorite(tx *gorm.DB) Message {
 		}
 	}
 
-	// return if no recipients
-	if len(userIDs) == 0 {
-		return nil
-	}
-
-	// Construct Message
-	message := Message{
-		"data":       floor,
-		"recipients": userIDs,
-		"type":       MessageTypeFavorite,
-		"url":        fmt.Sprintf("/api/floors/%d", floor.ID),
+	// Construct Notification
+	message := Notification{
+		Data:        floor,
+		Recipients:  userIDs,
+		Description: floor.Content,
+		Title:       "您收藏的树洞有新回复",
+		Type:        MessageTypeFavorite,
+		URL:         fmt.Sprintf("/api/floors/%d", floor.ID),
 	}
 
 	return message
 }
 
-func (floor *Floor) SendReply(tx *gorm.DB) Message {
+func (floor *Floor) SendReply(tx *gorm.DB) Notification {
 	// get recipients
 	userID := 0
 	result := tx.Raw("SELECT user_id from hole WHERE id = ?", floor.HoleID).Scan(&userID)
 	if result.Error != nil {
-		return nil
+		userID = 0
 	}
 
 	// return if no recipients or isMe
-	if userID == 0 || userID == floor.UserID {
-		return nil
+	var userIDs []int
+	if userID != 0 && userID != floor.UserID {
+		userIDs = []int{userID}
 	}
 
-	userIDs := []int{userID}
-
 	// construct message
-	message := Message{
-		"data":       floor,
-		"recipients": userIDs,
-		"type":       MessageTypeReply,
-		"url":        fmt.Sprintf("/api/floors/%d", floor.ID),
+	message := Notification{
+		Data:        floor,
+		Recipients:  userIDs,
+		Description: floor.Content,
+		Title:       "您的帖子被回复了",
+		Type:        MessageTypeReply,
+		URL:         fmt.Sprintf("/api/floors/%d", floor.ID),
 	}
 
 	return message
 }
 
-func (floor *Floor) SendMention(_ *gorm.DB) Message {
+func (floor *Floor) SendMention(_ *gorm.DB) Notification {
 	// get recipients
 	var userIDs []int
 	for _, mention := range floor.Mention {
@@ -369,17 +369,14 @@ func (floor *Floor) SendMention(_ *gorm.DB) Message {
 		userIDs = append(userIDs, mention.UserID)
 	}
 
-	// return if no recipients
-	if len(userIDs) == 0 {
-		return nil
-	}
-
 	// construct message
-	message := Message{
-		"data":       floor,
-		"recipients": userIDs,
-		"type":       MessageTypeMention,
-		"url":        fmt.Sprintf("/api/floors/%d", floor.ID),
+	message := Notification{
+		Data:        floor,
+		Recipients:  userIDs,
+		Description: floor.Content,
+		Title:       "您的帖子被引用了",
+		Type:        MessageTypeMention,
+		URL:         fmt.Sprintf("/api/floors/%d", floor.ID),
 	}
 
 	return message
@@ -390,15 +387,17 @@ func (floor *Floor) SendModify(_ *gorm.DB) error {
 	userIDs := []int{floor.UserID}
 
 	// construct message
-	message := Message{
-		"data":       floor,
-		"recipients": userIDs,
-		"type":       MessageTypeModify,
-		"url":        fmt.Sprintf("/api/floors/%d", floor.ID),
+	message := Notification{
+		Data:        floor,
+		Recipients:  userIDs,
+		Description: floor.Content,
+		Title:       "您的帖子被修改了",
+		Type:        MessageTypeModify,
+		URL:         fmt.Sprintf("/api/floors/%d", floor.ID),
 	}
 
 	// send
-	err := message.Send()
+	_, err := message.Send()
 	if err != nil {
 		return err
 	}
