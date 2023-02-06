@@ -3,7 +3,6 @@ package models
 import (
 	"fmt"
 	"time"
-	"treehole_next/elastic"
 	"treehole_next/utils"
 
 	"github.com/gofiber/fiber/v2"
@@ -222,7 +221,7 @@ func (floor *Floor) Create(tx *gorm.DB) (err error) {
 
 	if !hole.Hidden {
 		// insert into Elasticsearch
-		go elastic.FloorIndex(floor.ID, floor.Content)
+		go FloorIndex(floor.ID, floor.Content)
 	}
 
 	// delete cache

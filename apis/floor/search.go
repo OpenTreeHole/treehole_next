@@ -3,7 +3,6 @@ package floor
 import (
 	"github.com/gofiber/fiber/v2"
 	. "treehole_next/config"
-	"treehole_next/elastic"
 	. "treehole_next/models"
 	. "treehole_next/utils"
 )
@@ -28,7 +27,7 @@ func SearchFloors(c *fiber.Ctx) error {
 		return err
 	}
 
-	floors, err := elastic.Search(query.Search, query.Size, query.Offset)
+	floors, err := Search(query.Search, query.Size, query.Offset)
 	if err != nil {
 		return err
 	}
@@ -70,7 +69,7 @@ func SearchFloorsOld(c *fiber.Ctx, query *ListOldModel) error {
 		return Forbidden("树洞流量激增，搜索功能暂缓开放")
 	}
 
-	floors, err := elastic.Search(query.Search, query.Size, query.Offset)
+	floors, err := Search(query.Search, query.Size, query.Offset)
 	if err != nil {
 		return err
 	}

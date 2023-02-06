@@ -7,7 +7,6 @@ import (
 	"gorm.io/gorm/clause"
 	"gorm.io/plugin/dbresolver"
 	"strconv"
-	"treehole_next/elastic"
 	. "treehole_next/models"
 	. "treehole_next/utils"
 )
@@ -320,7 +319,14 @@ func ModifyHole(c *fiber.Ctx) error {
 			// reindex into Elasticsearch
 			var floors Floors
 			_ = DB.Where("hole_id = ?", hole.ID).Find(&floors)
-			go elastic.BulkInsert(floors)
+			var floorModels []FloorModel
+			for _, floor := range floors {
+				floorModels = append(floorModels, FloorModel{
+					ID:      floor.ID,
+					Content: floor.Content,
+				})
+			}
+			go BulkInsert(floorModels)
 
 			// log
 			MyLog("Hole", "Modify", holeID, user.ID, RoleAdmin, "Unhidden: ")
@@ -460,7 +466,7 @@ func DeleteHole(c *fiber.Ctx) error {
 	// delete floors from Elasticsearch
 	var floors Floors
 	_ = DB.Where("hole_id = ?", hole.ID).Find(&floors)
-	go elastic.BulkDelete(floors)
+	go BulkDelete(Models2IDSlice(floors))
 
 	return c.Status(204).JSON(nil)
 }

@@ -2,7 +2,6 @@ package floor
 
 import (
 	"fmt"
-	"treehole_next/elastic"
 	. "treehole_next/models"
 	. "treehole_next/utils"
 
@@ -325,7 +324,7 @@ func ModifyFloor(c *fiber.Ctx) error {
 			}
 
 			// reindex floor
-			go elastic.FloorIndex(floor.ID, floor.Content)
+			go FloorIndex(floor.ID, floor.Content)
 		}
 
 		if body.Fold != nil {
@@ -487,7 +486,7 @@ func DeleteFloor(c *fiber.Ctx) error {
 	floor.Content = generateDeleteReason(body.Reason, user.ID == floor.UserID)
 	DB.Save(&floor)
 
-	go elastic.FloorDelete(floor.ID)
+	go FloorDelete(floor.ID)
 
 	// log
 	if user.ID == floor.UserID {
@@ -601,7 +600,7 @@ func RestoreFloor(c *fiber.Ctx) error {
 	floor.Content = floorHistory.Content
 	DB.Save(&floor)
 
-	go elastic.FloorIndex(floor.ID, floor.Content)
+	go FloorIndex(floor.ID, floor.Content)
 
 	// log
 	MyLog("Floor", "Restore", floorID, user.ID, RoleAdmin, reason)
