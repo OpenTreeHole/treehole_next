@@ -21,16 +21,16 @@ type Floor struct {
 	/// base info
 
 	// content of the floor, no more than 15000
-	Content string `json:"content" gorm:"size:15000"`
+	Content string `json:"content" gorm:"not null;size:15000"`
 
 	// a random username
-	Anonyname string `json:"anonyname" gorm:"size:32"`
+	Anonyname string `json:"anonyname" gorm:"not null;size:32"`
 
 	// the ranking of this floor in the hole
 	Ranking int `json:"ranking" gorm:"default:0;not null;uniqueIndex:idx_hole_ranking,priority:2"`
 
 	// floor_id that it replies to, for dialog mode, in the same hole
-	ReplyTo int `json:"reply_to"`
+	ReplyTo int `json:"reply_to" gorm:"not null;default:0"`
 
 	// like number
 	Like int `json:"like" gorm:"not null:default:0"`

@@ -2,6 +2,7 @@ package user
 
 import (
 	"github.com/gofiber/fiber/v2"
+	"gorm.io/gorm/clause"
 	. "treehole_next/models"
 	"treehole_next/utils"
 )
@@ -9,6 +10,7 @@ import (
 func RegisterRoutes(app fiber.Router) {
 	app.Get("/users/me", GetCurrentUser)
 	app.Get("/users/:id", GetUserByID)
+	app.Put("/users/:id", ModifyUser)
 }
 
 // GetCurrentUser
@@ -31,7 +33,6 @@ func GetCurrentUser(c *fiber.Ctx) error {
 //
 // @Summary get user by id, owner or admin
 // @Tags user
-// @Deprecated
 // @Produce json
 // @Router /users/{user_id} [get]
 // @Success 200 {object} User
@@ -57,4 +58,43 @@ func GetUserByID(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(&getUser)
+}
+
+// ModifyUser
+//
+// @Summary modify user profiles
+// @Tags User
+// @Produce json
+// @Router /users/{user_id} [put]
+// @Success 200 {object} User
+func ModifyUser(c *fiber.Ctx) error {
+	userID, err := c.ParamsInt("id")
+	if err != nil {
+		return err
+	}
+
+	user, err := GetUser(c)
+	if err != nil {
+		return err
+	}
+
+	if !user.IsAdmin || user.ID == userID {
+		return utils.Forbidden()
+	}
+
+	body, err := utils.ValidateBody[ModifyModel](c)
+	if err != nil {
+		return err
+	}
+
+	if body.Config != nil {
+		user.Config = *body.Config
+	}
+
+	err = DB.Model(&user).Omit(clause.Associations).Select("Config").Updates(&user).Error
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(&user)
 }

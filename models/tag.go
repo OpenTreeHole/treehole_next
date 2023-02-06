@@ -56,12 +56,14 @@ var TagCacheBytes atomic.Value
 
 func LoadAllTags(tx *gorm.DB) error {
 	tagCache.data = make(Tags, 0, 10000)
+	if !utils.GetCache("tags", &tagCache) {
+		err := tx.Order("temperature DESC").Find(&tagCache.data).Error
+		if err != nil {
+			return err
+		}
+	}
 	tagCache.nameIndex = make(map[string]*Tag, 10000)
 	tagCache.idIndex = make(map[int]*Tag, 10000)
-	err := tx.Order("temperature DESC").Find(&tagCache.data).Error
-	if err != nil {
-		return err
-	}
 
 	for _, tag := range tagCache.data {
 		tagCache.nameIndex[tag.Name] = tag
@@ -72,6 +74,7 @@ func LoadAllTags(tx *gorm.DB) error {
 		return err
 	}
 	TagCacheBytes.Store(tagCacheBytes)
+	err = utils.SetCache("tags", tagCache.data, 10*time.Minute)
 	return err
 }
 
@@ -124,7 +127,7 @@ func updateTagCacheBytes() error {
 	}
 
 	TagCacheBytes.Store(tagCacheBytes)
-	return nil
+	return utils.SetCache("tags", tagCacheBytes, 10*time.Minute)
 }
 
 func updateTagTemperature() {
