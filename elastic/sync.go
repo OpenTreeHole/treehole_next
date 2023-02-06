@@ -8,6 +8,7 @@ import (
 	"github.com/goccy/go-json"
 	"log"
 	"strconv"
+	"treehole_next/utils"
 
 	. "treehole_next/models"
 )
@@ -16,82 +17,120 @@ type FloorModel struct {
 	Content string `json:"content"`
 }
 
-// BulkInsert run in single goroutine only, used when dump floors
+// BulkInsert run in single goroutine only
 // see https://www.elastic.co/guide/en/elasticsearch/reference/master/docs-bulk.html
-func BulkInsert(floors Floors) error {
+func BulkInsert(floors Floors) {
 	if len(floors) == 0 {
-		return nil
+		return
 	}
 
 	var BulkBuffer = bytes.NewBuffer(make([]byte, 0, 1024000)) // 100 KB buffer
 
-	firstFloorID := floors[0].ID
-	lastFloorID := floors[len(floors)-1].ID
 	for _, floor := range floors {
 		// meta: use index, it will insert or replace a document
 		BulkBuffer.WriteString(fmt.Sprintf(`{ "index" : { "_id" : "%d" } }%s`, floor.ID, "\n"))
+		floorModel := FloorModel{Content: floor.Content}
 		// data: should not contain \n, because \n is the delimiter of one action
-		data, err := json.Marshal(floor)
+		data, err := json.Marshal(floorModel)
 		if err != nil {
-			return fmt.Errorf("error failed to marshal floor: %s", err)
+			log.Printf("error failed to marshal floor: %s", err)
+			return
 		}
 		BulkBuffer.Write(data)
 		BulkBuffer.WriteByte('\n') // the final line of data must end with a newline character \n
 	}
 
-	log.Printf("Preparing insert floor [%d, %d]\n", firstFloorID, lastFloorID)
+	floorIDs := utils.Models2IDSlice(floors)
+	log.Printf("Preparing insert floors %v\n", floorIDs)
 
-	res, err := ES.Bulk(BulkBuffer, ES.Bulk.WithIndex(IndexName), ES.Bulk.WithRefresh("wait_for"))
+	res, err := ES.Bulk(BulkBuffer, ES.Bulk.WithIndex(IndexName))
+	defer func() {
+		_ = res.Body.Close()
+	}()
 	if err != nil || res.IsError() {
-		return fmt.Errorf("error indexing floor [%d, %d]: %s", firstFloorID, lastFloorID, err)
+		log.Printf("error indexing floors %v: %s", floorIDs, err)
+		return
 	}
-	_ = res.Body.Close()
-	log.Printf("index floor [%d, %d] success\n", firstFloorID, lastFloorID)
-
-	BulkBuffer.Reset()
-	return nil
+	log.Printf("index floors %v success\n", floorIDs)
 }
 
 // BulkDelete used when a hole becomes hidden and delete all of its floors
 func BulkDelete(floors Floors) {
-	// todo
+	if len(floors) == 0 {
+		return
+	}
+
+	var BulkBuffer = bytes.NewBuffer(make([]byte, 0, 1024000)) // 100 KB buffer
+
+	for _, floor := range floors {
+		// meta: use index, it will insert or replace a document
+		BulkBuffer.WriteString(fmt.Sprintf(`{ "delete" : { "_id" : "%d" } }%s`, floor.ID, "\n"))
+		floorModel := FloorModel{Content: floor.Content}
+		// data: should not contain \n, because \n is the delimiter of one action
+		data, err := json.Marshal(floorModel)
+		if err != nil {
+			log.Printf("error failed to marshal floor: %s", err)
+			return
+		}
+		BulkBuffer.Write(data)
+		BulkBuffer.WriteByte('\n') // the final line of data must end with a newline character \n
+	}
+
+	floorIDs := utils.Models2IDSlice(floors)
+	log.Printf("Preparing delete floors %v\n", floorIDs)
+
+	res, err := ES.Bulk(BulkBuffer, ES.Bulk.WithIndex(IndexName))
+	defer func() {
+		_ = res.Body.Close()
+	}()
+	if err != nil || res.IsError() {
+		log.Printf("error deleting floors %v: %s", floorIDs, err)
+		return
+	}
+	log.Printf("delete floors %v success\n", floorIDs)
 }
 
-// FloorIndex insert or replace a document, used when a floor is created
+// FloorIndex insert or replace a document, used when a floor is created or restored
 // see https://www.elastic.co/guide/en/elasticsearch/reference/master/docs-index_.html
-func FloorIndex(floor *Floor) {
+func FloorIndex(floorID int, content string) {
 	var buffer = bytes.NewBuffer(make([]byte, 16384))
 
-	floorModel := FloorModel{Content: floor.Content}
+	floorModel := FloorModel{Content: content}
 	err := json.NewEncoder(buffer).Encode(floorModel)
 	if err != nil {
-		log.Printf("floor encode error: floor_id: %v", floor.ID)
+		log.Printf("floor encode error: floor_id: %v", floorID)
+		return
 	}
 
 	req := esapi.IndexRequest{
 		Index:      IndexName,
-		DocumentID: strconv.Itoa(floor.ID),
+		DocumentID: strconv.Itoa(floorID),
 		Body:       buffer,
 		Refresh:    "false",
 	}
 
 	res, err := req.Do(context.Background(), ES)
+	defer func() {
+		_ = res.Body.Close()
+	}()
 	if err != nil || res.IsError() {
-		log.Printf("error index floor: %d\n", floor.ID)
+		log.Printf("error index floor: %d\n", floorID)
 	} else {
-		log.Printf("index floor success: %d\n", floor.ID)
+		log.Printf("index floor success: %d\n", floorID)
 	}
 }
 
 // FloorDelete used when a floor is deleted
-func FloorDelete(floor *Floor) {
-	rsp, err := ES.Delete(
+func FloorDelete(floorID int) {
+	res, err := ES.Delete(
 		IndexName,
-		strconv.Itoa(floor.ID))
-
-	if err != nil || rsp.IsError() {
-		log.Printf("error index floor: %d\n", floor.ID)
+		strconv.Itoa(floorID))
+	defer func() {
+		_ = res.Body.Close()
+	}()
+	if err != nil || res.IsError() {
+		log.Printf("error index floor: %d\n", floorID)
 	} else {
-		log.Printf("index floor success: %d\n", floor.ID)
+		log.Printf("index floor success: %d\n", floorID)
 	}
 }

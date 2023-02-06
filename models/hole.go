@@ -9,6 +9,7 @@ import (
 	"gorm.io/plugin/dbresolver"
 	"time"
 	"treehole_next/config"
+	"treehole_next/elastic"
 	"treehole_next/utils"
 )
 
@@ -329,6 +330,9 @@ func (hole *Hole) Create(tx *gorm.DB) error {
 
 	// half preprocess hole.Floor
 	hole.Floors[0].SetDefaults()
+
+	// index
+	go elastic.FloorIndex(hole.Floors[0].ID, hole.Floors[0].Content)
 
 	// store into cache
 	return utils.SetCache(hole.CacheName(), hole, HoleCacheExpire)
