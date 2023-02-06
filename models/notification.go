@@ -153,38 +153,6 @@ func (message Notification) Send() (Message, error) {
 	return body, nil
 }
 
-type Admin struct {
-	Id           int      `json:"id"`
-	IsAdmin      bool     `json:"is_admin"`
-	JoinedTime   string   `json:"joined_time"`
-	LastLogin    string   `json:"last_login"`
-	Nickname     string   `json:"nickname"`
-	OffenseCount int      `json:"offense_count"`
-	Roles        []string `json:"roles"`
-}
-
-func readRespAdmin(body io.ReadCloser) []Admin {
-	defer func(body io.ReadCloser) {
-		err := body.Close()
-		if err != nil {
-			utils.Logger.Error("[get admin] Close error: " + err.Error())
-		}
-	}(body)
-
-	data, err := io.ReadAll(body)
-	if err != nil {
-		utils.Logger.Error("[get admin] Read body failed: " + err.Error())
-		return []Admin{}
-	}
-	var response []Admin
-	err = json.Unmarshal(data, &response)
-	if err != nil {
-		utils.Logger.Error("[get admin] Unmarshal body failed: " + err.Error())
-		return []Admin{}
-	}
-	return response
-}
-
 var adminList []int
 
 func InitAdminList() {
@@ -193,20 +161,8 @@ func InitAdminList() {
 		return
 	}
 
-	// construct http request
-	req, _ := http.NewRequest(
-		"GET",
-		fmt.Sprintf("%s/users", config.Config.AuthUrl),
-		nil,
-	)
-	query := req.URL.Query()
-	query.Add("size", "0")
-	query.Add("offset", "0")
-	query.Add("role", "admin")
-	req.URL.RawQuery = query.Encode()
-
-	// get response
-	resp, err := client.Do(req)
+	// http request
+	res, err := http.Get(config.Config.AuthUrl + "/users/admin")
 
 	// handle err
 	if err != nil {
@@ -214,16 +170,25 @@ func InitAdminList() {
 		return
 	}
 
-	response := readRespAdmin(resp.Body)
+	defer func() {
+		_ = res.Body.Close()
+	}()
 
-	if resp.StatusCode != 200 || len(response) == 0 {
-		utils.Logger.Error("[get admin] auth server response failed" + fmt.Sprint(resp))
+	if res.StatusCode != 200 {
+		utils.Logger.Error("[get admin] auth server response failed" + res.Status)
 		return
 	}
 
-	// get ids
-	for _, mention := range response {
-		adminList = append(adminList, mention.Id)
+	data, err := io.ReadAll(res.Body)
+	if err != nil {
+		utils.Logger.Error("[get admin] auth server response failed" + err.Error())
+		return
+	}
+
+	err = json.Unmarshal(data, &adminList)
+	if err != nil {
+		utils.Logger.Error("[get admin] auth server response failed" + err.Error())
+		return
 	}
 
 	// shuffle ids
@@ -231,6 +196,4 @@ func InitAdminList() {
 		j := rand.Intn(i + 1)
 		adminList[i], adminList[j] = adminList[j], adminList[i]
 	}
-
-	// panic(fmt.Sprint(adminList)) // Only for Test
 }
