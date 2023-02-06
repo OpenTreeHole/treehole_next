@@ -27,11 +27,13 @@ func Init() {
 	// export ELASTICSEARCH_URL environment variable to set the ElasticSearch URL
 	// example: http://user:pass@127.0.0.1:9200
 	var err error
-	es, err := elasticsearch.NewClient(elasticsearch.Config{
+	ES, err = elasticsearch.NewClient(elasticsearch.Config{
 		Addresses: []string{config.Config.ElasticsearchUrl},
 	})
 	if err != nil {
-		log.Fatalf("Error creating elasticsearch client: %s", err)
+		log.Printf("Error creating elasticsearch client: %s", err)
+		ES = nil
+		return
 	}
 
 	res, err := ES.Info()
@@ -53,7 +55,6 @@ func Init() {
 	log.Printf("elasticsearch Client: %s\n", elasticsearch.Version)
 	log.Printf("elasticsearch Server: %s", r["version"].(map[string]interface{})["number"])
 	log.Println(strings.Repeat("~", 37))
-	ES = es
 }
 
 type SearchResponse struct {
@@ -84,6 +85,9 @@ type SearchFloorResponse struct {
 }
 
 func Search(keyword string, size, offset int) (Floors, error) {
+	if ES == nil {
+		return SearchOld(keyword, size, offset)
+	}
 	req := esapi.SearchRequest{
 		Index: []string{IndexName},
 		From:  &offset,
@@ -140,6 +144,16 @@ func Search(keyword string, size, offset int) (Floors, error) {
 	return utils.OrderInGivenOrder(floors, floorIDs), nil
 }
 
+func SearchOld(keyword string, size, offset int) (Floors, error) {
+	floors := Floors{}
+	result := DB.
+		Where("content like ?", "%"+keyword+"%").
+		Where("hole_id in (?)", DB.Table("hole").Select("id").Where("hidden = false")).
+		Offset(offset).Limit(size).Order("id desc").
+		Preload("Mention").Find(&floors)
+	return floors, result.Error
+}
+
 type FloorModel struct {
 	ID      int    `json:"-"`
 	Content string `json:"content"`
@@ -148,6 +162,9 @@ type FloorModel struct {
 // BulkInsert run in single goroutine only
 // see https://www.elastic.co/guide/en/elasticsearch/reference/master/docs-bulk.html
 func BulkInsert(floors []FloorModel) {
+	if ES == nil {
+		return
+	}
 	if len(floors) == 0 {
 		return
 	}
@@ -187,6 +204,9 @@ func BulkInsert(floors []FloorModel) {
 
 // BulkDelete used when a hole becomes hidden and delete all of its floors
 func BulkDelete(floorIDs []int) {
+	if ES == nil {
+		return
+	}
 	if len(floorIDs) == 0 {
 		return
 	}
@@ -213,6 +233,9 @@ func BulkDelete(floorIDs []int) {
 // FloorIndex insert or replace a document, used when a floor is created or restored
 // see https://www.elastic.co/guide/en/elasticsearch/reference/master/docs-index_.html
 func FloorIndex(floorID int, content string) {
+	if ES == nil {
+		return
+	}
 	var buffer = bytes.NewBuffer(make([]byte, 16384))
 
 	floorModel := FloorModel{Content: content}
@@ -242,6 +265,9 @@ func FloorIndex(floorID int, content string) {
 
 // FloorDelete used when a floor is deleted
 func FloorDelete(floorID int) {
+	if ES == nil {
+		return
+	}
 	res, err := ES.Delete(
 		IndexName,
 		strconv.Itoa(floorID))
