@@ -97,6 +97,23 @@ func (message Notification) Send() (Message, error) {
 	// only for test
 	// message["recipients"] = []int{1}
 
+	var err error
+
+	// save to database first
+	body := Message{
+		Type:        message.Type,
+		Title:       utils.StripContent(message.Title, 32),       //varchar(32)
+		Description: utils.StripContent(message.Description, 64), //varchar(64)
+		Data:        message.Data,
+		URL:         message.URL,
+		Recipients:  message.Recipients,
+	}
+	err = DB.Create(&body).Error
+	if err != nil {
+		utils.Logger.Error("[notification] message save failed: " + err.Error())
+		return Message{}, err
+	}
+
 	// construct form
 	form, err := json.Marshal(message)
 	if err != nil {
@@ -133,21 +150,6 @@ func (message Notification) Send() (Message, error) {
 	if resp.StatusCode != 201 {
 		utils.Logger.Error("[notification] notification response failed: " + fmt.Sprint(response))
 		return Message{}, errors.New(fmt.Sprint(response))
-	}
-
-	// save to database
-	body := Message{
-		Type:        message.Type,
-		Title:       utils.StripContent(message.Title, 32),       //varchar(32)
-		Description: utils.StripContent(message.Description, 64), //varchar(64)
-		Data:        message.Data,
-		URL:         message.URL,
-		Recipients:  message.Recipients,
-	}
-	err = DB.Create(&body).Error
-	if err != nil {
-		utils.Logger.Error("[notification] message save failed: " + err.Error())
-		return Message{}, err
 	}
 
 	return body, nil
