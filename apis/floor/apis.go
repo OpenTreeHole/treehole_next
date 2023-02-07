@@ -271,34 +271,29 @@ func ModifyFloor(c *fiber.Ctx) error {
 		return err
 	}
 
-	// find floor user_id
-	var floor Floor
-	err = DB.Take(&floor, floorID).Error
-	if err != nil {
-		return err
-	}
-
-	// find hole
-	var hole Hole
-	err = DB.Take(&hole, floor.HoleID).Error
-	if err != nil {
-		return err
-	}
-
 	// get user
 	user, err := GetUser(c)
 	if err != nil {
 		return err
 	}
 
-	// check permission
-	err = body.CheckPermission(user, floor.UserID, &hole)
-	if err != nil {
-		return err
-	}
-
+	var floor Floor
 	err = DB.Clauses(dbresolver.Write).Transaction(func(tx *gorm.DB) error {
+		// load floor, lock for update
 		err = tx.Clauses(clause.Locking{Strength: "UPDATE"}).Take(&floor).Error
+		if err != nil {
+			return err
+		}
+
+		// find hole
+		var hole Hole
+		err = tx.Clauses(clause.Locking{Strength: "UPDATE"}).Take(&hole, floor.HoleID).Error
+		if err != nil {
+			return err
+		}
+
+		// check permission
+		err = body.CheckPermission(user, &floor, &hole)
 		if err != nil {
 			return err
 		}
@@ -485,24 +480,30 @@ func DeleteFloor(c *fiber.Ctx) error {
 	}
 
 	var floor Floor
-	result := DB.First(&floor, floorID)
-	if result.Error != nil {
-		return result.Error
-	}
+	err = DB.Transaction(func(tx *gorm.DB) error {
 
-	// permission
-	if !(user.ID == floor.UserID || user.IsAdmin) {
-		return Forbidden()
-	}
+		result := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Take(&floor, floorID)
+		if result.Error != nil {
+			return result.Error
+		}
 
-	err = floor.Backup(DB, user.ID, body.Reason)
+		// permission
+		if !((user.ID == floor.UserID && !floor.Deleted) || user.IsAdmin) {
+			return Forbidden()
+		}
+
+		err = floor.Backup(tx, user.ID, body.Reason)
+		if err != nil {
+			return err
+		}
+
+		floor.Deleted = true
+		floor.Content = generateDeleteReason(body.Reason, user.ID == floor.UserID)
+		return tx.Save(&floor).Error
+	})
 	if err != nil {
 		return err
 	}
-
-	floor.Deleted = true
-	floor.Content = generateDeleteReason(body.Reason, user.ID == floor.UserID)
-	DB.Save(&floor)
 
 	go FloorDelete(floor.ID)
 

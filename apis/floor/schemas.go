@@ -45,9 +45,9 @@ type ModifyModel struct {
 	SpecialTag *string `json:"special_tag" validate:"omitempty,max=16"`
 	// All user, deprecated, "add" is like, "cancel" is reset
 	Like *string `json:"like" validate:"omitempty,oneof=add cancel"`
-	// Admin and operator only, only string, for version 2
+	// 仅管理员，留空则重置，高优先级
 	Fold *string `json:"fold_v2" validate:"omitempty,max=64"`
-	// Admin and operator only, string array, for version 1: danxi app
+	// 仅管理员，留空则重置，低优先级
 	FoldFrontend []string `json:"fold" validate:"omitempty"`
 }
 
@@ -55,11 +55,11 @@ func (body ModifyModel) DoNothing() bool {
 	return body.Content == nil && body.SpecialTag == nil && body.Like == nil && body.Fold == nil && body.FoldFrontend == nil
 }
 
-func (body ModifyModel) CheckPermission(user *models.User, floorUserID int, hole *models.Hole) error {
+func (body ModifyModel) CheckPermission(user *models.User, floor *models.Floor, hole *models.Hole) error {
 	if user.BanDivision[hole.DivisionID] != nil {
 		return utils.Forbidden(fmt.Sprintf("您在此分区已被禁言，解封时间：%s", user.BanDivision[hole.DivisionID]))
 	}
-	if body.Content != nil && !(user.IsAdmin || (user.ID == floorUserID && !hole.Locked)) {
+	if body.Content != nil && !(user.IsAdmin || (user.ID == floor.UserID && !hole.Locked && !floor.Deleted)) {
 		return utils.Forbidden("禁止修改此楼")
 	}
 	if (body.Fold != nil || body.FoldFrontend != nil || body.SpecialTag != nil) && !user.IsAdmin {

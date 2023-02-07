@@ -288,24 +288,20 @@ func ModifyHole(c *fiber.Ctx) error {
 		return err
 	}
 
-	// load hole.user_id
+	// load hole
 	var hole Hole
-	err = DB.Take(&hole, holeID).Error
-	if err != nil {
-		return err
-	}
-
-	// check user permission
-	err = body.CheckPermission(user, &hole)
-	if err != nil {
-		return err
-	}
 
 	changed := false
 
 	err = DB.Clauses(dbresolver.Write).Transaction(func(tx *gorm.DB) error {
 		// lock for update
 		err = tx.Clauses(clause.Locking{Strength: "UPDATE"}).Take(&hole, holeID).Error
+		if err != nil {
+			return err
+		}
+
+		// check user permission
+		err = body.CheckPermission(user, &hole)
 		if err != nil {
 			return err
 		}

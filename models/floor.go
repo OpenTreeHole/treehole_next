@@ -248,8 +248,7 @@ func (floor *Floor) AfterCreate(tx *gorm.DB) (err error) {
 	return nil
 }
 
-//	Update and Modify
-
+// Backup Update and Modify
 func (floor *Floor) Backup(tx *gorm.DB, userID int, reason string) error {
 	history := FloorHistory{
 		Content: floor.Content,
