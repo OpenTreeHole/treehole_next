@@ -127,10 +127,9 @@ func loadFloors(holes Holes) error {
 	// sorted by hole_id asc first and ranking asc second
 	var floors Floors
 	err := DB.
-		// using mysql file sort
-		Order("hole_id, ranking").
 		Raw(
-			`? UNION ?`,
+			// using file sort
+			`SELECT * FROM (? UNION ?) f ORDER BY hole_id, ranking`,
 			// use index(idx_hole_ranking), type range, use MRR
 			DB.Model(&Floor{}).Where("hole_id in ? and ranking < ?", holeIDs, config.Config.HoleFloorSize),
 
@@ -274,7 +273,7 @@ func (hole *Hole) SetHoleFloor() {
 	if holeFloorSize <= config.Config.HoleFloorSize {
 		hole.HoleFloor.Floors = hole.Floors
 	} else {
-		hole.HoleFloor.Floors = hole.Floors[:holeFloorSize-1]
+		hole.HoleFloor.Floors = hole.Floors[0 : holeFloorSize-1]
 	}
 }
 
