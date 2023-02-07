@@ -109,7 +109,7 @@ var adminCounter = new(int32)
 
 func (report *Report) SendCreate(_ *gorm.DB) error {
 	adminList.RLock()
-	defer adminList.Unlock()
+	defer adminList.RUnlock()
 	if len(adminList.data) == 0 {
 		return nil
 	}
