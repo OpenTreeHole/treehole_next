@@ -46,7 +46,7 @@ func (tagCreateModelSlice TagCreateModelSlice) ToName() []string {
 }
 
 type CreateModel struct {
-	Content string `json:"content" validate:"required,max=15000"`
+	Content string `json:"content" validate:"required"`
 	TagCreateModelSlice
 	// Admin and Operator only
 	SpecialTag string `json:"special_tag" validate:"max=16"`

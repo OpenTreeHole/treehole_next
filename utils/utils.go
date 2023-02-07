@@ -1,10 +1,9 @@
 package utils
 
 import (
+	"github.com/gofiber/fiber/v2"
 	"golang.org/x/exp/constraints"
 	"strconv"
-
-	"github.com/gofiber/fiber/v2"
 )
 
 type CanPreprocess interface {
@@ -47,5 +46,5 @@ func Min[T constraints.Ordered](x T, y T) T {
 }
 
 func StripContent(content string, contentMaxSize int) string {
-	return content[:Min(len(content), contentMaxSize)]
+	return string([]rune(content)[:Min(len([]rune(content)), contentMaxSize)])
 }

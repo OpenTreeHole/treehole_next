@@ -20,7 +20,7 @@ type ListOldModel struct {
 }
 
 type CreateModel struct {
-	Content string `json:"content" validate:"required,max=15000"`
+	Content string `json:"content" validate:"required"`
 	// Admin and Operator only
 	SpecialTag string `json:"special_tag" validate:"omitempty,max=16"`
 	// id of the floor to which replied
@@ -39,7 +39,7 @@ type CreateOldResponse struct {
 
 type ModifyModel struct {
 	// Owner or admin, the original content should be moved to  floor_history
-	Content *string `json:"content" validate:"omitempty,max=15000"`
+	Content *string `json:"content" validate:"omitempty"`
 	// Admin and Operator only
 	SpecialTag *string `json:"special_tag" validate:"omitempty,max=16"`
 	// All user, deprecated, "add" is like, "cancel" is reset

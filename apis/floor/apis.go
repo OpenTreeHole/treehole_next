@@ -130,6 +130,10 @@ func CreateFloor(c *fiber.Ctx) error {
 		return err
 	}
 
+	if len([]rune(body.Content)) > 15000 {
+		return BadRequest("文本限制 15000 字")
+	}
+
 	holeID, err := c.ParamsInt("id")
 	if err != nil {
 		return err
@@ -185,6 +189,10 @@ func CreateFloorOld(c *fiber.Ctx) error {
 	body, err := ValidateBody[CreateOldModel](c)
 	if err != nil {
 		return err
+	}
+
+	if len([]rune(body.Content)) > 15000 {
+		return BadRequest("文本限制 15000 字")
 	}
 
 	// get divisionID
@@ -245,6 +253,10 @@ func ModifyFloor(c *fiber.Ctx) error {
 
 	if body.DoNothing() {
 		return BadRequest("无效请求")
+	}
+
+	if body.Content != nil && len([]rune(*body.Content)) > 15000 {
+		return BadRequest("文本限制 15000 字")
 	}
 
 	// parse floor_id
