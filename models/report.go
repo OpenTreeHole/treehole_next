@@ -108,17 +108,19 @@ func (report *Report) AfterUpdate(tx *gorm.DB) (err error) {
 var adminCounter = new(int32)
 
 func (report *Report) SendCreate(_ *gorm.DB) error {
-	if len(adminList) == 0 {
+	adminList.RLock()
+	defer adminList.Unlock()
+	if len(adminList.data) == 0 {
 		return nil
 	}
 
 	// get counter
 	currentCounter := atomic.AddInt32(adminCounter, 1)
-	result := atomic.CompareAndSwapInt32(adminCounter, int32(len(adminList)), 0)
+	result := atomic.CompareAndSwapInt32(adminCounter, int32(len(adminList.data)), 0)
 	if result {
 		utils.Logger.Info("[get admin] adminCounter Reset")
 	}
-	userIDs := []int{adminList[currentCounter-1]}
+	userIDs := []int{adminList.data[currentCounter-1]}
 
 	// construct message
 	message := Notification{

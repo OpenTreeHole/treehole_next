@@ -2,6 +2,7 @@ package models
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"gorm.io/gorm/clause"
@@ -9,6 +10,7 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
+	"sync"
 	"time"
 	"treehole_next/config"
 	"treehole_next/utils"
@@ -160,7 +162,10 @@ func (message Notification) Send() (Message, error) {
 	return body, nil
 }
 
-var adminList []int
+var adminList struct {
+	sync.RWMutex
+	data []int
+}
 
 func InitAdminList() {
 	// skip when bench
@@ -192,15 +197,30 @@ func InitAdminList() {
 		return
 	}
 
-	err = json.Unmarshal(data, &adminList)
+	adminList.Lock()
+	defer adminList.Unlock()
+
+	err = json.Unmarshal(data, &adminList.data)
 	if err != nil {
 		utils.Logger.Error("[get admin] auth server response failed" + err.Error())
 		return
 	}
 
 	// shuffle ids
-	for i := range adminList {
+	for i := range adminList.data {
 		j := rand.Intn(i + 1)
-		adminList[i], adminList[j] = adminList[j], adminList[i]
+		adminList.data[i], adminList.data[j] = adminList.data[j], adminList.data[i]
+	}
+}
+
+func UpdateAdminList(ctx context.Context) {
+	ticker := time.NewTicker(time.Minute)
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			InitAdminList()
+		}
 	}
 }

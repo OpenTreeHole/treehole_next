@@ -50,5 +50,6 @@ func startTasks() context.CancelFunc {
 	ctx, cancel := context.WithCancel(context.Background())
 	go hole.UpdateHoleViews(ctx)
 	go message.PurgeMessage()
+	go models.UpdateAdminList(ctx)
 	return cancel
 }
