@@ -3,11 +3,9 @@ package models
 import (
 	"context"
 	"fmt"
-	"github.com/goccy/go-json"
 	"gorm.io/gorm"
 	"sort"
 	"sync"
-	"sync/atomic"
 	"time"
 	"treehole_next/utils"
 )
@@ -52,11 +50,9 @@ var tagCache struct {
 	idIndex   map[int]*Tag
 }
 
-var TagCacheBytes atomic.Value
-
 func LoadAllTags(tx *gorm.DB) error {
 	tagCache.data = make(Tags, 0, 10000)
-	if !utils.GetCache("tags", &tagCache) {
+	if !utils.GetCache("tags", &tagCache.data) {
 		err := tx.Order("temperature DESC").Find(&tagCache.data).Error
 		if err != nil {
 			return err
@@ -69,13 +65,8 @@ func LoadAllTags(tx *gorm.DB) error {
 		tagCache.nameIndex[tag.Name] = tag
 		tagCache.idIndex[tag.ID] = tag
 	}
-	tagCacheBytes, err := json.Marshal(tagCache.data)
-	if err != nil {
-		return err
-	}
-	TagCacheBytes.Store(tagCacheBytes)
-	err = utils.SetCache("tags", tagCache.data, 10*time.Minute)
-	return err
+
+	return utils.SetCache("tags", tagCache.data, 10*time.Minute)
 }
 
 func LoadTagsByID(tagIDs []int) (tags Tags) {
@@ -121,13 +112,9 @@ func UpdateTagTemperature(ctx context.Context) {
 // updateTagCacheBytes should be wrapped in tagCache write lock
 // tagCache.Lock() should not be called twice
 func updateTagCacheBytes() error {
-	tagCacheBytes, err := json.Marshal(tagCache.data)
-	if err != nil {
-		return err
-	}
-
-	TagCacheBytes.Store(tagCacheBytes)
-	return utils.SetCache("tags", tagCacheBytes, 10*time.Minute)
+	tagCache.RLock()
+	defer tagCache.RUnlock()
+	return utils.SetCache("tags", tagCache.data, 10*time.Minute)
 }
 
 func updateTagTemperature() {

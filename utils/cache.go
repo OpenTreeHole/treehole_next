@@ -49,6 +49,10 @@ func GetCache(key string, value any) bool {
 	return err == nil
 }
 
+func GetRawCache(key string) ([]byte, error) {
+	return Cache.Get(context.Background(), key)
+}
+
 func DeleteCache(key string) error {
 	err := Cache.Delete(context.Background(), key)
 	if err == nil {

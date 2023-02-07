@@ -23,10 +23,19 @@ func ListTags(c *fiber.Ctx) error {
 		return err
 	}
 
+	tags := make(Tags, 0, 10)
 	if query.Search == "" {
-		return c.Send(TagCacheBytes.Load().([]byte))
+		data, err := GetRawCache("tags")
+		if err != nil {
+			err = DB.Order("temperature DESC").Find(&tags).Error
+			if err != nil {
+				return err
+			}
+			return c.JSON(&tags)
+		} else {
+			return c.Send(data)
+		}
 	}
-	tags := Tags{}
 	err = DB.Where("name LIKE ?", "%"+query.Search+"%").
 		Order("temperature DESC").Find(&tags).Error
 	if err != nil {
