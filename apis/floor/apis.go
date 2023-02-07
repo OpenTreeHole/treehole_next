@@ -357,9 +357,9 @@ func ModifyFloor(c *fiber.Ctx) error {
 			}
 		}
 
-		if body.SpecialTag != nil && *body.SpecialTag != "" {
+		if body.SpecialTag != nil {
 			floor.SpecialTag = *body.SpecialTag
-			MyLog("Floor", "Modify", floorID, user.ID, RoleAdmin, "specialTag to: ", fmt.Sprintf("%v", floor.SpecialTag))
+			MyLog("Floor", "Modify", floorID, user.ID, RoleAdmin, "specialTag to: ", fmt.Sprintf("%s", floor.SpecialTag))
 		}
 
 		if body.Like != nil {
