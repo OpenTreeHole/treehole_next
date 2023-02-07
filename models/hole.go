@@ -97,7 +97,11 @@ func loadTags(holes Holes) (err error) {
 		tagIDs[holeTag.TagID] = true
 	}
 
-	tags := LoadTagsByID(utils.Keys(tagIDs))
+	var tags Tags
+	err = DB.Where("id in ?", utils.Keys(tagIDs)).Find(&tags).Error
+	if err != nil {
+		return err
+	}
 
 	tagMap := make(map[int]*Tag)
 	for _, tag := range tags {
@@ -274,9 +278,9 @@ func (hole *Hole) SetHoleFloor() {
 	}
 }
 
-func (hole *Hole) Create(tx *gorm.DB) error {
+func (hole *Hole) Create(tx *gorm.DB, tagNames []string) (err error) {
 	// Create hole.Tags, in different sql session
-	err := hole.Tags.FindOrCreateTags(tx)
+	hole.Tags, err = FindOrCreateTags(tx, tagNames)
 	if err != nil {
 		return err
 	}

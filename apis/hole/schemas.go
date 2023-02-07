@@ -37,10 +37,10 @@ type TagCreateModelSlice struct {
 	Tags []tag.CreateModel `json:"tags" validate:"min=1,max=10,dive"` // All users
 }
 
-func (tagCreateModelSlice TagCreateModelSlice) ToTags() models.Tags {
-	tags := make(models.Tags, 0, len(tagCreateModelSlice.Tags))
+func (tagCreateModelSlice TagCreateModelSlice) ToName() []string {
+	tags := make([]string, 0, len(tagCreateModelSlice.Tags))
 	for _, tagCreateModel := range tagCreateModelSlice.Tags {
-		tags = append(tags, &models.Tag{Name: tagCreateModel.Name})
+		tags = append(tags, tagCreateModel.Name)
 	}
 	return tags
 }

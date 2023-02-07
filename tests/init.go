@@ -13,11 +13,6 @@ func init() {
 	initTestTags()
 	initTestFavorites()
 	initTestReports()
-
-	err := LoadAllTags(DB)
-	if err != nil {
-		panic(err)
-	}
 }
 
 func initTestDivision() {

@@ -49,7 +49,6 @@ func registerMiddlewares(app *fiber.App) {
 func startTasks() context.CancelFunc {
 	ctx, cancel := context.WithCancel(context.Background())
 	go hole.UpdateHoleViews(ctx)
-	go models.UpdateTagTemperature(ctx)
 	go message.PurgeMessage()
 	return cancel
 }

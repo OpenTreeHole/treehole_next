@@ -1,11 +1,10 @@
 package models
 
 import (
-	"context"
-	"fmt"
+	"golang.org/x/exp/slices"
 	"gorm.io/gorm"
-	"sort"
-	"sync"
+	"gorm.io/gorm/clause"
+	"log"
 	"time"
 	"treehole_next/utils"
 )
@@ -43,181 +42,46 @@ func (tag *Tag) AfterCreate(_ *gorm.DB) (err error) {
 	return nil
 }
 
-var tagCache struct {
-	sync.RWMutex
-	data      Tags
-	nameIndex map[string]*Tag
-	idIndex   map[int]*Tag
-}
-
-func LoadAllTags(tx *gorm.DB) error {
-	tagCache.data = make(Tags, 0, 10000)
-	err := tx.Order("temperature DESC").Find(&tagCache.data).Error
+func FindOrCreateTags(tx *gorm.DB, names []string) (Tags, error) {
+	tags := make(Tags, 0)
+	err := tx.Where("name in ?", names).Find(&tags).Error
 	if err != nil {
-		return err
-	}
-	tagCache.nameIndex = make(map[string]*Tag, 10000)
-	tagCache.idIndex = make(map[int]*Tag, 10000)
-
-	for _, tag := range tagCache.data {
-		tagCache.nameIndex[tag.Name] = tag
-		tagCache.idIndex[tag.ID] = tag
+		return nil, err
 	}
 
-	return utils.SetCache("tags", tagCache.data, 10*time.Minute)
-}
-
-func LoadTagsByID(tagIDs []int) (tags Tags) {
-	tagCache.RLock()
-	defer tagCache.RUnlock()
-	for _, tagID := range tagIDs {
-		if tag, ok := tagCache.idIndex[tagID]; ok {
-			tags = append(tags, utils.ValueCopy(tag))
-		}
-	}
-	return tags
-}
-
-func LoadTagByName(name string) (*Tag, error) {
-	tagCache.RLock()
-	defer tagCache.RUnlock()
-	if tag, ok := tagCache.nameIndex[name]; ok {
-		return utils.ValueCopy(tag), nil
-	} else {
-		return nil, gorm.ErrRecordNotFound
-	}
-}
-
-var TagUpdateChan = make(chan int, 1000)
-var tagUpdateIDs = make(map[int]bool)
-
-// UpdateTagTemperature is a timed task
-func UpdateTagTemperature(ctx context.Context) {
-	ticker := time.NewTicker(5 * time.Minute)
-	for {
-		select {
-		case <-ctx.Done():
-			fmt.Println("task UpdateTagTemperature stopped")
-			return
-		case tagID := <-TagUpdateChan:
-			tagUpdateIDs[tagID] = true
-		case <-ticker.C:
-			updateTagTemperature()
-		}
-	}
-}
-
-// updateTagCacheBytes should be wrapped in tagCache write lock
-// tagCache.Lock() should not be called twice
-func updateTagCacheBytes() error {
-	fmt.Println("update tag cache")
-	defer fmt.Println("update finished")
-	tagCache.RLock()
-	defer tagCache.RUnlock()
-	return utils.SetCache("tags", tagCache.data, 10*time.Minute)
-}
-
-func updateTagTemperature() {
-	tagIDs := utils.Keys(tagUpdateIDs)
-	tagUpdateIDs = make(map[int]bool)
-	if len(tagUpdateIDs) == 0 {
-		return
-	}
-	var tags Tags
-	err := DB.Find(&tags, tagIDs).Error
-	if err != nil {
-		utils.Logger.Error(err.Error())
-		return
-	}
-	if len(tags) == 0 {
-		return
-	}
-
-	tagCache.Lock()
-	defer tagCache.Unlock()
+	existTagName := make([]string, 0)
 	for _, tag := range tags {
-		originTag, ok := tagCache.idIndex[tag.ID]
-		if !ok {
-			newTag := utils.ValueCopy(tag)
-			tagCache.data = append(tagCache.data, newTag)
-			tagCache.idIndex[tag.ID] = newTag
-			tagCache.nameIndex[tag.Name] = newTag
-		} else {
-			*originTag = *tag
-		}
+		existTagName = append(existTagName, tag.Name)
 	}
 
-	sort.Slice(tagCache.data, func(i, j int) bool {
-		return tagCache.data[i].Temperature > tagCache.data[j].Temperature
-	})
-
-	err = updateTagCacheBytes()
-	if err != nil {
-		utils.Logger.Error(err.Error())
-	}
-}
-
-func (tags Tags) checkTags() Tags {
 	newTags := make(Tags, 0)
-
-	// read lock, concurrence reading
-	tagCache.RLock()
-	defer tagCache.RUnlock()
-
-	for _, tag := range tags {
-		cachedTag, ok := tagCache.nameIndex[tag.Name]
-		if ok {
-			*tag = *cachedTag
-		} else {
-			newTags = append(newTags, tag)
+	for _, name := range names {
+		if !slices.Contains(existTagName, name) {
+			newTags = append(newTags, &Tag{Name: name})
 		}
 	}
-	return newTags
-}
 
-func (tags Tags) FindOrCreateTags(tx *gorm.DB) error {
-	newTags := tags.checkTags()
-	defer func() {
-		for _, tag := range tags {
-			TagUpdateChan <- tag.ID
-		}
-	}()
 	if len(newTags) == 0 {
-		return nil
+		return tags, nil
 	}
 
-	// write lock
-	err := createNewTags(tx, newTags)
-	if err != nil {
-		return err
-	}
+	err = tx.Clauses(clause.OnConflict{DoNothing: true}).Create(&newTags).Error
 
-	return updateTagCacheBytes()
+	go UpdateTagCache(nil)
+
+	return append(tags, newTags...), err
 }
 
-func createNewTags(tx *gorm.DB, newTags Tags) error {
-	tagCache.Lock()
-	defer tagCache.Unlock()
-
-	// check whether newTags have been inserted
-	tagsNeedInsert := make(Tags, 0, len(newTags))
-	for _, tag := range newTags {
-		if _, ok := tagCache.nameIndex[tag.Name]; !ok {
-			tagsNeedInsert = append(tagsNeedInsert, tag)
+func UpdateTagCache(tags Tags) {
+	var err error
+	if len(tags) == 0 {
+		err := DB.Order("temperature desc").Find(&tags).Error
+		if err != nil {
+			log.Printf("update tag cache error: %s", err)
 		}
 	}
-
-	err := tx.Create(&tagsNeedInsert).Error
+	err = utils.SetCache("tags", tags, 10*time.Minute)
 	if err != nil {
-		return err
+		log.Printf("update tag cache error: %s", err)
 	}
-
-	// update cache and index
-	for _, newTag := range tagsNeedInsert {
-		storeTag := utils.ValueCopy(newTag)
-		tagCache.data = append(tagCache.data, storeTag)
-		tagCache.nameIndex[storeTag.Name] = storeTag
-		tagCache.idIndex[storeTag.ID] = storeTag
-	}
-	return nil
 }

@@ -106,11 +106,12 @@ func ListHolesOld(c *fiber.Ctx) error {
 		return err
 	}
 	if query.Tag != "" {
-		tag, err := LoadTagByName(query.Tag)
+		var tag Tag
+		err = DB.Where("name = ?", query.Tag).Find(&tag).Error
 		if err != nil {
 			return err
 		}
-		err = querySet.Model(&tag).Association("Holes").Find(&holes)
+		err = querySet.Model(&tag).Order("updated_at desc").Association("Holes").Find(&holes)
 		if err != nil {
 			return err
 		}
@@ -191,12 +192,11 @@ func CreateHole(c *fiber.Ctx) error {
 	}
 
 	hole := Hole{
-		Tags:       body.ToTags(),
 		Floors:     Floors{{UserID: user.ID, Content: body.Content, SpecialTag: body.SpecialTag, IsMe: true}},
 		UserID:     user.ID,
 		DivisionID: divisionID,
 	}
-	err = hole.Create(DB)
+	err = hole.Create(DB, body.ToName())
 	if err != nil {
 		return err
 	}
@@ -233,12 +233,11 @@ func CreateHoleOld(c *fiber.Ctx) error {
 
 	// create hole
 	hole := Hole{
-		Tags:       body.ToTags(),
 		Floors:     Floors{{UserID: user.ID, Content: body.Content, SpecialTag: body.SpecialTag, IsMe: true}},
 		UserID:     user.ID,
 		DivisionID: body.DivisionID,
 	}
-	err = hole.Create(DB)
+	err = hole.Create(DB, body.ToName())
 	if err != nil {
 		return err
 	}
@@ -335,29 +334,21 @@ func ModifyHole(c *fiber.Ctx) error {
 		// modify tags
 		if len(body.Tags) != 0 {
 			changed = true
-			hole.Tags = body.ToTags()
-
-			// get old tags
-			var oldTagIDs []int
-			err = tx.Model(&HoleTag{}).Where("hole_id = ?", hole.ID).Select("tag_id").Scan(&oldTagIDs).Error
+			hole.Tags, err = FindOrCreateTags(tx, body.ToName())
 			if err != nil {
 				return err
 			}
 
 			// set tag.temperature = tag.temperature - 1
-			err = tx.Model(&Tag{}).Where("id in ?", oldTagIDs).Update("temperature", gorm.Expr("temperature - 1")).Error
+			err = tx.Model(&Tag{}).Where("id in (?)",
+				tx.Model(&HoleTag{}).Select("tag_id").Where("hole_id = ?", hole.ID)).
+				Update("temperature", gorm.Expr("temperature - 1")).Error
 			if err != nil {
 				return err
 			}
 
 			// delete old hole_tags association
 			err = tx.Exec("DELETE FROM hole_tags WHERE hole_id = ?", hole.ID).Error
-			if err != nil {
-				return err
-			}
-
-			// insert or set new tags
-			err = hole.Tags.FindOrCreateTags(tx)
 			if err != nil {
 				return err
 			}
@@ -372,11 +363,6 @@ func ModifyHole(c *fiber.Ctx) error {
 			err = tx.Model(&hole.Tags).Update("temperature", gorm.Expr("temperature + 1")).Error
 			if err != nil {
 				return err
-			}
-
-			// send to tagCache for update
-			for _, tagIDs := range oldTagIDs {
-				TagUpdateChan <- tagIDs
 			}
 
 			if user.IsAdmin {
