@@ -1,6 +1,7 @@
 package floor
 
 import (
+	"fmt"
 	"treehole_next/models"
 	"treehole_next/utils"
 )
@@ -54,15 +55,15 @@ func (body ModifyModel) DoNothing() bool {
 	return body.Content == nil && body.SpecialTag == nil && body.Like == nil && body.Fold == nil && body.FoldFrontend == nil
 }
 
-func (body ModifyModel) CheckPermission(user *models.User, floorUserID, divisionID int) error {
-	if user.BanDivision[divisionID] != nil {
-		return utils.Forbidden()
+func (body ModifyModel) CheckPermission(user *models.User, floorUserID int, hole *models.Hole) error {
+	if user.BanDivision[hole.DivisionID] != nil {
+		return utils.Forbidden(fmt.Sprintf("您在此分区已被禁言，解封时间：%s", user.BanDivision[hole.DivisionID]))
 	}
-	if body.Content != nil && !(user.IsAdmin || user.ID == floorUserID) {
-		return utils.Forbidden()
+	if body.Content != nil && !(user.IsAdmin || (user.ID == floorUserID && !hole.Locked)) {
+		return utils.Forbidden("禁止修改此楼")
 	}
 	if (body.Fold != nil || body.FoldFrontend != nil || body.SpecialTag != nil) && !user.IsAdmin {
-		return utils.Forbidden()
+		return utils.Forbidden("非管理员禁止修改")
 	}
 	return nil
 }

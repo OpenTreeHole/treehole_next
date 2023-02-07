@@ -290,14 +290,13 @@ func ModifyHole(c *fiber.Ctx) error {
 
 	// load hole.user_id
 	var hole Hole
-	err = DB.Select("user_id").Take(&hole, holeID).Error
+	err = DB.Take(&hole, holeID).Error
 	if err != nil {
 		return err
 	}
-	body.HoleUserID = hole.UserID
 
 	// check user permission
-	err = body.CheckPermission(user)
+	err = body.CheckPermission(user, &hole)
 	if err != nil {
 		return err
 	}
@@ -381,11 +380,19 @@ func ModifyHole(c *fiber.Ctx) error {
 			}
 		}
 
+		// modify lock
+		if body.Lock != nil {
+			changed = true
+			hole.Locked = *body.Lock
+
+			MyLog("Hole", "Modify", holeID, user.ID, RoleAdmin, "Lock: ")
+		}
+
 		// save
 		if changed {
 			err = tx.Model(&hole).
 				Omit(clause.Associations, "UpdatedAt").
-				Select("DivisionID", "Hidden").
+				Select("DivisionID", "Hidden", "Locked").
 				Updates(&hole).Error
 			if err != nil {
 				return err

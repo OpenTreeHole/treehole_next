@@ -139,11 +139,11 @@ func CreateFloor(c *fiber.Ctx) error {
 		return err
 	}
 
-	// get divisionID
-	var divisionID int
-	result := DB.Table("hole").Select("division_id").Where("id = ?", holeID).Take(&divisionID)
-	if result.Error != nil {
-		return result.Error
+	// get hole to check DivisionID and Locked
+	var hole Hole
+	err = DB.Take(&hole, holeID).Error
+	if err != nil {
+		return err
 	}
 
 	// get user from auth
@@ -155,8 +155,11 @@ func CreateFloor(c *fiber.Ctx) error {
 	}
 
 	// permission
-	if user.BanDivision[divisionID] != nil {
+	if user.BanDivision[hole.DivisionID] != nil {
 		return Forbidden("您没有权限在此板块发言")
+	}
+	if hole.Locked && !user.IsAdmin {
+		return Forbidden("该帖子已被锁定，非管理员禁止发帖")
 	}
 
 	// create floor
@@ -195,7 +198,7 @@ func CreateFloorOld(c *fiber.Ctx) error {
 		return BadRequest("文本限制 15000 字")
 	}
 
-	// get divisionID
+	// get hole to check DivisionID and Locked
 	var hole Hole
 	err = DB.Take(&hole, body.HoleID).Error
 	if err != nil {
@@ -211,6 +214,9 @@ func CreateFloorOld(c *fiber.Ctx) error {
 	// permission
 	if user.BanDivision[hole.DivisionID] != nil {
 		return Forbidden("您没有权限在此板块发言")
+	}
+	if hole.Locked {
+		return Forbidden("该帖子已被锁定，非管理员禁止发帖")
 	}
 
 	// create floor
@@ -267,14 +273,14 @@ func ModifyFloor(c *fiber.Ctx) error {
 
 	// find floor user_id
 	var floor Floor
-	err = DB.Select("id", "user_id", "hole_id").Take(&floor, floorID).Error
+	err = DB.Take(&floor, floorID).Error
 	if err != nil {
 		return err
 	}
 
-	// find division_id
-	var divisionID int
-	err = DB.Model(&Hole{}).Select("division_id").Where("id = ?", floor.HoleID).Scan(&divisionID).Error
+	// find hole
+	var hole Hole
+	err = DB.Take(&hole, floor.HoleID).Error
 	if err != nil {
 		return err
 	}
@@ -286,7 +292,7 @@ func ModifyFloor(c *fiber.Ctx) error {
 	}
 
 	// check permission
-	err = body.CheckPermission(user, floor.UserID, divisionID)
+	err = body.CheckPermission(user, floor.UserID, &hole)
 	if err != nil {
 		return err
 	}
