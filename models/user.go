@@ -56,6 +56,8 @@ type User struct {
 
 	/// dynamically generated field
 
+	UserID int `json:"user_id" gorm:"-:all"`
+
 	Permission struct {
 		// 管理员权限到期时间
 		Admin time.Time `json:"admin"`
@@ -89,6 +91,16 @@ var defaultUserConfig = UserConfig{
 
 func (user *User) GetID() int {
 	return user.ID
+}
+
+func (user *User) AfterCreate(_ *gorm.DB) error {
+	user.UserID = user.ID
+	return nil
+}
+
+func (user *User) AfterFind(_ *gorm.DB) error {
+	user.UserID = user.ID
+	return nil
 }
 
 // parseJWT extracts and parse token
