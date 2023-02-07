@@ -78,7 +78,7 @@ func ModifyUser(c *fiber.Ctx) error {
 		return err
 	}
 
-	if !user.IsAdmin || user.ID == userID {
+	if !user.IsAdmin && user.ID != userID {
 		return utils.Forbidden()
 	}
 
