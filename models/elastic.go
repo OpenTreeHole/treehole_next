@@ -236,10 +236,8 @@ func FloorIndex(floorID int, content string) {
 	if ES == nil {
 		return
 	}
-	var buffer = bytes.NewBuffer(make([]byte, 16384))
-
 	floorModel := FloorModel{Content: content}
-	err := json.NewEncoder(buffer).Encode(floorModel)
+	data, err := json.Marshal(&floorModel)
 	if err != nil {
 		log.Printf("floor encode error: floor_id: %v", floorID)
 		return
@@ -248,7 +246,7 @@ func FloorIndex(floorID int, content string) {
 	req := esapi.IndexRequest{
 		Index:      IndexName,
 		DocumentID: strconv.Itoa(floorID),
-		Body:       buffer,
+		Body:       bytes.NewBuffer(data),
 		Refresh:    "false",
 	}
 
@@ -257,7 +255,8 @@ func FloorIndex(floorID int, content string) {
 		_ = res.Body.Close()
 	}()
 	if err != nil || res.IsError() {
-		log.Printf("error index floor: %d\n", floorID)
+		data, _ := io.ReadAll(res.Body)
+		log.Printf("error index floor: %d: %s\n", floorID, string(data))
 	} else {
 		log.Printf("index floor success: %d\n", floorID)
 	}
@@ -275,8 +274,9 @@ func FloorDelete(floorID int) {
 		_ = res.Body.Close()
 	}()
 	if err != nil || res.IsError() {
-		log.Printf("error index floor: %d\n", floorID)
+		data, _ := io.ReadAll(res.Body)
+		log.Printf("error delete floor: %d: %s\n", floorID, string(data))
 	} else {
-		log.Printf("index floor success: %d\n", floorID)
+		log.Printf("delete floor success: %d\n", floorID)
 	}
 }
