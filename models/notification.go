@@ -26,12 +26,12 @@ type Notifications []Notification
 
 type Notification struct {
 	// Should be same as CrateModel in notification project
-	Type        MessageType `json:"type" validate:"required"`
-	Title       string      `json:"title"`
+	Title       string      `json:"message"`
 	Description string      `json:"description"`
-	Data        any         `json:"data" gorm:"serializer:json" `
+	Data        any         `json:"data"`
+	Type        MessageType `json:"code"`
 	URL         string      `json:"url"`
-	Recipients  []int       `json:"recipients" validate:"required"`
+	Recipients  []int       `json:"recipients"`
 }
 
 func readRespNotification(body io.ReadCloser) Notification {
