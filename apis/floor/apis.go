@@ -280,7 +280,7 @@ func ModifyFloor(c *fiber.Ctx) error {
 	var floor Floor
 	err = DB.Clauses(dbresolver.Write).Transaction(func(tx *gorm.DB) error {
 		// load floor, lock for update
-		err = tx.Clauses(clause.Locking{Strength: "UPDATE"}).Take(&floor).Error
+		err = tx.Clauses(clause.Locking{Strength: "UPDATE"}).Take(&floor, floorID).Error
 		if err != nil {
 			return err
 		}
@@ -380,6 +380,9 @@ func ModifyFloor(c *fiber.Ctx) error {
 			Select("Content", "Fold", "SpecialTag", "Like", "DisLike", "Modified").
 			Updates(&floor).Error
 	})
+	if err != nil {
+		return err
+	}
 
 	// SendModify only when operator or admin modify content or fold
 	if ((body.Content != nil && *body.Content != "") ||
