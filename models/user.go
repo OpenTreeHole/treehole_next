@@ -39,9 +39,6 @@ type User struct {
 	// reports made by the user; a user has many report
 	UserReports Reports `json:"-"`
 
-	// reports dealt by the user, admin only
-	UserDealtReports Reports `json:"-" gorm:"foreignKey:DealtBy"`
-
 	// floors liked by the user
 	UserLikedFloors Floors `json:"-" gorm:"many2many:floor_like"`
 

@@ -22,7 +22,7 @@ type Report struct {
 	Reason    string    `json:"reason" gorm:"size:128"`
 	Dealt     bool      `json:"dealt"` // the report has been dealt
 	// who dealt the report
-	DealtBy int    `json:"dealt_by"`
+	DealtBy int    `json:"dealt_by" gorm:"index"`
 	Result  string `json:"result" gorm:"size:128"` // deal result
 }
 
