@@ -23,7 +23,7 @@ type Message struct {
 	Recipients  []int       `json:"-" gorm:"-:all" `
 	MessageID   int         `json:"message_id" gorm:"-:all"`       // 兼容旧版 id
 	HasRead     bool        `json:"has_read" gorm:"default:false"` // 兼容旧版, 永远为false，以MessageUser的HasRead为准
-	Users       Users       `json:"user" gorm:"many2many:message_user;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	Users       Users       `json:"-" gorm:"many2many:message_user;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 }
 
 type MessageUser struct {

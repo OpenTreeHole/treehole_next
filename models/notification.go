@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"gorm.io/gorm/clause"
 	"io"
+	"log"
 	"math/rand"
 	"net/http"
 	"time"
@@ -108,10 +110,13 @@ func (message Notification) Send() (Message, error) {
 		URL:         message.URL,
 		Recipients:  message.Recipients,
 	}
-	err = DB.Create(&body).Error
+	err = DB.Omit(clause.Associations).Create(&body).Error
 	if err != nil {
-		utils.Logger.Error("[notification] message save failed: " + err.Error())
+		log.Println("[notification] message save failed: " + err.Error())
 		return Message{}, err
+	}
+	if config.Config.NotificationUrl == "" {
+		return Message{}, nil
 	}
 
 	// construct form

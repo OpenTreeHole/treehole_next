@@ -52,11 +52,9 @@ var tagCache struct {
 
 func LoadAllTags(tx *gorm.DB) error {
 	tagCache.data = make(Tags, 0, 10000)
-	if !utils.GetCache("tags", &tagCache.data) {
-		err := tx.Order("temperature DESC").Find(&tagCache.data).Error
-		if err != nil {
-			return err
-		}
+	err := tx.Order("temperature DESC").Find(&tagCache.data).Error
+	if err != nil {
+		return err
 	}
 	tagCache.nameIndex = make(map[string]*Tag, 10000)
 	tagCache.idIndex = make(map[int]*Tag, 10000)
@@ -112,6 +110,8 @@ func UpdateTagTemperature(ctx context.Context) {
 // updateTagCacheBytes should be wrapped in tagCache write lock
 // tagCache.Lock() should not be called twice
 func updateTagCacheBytes() error {
+	fmt.Println("update tag cache")
+	defer fmt.Println("update finished")
 	tagCache.RLock()
 	defer tagCache.RUnlock()
 	return utils.SetCache("tags", tagCache.data, 10*time.Minute)
@@ -187,6 +187,15 @@ func (tags Tags) FindOrCreateTags(tx *gorm.DB) error {
 	}
 
 	// write lock
+	err := createNewTags(tx, newTags)
+	if err != nil {
+		return err
+	}
+
+	return updateTagCacheBytes()
+}
+
+func createNewTags(tx *gorm.DB, newTags Tags) error {
 	tagCache.Lock()
 	defer tagCache.Unlock()
 
@@ -210,6 +219,5 @@ func (tags Tags) FindOrCreateTags(tx *gorm.DB) error {
 		tagCache.nameIndex[storeTag.Name] = storeTag
 		tagCache.idIndex[storeTag.ID] = storeTag
 	}
-
-	return updateTagCacheBytes()
+	return nil
 }

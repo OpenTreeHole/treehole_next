@@ -154,12 +154,14 @@ func initTestReports() {
 			ID:      REPORT_FLOOR_BASE_ID + i,
 			HoleID:  1000,
 			Ranking: i,
+			UserID:  1,
 		}
 	}
 	reports := make([]Report, 10)
 	for i := range reports {
 		reports[i].ID = REPORT_BASE_ID + i
 		reports[i].FloorID = REPORT_FLOOR_BASE_ID + i
+		reports[i].UserID = 1
 		if i < 5 {
 			reports[i].Dealt = true
 		}

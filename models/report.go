@@ -136,11 +136,7 @@ func (report *Report) SendCreate(_ *gorm.DB) error {
 
 	// send
 	_, err := message.Send()
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
 
 func (report *Report) SendModify(_ *gorm.DB) error {
@@ -163,9 +159,5 @@ func (report *Report) SendModify(_ *gorm.DB) error {
 
 	// send
 	_, err := message.Send()
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
