@@ -57,7 +57,7 @@ func TestCreateHole(t *testing.T) {
 	assert.EqualValues(t, 2, tag.Temperature)
 	assert.EqualValues(t, 2, DB.Model(&tag).Association("Holes").Count())
 
-	data = Map{"content": content}
+	data = Map{"content": content, "tags": []Map{}}
 	testAPI(t, "post", "/api/divisions/1/holes", 400, data) // at least one tag
 
 	content = strings.Repeat("~", 15001)
