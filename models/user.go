@@ -3,6 +3,7 @@ package models
 import (
 	"encoding/base64"
 	"errors"
+	"fmt"
 	"github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
@@ -236,4 +237,12 @@ func (user *User) LoadUserByID(userID int) error {
 
 		return nil
 	})
+}
+
+func (user *User) BanDivisionMessage(divisionID int) string {
+	if user.BanDivision[divisionID] == nil {
+		return fmt.Sprintf("您在此板块已被禁言")
+	} else {
+		return fmt.Sprintf("您在此板块已被禁言，解封时间：%s", user.BanDivision[divisionID].Format("2006-01-02 15:04:05"))
+	}
 }

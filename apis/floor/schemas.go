@@ -1,7 +1,6 @@
 package floor
 
 import (
-	"fmt"
 	"treehole_next/models"
 	"treehole_next/utils"
 )
@@ -56,14 +55,30 @@ func (body ModifyModel) DoNothing() bool {
 }
 
 func (body ModifyModel) CheckPermission(user *models.User, floor *models.Floor, hole *models.Hole) error {
-	if user.BanDivision[hole.DivisionID] != nil {
-		return utils.Forbidden(fmt.Sprintf("您在此分区已被禁言，解封时间：%s", user.BanDivision[hole.DivisionID]))
+	if body.Content != nil {
+		if !user.IsAdmin {
+			if user.ID != floor.UserID {
+				return utils.Forbidden("这不是您的楼层，您没有权限修改")
+			} else {
+				if user.BanDivision[hole.DivisionID] != nil {
+					return utils.Forbidden(user.BanDivisionMessage(hole.DivisionID))
+				} else if hole.Locked {
+					return utils.Forbidden("此洞已被锁定，您无法修改")
+				} else if floor.Deleted {
+					return utils.Forbidden("此洞已被删除，您无法修改")
+				}
+			}
+		} else {
+			if user.BanDivision[hole.DivisionID] != nil {
+				return utils.Forbidden(user.BanDivisionMessage(hole.DivisionID))
+			}
+		}
 	}
-	if body.Content != nil && !(user.IsAdmin || (user.ID == floor.UserID && !hole.Locked && !floor.Deleted)) {
-		return utils.Forbidden("禁止修改此楼")
+	if (body.Fold != nil || body.FoldFrontend != nil) && !user.IsAdmin {
+		return utils.Forbidden("非管理员禁止折叠")
 	}
-	if (body.Fold != nil || body.FoldFrontend != nil || body.SpecialTag != nil) && !user.IsAdmin {
-		return utils.Forbidden("非管理员禁止修改")
+	if body.SpecialTag != nil && !user.IsAdmin {
+		return utils.Forbidden("非管理员禁止修改特殊标签")
 	}
 	return nil
 }

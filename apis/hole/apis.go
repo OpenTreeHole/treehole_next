@@ -193,7 +193,7 @@ func CreateHole(c *fiber.Ctx) error {
 
 	// permission
 	if user.BanDivision[divisionID] != nil {
-		return Forbidden("您没有权限在此板块发言")
+		return Forbidden(user.BanDivisionMessage(divisionID))
 	}
 
 	hole := Hole{
@@ -237,7 +237,7 @@ func CreateHoleOld(c *fiber.Ctx) error {
 
 	// permission
 	if user.BanDivision[body.DivisionID] != nil {
-		return Forbidden("您没有权限在此板块发言")
+		return Forbidden(user.BanDivisionMessage(body.DivisionID))
 	}
 
 	// create hole

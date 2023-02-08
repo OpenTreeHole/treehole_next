@@ -156,7 +156,7 @@ func CreateFloor(c *fiber.Ctx) error {
 
 	// permission
 	if user.BanDivision[hole.DivisionID] != nil {
-		return Forbidden("您没有权限在此板块发言")
+		return Forbidden(user.BanDivisionMessage(hole.DivisionID))
 	}
 	if hole.Locked && !user.IsAdmin {
 		return Forbidden("该帖子已被锁定，非管理员禁止发帖")
@@ -213,7 +213,7 @@ func CreateFloorOld(c *fiber.Ctx) error {
 
 	// permission
 	if user.BanDivision[hole.DivisionID] != nil {
-		return Forbidden("您没有权限在此板块发言")
+		return Forbidden(user.BanDivisionMessage(hole.DivisionID))
 	}
 	if hole.Locked && !user.IsAdmin {
 		return Forbidden("该帖子已被锁定，非管理员禁止发帖")
