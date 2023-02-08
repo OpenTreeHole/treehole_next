@@ -169,7 +169,7 @@ var adminList struct {
 
 func InitAdminList() {
 	// skip when bench
-	if config.Config.Mode == "bench" {
+	if config.Config.Mode == "bench" || config.Config.AuthUrl == "" {
 		return
 	}
 

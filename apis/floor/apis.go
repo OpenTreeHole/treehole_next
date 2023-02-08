@@ -205,7 +205,7 @@ func CreateFloorOld(c *fiber.Ctx) error {
 		return err
 	}
 
-	// get user from auth
+	// get user
 	user, err := GetUser(c)
 	if err != nil {
 		return err

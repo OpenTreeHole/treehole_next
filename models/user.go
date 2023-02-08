@@ -69,7 +69,6 @@ type User struct {
 	// get from jwt
 	IsAdmin    bool      `json:"is_admin" gorm:"-:all"`
 	JoinedTime time.Time `json:"joined_time" gorm:"-:all"`
-	LastLogin  time.Time `json:"last_login" gorm:"-:all"`
 	Nickname   string    `json:"nickname" gorm:"-:all"`
 }
 
@@ -197,16 +196,18 @@ func GetUserID(c *fiber.Ctx) (int, error) {
 func (user *User) LoadUserByID(userID int) error {
 	return DB.Clauses(dbresolver.Write).Transaction(func(tx *gorm.DB) error {
 		err := tx.Preload("UserPunishments").Clauses(clause.Locking{Strength: "UPDATE"}).Take(&user, userID).Error
-		if err == gorm.ErrRecordNotFound {
-			// insert user if not found
-			user.ID = userID
-			user.Config = defaultUserConfig
-			err = tx.Create(&user).Error
-			if err != nil {
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				// insert user if not found
+				user.ID = userID
+				user.Config = defaultUserConfig
+				err = tx.Create(&user).Error
+				if err != nil {
+					return err
+				}
+			} else {
 				return err
 			}
-		} else {
-			return err
 		}
 
 		// check permission
@@ -214,9 +215,9 @@ func (user *User) LoadUserByID(userID int) error {
 		for divisionID := range user.BanDivision {
 			// get the latest punishments in divisionID
 			var latestPunishment *Punishment
-			for _, punishment := range user.UserPunishments {
-				if punishment.DivisionID == divisionID {
-					latestPunishment = punishment
+			for i := range user.UserPunishments {
+				if user.UserPunishments[i].DivisionID == divisionID {
+					latestPunishment = user.UserPunishments[i]
 				}
 			}
 

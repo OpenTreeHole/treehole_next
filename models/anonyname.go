@@ -1,6 +1,7 @@
 package models
 
 import (
+	"errors"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"treehole_next/utils"
@@ -30,31 +31,32 @@ func FindOrGenerateAnonyname(tx *gorm.DB, holeID, userID int) (string, error) {
 		Where("user_id = ?", userID).
 		Take(&anonyname).Error
 
-	if err == gorm.ErrRecordNotFound {
-		var names []string
-		err = tx.
-			Clauses(clause.Locking{Strength: "UPDATE"}).
-			Model(&AnonynameMapping{}).
-			Select("anonyname").
-			Where("hole_id = ?", holeID).
-			Order("anonyname").
-			Scan(&names).Error
-		if err != nil {
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			var names []string
+			err = tx.
+				Clauses(clause.Locking{Strength: "UPDATE"}).
+				Model(&AnonynameMapping{}).
+				Select("anonyname").
+				Where("hole_id = ?", holeID).
+				Order("anonyname").
+				Scan(&names).Error
+			if err != nil {
+				return "", err
+			}
+
+			anonyname = utils.GenerateName(names)
+			err = tx.Create(&AnonynameMapping{
+				HoleID:    holeID,
+				UserID:    userID,
+				Anonyname: anonyname,
+			}).Error
+			if err != nil {
+				return anonyname, err
+			}
+		} else {
 			return "", err
 		}
-
-		anonyname = utils.GenerateName(names)
-		err = tx.Create(&AnonynameMapping{
-			HoleID:    holeID,
-			UserID:    userID,
-			Anonyname: anonyname,
-		}).Error
-		if err != nil {
-			return anonyname, err
-		}
-	} else if err != nil {
-		return "", err
 	}
-
 	return anonyname, nil
 }
