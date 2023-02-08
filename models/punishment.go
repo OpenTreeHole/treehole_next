@@ -19,7 +19,7 @@ type Punishment struct {
 	ID int `json:"id" gorm:"primaryKey"`
 
 	// time when this punishment creates
-	CreateAt time.Time `json:"create_at" gorm:"not null"`
+	CreatedAt time.Time `json:"created_at" gorm:"not null"`
 
 	// start from end_time of previous punishment (punishment accumulation of different floors)
 	// if no previous punishment or previous punishment end time less than time.Now() (synced), set start time time.Now()
