@@ -63,7 +63,7 @@ type User struct {
 		// 管理员权限到期时间
 		Admin time.Time `json:"admin"`
 		// key: division_id value: 对应分区禁言解除时间
-		Silence      map[int]*time.Time `json:"silence"`
+		Silent       map[int]*time.Time `json:"silent"`
 		OffenseCount int                `json:"offense_count"`
 	} `json:"permission" gorm:"-:all"`
 
@@ -176,7 +176,7 @@ func GetUser(c *fiber.Ctx) (*User, error) {
 	} else {
 		user.Permission.Admin = minTime
 	}
-	user.Permission.Silence = user.BanDivision
+	user.Permission.Silent = user.BanDivision
 	user.Permission.OffenseCount = user.OffenceCount
 	return user, err
 }
