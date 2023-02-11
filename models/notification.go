@@ -14,6 +14,7 @@ import (
 	"treehole_next/config"
 	"treehole_next/utils"
 
+	"golang.org/x/exp/slices"
 	"gorm.io/gorm/clause"
 
 	"github.com/goccy/go-json"
@@ -98,30 +99,25 @@ func (messages Notifications) Send() error {
 	return nil
 }
 
-// contains checks if a string is present in a slice
-func contains(s []string, str string) bool {
-	for _, v := range s {
-		if v == str {
-			return true
-		}
-	}
-
-	return false
-}
-
 // check user.config.Notify contain message.Type
 func (message *Notification) checkConfig() {
+	// generate new recipients
 	var newRecipient []int
-	for _, recipient := range message.Recipients {
-		var config UserConfig
-		result := DB.Raw("SELECT config from user WHERE id = ?", recipient).Scan(&config)
-		if result.Error != nil {
+
+	// find users
+	var users []User
+	result := DB.Select("config").Find(&users, "id in ?", message.Recipients)
+	if result.Error != nil {
+		message.Recipients = newRecipient
+		return
+	}
+
+	// filter recipients
+	for _, user := range users {
+		if slices.Contains(defaultUserConfig.Notify, string(message.Type)) && !slices.Contains(user.Config.Notify, string(message.Type)) {
 			continue
 		}
-		if contains(defaultUserConfig.Notify, string(message.Type)) && !contains(config.Notify, string(message.Type)) {
-			continue
-		}
-		newRecipient = append(newRecipient, recipient)
+		newRecipient = append(newRecipient, user.ID)
 	}
 	message.Recipients = newRecipient
 }
