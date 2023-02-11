@@ -1,7 +1,7 @@
 package tests
 
 import (
-	"encoding/json"
+	"github.com/goccy/go-json"
 	"strconv"
 	"strings"
 	"testing"
@@ -11,36 +11,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func init() {
-	holes := make([]Hole, 10)
-	for i := 0; i < 10; i++ {
-		holes[i] = Hole{
-			DivisionID: 7,
-		}
-	}
-	for i := 1; i <= 50; i++ {
-		holes[0].Floors = append(holes[0].Floors, Floor{Content: strings.Repeat("1", i)})
-	}
-	holes[0].Floors[10].Mention = []Floor{
-		{HoleID: 102},
-		{HoleID: 304},
-	}
-	holes[0].Floors[11].Mention = []Floor{
-		{HoleID: 506},
-		{HoleID: 708},
-	}
-	holes[1].Floors = []Floor{{Content: "123456789"}}                                           // for TestCreate
-	holes[2].Floors = []Floor{{Content: "123456789"}}                                           // for TestCreate
-	holes[3].Floors = []Floor{{Content: "123456789"}}                                           // for TestModify
-	holes[4].Floors = []Floor{{Content: "123456789"}}                                           // for TestModify like
-	holes[5].Floors = []Floor{{Content: "123456789", UserID: 1}, {Content: "23333", UserID: 5}} // for TestDelete
-	DB.Create(&holes)
-}
-
 func TestListFloorsInAHole(t *testing.T) {
 	var hole Hole
 	DB.Where("division_id = ?", 7).First(&hole)
-	var floors []Floor
+	var floors Floors
 	testAPIModel(t, "get", "/api/holes/"+strconv.Itoa(hole.ID)+"/floors", 200, &floors)
 	assert.EqualValues(t, Config.Size, len(floors))
 	if len(floors) != 0 {
@@ -70,7 +44,7 @@ func TestListFloorsOld(t *testing.T) {
 	var hole Hole
 	DB.Where("division_id = ?", 7).First(&hole)
 	data := Map{"hole_id": hole.ID}
-	var floors []Floor
+	var floors Floors
 	testAPIModelWithQuery(t, "get", "/api/floors", 200, &floors, data)
 	assert.EqualValues(t, Config.MaxSize, len(floors))
 	if len(floors) != 0 {
@@ -83,11 +57,11 @@ func TestGetFloor(t *testing.T) {
 	DB.Where("division_id = ?", 7).First(&hole)
 	var floor Floor
 	DB.Where("hole_id = ?", hole.ID).First(&floor)
-	var getfloor Floor
-	testAPIModel(t, "get", "/api/floors/"+strconv.Itoa(floor.ID), 200, &getfloor)
-	assert.EqualValues(t, floor.Content, getfloor.Content)
+	var getFloor Floor
+	testAPIModel(t, "get", "/api/floors/"+strconv.Itoa(floor.ID), 200, &getFloor)
+	assert.EqualValues(t, floor.Content, getFloor.Content)
 
-	testAPIModel(t, "get", "/api/floors/"+strconv.Itoa(largeInt), 404, &getfloor)
+	testAPIModel(t, "get", "/api/floors/"+strconv.Itoa(largeInt), 404, &getFloor)
 }
 
 func TestCreateFloor(t *testing.T) {
@@ -95,15 +69,15 @@ func TestCreateFloor(t *testing.T) {
 	DB.Where("division_id = ?", 7).Offset(1).First(&hole)
 	content := "123"
 	data := Map{"content": content}
-	var getfloor Floor
-	testAPIModel(t, "post", "/api/holes/"+strconv.Itoa(hole.ID)+"/floors", 201, &getfloor, data)
-	assert.EqualValues(t, content, getfloor.Content)
+	var getFloor Floor
+	testAPIModel(t, "post", "/api/holes/"+strconv.Itoa(hole.ID)+"/floors", 201, &getFloor, data)
+	assert.EqualValues(t, content, getFloor.Content)
 
-	var floors []Floor
+	var floors Floors
 	DB.Where("hole_id = ?", hole.ID).Find(&floors)
 	assert.EqualValues(t, 2, len(floors))
 
-	testAPIModel(t, "post", "/api/holes/"+strconv.Itoa(largeInt)+"/floors", 404, &getfloor, data)
+	testAPIModel(t, "post", "/api/holes/"+strconv.Itoa(largeInt)+"/floors", 404, &getFloor, data)
 }
 
 func TestCreateFloorOld(t *testing.T) {
@@ -115,13 +89,13 @@ func TestCreateFloorOld(t *testing.T) {
 		Data    Floor
 		Message string
 	}
-	var getfloor CreateOLdResponse
+	var getFloor CreateOLdResponse
 	rsp := testCommon(t, "post", "/api/floors", 201, data)
-	err := json.Unmarshal(rsp, &getfloor)
+	err := json.Unmarshal(rsp, &getFloor)
 	assert.Nilf(t, err, "Unmarshal Failed")
-	assert.EqualValues(t, content, getfloor.Data.Content)
+	assert.EqualValues(t, content, getFloor.Data.Content)
 
-	var floors []Floor
+	var floors Floors
 	DB.Where("hole_id = ?", hole.ID).Find(&floors)
 	assert.EqualValues(t, 2, len(floors))
 	if len(floors) != 0 {
@@ -177,9 +151,9 @@ func TestModifyFloor(t *testing.T) {
 	DB.Find(&getFloor, floor.ID)
 	assert.EqualValues(t, "test_test", getFloor.Fold)
 
-	// test6: fold == nil, fold_v2 == "": do nothing
+	// test6: fold == nil, fold_v2 == "": do nothing; 无效请求
 	data = Map{}
-	testAPI(t, "put", "/api/floors/"+strconv.Itoa(floor.ID), 200, data)
+	testAPI(t, "put", "/api/floors/"+strconv.Itoa(floor.ID), 400, data)
 	DB.Find(&getFloor, floor.ID)
 	assert.EqualValues(t, "test_test", getFloor.Fold)
 
@@ -208,13 +182,15 @@ func TestModifyFloorLike(t *testing.T) {
 	}
 	DB.First(&floor, floor.ID)
 	assert.EqualValues(t, 1, floor.Like)
+	assert.EqualValues(t, 0, floor.Dislike)
 
 	// dislike
 	for i := 0; i < 15; i++ {
 		testAPI(t, "post", "/api/floors/"+strconv.Itoa(floor.ID)+"/like/-1", 200)
 	}
 	DB.First(&floor, floor.ID)
-	assert.EqualValues(t, -1, floor.Like)
+	assert.EqualValues(t, 0, floor.Like)
+	assert.EqualValues(t, 1, floor.Dislike)
 
 	// reset
 	testAPI(t, "post", "/api/floors/"+strconv.Itoa(floor.ID)+"/like/0", 200)

@@ -1,6 +1,7 @@
 package models
 
 import (
+	"time"
 	"treehole_next/utils"
 
 	"github.com/gofiber/fiber/v2"
@@ -8,19 +9,36 @@ import (
 )
 
 type Division struct {
-	BaseModel
-	DivisionID  int      `json:"division_id" gorm:"-:all"`
-	Name        string   `json:"name" gorm:"unique"`
-	Description string   `json:"description"`
-	Pinned      IntArray `json:"-"` // pinned holes in given order
-	Holes       []Hole   `json:"pinned"`
+	/// saved fields
+	ID        int       `json:"id" gorm:"primaryKey"`
+	CreatedAt time.Time `json:"time_created" gorm:"not null"`
+	UpdatedAt time.Time `json:"time_updated" gorm:"not null"`
+
+	/// base info
+	Name        string `json:"name" gorm:"unique;size:10"`
+	Description string `json:"description" gorm:"size:64"`
+
+	// pinned holes in given order
+	Pinned []int `json:"-" gorm:"serializer:json;size:100;not null;default:\"[]\""`
+
+	/// association fields, should add foreign key
+
+	// return pinned hole to frontend
+	Holes Holes `json:"pinned"`
+
+	/// generated field
+	DivisionID int `json:"division_id" gorm:"-:all"`
+}
+
+func (division *Division) GetID() int {
+	return division.ID
 }
 
 type Divisions []*Division
 
 func (divisions Divisions) Preprocess(c *fiber.Ctx) error {
-	for i := 0; i < len(divisions); i++ {
-		err := divisions[i].Preprocess(c)
+	for _, division := range divisions {
+		err := division.Preprocess(c)
 		if err != nil {
 			return err
 		}
@@ -29,9 +47,9 @@ func (divisions Divisions) Preprocess(c *fiber.Ctx) error {
 }
 
 func (division *Division) Preprocess(c *fiber.Ctx) error {
-	var pinned = []int(division.Pinned)
+	var pinned = division.Pinned
 	if len(pinned) == 0 {
-		division.Holes = []Hole{}
+		division.Holes = Holes{}
 		return nil
 	}
 	var holes Holes
@@ -45,12 +63,12 @@ func (division *Division) Preprocess(c *fiber.Ctx) error {
 	return nil
 }
 
-func (division *Division) AfterFind(tx *gorm.DB) (err error) {
+func (division *Division) AfterFind(_ *gorm.DB) (err error) {
 	division.DivisionID = division.ID
 	return nil
 }
 
-func (division *Division) AfterCreate(tx *gorm.DB) (err error) {
+func (division *Division) AfterCreate(_ *gorm.DB) (err error) {
 	division.DivisionID = division.ID
 	return nil
 }

@@ -11,26 +11,27 @@ import (
 )
 
 // AddDivision
-// @Summary Add A Division
-// @Tags Division
-// @Accept application/json
-// @Produce application/json
-// @Router /divisions [post]
-// @Param json body CreateModel true "json"
-// @Success 201 {object} models.Division
-// @Success 200 {object} models.Division
+//
+//	@Summary	Add A Division
+//	@Tags		Division
+//	@Accept		application/json
+//	@Produce	application/json
+//	@Router		/divisions [post]
+//	@Param		json	body		CreateModel	true	"json"
+//	@Success	201		{object}	models.Division
+//	@Success	200		{object}	models.Division
 func AddDivision(c *fiber.Ctx) error {
 	// validate body
-	var body CreateModel
-	err := ValidateBody(c, &body)
+	body, err := ValidateBody[CreateModel](c)
 	if err != nil {
 		return err
 	}
 
 	// bind division
-	var division Division
-	division.Name = body.Name
-	division.Description = body.Description
+	division := Division{
+		Name:        body.Name,
+		Description: body.Description,
+	}
 	result := DB.FirstOrCreate(&division, Division{Name: body.Name})
 	if result.RowsAffected == 0 {
 		c.Status(200)
@@ -41,11 +42,12 @@ func AddDivision(c *fiber.Ctx) error {
 }
 
 // ListDivisions
-// @Summary List All Divisions
-// @Tags Division
-// @Produce application/json
-// @Router /divisions [get]
-// @Success 200 {array} models.Division
+//
+//	@Summary	List All Divisions
+//	@Tags		Division
+//	@Produce	application/json
+//	@Router		/divisions [get]
+//	@Success	200	{array}	models.Division
 func ListDivisions(c *fiber.Ctx) error {
 	var divisions Divisions
 	if GetCache("divisions", &divisions) {
@@ -56,13 +58,14 @@ func ListDivisions(c *fiber.Ctx) error {
 }
 
 // GetDivision
-// @Summary Get Division
-// @Tags Division
-// @Produce application/json
-// @Router /divisions/{id} [get]
-// @Param id path int true "id"
-// @Success 200 {object} models.Division
-// @Failure 404 {object} MessageModel
+//
+//	@Summary	Get Division
+//	@Tags		Division
+//	@Produce	application/json
+//	@Router		/divisions/{id} [get]
+//	@Param		id	path		int	true	"id"
+//	@Success	200	{object}	models.Division
+//	@Failure	404	{object}	MessageModel
 func GetDivision(c *fiber.Ctx) error {
 	id, err := c.ParamsInt("id")
 	if err != nil {
@@ -77,18 +80,18 @@ func GetDivision(c *fiber.Ctx) error {
 }
 
 // ModifyDivision
-// @Summary Modify A Division
-// @Tags Division
-// @Produce application/json
-// @Router /divisions/{id} [put]
-// @Param id path int true "id"
-// @Param json body ModifyModel true "json"
-// @Success 200 {object} models.Division
-// @Failure 404 {object} MessageModel
+//
+//	@Summary	Modify A Division
+//	@Tags		Division
+//	@Produce	json
+//	@Router		/divisions/{id} [put]
+//	@Param		id		path		int			true	"id"
+//	@Param		json	body		ModifyModel	true	"json"
+//	@Success	200		{object}	models.Division
+//	@Failure	404		{object}	MessageModel
 func ModifyDivision(c *fiber.Ctx) error {
 	// validate body
-	var body ModifyModel
-	err := ValidateBody(c, &body)
+	body, err := ValidateBody[ModifyModel](c)
 	if err != nil {
 		return err
 	}
@@ -125,39 +128,53 @@ func ModifyDivision(c *fiber.Ctx) error {
 }
 
 // DeleteDivision
-// @Summary Delete A Division
-// @Description Delete a division and move all of its holes to another given division
-// @Tags Division
-// @Produce application/json
-// @Router /divisions/{id} [delete]
-// @Param id path int true "id"
-// @Param json body DeleteModel true "json"
-// @Success 204
-// @Failure 404 {object} MessageModel
+//
+//	@Summary		Delete A Division
+//	@Description	Delete a division and move all of its holes to another given division
+//	@Tags			Division
+//	@Produce		application/json
+//	@Router			/divisions/{id} [delete]
+//	@Param			id		path	int			true	"id"
+//	@Param			json	body	DeleteModel	true	"json"
+//	@Success		204
+//	@Failure		404	{object}	MessageModel
 func DeleteDivision(c *fiber.Ctx) error {
 	// validate body
+	body, err := ValidateBody[DeleteModel](c)
+	if err != nil {
+		return err
+	}
 	id, err := c.ParamsInt("id")
 	if err != nil {
 		return err
 	}
-	var body DeleteModel
-	err = ValidateBody(c, &body)
+
+	// get user
+	user, err := GetUser(c)
 	if err != nil {
 		return err
+	}
+	if !user.IsAdmin {
+		return Forbidden()
 	}
 
 	if id == body.To {
 		return BadRequest("The deleted division can't be the same as to.")
 	}
-	DB.Exec("UPDATE hole SET division_id = ? WHERE division_id = ?", body.To, id)
-	DB.Delete(&Division{}, id)
-
-	// log
-	userID, err := GetUserID(c)
+	err = DB.Exec("UPDATE hole SET division_id = ? WHERE division_id = ?", body.To, id).Error
 	if err != nil {
 		return err
 	}
-	MyLog("Division", "Delete", id, userID, RoleAdmin, "To: ", strconv.Itoa(body.To))
+	err = DB.Delete(&Division{ID: id}).Error
+	if err != nil {
+		return err
+	}
+
+	// log
+	if err != nil {
+		return err
+	}
+	MyLog("Division", "Delete", id, user.ID, RoleAdmin, "To: ", strconv.Itoa(body.To))
 
 	go refreshCache()
 

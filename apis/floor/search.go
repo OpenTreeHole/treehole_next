@@ -1,87 +1,48 @@
 package floor
 
 import (
-	"bytes"
-	"encoding/json"
-	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/gofiber/fiber/v2"
-	"go.uber.org/zap"
-	"log"
 	. "treehole_next/config"
 	. "treehole_next/models"
 	. "treehole_next/utils"
-	"treehole_next/utils/perm"
 )
 
-var ES *elasticsearch.Client
-
-func init() {
-	if Config.Mode == "test" || Config.Mode == "bench" || Config.ElasticsearchUrl == "" {
-		return
-	}
-
-	// export ELASTICSEARCH_URL environment variable to set the ElasticSearch URL
-	// example: http://user:pass@127.0.0.1:9200
-	es, err := elasticsearch.NewClient(elasticsearch.Config{
-		Addresses: []string{Config.ElasticsearchUrl},
-	})
-	if err != nil {
-		panic(err)
-	}
-	log.Println(elasticsearch.Version)
-	log.Println(es.Info())
-	ES = es
-}
-
-type SearchResponse struct {
-	Took     int  `json:"took"`
-	TimedOut bool `json:"timed_out"`
-	Shards   struct {
-		Total      int `json:"total"`
-		Successful int `json:"successful"`
-		Failed     int `json:"failed"`
-		Skipped    int `json:"skipped"`
-	} `json:"_shards"`
-	Hits struct {
-		Total struct {
-			Value    int    `json:"value"`
-			Relation string `json:"relation"`
-		} `json:"total"`
-		Hits []struct {
-			Index  string              `json:"_index"`
-			ID     string              `json:"_id"`
-			Score  float64             `json:"_score"`
-			Source SearchFloorResponse `json:"_source"`
-		} `json:"hits"`
-	} `json:"hits"`
-}
-
-type SearchFloorResponse struct {
-	ID      int    `json:"id"`
-	Content string `json:"content"`
+type SearchQuery struct {
+	Search string `json:"search" query:"search" validate:"required"`
+	Size   int    `json:"size" query:"size" validate:"min=0" default:"10"`
+	Offset int    `json:"offset" query:"offset" validate:"min=0" default:"0"`
 }
 
 // SearchFloors
-// @Summary SearchFloors In ElasticSearch
-// @Tags Search
-// @Produce application/json
-// @Router /floors/search [post]
-// @Param json body any true "json"
-// @Success 200 {array} models.Floor
+//
+//	@Summary	SearchFloors In ElasticSearch
+//	@Tags		Search
+//	@Produce	application/json
+//	@Router		/floors/search [get]
+//	@Param		object	query	SearchQuery	true	"search_query"
+//	@Success	200		{array}	models.Floor
 func SearchFloors(c *fiber.Ctx) error {
-	// forwarding
-	var body bytes.Buffer
-	body.Write(c.Body())
-	return search(c, body)
+	query, err := ValidateQuery[SearchQuery](c)
+	if err != nil {
+		return err
+	}
+
+	floors, err := Search(query.Search, query.Size, query.Offset)
+	if err != nil {
+		return err
+	}
+
+	return Serialize(c, floors)
 }
 
 // SearchConfig
-// @Summary change search config
-// @Tags Search
-// @Produce application/json
-// @Router /config/search [post]
-// @Param json body SearchConfigModel true "json"
-// @Success 200 {object} Map
+//
+//	@Summary	change search config
+//	@Tags		Search
+//	@Produce	application/json
+//	@Router		/config/search [post]
+//	@Param		json	body		SearchConfigModel	true	"json"
+//	@Success	200		{object}	Map
 func SearchConfig(c *fiber.Ctx) error {
 	var body SearchConfigModel
 	err := c.BodyParser(&body)
@@ -92,7 +53,7 @@ func SearchConfig(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	if !perm.CheckPermission(user, perm.Admin) {
+	if !user.IsAdmin {
 		return Forbidden()
 	}
 	if DynamicConfig.OpenSearch.Load() == body.Open {
@@ -103,66 +64,14 @@ func SearchConfig(c *fiber.Ctx) error {
 	}
 }
 
-func SearchFloorsOld(c *fiber.Ctx, query ListOldModel) error {
+func SearchFloorsOld(c *fiber.Ctx, query *ListOldModel) error {
 	if DynamicConfig.OpenSearch.Load() == false {
 		return Forbidden("树洞流量激增，搜索功能暂缓开放")
 	}
-	floors := Floors{}
-	result := DB.
-		Where("content like ?", "%"+query.Search+"%").
-		Where("hole_id in (?)", DB.Table("hole").Select("id").Where("hidden = false")).
-		Offset(query.Offset).Limit(query.Size).Order("id desc").
-		Preload("Mention").Find(&floors)
-	if result.Error != nil {
-		return result.Error
-	}
-	return Serialize(c, &floors)
-}
 
-func search(c *fiber.Ctx, body bytes.Buffer) error {
-	res, err := ES.Search(
-		ES.Search.WithIndex("floor"),
-		ES.Search.WithBody(&body),
-	)
+	floors, err := Search(query.Search, query.Size, query.Offset)
 	if err != nil {
 		return err
-	}
-	//goland:noinspection GoUnhandledErrorResult
-	defer res.Body.Close()
-
-	if res.IsError() {
-		e := Map{}
-		err = json.NewDecoder(res.Body).Decode(&e)
-		if err != nil {
-			return err
-		} else {
-			return c.Status(502).JSON(&e)
-		}
-	}
-
-	var response SearchResponse
-	err = json.NewDecoder(res.Body).Decode(&response)
-	if err != nil {
-		return err
-	}
-
-	floorIDs := make([]int, len(response.Hits.Hits))
-	for i, hit := range response.Hits.Hits {
-		floorIDs[i] = hit.Source.ID
-	}
-	Logger.Debug("search response", zap.Ints("floorIDs", floorIDs))
-
-	// get floors
-	floors := Floors{}
-	if len(floorIDs) > 0 {
-
-		result := DB.Preload("Mention").Find(&floors, floorIDs)
-		if result.Error != nil {
-			return result.Error
-		}
-
-		// order
-		floors = OrderInGivenOrder(floors, floorIDs)
 	}
 
 	return Serialize(c, &floors)

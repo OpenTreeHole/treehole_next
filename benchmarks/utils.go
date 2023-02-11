@@ -2,10 +2,10 @@ package benchmarks
 
 import (
 	"bytes"
-	"encoding/json"
+	"github.com/goccy/go-json"
 	"github.com/hetiansu5/urlquery"
 	"github.com/stretchr/testify/assert"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 	"testing"
@@ -13,7 +13,7 @@ import (
 	. "treehole_next/models"
 )
 
-var App = bootstrap.Init()
+var App, _ = bootstrap.Init()
 
 var _ Map
 
@@ -60,7 +60,7 @@ func benchmarkCommon(b *testing.B, method string, route string, requestType int,
 	b.StopTimer()
 	assert.Nilf(b, err, "perform request")
 
-	responseBody, err := ioutil.ReadAll(res.Body)
+	responseBody, err := io.ReadAll(res.Body)
 	assert.Nilf(b, err, "decode response")
 
 	if res.StatusCode != 200 && res.StatusCode != 201 {

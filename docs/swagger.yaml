@@ -56,6 +56,7 @@ definitions:
   floor.CreateModel:
     properties:
       content:
+        maxLength: 15000
         type: string
       reply_to:
         description: id of the floor to which replied
@@ -71,6 +72,7 @@ definitions:
   floor.CreateOldModel:
     properties:
       content:
+        maxLength: 15000
         type: string
       hole_id:
         minimum: 1
@@ -137,8 +139,6 @@ definitions:
     properties:
       open:
         type: boolean
-    required:
-    - open
     type: object
   hole.CreateModel:
     properties:
@@ -152,6 +152,8 @@ definitions:
         description: All users
         items:
           $ref: '#/definitions/tag.CreateModel'
+        maxItems: 10
+        minItems: 1
         type: array
     required:
     - content
@@ -161,7 +163,6 @@ definitions:
       content:
         type: string
       division_id:
-        description: Admin only
         minimum: 1
         type: integer
       special_tag:
@@ -172,6 +173,8 @@ definitions:
         description: All users
         items:
           $ref: '#/definitions/tag.CreateModel'
+        maxItems: 10
+        minItems: 1
         type: array
     required:
     - content
@@ -186,28 +189,46 @@ definitions:
   hole.ModifyModel:
     properties:
       division_id:
-        description: Admin only
+        description: Admin and owner only
         minimum: 1
         type: integer
       tags:
         description: All users
         items:
           $ref: '#/definitions/tag.CreateModel'
+        maxItems: 10
+        minItems: 1
         type: array
       unhidden:
         type: boolean
+    type: object
+  message.CreateModel:
+    properties:
+      description:
+        description: MessageTypeMail
+        type: string
+      recipients:
+        items:
+          type: integer
+        type: array
+    required:
+    - recipients
     type: object
   models.Division:
     properties:
       description:
         type: string
       division_id:
+        description: / generated field
         type: integer
       id:
+        description: / saved fields
         type: integer
       name:
+        description: / base info
         type: string
       pinned:
+        description: return pinned hole to frontend
         items:
           $ref: '#/definitions/models.Hole'
         type: array
@@ -222,15 +243,19 @@ definitions:
         description: a random username
         type: string
       content:
-        description: content of the floor
+        description: content of the floor, no more than 15000
         type: string
       deleted:
         description: whether the floor is deleted
         type: boolean
+      dislike:
+        description: dislike number
+        type: integer
       disliked:
-        description: whether the user has disliked the floor, dynamically generated
+        description: whether the user has disliked the floor
         type: boolean
       floor_id:
+        description: old version compatibility
         type: integer
       fold:
         description: fold reason, for v1
@@ -244,30 +269,34 @@ definitions:
         description: the hole it belongs to
         type: integer
       id:
+        description: / saved fields
         type: integer
       is_me:
-        description: whether the user is the author of the floor, dynamically generated
+        description: whether the user is the author of the floor
         type: boolean
       like:
-        description: like number - dislike number
+        description: like number
         type: integer
       liked:
-        description: whether the user has liked the floor, dynamically generated
+        description: whether the user has liked the floor
         type: boolean
       mention:
-        description: many to many mentions (in different holes)
+        description: many to many mentions
         items:
           $ref: '#/definitions/models.Floor'
         type: array
-      path:
-        description: storey path e.g. /1/2/3/
-        type: string
+      modified:
+        description: the modification times of floor.content
+        type: integer
+      ranking:
+        description: the ranking of this floor in the hole
+        type: integer
+      reply_to:
+        description: floor_id that it replies to, for dialog mode, in the same hole
+        type: integer
       special_tag:
         description: additional info, like "树洞管理团队"
         type: string
-      storey:
-        description: the sequence of floors in a hole
-        type: integer
       time_created:
         type: string
       time_updated:
@@ -280,6 +309,7 @@ definitions:
       floor_id:
         type: integer
       id:
+        description: / base info
         type: integer
       reason:
         type: string
@@ -297,8 +327,22 @@ definitions:
         description: 所属 division 的 id
         type: integer
       floors:
-        $ref: '#/definitions/models.HoleFloor'
         description: 返回给前端的楼层列表，包括首楼、尾楼和预加载的前 n 个楼层
+        properties:
+          first_floor:
+            allOf:
+            - $ref: '#/definitions/models.Floor'
+            description: 首楼
+          last_floor:
+            allOf:
+            - $ref: '#/definitions/models.Floor'
+            description: 尾楼
+          prefetch:
+            description: 预加载的楼层
+            items:
+              $ref: '#/definitions/models.Floor'
+            type: array
+        type: object
       hidden:
         description: 是否隐藏，隐藏的洞用户不可见，管理员可见
         type: boolean
@@ -306,12 +350,13 @@ definitions:
         description: 兼容旧版 id
         type: integer
       id:
+        description: / saved fields
         type: integer
       reply:
-        description: 回复量（即该洞下 floor 的数量）
+        description: 回复量（即该洞下 floor 的数量 - 1）
         type: integer
       tags:
-        description: tag 列表
+        description: tag 列表；不超过 10 个
         items:
           $ref: '#/definitions/models.Tag'
         type: array
@@ -323,28 +368,64 @@ definitions:
         description: 浏览量
         type: integer
     type: object
-  models.HoleFloor:
-    properties:
-      first_floor:
-        $ref: '#/definitions/models.Floor'
-        description: 首楼
-      last_floor:
-        $ref: '#/definitions/models.Floor'
-        description: 尾楼
-      prefetch:
-        description: 预加载的楼层
-        items:
-          $ref: '#/definitions/models.Floor'
-        type: array
-    type: object
   models.Map:
     additionalProperties: true
+    type: object
+  models.Message:
+    properties:
+      code:
+        $ref: '#/definitions/models.MessageType'
+      data: {}
+      description:
+        type: string
+      has_read:
+        description: 兼容旧版, 永远为false，以MessageUser的HasRead为准
+        type: boolean
+      id:
+        type: integer
+      message:
+        type: string
+      message_id:
+        description: 兼容旧版 id
+        type: integer
+      time_created:
+        type: string
+      time_updated:
+        type: string
+      url:
+        type: string
+      user:
+        items:
+          $ref: '#/definitions/models.User'
+        type: array
     type: object
   models.MessageModel:
     properties:
       message:
         type: string
     type: object
+  models.MessageType:
+    enum:
+    - favorite
+    - reply
+    - mention
+    - modify
+    - permission
+    - report
+    - report_dealt
+    - mail
+    type: string
+    x-enum-comments:
+      MessageTypeModify: including fold and delete
+    x-enum-varnames:
+    - MessageTypeFavorite
+    - MessageTypeReply
+    - MessageTypeMention
+    - MessageTypeModify
+    - MessageTypePermission
+    - MessageTypeReport
+    - MessageTypeReportDealt
+    - MessageTypeMail
   models.Report:
     properties:
       dealt:
@@ -376,24 +457,77 @@ definitions:
   models.Tag:
     properties:
       id:
+        description: / saved fields
         type: integer
       name:
+        description: / base info
         type: string
       tag_id:
+        description: / generated field
         type: integer
       temperature:
         type: integer
-      time_created:
+    type: object
+  models.User:
+    properties:
+      config:
+        $ref: '#/definitions/models.UserConfig'
+      id:
+        description: / base info
+        type: integer
+      is_admin:
+        description: get from jwt
+        type: boolean
+      joined_time:
         type: string
-      time_updated:
+      last_login:
+        type: string
+      nickname:
+        type: string
+      permission:
+        properties:
+          admin:
+            description: 管理员权限到期时间
+            type: string
+          offense_count:
+            type: integer
+          silence:
+            additionalProperties:
+              type: string
+            description: 'key: division_id value: 对应分区禁言解除时间'
+            type: object
+        type: object
+    type: object
+  models.UserConfig:
+    properties:
+      notify:
+        description: used when notify
+        items:
+          type: string
+        type: array
+      show_folded:
+        description: |-
+          对折叠内容的处理
+          fold 折叠, hide 隐藏, show 展示
         type: string
     type: object
   penalty.PostBody:
     properties:
+      days:
+        description: high priority
+        minimum: 1
+        type: integer
       division_id:
+        minimum: 1
         type: integer
       penalty_level:
+        description: low priority, deprecated
         type: integer
+      reason:
+        description: optional
+        type: string
+    required:
+    - division_id
     type: object
   report.AddModel:
     properties:
@@ -415,10 +549,21 @@ definitions:
     required:
     - result
     type: object
+  report.Range:
+    enum:
+    - 0
+    - 1
+    - 2
+    type: integer
+    x-enum-varnames:
+    - RangeNotDealt
+    - RangeDealt
+    - RangeAll
   tag.CreateModel:
     properties:
       name:
         description: Admin only
+        maxLength: 32
         type: string
     type: object
   tag.DeleteModel:
@@ -433,6 +578,7 @@ definitions:
     properties:
       name:
         description: Admin only
+        maxLength: 32
         type: string
       temperature:
         description: Admin only
@@ -460,15 +606,15 @@ definitions:
     type: object
 info:
   contact:
-    email: hasbai@fduhole.com
-    name: Maintainer Shi Yue
+    email: dev@fduhole.com
+    name: Maintainer Ke Chen
   description: 'An Anonymous BBS \n Note: PUT methods are used to PARTLY update, and
     we don''t use PATCH method.'
   license:
     name: Apache 2.0
-    url: http://www.apache.org/licenses/LICENSE-2.0.html
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
   title: Open Tree Hole
-  version: 2.0.0
+  version: 2.1.0
 paths:
   /:
     get:
@@ -680,8 +826,7 @@ paths:
       - in: query
         name: hole_id
         type: integer
-      - default: 30
-        in: query
+      - in: query
         maximum: 50
         minimum: 0
         name: length
@@ -885,14 +1030,22 @@ paths:
       tags:
       - Floor
   /floors/search:
-    post:
+    get:
       parameters:
-      - description: json
-        in: body
-        name: json
+      - default: 0
+        in: query
+        minimum: 0
+        name: offset
+        type: integer
+      - in: query
+        name: search
         required: true
-        schema:
-          type: object
+        type: string
+      - default: 10
+        in: query
+        minimum: 0
+        name: size
+        type: integer
       produces:
       - application/json
       responses:
@@ -971,14 +1124,13 @@ paths:
         minimum: 0
         name: offset
         type: integer
-      - default: storey
+      - default: id
         description: SQL ORDER BY field
         enum:
-        - storey
         - id
         - like
         in: query
-        name: orderBy
+        name: order_by
         type: string
       - default: 30
         description: length of object array
@@ -1120,9 +1272,81 @@ paths:
       summary: Modify A Hole
       tags:
       - Hole
+  /messages:
+    get:
+      parameters:
+      - default: false
+        in: query
+        name: not_read
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Message'
+            type: array
+      summary: List Messages of a User
+      tags:
+      - Message
+    post:
+      description: Send to multiple recipients and save to db, admin only.
+      parameters:
+      - description: json
+        in: body
+        name: json
+        required: true
+        schema:
+          $ref: '#/definitions/message.CreateModel'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Message'
+      summary: Send a Mail
+      tags:
+      - Message
+    put:
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+      summary: Clear Messages Deprecated
+      tags:
+      - Message
+  /messages/{id}:
+    delete:
+      parameters:
+      - description: message id
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+      summary: Delete a message of a user
+      tags:
+      - Message
+  /messages/clear:
+    post:
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+      summary: Clear Messages of a User
+      tags:
+      - Message
   /penalty/{floor_id}:
     post:
-      deprecated: true
       parameters:
       - description: json
         in: body
@@ -1136,30 +1360,23 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/models.Hole'
-      summary: '[Deprecated] Ban publisher of a floor'
+            $ref: '#/definitions/models.User'
+      summary: Ban publisher of a floor
       tags:
       - Penalty
   /reports:
     get:
       parameters:
       - default: 0
-        description: offset of object array
         in: query
         minimum: 0
         name: offset
         type: integer
       - default: id
-        description: SQL ORDER BY field
         in: query
         name: orderBy
         type: string
-      - description: 'Range, 0: not dealt, 1: dealt, 2: all'
-        in: query
-        name: range
-        type: integer
       - default: 30
-        description: length of object array
         in: query
         maximum: 50
         minimum: 0
@@ -1265,6 +1482,7 @@ paths:
       parameters:
       - description: search tag by name
         in: query
+        maxLength: 32
         name: s
         type: string
       produces:
@@ -1436,6 +1654,14 @@ paths:
       - Favorite
     get:
       parameters:
+      - default: time_created
+        enum:
+        - id
+        - time_created
+        - hole_time_updated
+        in: query
+        name: order
+        type: string
       - default: false
         in: query
         name: plain
@@ -1498,9 +1724,30 @@ paths:
       summary: Modify User's Favorites
       tags:
       - Favorite
-securityDefinitions:
-  ApiKeyAuth:
-    in: header
-    name: Authorization
-    type: apiKey
+  /users/{user_id}:
+    get:
+      deprecated: true
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.User'
+      summary: get user by id, owner or admin
+      tags:
+      - user
+  /users/me:
+    get:
+      deprecated: true
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.User'
+      summary: get current user
+      tags:
+      - user
 swagger: "2.0"

@@ -1,33 +1,24 @@
 package utils
 
 import (
-	"github.com/goccy/go-json"
-	"reflect"
-	"strings"
-	"time"
-
 	"github.com/creasty/defaults"
 	"github.com/go-playground/validator/v10"
+	"github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v2"
+	"reflect"
+	"strings"
 )
 
 type ErrorDetailElement struct {
-	Field string                `json:"field"`
-	Tag   string                `json:"tag"`
-	Value string                `json:"value"`
-	Error *validator.FieldError `json:"-"`
+	Field string `json:"field"`
+	Tag   string `json:"tag"`
+	Value string `json:"value"`
 }
 
 type ErrorDetail []*ErrorDetailElement
 
 func (e *ErrorDetail) Error() string {
 	return "Validation Error"
-	//var builder strings.Builder
-	//for _, err := range *e {
-	//	builder.WriteString((*err.Error).Error())
-	//	builder.WriteString("\n")
-	//}
-	//return builder.String()
 }
 
 var validate = validator.New()
@@ -53,7 +44,6 @@ func Validate(model any) error {
 				Field: err.Field(),
 				Tag:   err.Tag(),
 				Value: err.Param(),
-				Error: &err,
 			}
 			errorDetail = append(errorDetail, &detail)
 		}
@@ -62,65 +52,30 @@ func Validate(model any) error {
 	return nil
 }
 
-func ValidateQuery(c *fiber.Ctx, model any) error {
-	err := c.QueryParser(model)
-	if err != nil {
-		return err
+func ValidateQuery[T any](c *fiber.Ctx) (*T, error) {
+	model := new(T)
+	if err := c.QueryParser(model); err != nil {
+		return nil, err
 	}
-	err = defaults.Set(model)
-	if err != nil {
-		return err
+	if err := defaults.Set(model); err != nil {
+		return nil, err
 	}
-	return Validate(model)
+	return model, Validate(model)
 }
 
 // ValidateBody supports json only
-func ValidateBody(c *fiber.Ctx, model any) error {
+func ValidateBody[T any](c *fiber.Ctx) (*T, error) {
 	body := c.Body()
+	model := new(T)
 	if len(body) == 0 {
-		body = []byte("{}")
+		return model, defaults.Set(model)
+	} else {
+		if err := json.Unmarshal(body, model); err != nil {
+			return nil, err
+		}
+		if err := defaults.Set(model); err != nil {
+			return nil, err
+		}
+		return model, Validate(model)
 	}
-	err := json.Unmarshal(body, model)
-	if err != nil {
-		return err
-	}
-	err = defaults.Set(model)
-	if err != nil {
-		return err
-	}
-	return Validate(model)
-}
-
-type CustomTime struct {
-	time.Time
-}
-
-func (ct *CustomTime) UnmarshalJSON(data []byte) error {
-	s := strings.Trim(string(data), `"`)
-	// Ignore null, like in the main JSON package.
-	if s == "null" {
-		return nil
-	}
-	// Fractional seconds are handled implicitly by Parse.
-	var err error
-	ct.Time, err = time.Parse(time.RFC3339, s)
-	if err != nil {
-		ct.Time, err = time.ParseInLocation(`2006-01-02T15:04:05`, s, time.Local)
-	}
-	return err
-}
-
-func (ct *CustomTime) UnmarshalText(data []byte) error {
-	s := strings.Trim(string(data), `"`)
-	// Ignore null, like in the main JSON package.
-	if s == "" {
-		return nil
-	}
-	// Fractional seconds are handled implicitly by Parse.
-	var err error
-	ct.Time, err = time.Parse(time.RFC3339, s)
-	if err != nil {
-		ct.Time, err = time.ParseInLocation(`2006-01-02T15:04:05`, s, time.Local)
-	}
-	return err
 }

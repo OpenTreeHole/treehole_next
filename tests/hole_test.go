@@ -6,52 +6,19 @@ import (
 	"testing"
 	. "treehole_next/config"
 	. "treehole_next/models"
+	"treehole_next/utils"
 
 	"github.com/stretchr/testify/assert"
 )
 
-const HOLE_BASE = 21
-
-func init() {
-	holes := make([]Hole, 10)
-	for i := 0; i < 10; i++ {
-		holes[i] = Hole{
-			DivisionID: 6,
-		}
-		// holes[i].ID = HOLE_BASE + i
-	}
-	tag := Tag{
-		Name:        "114",
-		Temperature: 15,
-	}
-	holes[1].Tags = []*Tag{&tag}
-	holes[2].Tags = []*Tag{&tag}
-	holes[3].Tags = []*Tag{
-		{
-			Name:        "111",
-			Temperature: 23,
-		},
-		{
-			Name:        "222",
-			Temperature: 45,
-		},
-	}
-	DB.Create(&holes)
-	tag = Tag{Name: "115"}
-	DB.Create(&tag)
-}
-
-func TestGetHoleInDivision(t *testing.T) {
-	var holes []Hole
-	var ids, respIDs []int
+func TestListHoleInADivision(t *testing.T) {
+	var holes Holes
+	var ids []int
 
 	DB.Raw("SELECT id FROM hole WHERE division_id = 6 AND hidden = 0 ORDER BY updated_at DESC").Scan(&ids)
 
 	testAPIModel(t, "get", "/api/divisions/6/holes", 200, &holes)
-	for _, hole := range holes {
-		respIDs = append(respIDs, hole.ID)
-	}
-	assert.Equal(t, ids[:Config.HoleFloorSize], respIDs)
+	assert.Equal(t, ids[:Config.HoleFloorSize], utils.Models2IDSlice(holes))
 
 	testAPIModel(t, "get", "/api/divisions/"+strconv.Itoa(largeInt)+"/holes", 200, &holes)        // return empty holes
 	testAPI(t, "get", "/api/divisions/"+strings.Repeat(strconv.Itoa(largeInt), 15)+"/holes", 500) // huge divisionID
@@ -60,23 +27,26 @@ func TestGetHoleInDivision(t *testing.T) {
 func TestListHolesByTag(t *testing.T) {
 	var tag Tag
 	DB.Where("name = ?", "114").First(&tag)
-	var holes []Hole
-	DB.Model(&tag).Association("Holes").Find(&holes)
+	var holes Holes
+	err := DB.Model(&tag).Association("Holes").Find(&holes)
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	var getholes []Hole
-	testAPIModel(t, "get", "/api/tags/114/holes", 200, &getholes)
-	assert.EqualValues(t, len(holes), len(getholes))
+	var getHoles Holes
+	testAPIModel(t, "get", "/api/tags/114/holes", 200, &getHoles)
+	assert.EqualValues(t, len(holes), len(getHoles))
 
 	// empty holes
-	testAPIModel(t, "get", "/api/tags/115/holes", 200, &getholes)
-	assert.EqualValues(t, Holes{}, getholes)
+	testAPIModel(t, "get", "/api/tags/115/holes", 200, &getHoles)
+	assert.EqualValues(t, Holes{}, getHoles)
 }
 
 func TestCreateHole(t *testing.T) {
 	content := "abcdef"
 	data := Map{"content": content, "tags": []Map{{"name": "a"}, {"name": "ab"}, {"name": "abc"}}}
 	testAPI(t, "post", "/api/divisions/1/holes", 201, data)
-	data["tags"] = []Map{{"name": "abcd"}, {"name": "ab"}, {"name": "abc"}} // update temperature or create tapg
+	data["tags"] = []Map{{"name": "abcd"}, {"name": "ab"}, {"name": "abc"}} // update temperature or create tag
 	testAPI(t, "post", "/api/divisions/1/holes", 201, data)
 
 	tag := Tag{}
@@ -86,6 +56,20 @@ func TestCreateHole(t *testing.T) {
 	DB.Where("name = ?", "abc").First(&tag)
 	assert.EqualValues(t, 2, tag.Temperature)
 	assert.EqualValues(t, 2, DB.Model(&tag).Association("Holes").Count())
+
+	data = Map{"content": content, "tags": []Map{}}
+	testAPI(t, "post", "/api/divisions/1/holes", 400, data) // at least one tag
+
+	content = strings.Repeat("~", 15001)
+	data = Map{"content": content, "tags": []Map{{"name": "a"}, {"name": "ab"}, {"name": "abc"}}}
+	testAPI(t, "post", "/api/divisions/1/holes", 400, data) // data no more than 15000
+
+	tags := make([]Map, 11)
+	for i := range tags {
+		tags[i] = Map{"name": strconv.Itoa(i)}
+	}
+	data = Map{"content": "123456789", "tags": tags} // at most 10 tags
+	testAPI(t, "post", "/api/divisions/1/holes", 400, data)
 }
 
 func TestCreateHoleOld(t *testing.T) {
@@ -101,16 +85,22 @@ func TestCreateHoleOld(t *testing.T) {
 	var holes Holes
 	var tag Tag
 	DB.Where("name = ?", "def").First(&tag)
-	DB.Model(&tag).Association("Holes").Find(&holes)
+	err := DB.Model(&tag).Association("Holes").Find(&holes)
+	if err != nil {
+		t.Fatal(err)
+	}
 }
 
 func TestModifyHole(t *testing.T) {
 	var tag Tag
 	DB.Where("name = ?", "111").First(&tag)
 	var holes Holes
-	DB.Model(&tag).Association("Holes").Find(&holes)
+	err := DB.Model(&tag).Association("Holes").Find(&holes)
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	tagName := []Map{{"name": "d"}, {"name": "de"}, {"name": "def"}, {"name": "defg"}}
+	tagName := []Map{{"name": "111"}, {"name": "d"}, {"name": "de"}, {"name": "def"}}
 	division_id := 5
 	data := Map{"tags": tagName, "division_id": division_id}
 	testAPI(t, "put", "/api/holes/"+strconv.Itoa(holes[0].ID), 200, data)
@@ -122,9 +112,10 @@ func TestModifyHole(t *testing.T) {
 		getTagName = append(getTagName, Map{"name": v.Name})
 	}
 	assert.EqualValues(t, tagName, getTagName)
+	assert.EqualValues(t, division_id, holes[0].DivisionID)
 
 	// default schemas
-	testAPI(t, "put", "/api/holes/"+strconv.Itoa(holes[0].ID), 200, Map{})
+	testAPI(t, "put", "/api/holes/"+strconv.Itoa(holes[0].ID), 400, Map{}) // bad request if modify nothing
 	DB.Where("id = ?", holes[0].ID).Find(&holes[0])
 	assert.Equal(t, division_id, holes[0].DivisionID)
 }

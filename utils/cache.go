@@ -15,7 +15,7 @@ import (
 
 var Cache *cache.Cache[[]byte]
 
-func init() {
+func InitCache() {
 	if config.Config.RedisURL != "" {
 		redisStore := redis_store.NewRedis(redis.NewClient(&redis.Options{
 			Addr: config.Config.RedisURL,

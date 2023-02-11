@@ -3,7 +3,7 @@ package utils
 import (
 	"encoding/base64"
 	"encoding/binary"
-	"encoding/json"
+	"github.com/goccy/go-json"
 	"math/rand"
 	"sort"
 	"time"
@@ -37,10 +37,14 @@ func timeStampBase64() string {
 	return base64.StdEncoding.EncodeToString(bytes)
 }
 
+func NewRandName() string {
+	return names[rand.Intn(length)]
+}
+
 func GenerateName(compareList []string) string {
 	if len(compareList) < length>>3 {
 		for {
-			name := names[rand.Intn(length)]
+			name := NewRandName()
 			if !inArray(name, compareList) {
 				return name
 			}

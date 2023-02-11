@@ -1,4 +1,4 @@
-package utils
+package models
 
 import (
 	"fmt"
@@ -26,5 +26,6 @@ func TestTimeString(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
+		fmt.Println(model.Time.String())
 	}
 }
