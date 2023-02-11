@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"gorm.io/gorm/clause"
 	"io"
 	"log"
 	"math/rand"
@@ -14,6 +13,8 @@ import (
 	"time"
 	"treehole_next/config"
 	"treehole_next/utils"
+
+	"gorm.io/gorm/clause"
 
 	"github.com/goccy/go-json"
 )
@@ -97,11 +98,45 @@ func (messages Notifications) Send() error {
 	return nil
 }
 
+// contains checks if a string is present in a slice
+func contains(s []string, str string) bool {
+	for _, v := range s {
+		if v == str {
+			return true
+		}
+	}
+
+	return false
+}
+
+// check user.config.Notify contain message.Type
+func (message *Notification) checkConfig() {
+	var newRecipient []int
+	for _, recipient := range message.Recipients {
+		var config UserConfig
+		result := DB.Raw("SELECT config from user WHERE id = ?", recipient).Scan(&config)
+		if result.Error != nil {
+			continue
+		}
+		if contains(defaultUserConfig.Notify, string(message.Type)) && !contains(config.Notify, string(message.Type)) {
+			continue
+		}
+		newRecipient = append(newRecipient, recipient)
+	}
+	message.Recipients = newRecipient
+}
+
 func (message Notification) Send() (Message, error) {
 	// only for test
 	// message["recipients"] = []int{1}
 
 	var err error
+
+	message.checkConfig()
+	// return if no recipient
+	if len(message.Recipients) == 0 {
+		return Message{}, nil
+	}
 
 	// save to database first
 	body := Message{
