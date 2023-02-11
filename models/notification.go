@@ -106,7 +106,7 @@ func (message *Notification) checkConfig() {
 
 	// find users
 	var users []User
-	result := DB.Select("config").Find(&users, "id in ?", message.Recipients)
+	result := DB.Find(&users, "id in ?", message.Recipients)
 	if result.Error != nil {
 		message.Recipients = newRecipient
 		return
