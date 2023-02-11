@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"gorm.io/gorm/clause"
 	"io"
 	"log"
 	"math/rand"
@@ -14,6 +13,9 @@ import (
 	"time"
 	"treehole_next/config"
 	"treehole_next/utils"
+
+	"golang.org/x/exp/slices"
+	"gorm.io/gorm/clause"
 
 	"github.com/goccy/go-json"
 )
@@ -97,11 +99,40 @@ func (messages Notifications) Send() error {
 	return nil
 }
 
+// check user.config.Notify contain message.Type
+func (message *Notification) checkConfig() {
+	// generate new recipients
+	var newRecipient []int
+
+	// find users
+	var users []User
+	result := DB.Find(&users, "id in ?", message.Recipients)
+	if result.Error != nil {
+		message.Recipients = newRecipient
+		return
+	}
+
+	// filter recipients
+	for _, user := range users {
+		if slices.Contains(defaultUserConfig.Notify, string(message.Type)) && !slices.Contains(user.Config.Notify, string(message.Type)) {
+			continue
+		}
+		newRecipient = append(newRecipient, user.ID)
+	}
+	message.Recipients = newRecipient
+}
+
 func (message Notification) Send() (Message, error) {
 	// only for test
 	// message["recipients"] = []int{1}
 
 	var err error
+
+	message.checkConfig()
+	// return if no recipient
+	if len(message.Recipients) == 0 {
+		return Message{}, nil
+	}
 
 	// save to database first
 	body := Message{
