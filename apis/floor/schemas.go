@@ -2,28 +2,21 @@ package floor
 
 import (
 	"treehole_next/models"
-
-	"gorm.io/gorm"
+	"treehole_next/utils"
 )
 
 type ListModel struct {
-	models.Query
-	OrderBy string `query:"order_by" default:"storey" validate:"oneof=storey id like"` // SQL ORDER BY field
-}
-
-func (q *ListModel) BaseQuery() *gorm.DB {
-	return models.DB.Limit(q.Size).Offset(q.Offset).Order(q.OrderBy + " " + q.Sort)
+	Size    int    `json:"size" query:"size" default:"30" validate:"min=0,max=50"`          // length of object array
+	Offset  int    `json:"offset" query:"offset" default:"0" validate:"min=0"`              // offset of object array
+	Sort    string `json:"sort" query:"sort" default:"asc" validate:"oneof=asc desc"`       // Sort order
+	OrderBy string `json:"order_by" query:"order_by" default:"id" validate:"oneof=id like"` // SQL ORDER BY field
 }
 
 type ListOldModel struct {
 	HoleID int    `query:"hole_id"     json:"hole_id"`
-	Size   int    `query:"length"      json:"length"     default:"30"   validate:"min=0,max=50" `
+	Size   int    `query:"length"      json:"length"     validate:"min=0,max=50" `
 	Offset int    `query:"start_floor" json:"start_floor"`
 	Search string `query:"s"           json:"s"`
-}
-
-func (q *ListOldModel) BaseQuery() *gorm.DB {
-	return models.DB.Limit(q.Size).Offset(q.Offset)
 }
 
 type CreateModel struct {
@@ -46,15 +39,48 @@ type CreateOldResponse struct {
 
 type ModifyModel struct {
 	// Owner or admin, the original content should be moved to  floor_history
-	Content string `json:"content" validate:"omitempty"`
+	Content *string `json:"content" validate:"omitempty"`
 	// Admin and Operator only
-	SpecialTag string `json:"special_tag" validate:"omitempty,max=16"`
+	SpecialTag *string `json:"special_tag" validate:"omitempty,max=16"`
 	// All user, deprecated, "add" is like, "cancel" is reset
-	Like string `json:"like" validate:"omitempty,oneof=add cancel"`
-	// Admin and operator only, only string, for version 2
-	Fold string `json:"fold_v2" validate:"omitempty,max=64"`
-	// Admin and operator only, string array, for version 1: danxi app
+	Like *string `json:"like" validate:"omitempty,oneof=add cancel"`
+	// 仅管理员，留空则重置，高优先级
+	Fold *string `json:"fold_v2" validate:"omitempty,max=64"`
+	// 仅管理员，留空则重置，低优先级
 	FoldFrontend []string `json:"fold" validate:"omitempty"`
+}
+
+func (body ModifyModel) DoNothing() bool {
+	return body.Content == nil && body.SpecialTag == nil && body.Like == nil && body.Fold == nil && body.FoldFrontend == nil
+}
+
+func (body ModifyModel) CheckPermission(user *models.User, floor *models.Floor, hole *models.Hole) error {
+	if body.Content != nil {
+		if !user.IsAdmin {
+			if user.ID != floor.UserID {
+				return utils.Forbidden("这不是您的楼层，您没有权限修改")
+			} else {
+				if user.BanDivision[hole.DivisionID] != nil {
+					return utils.Forbidden(user.BanDivisionMessage(hole.DivisionID))
+				} else if hole.Locked {
+					return utils.Forbidden("此洞已被锁定，您无法修改")
+				} else if floor.Deleted {
+					return utils.Forbidden("此洞已被删除，您无法修改")
+				}
+			}
+		} else {
+			if user.BanDivision[hole.DivisionID] != nil {
+				return utils.Forbidden(user.BanDivisionMessage(hole.DivisionID))
+			}
+		}
+	}
+	if (body.Fold != nil || body.FoldFrontend != nil) && !user.IsAdmin {
+		return utils.Forbidden("非管理员禁止折叠")
+	}
+	if body.SpecialTag != nil && !user.IsAdmin {
+		return utils.Forbidden("非管理员禁止修改特殊标签")
+	}
+	return nil
 }
 
 type DeleteModel struct {
@@ -63,4 +89,8 @@ type DeleteModel struct {
 
 type RestoreModel struct {
 	Reason string `json:"restore_reason" validate:"required,max=32"`
+}
+
+type SearchConfigModel struct {
+	Open bool `json:"open"`
 }

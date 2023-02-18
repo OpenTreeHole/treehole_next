@@ -3,7 +3,7 @@ package models
 import (
 	"fmt"
 	"sync/atomic"
-	"treehole_next/config"
+	"time"
 	"treehole_next/utils"
 
 	"github.com/gofiber/fiber/v2"
@@ -11,21 +11,28 @@ import (
 )
 
 type Report struct {
-	BaseModel
-	ReportID int    `json:"report_id" gorm:"-:all"`
-	FloorID  int    `json:"floor_id"`
-	HoleID   int    `json:"hole_id" gorm:"-:all"`
-	Floor    Floor  `json:"floor"`
-	UserID   int    `json:"-"` // the reporter's id, should keep a secret
-	Reason   string `json:"reason" gorm:"size:128"`
-	Dealt    bool   `json:"dealt"`                  // the report has been dealt
-	DealtBy  int    `json:"dealt_by"`               // who dealt the report
-	Result   string `json:"result" gorm:"size:128"` // deal result
+	ID        int       `json:"id" gorm:"primaryKey"`
+	CreatedAt time.Time `json:"time_created"`
+	UpdatedAt time.Time `json:"time_updated"`
+	ReportID  int       `json:"report_id" gorm:"-:all"`
+	FloorID   int       `json:"floor_id"`
+	HoleID    int       `json:"hole_id" gorm:"-:all"`
+	Floor     *Floor    `json:"floor"`
+	UserID    int       `json:"-"` // the reporter's id, should keep a secret
+	Reason    string    `json:"reason" gorm:"size:128"`
+	Dealt     bool      `json:"dealt"` // the report has been dealt
+	// who dealt the report
+	DealtBy int    `json:"dealt_by" gorm:"index"`
+	Result  string `json:"result" gorm:"size:128"` // deal result
 }
 
-type Reports []Report
+func (report *Report) GetID() int {
+	return report.ID
+}
 
-func (report *Report) Preprocess(c *fiber.Ctx) error {
+type Reports []*Report
+
+func (report *Report) Preprocess(_ *fiber.Ctx) error {
 	report.Floor.SetDefaults()
 	for i := range report.Floor.Mention {
 		report.Floor.Mention[i].SetDefaults()
@@ -64,82 +71,95 @@ func (report *Report) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 
 func (report *Report) AfterCreate(tx *gorm.DB) (err error) {
 	report.ReportID = report.ID
-	if config.Config.NotificationUrl == "" {
-		return nil
+
+	err = tx.Model(report).Association("Floor").Find(&report.Floor)
+	if err != nil {
+		return err
 	}
 
-	err = report.SendCreate(tx)
+	err = report.Preprocess(nil)
 	if err != nil {
-		utils.Logger.Error("[notification] SendCreate failed: " + err.Error())
-		// return err // only for test
+		return err
 	}
+
 	return nil
 }
 
-func (report *Report) AfterFind(tx *gorm.DB) (err error) {
+func (report *Report) AfterFind(_ *gorm.DB) (err error) {
 	report.ReportID = report.ID
 
 	return nil
 }
 
 func (report *Report) AfterUpdate(tx *gorm.DB) (err error) {
-	if config.Config.NotificationUrl == "" {
-		return nil
+	err = tx.Model(report).Association("Floor").Find(&report.Floor)
+	if err != nil {
+		return err
 	}
 
-	err = report.SendModify(tx)
+	err = report.Preprocess(nil)
 	if err != nil {
-		utils.Logger.Error("[notification] SendModify failed: " + err.Error())
-		// return err // only for test
+		return err
 	}
+
 	return nil
 }
 
 var adminCounter = new(int32)
 
-func (report *Report) SendCreate(tx *gorm.DB) error {
+func (report *Report) SendCreate(_ *gorm.DB) error {
+	adminList.RLock()
+	defer adminList.RUnlock()
+	if len(adminList.data) == 0 {
+		return nil
+	}
+
 	// get counter
 	currentCounter := atomic.AddInt32(adminCounter, 1)
-	result := atomic.CompareAndSwapInt32(adminCounter, int32(len(adminList)), 0)
+	result := atomic.CompareAndSwapInt32(adminCounter, int32(len(adminList.data)), 0)
 	if result {
-		utils.Logger.Info("[getadmin] adminCounter Reset")
+		utils.Logger.Info("[get admin] adminCounter Reset")
 	}
-	userIDs := []int{adminList[currentCounter-1]}
+	userIDs := []int{adminList.data[currentCounter-1]}
 
 	// construct message
-	message := Message{
-		"data":       report,
-		"recipients": userIDs,
-		"type":       MessageTypeReport,
-		"url":        fmt.Sprintf("/api/reports/%d", report.ID),
+	message := Notification{
+		Data:       report,
+		Recipients: userIDs,
+		Description: fmt.Sprintf(
+			"理由：%s，内容：%s",
+			report.Reason,
+			report.Floor.Content,
+		),
+		Title: "您有举报需要处理",
+		Type:  MessageTypeReport,
+		URL:   fmt.Sprintf("/api/reports/%d", report.ID),
 	}
 
 	// send
-	err := message.Send()
-	if err != nil {
-		return err
-	}
-
-	return nil
+	_, err := message.Send()
+	return err
 }
 
-func (report *Report) SendModify(tx *gorm.DB) error {
+func (report *Report) SendModify(_ *gorm.DB) error {
 	// get recipients
 	userIDs := []int{report.UserID}
 
 	// construct message
-	message := Message{
-		"data":       report,
-		"recipients": userIDs,
-		"type":       MessageTypeReportDealt,
-		"url":        fmt.Sprintf("/api/reports/%d", report.ID),
+	message := Notification{
+		Data:       report,
+		Recipients: userIDs,
+		Description: fmt.Sprintf(
+			"结果：%s，内容：%s",
+			report.Result,
+			report.Floor.Content,
+		),
+		Title: "您的举报被处理了",
+		Type:  MessageTypeReportDealt,
+		URL:   fmt.Sprintf("/api/reports/%d", report.ID),
 	}
 
 	// send
-	err := message.Send()
-	if err != nil {
-		return err
-	}
-
-	return nil
+	_, err := message.Send()
+	return err
 }

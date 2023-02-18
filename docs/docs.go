@@ -11,12 +11,12 @@ const docTemplate = `{
         "description": "{{escape .Description}}",
         "title": "{{.Title}}",
         "contact": {
-            "name": "Maintainer Shi Yue",
-            "email": "hasbai@fduhole.com"
+            "name": "Maintainer Ke Chen",
+            "email": "dev@fduhole.com"
         },
         "license": {
             "name": "Apache 2.0",
-            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+            "url": "https://www.apache.org/licenses/LICENSE-2.0.html"
         },
         "version": "{{.Version}}"
     },
@@ -33,6 +33,36 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/models.MessageModel"
+                        }
+                    }
+                }
+            }
+        },
+        "/config/search": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Search"
+                ],
+                "summary": "change search config",
+                "parameters": [
+                    {
+                        "description": "json",
+                        "name": "json",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/floor.SearchConfigModel"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Map"
                         }
                     }
                 }
@@ -323,7 +353,6 @@ const docTemplate = `{
                         "maximum": 50,
                         "minimum": 0,
                         "type": "integer",
-                        "default": 30,
                         "name": "length",
                         "in": "query"
                     },
@@ -381,7 +410,7 @@ const docTemplate = `{
             }
         },
         "/floors/search": {
-            "post": {
+            "get": {
                 "produces": [
                     "application/json"
                 ],
@@ -391,13 +420,24 @@ const docTemplate = `{
                 "summary": "SearchFloors In ElasticSearch",
                 "parameters": [
                     {
-                        "description": "json",
-                        "name": "json",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "object"
-                        }
+                        "minimum": 0,
+                        "type": "integer",
+                        "default": 0,
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "name": "search",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "minimum": 0,
+                        "type": "integer",
+                        "default": 10,
+                        "name": "size",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -764,14 +804,13 @@ const docTemplate = `{
                     },
                     {
                         "enum": [
-                            "storey",
                             "id",
                             "like"
                         ],
                         "type": "string",
-                        "default": "storey",
+                        "default": "id",
                         "description": "SQL ORDER BY field",
-                        "name": "orderBy",
+                        "name": "order_by",
                         "in": "query"
                     },
                     {
@@ -978,6 +1017,120 @@ const docTemplate = `{
                 }
             }
         },
+        "/messages": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Message"
+                ],
+                "summary": "List Messages of a User",
+                "parameters": [
+                    {
+                        "type": "boolean",
+                        "default": false,
+                        "name": "not_read",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Message"
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Message"
+                ],
+                "summary": "Clear Messages Deprecated",
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            },
+            "post": {
+                "description": "Send to multiple recipients and save to db, admin only.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Message"
+                ],
+                "summary": "Send a Mail",
+                "parameters": [
+                    {
+                        "description": "json",
+                        "name": "json",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/message.CreateModel"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/models.Message"
+                        }
+                    }
+                }
+            }
+        },
+        "/messages/clear": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Message"
+                ],
+                "summary": "Clear Messages of a User",
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            }
+        },
+        "/messages/{id}": {
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Message"
+                ],
+                "summary": "Delete a message of a user",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "message id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            }
+        },
         "/penalty/{floor_id}": {
             "post": {
                 "produces": [
@@ -986,8 +1139,7 @@ const docTemplate = `{
                 "tags": [
                     "Penalty"
                 ],
-                "summary": "[Deprecated] Ban publisher of a floor",
-                "deprecated": true,
+                "summary": "Ban publisher of a floor",
                 "parameters": [
                     {
                         "description": "json",
@@ -1003,7 +1155,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/models.Hole"
+                            "$ref": "#/definitions/models.User"
                         }
                     }
                 }
@@ -1023,21 +1175,13 @@ const docTemplate = `{
                         "minimum": 0,
                         "type": "integer",
                         "default": 0,
-                        "description": "offset of object array",
                         "name": "offset",
                         "in": "query"
                     },
                     {
                         "type": "string",
                         "default": "id",
-                        "description": "SQL ORDER BY field",
                         "name": "orderBy",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Range, 0: not dealt, 1: dealt, 2: all",
-                        "name": "range",
                         "in": "query"
                     },
                     {
@@ -1045,7 +1189,6 @@ const docTemplate = `{
                         "minimum": 0,
                         "type": "integer",
                         "default": 30,
-                        "description": "length of object array",
                         "name": "size",
                         "in": "query"
                     },
@@ -1199,6 +1342,7 @@ const docTemplate = `{
                 "summary": "List All Tags",
                 "parameters": [
                     {
+                        "maxLength": 32,
                         "type": "string",
                         "description": "search tag by name",
                         "name": "s",
@@ -1430,6 +1574,17 @@ const docTemplate = `{
                 "summary": "List User's Favorites",
                 "parameters": [
                     {
+                        "enum": [
+                            "id",
+                            "time_created",
+                            "hole_time_updated"
+                        ],
+                        "type": "string",
+                        "default": "time_created",
+                        "name": "order",
+                        "in": "query"
+                    },
+                    {
                         "type": "boolean",
                         "default": false,
                         "name": "plain",
@@ -1553,6 +1708,46 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/users/me": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "get current user",
+                "deprecated": true,
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.User"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/{user_id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "get user by id, owner or admin",
+                "deprecated": true,
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.User"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -1642,7 +1837,8 @@ const docTemplate = `{
             ],
             "properties": {
                 "content": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 15000
                 },
                 "reply_to": {
                     "description": "id of the floor to which replied",
@@ -1663,7 +1859,8 @@ const docTemplate = `{
             ],
             "properties": {
                 "content": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 15000
                 },
                 "hole_id": {
                     "type": "integer",
@@ -1747,6 +1944,14 @@ const docTemplate = `{
                 }
             }
         },
+        "floor.SearchConfigModel": {
+            "type": "object",
+            "properties": {
+                "open": {
+                    "type": "boolean"
+                }
+            }
+        },
         "hole.CreateModel": {
             "type": "object",
             "required": [
@@ -1764,6 +1969,8 @@ const docTemplate = `{
                 "tags": {
                     "description": "All users",
                     "type": "array",
+                    "maxItems": 10,
+                    "minItems": 1,
                     "items": {
                         "$ref": "#/definitions/tag.CreateModel"
                     }
@@ -1780,7 +1987,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "division_id": {
-                    "description": "Admin only",
                     "type": "integer",
                     "minimum": 1
                 },
@@ -1792,6 +1998,8 @@ const docTemplate = `{
                 "tags": {
                     "description": "All users",
                     "type": "array",
+                    "maxItems": 10,
+                    "minItems": 1,
                     "items": {
                         "$ref": "#/definitions/tag.CreateModel"
                     }
@@ -1813,19 +2021,39 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "division_id": {
-                    "description": "Admin only",
+                    "description": "Admin and owner only",
                     "type": "integer",
                     "minimum": 1
                 },
                 "tags": {
                     "description": "All users",
                     "type": "array",
+                    "maxItems": 10,
+                    "minItems": 1,
                     "items": {
                         "$ref": "#/definitions/tag.CreateModel"
                     }
                 },
                 "unhidden": {
                     "type": "boolean"
+                }
+            }
+        },
+        "message.CreateModel": {
+            "type": "object",
+            "required": [
+                "recipients"
+            ],
+            "properties": {
+                "description": {
+                    "description": "MessageTypeMail",
+                    "type": "string"
+                },
+                "recipients": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
                 }
             }
         },
@@ -1836,15 +2064,19 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "division_id": {
+                    "description": "/ generated field",
                     "type": "integer"
                 },
                 "id": {
+                    "description": "/ saved fields",
                     "type": "integer"
                 },
                 "name": {
+                    "description": "/ base info",
                     "type": "string"
                 },
                 "pinned": {
+                    "description": "return pinned hole to frontend",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/models.Hole"
@@ -1866,18 +2098,23 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "content": {
-                    "description": "content of the floor",
+                    "description": "content of the floor, no more than 15000",
                     "type": "string"
                 },
                 "deleted": {
                     "description": "whether the floor is deleted",
                     "type": "boolean"
                 },
+                "dislike": {
+                    "description": "dislike number",
+                    "type": "integer"
+                },
                 "disliked": {
-                    "description": "whether the user has disliked the floor, dynamically generated",
+                    "description": "whether the user has disliked the floor",
                     "type": "boolean"
                 },
                 "floor_id": {
+                    "description": "old version compatibility",
                     "type": "integer"
                 },
                 "fold": {
@@ -1896,38 +2133,43 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "id": {
+                    "description": "/ saved fields",
                     "type": "integer"
                 },
                 "is_me": {
-                    "description": "whether the user is the author of the floor, dynamically generated",
+                    "description": "whether the user is the author of the floor",
                     "type": "boolean"
                 },
                 "like": {
-                    "description": "like number - dislike number",
+                    "description": "like number",
                     "type": "integer"
                 },
                 "liked": {
-                    "description": "whether the user has liked the floor, dynamically generated",
+                    "description": "whether the user has liked the floor",
                     "type": "boolean"
                 },
                 "mention": {
-                    "description": "many to many mentions (in different holes)",
+                    "description": "many to many mentions",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/models.Floor"
                     }
                 },
-                "path": {
-                    "description": "storey path e.g. /1/2/3/",
-                    "type": "string"
+                "modified": {
+                    "description": "the modification times of floor.content",
+                    "type": "integer"
+                },
+                "ranking": {
+                    "description": "the ranking of this floor in the hole",
+                    "type": "integer"
+                },
+                "reply_to": {
+                    "description": "floor_id that it replies to, for dialog mode, in the same hole",
+                    "type": "integer"
                 },
                 "special_tag": {
                     "description": "additional info, like \"树洞管理团队\"",
                     "type": "string"
-                },
-                "storey": {
-                    "description": "the sequence of floors in a hole",
-                    "type": "integer"
                 },
                 "time_created": {
                     "type": "string"
@@ -1947,6 +2189,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "id": {
+                    "description": "/ base info",
                     "type": "integer"
                 },
                 "reason": {
@@ -1973,7 +2216,32 @@ const docTemplate = `{
                 },
                 "floors": {
                     "description": "返回给前端的楼层列表，包括首楼、尾楼和预加载的前 n 个楼层",
-                    "$ref": "#/definitions/models.HoleFloor"
+                    "type": "object",
+                    "properties": {
+                        "first_floor": {
+                            "description": "首楼",
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/models.Floor"
+                                }
+                            ]
+                        },
+                        "last_floor": {
+                            "description": "尾楼",
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/models.Floor"
+                                }
+                            ]
+                        },
+                        "prefetch": {
+                            "description": "预加载的楼层",
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Floor"
+                            }
+                        }
+                    }
                 },
                 "hidden": {
                     "description": "是否隐藏，隐藏的洞用户不可见，管理员可见",
@@ -1984,14 +2252,15 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "id": {
+                    "description": "/ saved fields",
                     "type": "integer"
                 },
                 "reply": {
-                    "description": "回复量（即该洞下 floor 的数量）",
+                    "description": "回复量（即该洞下 floor 的数量 - 1）",
                     "type": "integer"
                 },
                 "tags": {
-                    "description": "tag 列表",
+                    "description": "tag 列表；不超过 10 个",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/models.Tag"
@@ -2009,29 +2278,50 @@ const docTemplate = `{
                 }
             }
         },
-        "models.HoleFloor": {
-            "type": "object",
-            "properties": {
-                "first_floor": {
-                    "description": "首楼",
-                    "$ref": "#/definitions/models.Floor"
-                },
-                "last_floor": {
-                    "description": "尾楼",
-                    "$ref": "#/definitions/models.Floor"
-                },
-                "prefetch": {
-                    "description": "预加载的楼层",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/models.Floor"
-                    }
-                }
-            }
-        },
         "models.Map": {
             "type": "object",
             "additionalProperties": true
+        },
+        "models.Message": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "$ref": "#/definitions/models.MessageType"
+                },
+                "data": {},
+                "description": {
+                    "type": "string"
+                },
+                "has_read": {
+                    "description": "兼容旧版, 永远为false，以MessageUser的HasRead为准",
+                    "type": "boolean"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "message_id": {
+                    "description": "兼容旧版 id",
+                    "type": "integer"
+                },
+                "time_created": {
+                    "type": "string"
+                },
+                "time_updated": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
+                },
+                "user": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.User"
+                    }
+                }
+            }
         },
         "models.MessageModel": {
             "type": "object",
@@ -2040,6 +2330,32 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
+        },
+        "models.MessageType": {
+            "type": "string",
+            "enum": [
+                "favorite",
+                "reply",
+                "mention",
+                "modify",
+                "permission",
+                "report",
+                "report_dealt",
+                "mail"
+            ],
+            "x-enum-comments": {
+                "MessageTypeModify": "including fold and delete"
+            },
+            "x-enum-varnames": [
+                "MessageTypeFavorite",
+                "MessageTypeReply",
+                "MessageTypeMention",
+                "MessageTypeModify",
+                "MessageTypePermission",
+                "MessageTypeReport",
+                "MessageTypeReportDealt",
+                "MessageTypeMail"
+            ]
         },
         "models.Report": {
             "type": "object",
@@ -2086,33 +2402,104 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "id": {
+                    "description": "/ saved fields",
                     "type": "integer"
                 },
                 "name": {
+                    "description": "/ base info",
                     "type": "string"
                 },
                 "tag_id": {
+                    "description": "/ generated field",
                     "type": "integer"
                 },
                 "temperature": {
                     "type": "integer"
+                }
+            }
+        },
+        "models.User": {
+            "type": "object",
+            "properties": {
+                "config": {
+                    "$ref": "#/definitions/models.UserConfig"
                 },
-                "time_created": {
+                "id": {
+                    "description": "/ base info",
+                    "type": "integer"
+                },
+                "is_admin": {
+                    "description": "get from jwt",
+                    "type": "boolean"
+                },
+                "joined_time": {
                     "type": "string"
                 },
-                "time_updated": {
+                "last_login": {
+                    "type": "string"
+                },
+                "nickname": {
+                    "type": "string"
+                },
+                "permission": {
+                    "type": "object",
+                    "properties": {
+                        "admin": {
+                            "description": "管理员权限到期时间",
+                            "type": "string"
+                        },
+                        "offense_count": {
+                            "type": "integer"
+                        },
+                        "silence": {
+                            "description": "key: division_id value: 对应分区禁言解除时间",
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "models.UserConfig": {
+            "type": "object",
+            "properties": {
+                "notify": {
+                    "description": "used when notify",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "show_folded": {
+                    "description": "对折叠内容的处理\nfold 折叠, hide 隐藏, show 展示",
                     "type": "string"
                 }
             }
         },
         "penalty.PostBody": {
             "type": "object",
+            "required": [
+                "division_id"
+            ],
             "properties": {
+                "days": {
+                    "description": "high priority",
+                    "type": "integer",
+                    "minimum": 1
+                },
                 "division_id": {
-                    "type": "integer"
+                    "type": "integer",
+                    "minimum": 1
                 },
                 "penalty_level": {
+                    "description": "low priority, deprecated",
                     "type": "integer"
+                },
+                "reason": {
+                    "description": "optional",
+                    "type": "string"
                 }
             }
         },
@@ -2145,12 +2532,26 @@ const docTemplate = `{
                 }
             }
         },
+        "report.Range": {
+            "type": "integer",
+            "enum": [
+                0,
+                1,
+                2
+            ],
+            "x-enum-varnames": [
+                "RangeNotDealt",
+                "RangeDealt",
+                "RangeAll"
+            ]
+        },
         "tag.CreateModel": {
             "type": "object",
             "properties": {
                 "name": {
                     "description": "Admin only",
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 32
                 }
             }
         },
@@ -2168,7 +2569,8 @@ const docTemplate = `{
             "properties": {
                 "name": {
                     "description": "Admin only",
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 32
                 },
                 "temperature": {
                     "description": "Admin only",
@@ -2207,19 +2609,12 @@ const docTemplate = `{
                 }
             }
         }
-    },
-    "securityDefinitions": {
-        "ApiKeyAuth": {
-            "type": "apiKey",
-            "name": "Authorization",
-            "in": "header"
-        }
     }
 }`
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
-	Version:          "2.0.0",
+	Version:          "2.1.0",
 	Host:             "",
 	BasePath:         "/api",
 	Schemes:          []string{},

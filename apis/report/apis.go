@@ -2,6 +2,7 @@ package report
 
 import (
 	. "treehole_next/models"
+	"treehole_next/utils"
 	. "treehole_next/utils"
 
 	"github.com/gofiber/fiber/v2"
@@ -9,13 +10,14 @@ import (
 )
 
 // GetReport
-// @Summary Get A Report
-// @Tags Report
-// @Produce application/json
-// @Router /reports/{id} [get]
-// @Param id path int true "id"
-// @Success 200 {object} Report
-// @Failure 404 {object} MessageModel
+//
+//	@Summary	Get A Report
+//	@Tags		Report
+//	@Produce	application/json
+//	@Router		/reports/{id} [get]
+//	@Param		id	path		int	true	"id"
+//	@Success	200	{object}	Report
+//	@Failure	404	{object}	MessageModel
 func GetReport(c *fiber.Ctx) error {
 	// validate query
 	reportID, err := c.ParamsInt("id")
@@ -33,17 +35,17 @@ func GetReport(c *fiber.Ctx) error {
 }
 
 // ListReports
-// @Summary List All Reports
-// @Tags Report
-// @Produce application/json
-// @Router /reports [get]
-// @Param object query ListModel false "query"
-// @Success 200 {array} Report
-// @Failure 404 {object} MessageModel
+//
+//	@Summary	List All Reports
+//	@Tags		Report
+//	@Produce	application/json
+//	@Router		/reports [get]
+//	@Param		object	query		ListModel	false	"query"
+//	@Success	200		{array}		Report
+//	@Failure	404		{object}	MessageModel
 func ListReports(c *fiber.Ctx) error {
 	// validate query
-	var query ListModel
-	err := ValidateQuery(c, &query)
+	query, err := ValidateQuery[ListModel](c)
 	if err != nil {
 		return err
 	}
@@ -69,18 +71,18 @@ func ListReports(c *fiber.Ctx) error {
 }
 
 // AddReport
-// @Summary Add a report
-// @Description Add a report and send notification to admins
-// @Tags Report
-// @Produce application/json
-// @Router /reports [post]
-// @Param json body AddModel true "json"
-// @Success 204
-// @Failure 400 {object} utils.HttpError
+//
+//	@Summary		Add a report
+//	@Description	Add a report and send notification to admins
+//	@Tags			Report
+//	@Produce		application/json
+//	@Router			/reports [post]
+//	@Param			json	body	AddModel	true	"json"
+//	@Success		204
+//	@Failure		400	{object}	utils.HttpError
 func AddReport(c *fiber.Ctx) error {
 	// validate body
-	var body AddModel
-	err := ValidateBody(c, &body)
+	body, err := ValidateBody[AddModel](c)
 	if err != nil {
 		return err
 	}
@@ -96,19 +98,27 @@ func AddReport(c *fiber.Ctx) error {
 		return err
 	}
 
+	// Send Notification
+	err = report.SendCreate(DB)
+	if err != nil {
+		utils.Logger.Error("[notification] SendCreate failed: " + err.Error())
+		// return err // only for test
+	}
+
 	return c.Status(204).JSON(nil)
 }
 
 // DeleteReport
-// @Summary Deal a report
-// @Description Mark a report as "dealt" and send notification to reporter
-// @Tags Report
-// @Produce application/json
-// @Router /reports/{id} [delete]
-// @Param id path int true "id"
-// @Param json body DeleteModel true "json"
-// @Success 200 {object} Report
-// @Failure 400 {object} utils.HttpError
+//
+//	@Summary		Deal a report
+//	@Description	Mark a report as "dealt" and send notification to reporter
+//	@Tags			Report
+//	@Produce		application/json
+//	@Router			/reports/{id} [delete]
+//	@Param			id		path		int			true	"id"
+//	@Param			json	body		DeleteModel	true	"json"
+//	@Success		200		{object}	Report
+//	@Failure		400		{object}	utils.HttpError
 func DeleteReport(c *fiber.Ctx) error {
 	// validate query
 	reportID, err := c.ParamsInt("id")
@@ -117,8 +127,7 @@ func DeleteReport(c *fiber.Ctx) error {
 	}
 
 	// validate body
-	var body DeleteModel
-	err = ValidateBody(c, &body)
+	body, err := ValidateBody[DeleteModel](c)
 	if err != nil {
 		return err
 	}
@@ -141,6 +150,13 @@ func DeleteReport(c *fiber.Ctx) error {
 	DB.Omit("Floor").Save(&report)
 
 	MyLog("Report", "Delete", reportID, userID, RoleAdmin)
+
+	// Send Notification
+	err = report.SendModify(DB)
+	if err != nil {
+		utils.Logger.Error("[notification] SendModify failed: " + err.Error())
+		// return err // only for test
+	}
 
 	return Serialize(c, &report)
 }

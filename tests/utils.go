@@ -2,8 +2,8 @@ package tests
 
 import (
 	"bytes"
-	"encoding/json"
-	"io/ioutil"
+	"github.com/goccy/go-json"
+	"io"
 	"net/http"
 	"strings"
 	"testing"
@@ -18,7 +18,7 @@ type JsonData interface {
 	Map | []Map
 }
 
-var App = bootstrap.Init()
+var App, _ = bootstrap.Init()
 
 // testCommon tests status code and returns response body in bytes
 func testCommon(t *testing.T, method string, route string, statusCode int, data ...Map) []byte {
@@ -41,7 +41,7 @@ func testCommon(t *testing.T, method string, route string, statusCode int, data 
 	assert.Nilf(t, err, "perform request")
 	assert.Equalf(t, statusCode, res.StatusCode, "status code")
 
-	responseBody, err := ioutil.ReadAll(res.Body)
+	responseBody, err := io.ReadAll(res.Body)
 	assert.Nilf(t, err, "decode response")
 
 	return responseBody
@@ -68,7 +68,7 @@ func testCommonQuery(t *testing.T, method string, route string, statusCode int, 
 	assert.Nilf(t, err, "perform request")
 	assert.Equalf(t, statusCode, res.StatusCode, "status code")
 
-	responseBody, err := ioutil.ReadAll(res.Body)
+	responseBody, err := io.ReadAll(res.Body)
 	assert.Nilf(t, err, "decode response")
 
 	return responseBody

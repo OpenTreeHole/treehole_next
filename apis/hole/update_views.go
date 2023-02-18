@@ -1,6 +1,7 @@
 package hole
 
 import (
+	"context"
 	"fmt"
 	"go.uber.org/zap"
 	"strconv"
@@ -10,17 +11,7 @@ import (
 	"treehole_next/utils"
 )
 
-var holeViewsChan = make(chan int, 100)
-
-func receiveViewsUpdate() {
-	for {
-		select {
-		case holeID := <-holeViewsChan:
-			holeViews[holeID]++
-		}
-	}
-}
-
+var holeViewsChan = make(chan int, 1000)
 var holeViews = map[int]int{}
 
 func updateHoleViews() {
@@ -62,12 +53,20 @@ func updateHoleViews() {
 	}
 }
 
-func UpdateHoleViews() {
-	go receiveViewsUpdate()
+func UpdateHoleViews(ctx context.Context) {
 
 	ticker := time.NewTicker(time.Second * 60)
 	defer ticker.Stop()
-	for range ticker.C {
-		updateHoleViews()
+	for {
+		select {
+		case <-ticker.C:
+			updateHoleViews()
+		case holeID := <-holeViewsChan:
+			holeViews[holeID]++
+		case <-ctx.Done():
+			updateHoleViews()
+			fmt.Println("task UpdateHoleViews stopped...")
+			return
+		}
 	}
 }
