@@ -4,15 +4,17 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/elastic/go-elasticsearch/v8"
-	"github.com/elastic/go-elasticsearch/v8/esapi"
-	"github.com/goccy/go-json"
 	"io"
 	"log"
 	"strconv"
 	"strings"
+	"time"
 	"treehole_next/config"
 	"treehole_next/utils"
+
+	"github.com/elastic/go-elasticsearch/v8"
+	"github.com/elastic/go-elasticsearch/v8/esapi"
+	"github.com/goccy/go-json"
 )
 
 var ES *elasticsearch.Client
@@ -72,16 +74,18 @@ type SearchResponse struct {
 			Relation string `json:"relation"`
 		} `json:"total"`
 		Hits []struct {
-			Index  string              `json:"_index"`
-			ID     string              `json:"_id"`
-			Score  float64             `json:"_score"`
-			Source SearchFloorResponse `json:"_source"`
+			Index  string     `json:"_index"`
+			ID     string     `json:"_id"`
+			Score  float64    `json:"_score"`
+			Source FloorModel `json:"_source"`
 		} `json:"hits"`
 	} `json:"hits"`
 }
 
-type SearchFloorResponse struct {
-	Content string `json:"content"`
+type FloorModel struct {
+	ID        int       `json:"id"`
+	UpdatedAt time.Time `json:"updated_at"`
+	Content   string    `json:"content"`
 }
 
 func Search(keyword string, size, offset int) (Floors, error) {
@@ -93,6 +97,10 @@ func Search(keyword string, size, offset int) (Floors, error) {
 		From:  &offset,
 		Size:  &size,
 		Query: keyword,
+		Sort: []string{
+			"_score:desc",
+			"updated_at:desc",
+		},
 	}
 
 	res, err := req.Do(context.Background(), ES)
@@ -129,12 +137,12 @@ func Search(keyword string, size, offset int) (Floors, error) {
 
 	floorIDs := make([]int, floorSize)
 	for i, hit := range response.Hits.Hits {
-		floorIDs[i], err = strconv.Atoi(hit.ID)
+		floorIDs[i] = hit.Source.ID
 		if err != nil {
 			return nil, &utils.HttpError{Code: 500, Message: "error parse floor_id from elasticsearch ID"}
 		}
 	}
-	log.Printf("search response: %d\n", floorIDs)
+	fmt.Printf("search response: %d\n", floorIDs)
 
 	err = DB.Preload("Mention").Find(&floors, floorIDs).Error
 	if err != nil {
@@ -154,11 +162,6 @@ func SearchOld(keyword string, size, offset int) (Floors, error) {
 	return floors, result.Error
 }
 
-type FloorModel struct {
-	ID      int    `json:"-"`
-	Content string `json:"content"`
-}
-
 // BulkInsert run in single goroutine only
 // see https://www.elastic.co/guide/en/elasticsearch/reference/master/docs-bulk.html
 func BulkInsert(floors []FloorModel) {
@@ -174,9 +177,9 @@ func BulkInsert(floors []FloorModel) {
 	for _, floor := range floors {
 		// meta: use index, it will insert or replace a document
 		BulkBuffer.WriteString(fmt.Sprintf(`{ "index" : { "_id" : "%d" } }%s`, floor.ID, "\n"))
-		floorModel := FloorModel{Content: floor.Content}
+
 		// data: should not contain \n, because \n is the delimiter of one action
-		data, err := json.Marshal(floorModel)
+		data, err := json.Marshal(floor)
 		if err != nil {
 			log.Printf("error failed to marshal floor: %s", err)
 			return
@@ -189,7 +192,7 @@ func BulkInsert(floors []FloorModel) {
 	for _, floorModel := range floors {
 		floorIDs = append(floorIDs, floorModel.ID)
 	}
-	log.Printf("Preparing insert floors %v\n", floorIDs)
+	fmt.Printf("Preparing insert floors %v\n", floorIDs)
 
 	res, err := ES.Bulk(BulkBuffer, ES.Bulk.WithIndex(IndexName))
 	defer func() {
@@ -199,7 +202,7 @@ func BulkInsert(floors []FloorModel) {
 		log.Printf("error indexing floors %v: %s", floorIDs, err)
 		return
 	}
-	log.Printf("index floors %v success\n", floorIDs)
+	fmt.Printf("index floors %v success\n", floorIDs)
 }
 
 // BulkDelete used when a hole becomes hidden and delete all of its floors
@@ -217,7 +220,7 @@ func BulkDelete(floorIDs []int) {
 		// meta: use index, it will insert or replace a document
 		BulkBuffer.WriteString(fmt.Sprintf(`{ "delete" : { "_id" : "%d" } }%s`, floorID, "\n"))
 	}
-	log.Printf("Preparing delete floors %v\n", floorIDs)
+	fmt.Printf("Preparing delete floors %v\n", floorIDs)
 
 	res, err := ES.Bulk(BulkBuffer, ES.Bulk.WithIndex(IndexName))
 	defer func() {
@@ -227,25 +230,25 @@ func BulkDelete(floorIDs []int) {
 		log.Printf("error deleting floors %v: %s", floorIDs, err)
 		return
 	}
-	log.Printf("delete floors %v success\n", floorIDs)
+	fmt.Printf("delete floors %v success\n", floorIDs)
 }
 
 // FloorIndex insert or replace a document, used when a floor is created or restored
 // see https://www.elastic.co/guide/en/elasticsearch/reference/master/docs-index_.html
-func FloorIndex(floorID int, content string) {
+func FloorIndex(floorModel FloorModel) {
 	if ES == nil {
 		return
 	}
-	floorModel := FloorModel{Content: content}
+
 	data, err := json.Marshal(&floorModel)
 	if err != nil {
-		log.Printf("floor encode error: floor_id: %v", floorID)
+		log.Printf("floor encode error: floor_id: %v", floorModel.ID)
 		return
 	}
 
 	req := esapi.IndexRequest{
 		Index:      IndexName,
-		DocumentID: strconv.Itoa(floorID),
+		DocumentID: strconv.Itoa(floorModel.ID),
 		Body:       bytes.NewBuffer(data),
 		Refresh:    "false",
 	}
@@ -256,9 +259,9 @@ func FloorIndex(floorID int, content string) {
 	}()
 	if err != nil || res.IsError() {
 		data, _ := io.ReadAll(res.Body)
-		log.Printf("error index floor: %d: %s\n", floorID, string(data))
+		log.Printf("error index floor: %d: %s\n", floorModel.ID, string(data))
 	} else {
-		log.Printf("index floor success: %d\n", floorID)
+		fmt.Printf("index floor success: %d\n", floorModel.ID)
 	}
 }
 
@@ -277,6 +280,6 @@ func FloorDelete(floorID int) {
 		data, _ := io.ReadAll(res.Body)
 		log.Printf("error delete floor: %d: %s\n", floorID, string(data))
 	} else {
-		log.Printf("delete floor success: %d\n", floorID)
+		fmt.Printf("delete floor success: %d\n", floorID)
 	}
 }

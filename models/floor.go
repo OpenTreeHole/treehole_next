@@ -222,7 +222,11 @@ func (floor *Floor) Create(tx *gorm.DB) (err error) {
 
 	if !hole.Hidden {
 		// insert into Elasticsearch
-		go FloorIndex(floor.ID, floor.Content)
+		go FloorIndex(FloorModel{
+			ID:        floor.ID,
+			UpdatedAt: time.Now(),
+			Content:   floor.Content,
+		})
 	}
 
 	// delete cache
