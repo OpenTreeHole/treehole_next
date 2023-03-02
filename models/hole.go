@@ -337,7 +337,11 @@ func (hole *Hole) Create(tx *gorm.DB, tagNames []string) (err error) {
 	hole.Floors[0].SetDefaults()
 
 	// index
-	go FloorIndex(hole.Floors[0].ID, hole.Floors[0].Content)
+	go FloorIndex(FloorModel{
+		ID:        hole.Floors[0].ID,
+		UpdatedAt: time.Now(),
+		Content:   hole.Floors[0].Content,
+	})
 
 	// store into cache
 	return utils.SetCache(hole.CacheName(), hole, HoleCacheExpire)
