@@ -5,7 +5,6 @@ import (
 	"gorm.io/gorm/logger"
 	"math/rand"
 	"strings"
-	"time"
 	. "treehole_next/models"
 	"treehole_next/utils"
 )
@@ -20,7 +19,6 @@ const (
 func init() {
 	DB.Logger = logger.Default.LogMode(logger.Silent)
 
-	rand.Seed(time.Now().UnixMicro())
 	divisions := make(Divisions, 0, DIVISION_MAX)
 	tags := make(Tags, 0, TAG_MAX)
 	holes := make(Holes, 0, HOLE_MAX)
