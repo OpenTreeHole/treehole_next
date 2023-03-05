@@ -1738,7 +1738,23 @@ const docTemplate = `{
                     "user"
                 ],
                 "summary": "get user by id, owner or admin",
-                "deprecated": true,
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.User"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User"
+                ],
+                "summary": "modify user profiles",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -1837,8 +1853,7 @@ const docTemplate = `{
             ],
             "properties": {
                 "content": {
-                    "type": "string",
-                    "maxLength": 15000
+                    "type": "string"
                 },
                 "reply_to": {
                     "description": "id of the floor to which replied",
@@ -1859,8 +1874,7 @@ const docTemplate = `{
             ],
             "properties": {
                 "content": {
-                    "type": "string",
-                    "maxLength": 15000
+                    "type": "string"
                 },
                 "hole_id": {
                     "type": "integer",
@@ -1906,14 +1920,14 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "fold": {
-                    "description": "Admin and operator only, string array, for version 1: danxi app",
+                    "description": "仅管理员，留空则重置，低优先级",
                     "type": "array",
                     "items": {
                         "type": "string"
                     }
                 },
                 "fold_v2": {
-                    "description": "Admin and operator only, only string, for version 2",
+                    "description": "仅管理员，留空则重置，高优先级",
                     "type": "string",
                     "maxLength": 64
                 },
@@ -1988,6 +2002,7 @@ const docTemplate = `{
                 },
                 "division_id": {
                     "type": "integer",
+                    "default": 1,
                     "minimum": 1
                 },
                 "special_tag": {
@@ -2025,6 +2040,10 @@ const docTemplate = `{
                     "type": "integer",
                     "minimum": 1
                 },
+                "lock": {
+                    "description": "admin only",
+                    "type": "boolean"
+                },
                 "tags": {
                     "description": "All users",
                     "type": "array",
@@ -2035,6 +2054,7 @@ const docTemplate = `{
                     }
                 },
                 "unhidden": {
+                    "description": "admin only",
                     "type": "boolean"
                 }
             }
@@ -2255,6 +2275,10 @@ const docTemplate = `{
                     "description": "/ saved fields",
                     "type": "integer"
                 },
+                "locked": {
+                    "description": "锁定帖子，如果锁定则非管理员无法发帖，也无法修改已有发帖",
+                    "type": "boolean"
+                },
                 "reply": {
                     "description": "回复量（即该洞下 floor 的数量 - 1）",
                     "type": "integer"
@@ -2314,12 +2338,6 @@ const docTemplate = `{
                 },
                 "url": {
                     "type": "string"
-                },
-                "user": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/models.User"
-                    }
                 }
             }
         },
@@ -2435,9 +2453,6 @@ const docTemplate = `{
                 "joined_time": {
                     "type": "string"
                 },
-                "last_login": {
-                    "type": "string"
-                },
                 "nickname": {
                     "type": "string"
                 },
@@ -2451,7 +2466,7 @@ const docTemplate = `{
                         "offense_count": {
                             "type": "integer"
                         },
-                        "silence": {
+                        "silent": {
                             "description": "key: division_id value: 对应分区禁言解除时间",
                             "type": "object",
                             "additionalProperties": {
@@ -2459,6 +2474,9 @@ const docTemplate = `{
                             }
                         }
                     }
+                },
+                "user_id": {
+                    "type": "integer"
                 }
             }
         },
@@ -2480,16 +2498,9 @@ const docTemplate = `{
         },
         "penalty.PostBody": {
             "type": "object",
-            "required": [
-                "division_id"
-            ],
             "properties": {
                 "days": {
                     "description": "high priority",
-                    "type": "integer",
-                    "minimum": 1
-                },
-                "division_id": {
                     "type": "integer",
                     "minimum": 1
                 },

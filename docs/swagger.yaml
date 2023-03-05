@@ -56,7 +56,6 @@ definitions:
   floor.CreateModel:
     properties:
       content:
-        maxLength: 15000
         type: string
       reply_to:
         description: id of the floor to which replied
@@ -72,7 +71,6 @@ definitions:
   floor.CreateOldModel:
     properties:
       content:
-        maxLength: 15000
         type: string
       hole_id:
         minimum: 1
@@ -107,13 +105,12 @@ definitions:
         description: Owner or admin, the original content should be moved to  floor_history
         type: string
       fold:
-        description: 'Admin and operator only, string array, for version 1: danxi
-          app'
+        description: 仅管理员，留空则重置，低优先级
         items:
           type: string
         type: array
       fold_v2:
-        description: Admin and operator only, only string, for version 2
+        description: 仅管理员，留空则重置，高优先级
         maxLength: 64
         type: string
       like:
@@ -163,6 +160,7 @@ definitions:
       content:
         type: string
       division_id:
+        default: 1
         minimum: 1
         type: integer
       special_tag:
@@ -192,6 +190,9 @@ definitions:
         description: Admin and owner only
         minimum: 1
         type: integer
+      lock:
+        description: admin only
+        type: boolean
       tags:
         description: All users
         items:
@@ -200,6 +201,7 @@ definitions:
         minItems: 1
         type: array
       unhidden:
+        description: admin only
         type: boolean
     type: object
   message.CreateModel:
@@ -352,6 +354,9 @@ definitions:
       id:
         description: / saved fields
         type: integer
+      locked:
+        description: 锁定帖子，如果锁定则非管理员无法发帖，也无法修改已有发帖
+        type: boolean
       reply:
         description: 回复量（即该洞下 floor 的数量 - 1）
         type: integer
@@ -394,10 +399,6 @@ definitions:
         type: string
       url:
         type: string
-      user:
-        items:
-          $ref: '#/definitions/models.User'
-        type: array
     type: object
   models.MessageModel:
     properties:
@@ -480,8 +481,6 @@ definitions:
         type: boolean
       joined_time:
         type: string
-      last_login:
-        type: string
       nickname:
         type: string
       permission:
@@ -491,12 +490,14 @@ definitions:
             type: string
           offense_count:
             type: integer
-          silence:
+          silent:
             additionalProperties:
               type: string
             description: 'key: division_id value: 对应分区禁言解除时间'
             type: object
         type: object
+      user_id:
+        type: integer
     type: object
   models.UserConfig:
     properties:
@@ -517,17 +518,12 @@ definitions:
         description: high priority
         minimum: 1
         type: integer
-      division_id:
-        minimum: 1
-        type: integer
       penalty_level:
         description: low priority, deprecated
         type: integer
       reason:
         description: optional
         type: string
-    required:
-    - division_id
     type: object
   report.AddModel:
     properties:
@@ -1726,7 +1722,6 @@ paths:
       - Favorite
   /users/{user_id}:
     get:
-      deprecated: true
       produces:
       - application/json
       responses:
@@ -1737,6 +1732,17 @@ paths:
       summary: get user by id, owner or admin
       tags:
       - user
+    put:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.User'
+      summary: modify user profiles
+      tags:
+      - User
   /users/me:
     get:
       deprecated: true

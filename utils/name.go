@@ -22,8 +22,6 @@ func init() {
 	}
 	sort.Strings(names)
 	length = len(names)
-
-	rand.Seed(time.Now().UnixNano())
 }
 
 func inArray(target string, array []string) bool {

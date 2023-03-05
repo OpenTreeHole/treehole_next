@@ -2,6 +2,7 @@ package floor
 
 import (
 	"fmt"
+	"time"
 	. "treehole_next/models"
 	. "treehole_next/utils"
 
@@ -337,7 +338,11 @@ func ModifyFloor(c *fiber.Ctx) error {
 			}
 
 			// reindex floor
-			go FloorIndex(floor.ID, floor.Content)
+			go FloorIndex(FloorModel{
+				ID:        floor.ID,
+				UpdatedAt: time.Now(),
+				Content:   floor.Content,
+			})
 		}
 
 		if body.Fold != nil {
@@ -622,7 +627,11 @@ func RestoreFloor(c *fiber.Ctx) error {
 	floor.Content = floorHistory.Content
 	DB.Save(&floor)
 
-	go FloorIndex(floor.ID, floor.Content)
+	go FloorIndex(FloorModel{
+		ID:        floor.ID,
+		UpdatedAt: time.Now(),
+		Content:   floor.Content,
+	})
 
 	// log
 	MyLog("Floor", "Restore", floorID, user.ID, RoleAdmin, reason)

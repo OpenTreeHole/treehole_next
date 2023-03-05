@@ -13,8 +13,7 @@ import (
 type PostBody struct {
 	PenaltyLevel *int   `json:"penalty_level" validate:"omitempty"` // low priority, deprecated
 	Days         *int   `json:"days" validate:"omitempty,min=1"`    // high priority
-	DivisionID   int    `json:"division_id" validate:"required,min=1"`
-	Reason       string `json:"reason"` // optional
+	Reason       string `json:"reason"`                             // optional
 }
 
 // BanUser
@@ -54,6 +53,12 @@ func BanUser(c *fiber.Ctx) error {
 		return err
 	}
 
+	var hole Hole
+	err = DB.Take(&hole, floor.HoleID).Error
+	if err != nil {
+		return err
+	}
+
 	var days int
 	if body.Days != nil {
 		days = *body.Days
@@ -77,7 +82,7 @@ func BanUser(c *fiber.Ctx) error {
 		UserID:     floor.UserID,
 		MadeBy:     user.ID,
 		FloorID:    floor.ID,
-		DivisionID: body.DivisionID,
+		DivisionID: hole.DivisionID,
 		Duration:   time.Duration(days) * 24 * time.Hour,
 		Reason:     body.Reason,
 	}
@@ -92,7 +97,7 @@ func BanUser(c *fiber.Ctx) error {
 		Recipients: []int{floor.UserID},
 		Description: fmt.Sprintf(
 			"分区：%d，时间：%d天，原因：%s",
-			body.DivisionID,
+			hole.DivisionID,
 			days,
 			body.Reason,
 		),
