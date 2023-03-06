@@ -85,6 +85,35 @@ func ListHolesByTag(c *fiber.Ctx) error {
 	return Serialize(c, &holes)
 }
 
+// ListHoleByMe
+//
+//	@Summary	List a Hole Created By User
+//	@Tags		Hole
+//	@Produce	json
+//	@Router		/me/holes [get]
+//	@Success	200			{array}		Hole
+func ListHoleByMe(c *fiber.Ctx) error {
+	query, err := ValidateQuery[QueryTime](c)
+	if err != nil {
+		return err
+	}
+	user, err := GetUser(c)
+	if err != nil {
+		return err
+	}
+
+	// get holes
+	var holes Holes
+	querySet, err := holes.MakeQuerySet(query.Offset, query.Size, "", c)
+	if err != nil {
+		return err
+	}
+	querySet = querySet.Where("user_id = ?", user.ID)
+	querySet.Find(&holes)
+
+	return Serialize(c, &holes)
+}
+
 // ListHolesOld
 //
 //	@Summary	Old API for Listing Holes
