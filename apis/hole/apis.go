@@ -85,19 +85,20 @@ func ListHolesByTag(c *fiber.Ctx) error {
 	return Serialize(c, &holes)
 }
 
-// ListHoleByMe
+// ListHolesByMe
 //
 //	@Summary	List a Hole Created By User
 //	@Tags		Hole
 //	@Produce	json
-//	@Router		/me/holes [get]
+//	@Router		/users/me/holes [get]
+//	@Param		object		query		QueryTime	false	"query"
 //	@Success	200			{array}		Hole
-func ListHoleByMe(c *fiber.Ctx) error {
+func ListHolesByMe(c *fiber.Ctx) error {
 	query, err := ValidateQuery[QueryTime](c)
 	if err != nil {
 		return err
 	}
-	user, err := GetUser(c)
+	userID, err := GetUserID(c)
 	if err != nil {
 		return err
 	}
@@ -108,7 +109,7 @@ func ListHoleByMe(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	querySet = querySet.Where("user_id = ?", user.ID)
+	querySet = querySet.Where("user_id = ?", userID)
 	querySet.Find(&holes)
 
 	return Serialize(c, &holes)

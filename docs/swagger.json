@@ -1706,26 +1706,63 @@
                 "produces": [
                     "application/json"
                 ],
-                "tags": [
-                    "user"
-                ],
-                "summary": "get current user",
-                "deprecated": true,
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/models.User"
-                        }
-                    }
+              "tags": [
+                "user"
+              ],
+              "summary": "get current user",
+              "deprecated": true,
+              "responses": {
+                "200": {
+                  "description": "OK",
+                  "schema": {
+                    "$ref": "#/definitions/models.User"
+                  }
                 }
+              }
             }
         },
-        "/users/{user_id}": {
-            "get": {
-                "produces": [
-                    "application/json"
-                ],
+      "/users/me/holes": {
+        "get": {
+          "produces": [
+            "application/json"
+          ],
+          "tags": [
+            "Hole"
+          ],
+          "summary": "List a Hole Created By User",
+          "parameters": [
+            {
+              "type": "string",
+              "description": "updated time \u003c offset (default is now)",
+              "name": "offset",
+              "in": "query"
+            },
+            {
+              "maximum": 10,
+              "type": "integer",
+              "default": 10,
+              "name": "size",
+              "in": "query"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "OK",
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/definitions/models.Hole"
+                }
+              }
+            }
+          }
+        }
+      },
+      "/users/{user_id}": {
+        "get": {
+          "produces": [
+            "application/json"
+          ],
                 "tags": [
                     "user"
                 ],

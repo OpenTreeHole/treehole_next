@@ -1747,7 +1747,7 @@ paths:
     get:
       deprecated: true
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: OK
@@ -1755,5 +1755,29 @@ paths:
             $ref: '#/definitions/models.User'
       summary: get current user
       tags:
-      - user
+        - user
+  /users/me/holes:
+    get:
+      parameters:
+        - description: updated time < offset (default is now)
+          in: query
+          name: offset
+          type: string
+        - default: 10
+          in: query
+          maximum: 10
+          name: size
+          type: integer
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Hole'
+            type: array
+      summary: List a Hole Created By User
+      tags:
+        - Hole
 swagger: "2.0"
