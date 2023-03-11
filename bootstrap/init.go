@@ -60,19 +60,27 @@ func GetUser(c *fiber.Ctx) error {
 
 func MyLogger(c *fiber.Ctx) error {
 	startTime := time.Now()
-	err := c.Next()
-	latency := time.Since(startTime)
+	chainErr := c.Next()
+
+	if chainErr != nil {
+		if err := c.App().ErrorHandler(c, chainErr); err != nil {
+			_ = c.SendStatus(fiber.StatusInternalServerError)
+		}
+	}
+
+	latency := time.Since(startTime).Milliseconds()
 	user := c.Locals("user").(*models.User)
 	utils.Logger.Info("LOG : ",
 		zap.Int("StatusCode", c.Response().StatusCode()),
-		zap.String("Method", string(c.Context().Method())),
+		zap.String("Method", string(c.Method())),
 		zap.String("OriginUrl", c.OriginalURL()),
-		zap.String("RemoteIP", string(c.Context().RemoteIP())),
+		zap.String("RemoteIP", string(c.Get("X-Real-IP"))),
 		zap.Int("Latency", int(latency)),
-		zap.String("Error", err.Error()),
+		zap.String("Error", chainErr.Error()),
 		zap.Int("User", user.ID),
 	)
-	return err
+
+	return chainErr
 }
 
 func startTasks() context.CancelFunc {
