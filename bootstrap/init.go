@@ -45,15 +45,15 @@ func registerMiddlewares(app *fiber.App) {
 	if config.Config.Mode == "dev" {
 		app.Use(pprof.New())
 	}
-	app.Use(GetUser)
+	app.Use(GetUserID)
 }
 
-func GetUser(c *fiber.Ctx) error {
+func GetUserID(c *fiber.Ctx) error {
 	userID, err := models.GetUserID(c)
+	c.Locals("user_id", userID)
 	if err != nil {
 		return err
 	}
-	c.Locals("user_id", userID)
 
 	return c.Next()
 }
@@ -69,7 +69,7 @@ func MyLogger(c *fiber.Ctx) error {
 	}
 
 	latency := time.Since(startTime).Milliseconds()
-	userID := c.Locals("userID").(int)
+	userID := c.Locals("user_id").(int)
 	utils.Logger.Info("LOG : ",
 		zap.Int("StatusCode", c.Response().StatusCode()),
 		zap.String("Method", string(c.Method())),
