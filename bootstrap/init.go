@@ -49,11 +49,11 @@ func registerMiddlewares(app *fiber.App) {
 }
 
 func GetUser(c *fiber.Ctx) error {
-	user, err := models.GetUser(c)
+	userID, err := models.GetUserID(c)
 	if err != nil {
 		return err
 	}
-	c.Locals("user", user)
+	c.Locals("user_id", userID)
 
 	return c.Next()
 }
@@ -69,7 +69,7 @@ func MyLogger(c *fiber.Ctx) error {
 	}
 
 	latency := time.Since(startTime).Milliseconds()
-	user := c.Locals("user").(*models.User)
+	userID := c.Locals("userID").(int)
 	utils.Logger.Info("LOG : ",
 		zap.Int("StatusCode", c.Response().StatusCode()),
 		zap.String("Method", string(c.Method())),
@@ -77,7 +77,7 @@ func MyLogger(c *fiber.Ctx) error {
 		zap.String("RemoteIP", string(c.Get("X-Real-IP"))),
 		zap.Int("Latency", int(latency)),
 		zap.String("Error", chainErr.Error()),
-		zap.Int("User", user.ID),
+		zap.Int("UserID", userID),
 	)
 
 	return chainErr
