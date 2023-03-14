@@ -20,7 +20,7 @@ jobs:
       - name: Automated Testing
         env:
           MODE: test
-        run: go test -json -tags release ./tests/...
+        run: go test -v -count=1 -json -tags release ./tests/...
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
       - name: Set up Docker Buildx
