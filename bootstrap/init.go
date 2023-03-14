@@ -70,17 +70,19 @@ func MyLogger(c *fiber.Ctx) error {
 
 	latency := time.Since(startTime).Milliseconds()
 	userID := c.Locals("user_id").(int)
-	utils.Logger.Info("LOG : ",
-		zap.Int("StatusCode", c.Response().StatusCode()),
-		zap.String("Method", string(c.Method())),
-		zap.String("OriginUrl", c.OriginalURL()),
-		zap.String("RemoteIP", string(c.Get("X-Real-IP"))),
-		zap.Int("Latency", int(latency)),
-		zap.String("Error", chainErr.Error()),
+	output := []zap.Field{
 		zap.Int("UserID", userID),
-	)
-
-	return chainErr
+		zap.Int("StatusCode", c.Response().StatusCode()),
+		zap.String("Method", c.Method()),
+		zap.String("OriginUrl", c.OriginalURL()),
+		zap.String("RemoteIP", c.Get("X-Real-IP")),
+		zap.Int64("Latency", latency),
+	}
+	if chainErr != nil {
+		output = append(output, zap.Error(chainErr))
+	}
+	utils.Logger.Info("LOG : ", output...)
+	return nil
 }
 
 func startTasks() context.CancelFunc {
