@@ -992,7 +992,31 @@ paths:
             $ref: '#/definitions/models.MessageModel'
       summary: Modify A Floor's like
       tags:
-      - Floor
+        - Floor
+  /floors/{id}/punishment:
+    get:
+      parameters:
+        - description: id
+          in: path
+          name: id
+          required: true
+          type: integer
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              type: string
+            type: array
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.MessageModel'
+      summary: Get A Floor's Punishment History, admin only
+      tags:
+        - Floor
   /floors/{id}/restore/{floor_history_id}:
     post:
       description: Restore A Floor From A History Version
