@@ -42,9 +42,7 @@ func registerMiddlewares(app *fiber.App) {
 	if config.Config.Mode != "bench" {
 		app.Use(MyLogger)
 	}
-	if config.Config.Mode == "dev" {
-		app.Use(pprof.New())
-	}
+	app.Use(pprof.New())
 	app.Use(GetUserID)
 }
 
