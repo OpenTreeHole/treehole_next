@@ -48,10 +48,10 @@ func registerMiddlewares(app *fiber.App) {
 
 func GetUserID(c *fiber.Ctx) error {
 	userID, err := models.GetUserID(c)
-	c.Locals("user_id", userID)
 	if err != nil {
 		return err
 	}
+	c.Locals("user_id", userID)
 
 	return c.Next()
 }
@@ -67,14 +67,16 @@ func MyLogger(c *fiber.Ctx) error {
 	}
 
 	latency := time.Since(startTime).Milliseconds()
-	userID := c.Locals("user_id").(int)
+	userID, ok := c.Locals("user_id").(int)
 	output := []zap.Field{
-		zap.Int("UserID", userID),
 		zap.Int("StatusCode", c.Response().StatusCode()),
 		zap.String("Method", c.Method()),
 		zap.String("OriginUrl", c.OriginalURL()),
 		zap.String("RemoteIP", c.Get("X-Real-IP")),
 		zap.Int64("Latency", latency),
+	}
+	if ok {
+		output = append(output, zap.Int("UserID", userID))
 	}
 	if chainErr != nil {
 		output = append(output, zap.Error(chainErr))
