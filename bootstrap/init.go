@@ -48,10 +48,9 @@ func registerMiddlewares(app *fiber.App) {
 
 func GetUserID(c *fiber.Ctx) error {
 	userID, err := models.GetUserID(c)
-	if err != nil {
-		return err
+	if err == nil {
+		c.Locals("user_id", userID)
 	}
-	c.Locals("user_id", userID)
 
 	return c.Next()
 }
