@@ -77,8 +77,10 @@ func SendMail(c *fiber.Ctx) error {
 	mail := Notification{
 		Description: body.Description,
 		Recipients:  body.Recipients,
+		Data:        Map{},
 		Title:       "您有一封站内信",
 		Type:        MessageTypeMail,
+		URL:         "/api/messages",
 	}
 
 	// send

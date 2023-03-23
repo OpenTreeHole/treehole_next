@@ -637,3 +637,51 @@ func RestoreFloor(c *fiber.Ctx) error {
 	MyLog("Floor", "Restore", floorID, user.ID, RoleAdmin, reason)
 	return Serialize(c, &floor)
 }
+
+// GetPunishmentHistory
+//
+//	@Summary	Get A Floor's Punishment History, admin only
+//	@Tags		Floor
+//	@Produce	application/json
+//	@Router		/floors/{id}/punishment [get]
+//	@Param		id	path		int	true	"id"
+//	@Success	200	{array}		string
+//	@Failure	404	{object}	MessageModel
+func GetPunishmentHistory(c *fiber.Ctx) error {
+	floorID, err := c.ParamsInt("id")
+	if err != nil {
+		return err
+	}
+
+	// get user
+	user, err := GetUser(c)
+	if err != nil {
+		return err
+	}
+
+	// permission, admin only
+	if !user.IsAdmin {
+		return Forbidden()
+	}
+
+	// get floor userID
+	var floor Floor
+	result := DB.First(&floor, floorID)
+	if result.Error != nil {
+		return result.Error
+	}
+	userID := floor.UserID
+
+	// search DB for user punishment history
+	punishments := make([]string, 0, 10)
+	err = DB.Raw(
+		`SELECT floor.content 
+			FROM floor JOIN floor_history ON floor.id = floor_history.floor_id 
+			WHERE floor.user_id <> floor_history.user_id 
+			AND floor.user_id = ? 
+			AND floor.deleted`, userID).Scan(&punishments).Error
+	if err != nil {
+		return err
+	}
+	return c.JSON(punishments)
+}

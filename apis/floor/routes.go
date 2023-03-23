@@ -17,4 +17,5 @@ func RegisterRoutes(app fiber.Router) {
 
 	app.Post("/floors/search", SearchFloors)
 	app.Post("/config/search", SearchConfig)
+	app.Get("/floors/:id/punishment", GetPunishmentHistory)
 }
