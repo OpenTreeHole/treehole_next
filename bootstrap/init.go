@@ -68,19 +68,19 @@ func MyLogger(c *fiber.Ctx) error {
 	latency := time.Since(startTime).Milliseconds()
 	userID, ok := c.Locals("user_id").(int)
 	output := []zap.Field{
-		zap.Int("StatusCode", c.Response().StatusCode()),
-		zap.String("Method", c.Method()),
-		zap.String("OriginUrl", c.OriginalURL()),
-		zap.String("RemoteIP", c.Get("X-Real-IP")),
-		zap.Int64("Latency", latency),
+		zap.Int("status_code", c.Response().StatusCode()),
+		zap.String("method", c.Method()),
+		zap.String("origin_url", c.OriginalURL()),
+		zap.String("remote_ip", c.Get("X-Real-IP")),
+		zap.Int64("latency", latency),
 	}
 	if ok {
-		output = append(output, zap.Int("UserID", userID))
+		output = append(output, zap.Int("user_id", userID))
 	}
 	if chainErr != nil {
 		output = append(output, zap.Error(chainErr))
 	}
-	utils.Logger.Info("LOG : ", output...)
+	utils.Logger.Info("http log", output...)
 	return nil
 }
 
