@@ -146,6 +146,7 @@ func (floors Floors) Preprocess(c *fiber.Ctx) error {
 
 func (floor *Floor) SetDefaults() {
 	floor.FloorID = floor.ID
+	floor.Anonyname = utils.GetFuzzName(floor.Anonyname)
 	if floor.Mention == nil {
 		floor.Mention = Floors{}
 	} else if len(floor.Mention) > 0 {

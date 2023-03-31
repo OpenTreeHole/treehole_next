@@ -7,6 +7,7 @@ import (
 	"math/rand"
 	"sort"
 	"time"
+	"treehole_next/config"
 	"treehole_next/data"
 
 	"golang.org/x/exp/slices"
@@ -66,5 +67,16 @@ func GenerateName(compareList []string) string {
 				return name
 			}
 		}
+	}
+}
+
+func GetFuzzName(name string) string {
+	if !config.Config.OpenFuzzName {
+		return name
+	}
+	if fuzzName, ok := data.NamesMapping[name]; ok {
+		return fuzzName
+	} else {
+		return name
 	}
 }
