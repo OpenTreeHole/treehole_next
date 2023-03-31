@@ -28,6 +28,7 @@ var Config struct {
 	AuthUrl          string   `env:"AUTH_URL"`
 	ElasticsearchUrl string   `env:"ELASTICSEARCH_URL"`
 	OpenSearch       bool     `env:"OPEN_SEARCH" envDefault:"true"`
+	OpenFuzzName     bool     `env:"OPEN_FUZZ_NAME" envDefault:"false"`
 }
 
 var DynamicConfig struct {
