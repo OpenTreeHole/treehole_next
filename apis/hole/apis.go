@@ -176,14 +176,10 @@ func GetHole(c *fiber.Ctx) error {
 	id, _ := c.ParamsInt("id")
 
 	// get hole
-	hole := Hole{}
-	querySet, err := MakeQuerySet(c)
+	var hole Hole
+	err := DB.Take(&hole, id).Error
 	if err != nil {
 		return err
-	}
-	result := querySet.Take(&hole, id)
-	if result.Error != nil {
-		return result.Error
 	}
 
 	return Serialize(c, &hole)
