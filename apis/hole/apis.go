@@ -11,6 +11,7 @@ import (
 	"gorm.io/plugin/dbresolver"
 
 	. "treehole_next/models"
+	"treehole_next/utils"
 	. "treehole_next/utils"
 )
 
@@ -450,7 +451,7 @@ func ModifyHole(c *fiber.Ctx) error {
 	return c.JSON(&hole)
 }
 
-// DeleteHole
+// HideHole
 //
 //	@Summary		Delete A Hole
 //	@Description	Hide a hole, but visible to admins. This may affect many floors, DO NOT ABUSE!!!
@@ -460,7 +461,7 @@ func ModifyHole(c *fiber.Ctx) error {
 //	@Param			id	path	int	true	"id"
 //	@Success		204
 //	@Failure		404	{object}	MessageModel
-func DeleteHole(c *fiber.Ctx) error {
+func HideHole(c *fiber.Ctx) error {
 	// validate holeID
 	holeID, err := c.ParamsInt("id")
 	if err != nil {
@@ -486,9 +487,10 @@ func DeleteHole(c *fiber.Ctx) error {
 	}
 
 	// log
-	MyLog("Hole", "Delete", holeID, user.ID, RoleAdmin)
+	MyLog("Hole", "Hide", holeID, user.ID, RoleAdmin)
 
 	// find hole and update cache
+
 	err = DB.Take(&hole).Error
 	if err != nil {
 		return err
@@ -525,6 +527,45 @@ func PatchHole(c *fiber.Ctx) error {
 	}
 
 	holeViewsChan <- holeID
+
+	return c.Status(204).JSON(nil)
+}
+
+func DeleteHole(c *fiber.Ctx) error {
+	holeID, err := c.ParamsInt("id")
+	if err != nil {
+		return err
+	}
+
+	user, err := GetUser(c)
+	if err != nil {
+		return err
+	}
+
+	var userType Role = RoleOwner
+
+	if user.IsAdmin {
+		userType = RoleAdmin
+	}
+
+	var hole Hole
+	hole.ID = holeID
+	result := DB.Where("hole_id = ? ", holeID).Delete(&hole)
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+
+	MyLog("Hole", "Delete", holeID, user.ID, userType)
+
+	err = utils.DeleteCache(hole.CacheName())
+	if err != nil {
+		return err
+	}
+
+	// delete floors from Elasticsearch
+	var floors Floors
+	_ = DB.Where("hole_id = ?", hole.ID).Find(&floors)
+	go BulkDelete(Models2IDSlice(floors))
 
 	return c.Status(204).JSON(nil)
 }
