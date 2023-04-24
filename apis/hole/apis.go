@@ -551,6 +551,10 @@ func DeleteHole(c *fiber.Ctx) error {
 	var hole Hole
 	err = DB.Take(&hole, holeID).Error
 
+	if hole.UserID != user.UserID && userType != RoleAdmin {
+		return Forbidden()
+	}
+
 	result := DB.Where("hole_id = ? ", holeID).Delete(&hole)
 	if result.RowsAffected == 0 {
 		return gorm.ErrRecordNotFound
