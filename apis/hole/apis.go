@@ -34,7 +34,7 @@ func ListHolesByDivision(c *fiber.Ctx) error {
 
 	// get holes
 	var holes Holes
-	querySet, err := holes.MakeQuerySet(query.Offset, query.Size, "", c)
+	querySet, err := holes.MakeQuerySet(query.Offset, query.Size, query.Order, c)
 	if err != nil {
 		return err
 	}
