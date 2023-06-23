@@ -11,6 +11,7 @@ type QueryTime struct {
 	Size int `json:"size" query:"size" default:"10" validate:"max=10"`
 	// updated time < offset (default is now)
 	Offset models.CustomTime `json:"offset" query:"offset" swaggertype:"string"`
+	Order  string            `json:"order" query:"order"`
 }
 
 func (q *QueryTime) SetDefaults() {

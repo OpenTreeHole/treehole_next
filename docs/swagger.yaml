@@ -690,6 +690,9 @@ paths:
         in: query
         name: offset
         type: string
+      - in: query
+        name: order
+        type: string
       - default: 10
         in: query
         maximum: 10
@@ -992,17 +995,17 @@ paths:
             $ref: '#/definitions/models.MessageModel'
       summary: Modify A Floor's like
       tags:
-        - Floor
+      - Floor
   /floors/{id}/punishment:
     get:
       parameters:
-        - description: id
-          in: path
-          name: id
-          required: true
-          type: integer
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: integer
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
@@ -1016,7 +1019,7 @@ paths:
             $ref: '#/definitions/models.MessageModel'
       summary: Get A Floor's Punishment History, admin only
       tags:
-        - Floor
+      - Floor
   /floors/{id}/restore/{floor_history_id}:
     post:
       description: Restore A Floor From A History Version
@@ -1628,6 +1631,9 @@ paths:
         in: query
         name: offset
         type: string
+      - in: query
+        name: order
+        type: string
       - default: 10
         in: query
         maximum: 10
@@ -1771,7 +1777,7 @@ paths:
     get:
       deprecated: true
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
@@ -1779,21 +1785,24 @@ paths:
             $ref: '#/definitions/models.User'
       summary: get current user
       tags:
-        - user
+      - user
   /users/me/holes:
     get:
       parameters:
-        - description: updated time < offset (default is now)
-          in: query
-          name: offset
-          type: string
-        - default: 10
-          in: query
-          maximum: 10
-          name: size
-          type: integer
+      - description: updated time < offset (default is now)
+        in: query
+        name: offset
+        type: string
+      - in: query
+        name: order
+        type: string
+      - default: 10
+        in: query
+        maximum: 10
+        name: size
+        type: integer
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
@@ -1803,5 +1812,5 @@ paths:
             type: array
       summary: List a Hole Created By User
       tags:
-        - Hole
+      - Hole
 swagger: "2.0"

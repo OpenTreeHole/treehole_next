@@ -150,6 +150,11 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "type": "string",
+                        "name": "order",
+                        "in": "query"
+                    },
+                    {
                         "maximum": 10,
                         "type": "integer",
                         "default": 10,
@@ -1573,6 +1578,11 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "type": "string",
+                        "name": "order",
+                        "in": "query"
+                    },
+                    {
                         "maximum": 10,
                         "type": "integer",
                         "default": 10,
@@ -1779,6 +1789,11 @@ const docTemplate = `{
                         "type": "string",
                         "description": "updated time \u003c offset (default is now)",
                         "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "name": "order",
                         "in": "query"
                     },
                     {
