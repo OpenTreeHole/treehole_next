@@ -152,6 +152,10 @@ func GetUser(c *fiber.Ctx) (*User, error) {
 		return user, nil
 	}
 
+	if c.Locals("user") != nil {
+		return c.Locals("user").(*User), nil
+	}
+
 	// get id
 	userID, err := GetUserID(c)
 	if err != nil {
@@ -178,6 +182,10 @@ func GetUser(c *fiber.Ctx) (*User, error) {
 	}
 	user.Permission.Silent = user.BanDivision
 	user.Permission.OffenseCount = user.OffenceCount
+
+	// save user in c.Locals
+	c.Locals("user", user)
+
 	return user, err
 }
 

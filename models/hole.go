@@ -190,7 +190,7 @@ func (hole *Hole) Preprocess(c *fiber.Ctx) error {
 	return Holes{hole}.Preprocess(c)
 }
 
-func (holes Holes) Preprocess(_ *fiber.Ctx) error {
+func (holes Holes) Preprocess(c *fiber.Ctx) error {
 	notInCache := make(Holes, 0, len(holes))
 
 	for _, hole := range holes {
@@ -207,6 +207,18 @@ func (holes Holes) Preprocess(_ *fiber.Ctx) error {
 		err := UpdateHoleCache(notInCache)
 		if err != nil {
 			return err
+		}
+	}
+
+	user, err := GetUser(c)
+	if err != nil {
+		return err
+	}
+
+	// only admin can see hole is hidden
+	if !user.IsAdmin {
+		for _, hole := range holes {
+			hole.Hidden = false
 		}
 	}
 

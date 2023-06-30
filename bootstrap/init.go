@@ -2,6 +2,7 @@ package bootstrap
 
 import (
 	"context"
+	"github.com/opentreehole/go-common"
 	"time"
 	"treehole_next/apis"
 	"treehole_next/apis/hole"
@@ -27,7 +28,7 @@ func Init() (*fiber.App, context.CancelFunc) {
 	models.InitAdminList()
 
 	app := fiber.New(fiber.Config{
-		ErrorHandler: utils.MyErrorHandler,
+		ErrorHandler: common.CommonErrorHandler,
 		JSONEncoder:  json.Marshal,
 		JSONDecoder:  json.Unmarshal,
 	})
