@@ -1,8 +1,8 @@
 package floor
 
 import (
+	"github.com/opentreehole/go-common"
 	"treehole_next/models"
-	"treehole_next/utils"
 )
 
 type ListModel struct {
@@ -58,27 +58,27 @@ func (body ModifyModel) CheckPermission(user *models.User, floor *models.Floor, 
 	if body.Content != nil {
 		if !user.IsAdmin {
 			if user.ID != floor.UserID {
-				return utils.Forbidden("这不是您的楼层，您没有权限修改")
+				return common.Forbidden("这不是您的楼层，您没有权限修改")
 			} else {
 				if user.BanDivision[hole.DivisionID] != nil {
-					return utils.Forbidden(user.BanDivisionMessage(hole.DivisionID))
+					return common.Forbidden(user.BanDivisionMessage(hole.DivisionID))
 				} else if hole.Locked {
-					return utils.Forbidden("此洞已被锁定，您无法修改")
+					return common.Forbidden("此洞已被锁定，您无法修改")
 				} else if floor.Deleted {
-					return utils.Forbidden("此洞已被删除，您无法修改")
+					return common.Forbidden("此洞已被删除，您无法修改")
 				}
 			}
 		} else {
 			if user.BanDivision[hole.DivisionID] != nil {
-				return utils.Forbidden(user.BanDivisionMessage(hole.DivisionID))
+				return common.Forbidden(user.BanDivisionMessage(hole.DivisionID))
 			}
 		}
 	}
 	if (body.Fold != nil || body.FoldFrontend != nil) && !user.IsAdmin {
-		return utils.Forbidden("非管理员禁止折叠")
+		return common.Forbidden("非管理员禁止折叠")
 	}
 	if body.SpecialTag != nil && !user.IsAdmin {
-		return utils.Forbidden("非管理员禁止修改特殊标签")
+		return common.Forbidden("非管理员禁止修改特殊标签")
 	}
 	return nil
 }

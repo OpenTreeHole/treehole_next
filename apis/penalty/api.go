@@ -3,6 +3,7 @@ package penalty
 
 import (
 	"fmt"
+	"github.com/opentreehole/go-common"
 	"time"
 	. "treehole_next/models"
 	. "treehole_next/utils"
@@ -44,7 +45,7 @@ func BanUser(c *fiber.Ctx) error {
 
 	// permission
 	if !user.IsAdmin {
-		return Forbidden()
+		return common.Forbidden()
 	}
 
 	var floor Floor

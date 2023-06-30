@@ -2,11 +2,11 @@ package models
 
 import (
 	"errors"
+	"github.com/opentreehole/go-common"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"gorm.io/plugin/dbresolver"
 	"time"
-	"treehole_next/utils"
 )
 
 // Punishment
@@ -63,7 +63,7 @@ func (punishment *Punishment) Create() (*User, error) {
 		var floorPunishment Punishment
 		err = tx.Where("user_id = ? and floor_id = ?", user.ID, punishment.FloorID).Take(&floorPunishment).Error
 		if err == nil {
-			return utils.BadRequest("该用户已被禁言")
+			return common.Forbidden("该用户已被禁言")
 		} else if !errors.Is(err, gorm.ErrRecordNotFound) {
 			return err
 		}

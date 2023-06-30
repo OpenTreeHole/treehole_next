@@ -1,6 +1,7 @@
 package division
 
 import (
+	"github.com/opentreehole/go-common"
 	"strconv"
 	"treehole_next/config"
 	. "treehole_next/models"
@@ -155,11 +156,11 @@ func DeleteDivision(c *fiber.Ctx) error {
 		return err
 	}
 	if !user.IsAdmin {
-		return Forbidden()
+		return common.Forbidden()
 	}
 
 	if id == body.To {
-		return BadRequest("The deleted division can't be the same as to.")
+		return common.BadRequest("The deleted division can't be the same as to.")
 	}
 	err = DB.Exec("UPDATE hole SET division_id = ? WHERE division_id = ?", body.To, id).Error
 	if err != nil {

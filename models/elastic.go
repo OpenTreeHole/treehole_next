@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/opentreehole/go-common"
 	"io"
 	"log"
 	"strconv"
@@ -118,7 +119,7 @@ func Search(keyword string, size, offset int) (Floors, error) {
 		if err != nil {
 			return nil, err
 		} else {
-			return nil, &utils.HttpError{Code: 502, Message: string(data)}
+			return nil, &common.HttpError{Code: 502, Message: string(data)}
 		}
 	}
 
@@ -139,7 +140,7 @@ func Search(keyword string, size, offset int) (Floors, error) {
 	for i, hit := range response.Hits.Hits {
 		floorIDs[i] = hit.Source.ID
 		if err != nil {
-			return nil, &utils.HttpError{Code: 500, Message: "error parse floor_id from elasticsearch ID"}
+			return nil, &common.HttpError{Code: 500, Message: "error parse floor_id from elasticsearch ID"}
 		}
 	}
 	fmt.Printf("search response: %d\n", floorIDs)

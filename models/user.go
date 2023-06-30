@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v2"
+	"github.com/opentreehole/go-common"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"gorm.io/plugin/dbresolver"
@@ -13,7 +14,6 @@ import (
 	"strings"
 	"time"
 	"treehole_next/config"
-	"treehole_next/utils"
 )
 
 type User struct {
@@ -169,7 +169,7 @@ func GetUser(c *fiber.Ctx) (*User, error) {
 	}
 	err = user.parseJWT(tokenString)
 	if err != nil {
-		return nil, utils.Unauthorized(err.Error())
+		return nil, common.Unauthorized(err.Error())
 	}
 
 	// load user from database in transaction
@@ -196,7 +196,7 @@ func GetUserID(c *fiber.Ctx) (int, error) {
 
 	id, err := strconv.Atoi(c.Get("X-Consumer-Username"))
 	if err != nil {
-		return 0, utils.Unauthorized("Unauthorized")
+		return 0, common.Unauthorized("Unauthorized")
 	}
 
 	return id, nil

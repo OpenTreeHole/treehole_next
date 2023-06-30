@@ -1,10 +1,10 @@
 package hole
 
 import (
+	"github.com/opentreehole/go-common"
 	"time"
 	"treehole_next/apis/tag"
 	"treehole_next/models"
-	"treehole_next/utils"
 )
 
 type QueryTime struct {
@@ -72,19 +72,19 @@ type ModifyModel struct {
 
 func (body ModifyModel) CheckPermission(user *models.User, hole *models.Hole) error {
 	if body.DivisionID != nil && !user.IsAdmin {
-		return utils.Forbidden("非管理员禁止修改分区")
+		return common.Forbidden("非管理员禁止修改分区")
 	}
 	if body.Unhidden != nil && !user.IsAdmin {
-		return utils.Forbidden("非管理员禁止取消隐藏")
+		return common.BadRequest("非管理员禁止取消隐藏")
 	}
 	if body.Tags != nil && !(user.IsAdmin || user.ID == hole.UserID) {
-		return utils.Forbidden()
+		return common.Forbidden()
 	}
 	if body.Tags != nil && len(body.Tags) == 0 {
-		return utils.BadRequest("tags 不能为空")
+		return common.BadRequest("tags 不能为空")
 	}
 	if body.Lock != nil && !user.IsAdmin {
-		return utils.Forbidden("非管理员禁止锁定帖子")
+		return common.Forbidden("非管理员禁止锁定帖子")
 	}
 	return nil
 }

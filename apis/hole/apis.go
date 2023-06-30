@@ -3,6 +3,7 @@ package hole
 import (
 	"fmt"
 	"github.com/gofiber/fiber/v2"
+	"github.com/opentreehole/go-common"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"gorm.io/plugin/dbresolver"
@@ -203,7 +204,7 @@ func CreateHole(c *fiber.Ctx) error {
 	}
 
 	if len([]rune(body.Content)) > 15000 {
-		return BadRequest("文本限制 15000 字")
+		return common.BadRequest("文本限制 15000 字")
 	}
 
 	divisionID, err := c.ParamsInt("id")
@@ -219,7 +220,7 @@ func CreateHole(c *fiber.Ctx) error {
 
 	// permission
 	if user.BanDivision[divisionID] != nil {
-		return Forbidden(user.BanDivisionMessage(divisionID))
+		return common.Forbidden(user.BanDivisionMessage(divisionID))
 	}
 
 	hole := Hole{
@@ -252,7 +253,7 @@ func CreateHoleOld(c *fiber.Ctx) error {
 	}
 
 	if len([]rune(body.Content)) > 15000 {
-		return BadRequest("文本限制 15000 字")
+		return common.BadRequest("文本限制 15000 字")
 	}
 
 	// get user from auth
@@ -263,7 +264,7 @@ func CreateHoleOld(c *fiber.Ctx) error {
 
 	// permission
 	if user.BanDivision[body.DivisionID] != nil {
-		return Forbidden(user.BanDivisionMessage(body.DivisionID))
+		return common.Forbidden(user.BanDivisionMessage(body.DivisionID))
 	}
 
 	// create hole
@@ -305,7 +306,7 @@ func ModifyHole(c *fiber.Ctx) error {
 	}
 
 	if body.DoNothing() {
-		return BadRequest("无效请求")
+		return common.BadRequest("无效请求")
 	}
 
 	// get user
@@ -462,7 +463,7 @@ func DeleteHole(c *fiber.Ctx) error {
 
 	// permission
 	if !user.IsAdmin {
-		return Forbidden()
+		return common.Forbidden()
 	}
 
 	var hole Hole

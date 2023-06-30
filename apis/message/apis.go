@@ -1,6 +1,7 @@
 package message
 
 import (
+	"github.com/opentreehole/go-common"
 	. "treehole_next/models"
 	. "treehole_next/utils"
 
@@ -70,7 +71,7 @@ func SendMail(c *fiber.Ctx) error {
 
 	// permission
 	if !user.IsAdmin {
-		return Forbidden()
+		return common.Forbidden()
 	}
 
 	// construct mail
