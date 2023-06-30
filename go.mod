@@ -4,17 +4,15 @@ go 1.20
 
 require (
 	github.com/caarlos0/env/v6 v6.10.1
-	github.com/creasty/defaults v1.7.0
 	github.com/eko/gocache/lib/v4 v4.1.3
 	github.com/eko/gocache/store/go_cache/v4 v4.1.2
 	github.com/eko/gocache/store/redis/v4 v4.1.2
 	github.com/elastic/go-elasticsearch/v8 v8.6.0
-	github.com/go-playground/validator/v10 v10.14.1
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/goccy/go-json v0.10.2
 	github.com/gofiber/fiber/v2 v2.47.0
 	github.com/hetiansu5/urlquery v1.2.7
-	github.com/opentreehole/go-common v0.0.0-20230630095944-fb9dca230666
+	github.com/opentreehole/go-common v0.0.0-20230630104726-e27d75701104
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/stretchr/testify v1.8.4
 	github.com/swaggo/fiber-swagger v1.3.0
@@ -32,6 +30,7 @@ require (
 	github.com/andybalholm/brotli v1.0.5 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
+	github.com/creasty/defaults v1.7.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/elastic/elastic-transport-go/v8 v8.1.0 // indirect
@@ -42,6 +41,7 @@ require (
 	github.com/go-openapi/swag v0.22.3 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
+	github.com/go-playground/validator/v10 v10.14.1 // indirect
 	github.com/go-sql-driver/mysql v1.7.0 // indirect
 	github.com/golang/mock v1.6.0 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
