@@ -2,6 +2,7 @@ package models
 
 import (
 	"fmt"
+	"github.com/rs/zerolog/log"
 	"time"
 	"treehole_next/utils"
 
@@ -217,7 +218,7 @@ func (floor *Floor) Create(tx *gorm.DB) (err error) {
 
 	err = messages.Send()
 	if err != nil {
-		utils.Logger.Error("[notification] SendNotification failed: " + err.Error())
+		log.Err(err).Str("model", "Notification").Msg("SendNotification failed")
 		// return err // only for test
 	}
 

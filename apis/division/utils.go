@@ -1,9 +1,8 @@
 package division
 
 import (
-	"go.uber.org/zap"
+	"github.com/rs/zerolog/log"
 	. "treehole_next/models"
-	"treehole_next/utils"
 )
 
 func refreshCache() {
@@ -11,6 +10,6 @@ func refreshCache() {
 	DB.Find(&divisions)
 	err := divisions.Preprocess(nil)
 	if err != nil {
-		utils.Logger.Error("error refreshing cache", zap.String("error", err.Error()))
+		log.Err(err).Msg("error refreshing cache")
 	}
 }

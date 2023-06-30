@@ -3,6 +3,7 @@ package floor
 import (
 	"fmt"
 	"github.com/opentreehole/go-common"
+	"github.com/rs/zerolog/log"
 	"time"
 	. "treehole_next/models"
 	. "treehole_next/utils"
@@ -396,7 +397,7 @@ func ModifyFloor(c *fiber.Ctx) error {
 		user.ID != floor.UserID {
 		err = floor.SendModify(DB)
 		if err != nil {
-			Logger.Error("[notification] SendModify failed: " + err.Error())
+			log.Err(err).Str("model", "Notification").Msg("SendModify failed")
 			// return err // only for test
 		}
 	}
@@ -525,7 +526,7 @@ func DeleteFloor(c *fiber.Ctx) error {
 		// SendModify when admin delete floor
 		err = floor.SendModify(DB)
 		if err != nil {
-			Logger.Error("[notification] SendModify failed: " + err.Error())
+			log.Err(err).Str("model", "Notification").Msg("SendModify failed")
 			// return err // only for test
 		}
 	}

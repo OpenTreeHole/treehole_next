@@ -2,8 +2,8 @@ package report
 
 import (
 	"github.com/opentreehole/go-common"
+	"github.com/rs/zerolog/log"
 	. "treehole_next/models"
-	"treehole_next/utils"
 	. "treehole_next/utils"
 
 	"github.com/gofiber/fiber/v2"
@@ -102,7 +102,7 @@ func AddReport(c *fiber.Ctx) error {
 	// Send Notification
 	err = report.SendCreate(DB)
 	if err != nil {
-		utils.Logger.Error("[notification] SendCreate failed: " + err.Error())
+		log.Err(err).Str("model", "Notification").Msg("SendCreate failed: ")
 		// return err // only for test
 	}
 
@@ -155,7 +155,7 @@ func DeleteReport(c *fiber.Ctx) error {
 	// Send Notification
 	err = report.SendModify(DB)
 	if err != nil {
-		utils.Logger.Error("[notification] SendModify failed: " + err.Error())
+		log.Err(err).Str("model", "Notification").Msg("SendModify failed")
 		// return err // only for test
 	}
 

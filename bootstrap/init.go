@@ -3,6 +3,7 @@ package bootstrap
 import (
 	"context"
 	"github.com/opentreehole/go-common"
+	"github.com/rs/zerolog/log"
 	"time"
 	"treehole_next/apis"
 	"treehole_next/apis/hole"
@@ -11,12 +12,10 @@ import (
 	"treehole_next/models"
 	"treehole_next/utils"
 
-	"github.com/gofiber/fiber/v2/middleware/pprof"
-	"github.com/gofiber/fiber/v2/middleware/recover"
-	"go.uber.org/zap"
-
 	"github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/pprof"
+	"github.com/gofiber/fiber/v2/middleware/recover"
 )
 
 func Init() (*fiber.App, context.CancelFunc) {
@@ -24,7 +23,6 @@ func Init() (*fiber.App, context.CancelFunc) {
 	utils.InitCache()
 	models.Init()
 	models.InitDB()
-	utils.Logger, _ = utils.InitLog()
 	models.InitAdminList()
 
 	app := fiber.New(fiber.Config{
@@ -68,20 +66,20 @@ func MyLogger(c *fiber.Ctx) error {
 
 	latency := time.Since(startTime).Milliseconds()
 	userID, ok := c.Locals("user_id").(int)
-	output := []zap.Field{
-		zap.Int("status_code", c.Response().StatusCode()),
-		zap.String("method", c.Method()),
-		zap.String("origin_url", c.OriginalURL()),
-		zap.String("remote_ip", c.Get("X-Real-IP")),
-		zap.Int64("latency", latency),
-	}
+
+	output := log.Info().
+		Int("status_code", c.Response().StatusCode()).
+		Str("method", c.Method()).
+		Str("origin_url", c.OriginalURL()).
+		Str("remote_ip", c.Get("X-Real-IP")).
+		Int64("latency", latency)
 	if ok {
-		output = append(output, zap.Int("user_id", userID))
+		output = output.Int("user_id", userID)
 	}
 	if chainErr != nil {
-		output = append(output, zap.Error(chainErr))
+		output = output.Err(chainErr)
 	}
-	utils.Logger.Info("http log", output...)
+	output.Msg("http log")
 	return nil
 }
 
