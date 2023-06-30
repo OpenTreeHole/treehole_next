@@ -6,7 +6,6 @@ import (
 	"os/signal"
 	"syscall"
 	"treehole_next/bootstrap"
-	"treehole_next/utils"
 )
 
 //	@title			Open Tree Hole
@@ -46,7 +45,6 @@ func main() {
 	cancel()
 
 	// sync logger
-	err = utils.Logger.Sync()
 	if err != nil {
 		log.Println(err)
 	}
