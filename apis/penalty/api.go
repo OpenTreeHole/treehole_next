@@ -27,7 +27,7 @@ type PostBody struct {
 //	@Success	201		{object}	User
 func BanUser(c *fiber.Ctx) error {
 	// validate body
-	body, err := ValidateBody[PostBody](c)
+	body, err := common.ValidateBody[PostBody](c)
 	if err != nil {
 		return err
 	}

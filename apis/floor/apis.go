@@ -29,7 +29,7 @@ func ListFloorsInAHole(c *fiber.Ctx) error {
 		return err
 	}
 
-	query, err := ValidateQuery[ListModel](c)
+	query, err := common.ValidateQuery[ListModel](c)
 	if err != nil {
 		return err
 	}
@@ -59,7 +59,7 @@ func ListFloorsInAHole(c *fiber.Ctx) error {
 //	@Success	200		{array}	Floor
 func ListFloorsOld(c *fiber.Ctx) error {
 	// validate
-	query, err := ValidateQuery[ListOldModel](c)
+	query, err := common.ValidateQuery[ListOldModel](c)
 	if err != nil {
 		return err
 	}
@@ -127,7 +127,7 @@ func GetFloor(c *fiber.Ctx) error {
 //	@Param		json	body		CreateModel	true	"json"
 //	@Success	201		{object}	Floor
 func CreateFloor(c *fiber.Ctx) error {
-	body, err := ValidateBody[CreateModel](c)
+	body, err := common.ValidateBody[CreateModel](c)
 	if err != nil {
 		return err
 	}
@@ -191,7 +191,7 @@ func CreateFloor(c *fiber.Ctx) error {
 //	@Param		json	body		CreateOldModel	true	"json"
 //	@Success	201		{object}	CreateOldResponse
 func CreateFloorOld(c *fiber.Ctx) error {
-	body, err := ValidateBody[CreateOldModel](c)
+	body, err := common.ValidateBody[CreateOldModel](c)
 	if err != nil {
 		return err
 	}
@@ -254,7 +254,7 @@ func CreateFloorOld(c *fiber.Ctx) error {
 //	@Failure		404		{object}	MessageModel
 func ModifyFloor(c *fiber.Ctx) error {
 	// validate request body
-	body, err := ValidateBody[ModifyModel](c)
+	body, err := common.ValidateBody[ModifyModel](c)
 	if err != nil {
 		return err
 	}
@@ -472,7 +472,7 @@ func ModifyFloorLike(c *fiber.Ctx) error {
 //	@Failure	404		{object}	MessageModel
 func DeleteFloor(c *fiber.Ctx) error {
 	// validate body
-	body, err := ValidateBody[DeleteModel](c)
+	body, err := common.ValidateBody[DeleteModel](c)
 	if err != nil {
 		return err
 	}
@@ -580,7 +580,7 @@ func GetFloorHistory(c *fiber.Ctx) error {
 //	@Failure		404					{object}	MessageModel
 func RestoreFloor(c *fiber.Ctx) error {
 	// validate body
-	body, err := ValidateBody[RestoreModel](c)
+	body, err := common.ValidateBody[RestoreModel](c)
 	if err != nil {
 		return err
 	}

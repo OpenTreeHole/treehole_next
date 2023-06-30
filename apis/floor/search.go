@@ -23,7 +23,7 @@ type SearchQuery struct {
 //	@Param		object	query	SearchQuery	true	"search_query"
 //	@Success	200		{array}	models.Floor
 func SearchFloors(c *fiber.Ctx) error {
-	query, err := ValidateQuery[SearchQuery](c)
+	query, err := common.ValidateQuery[SearchQuery](c)
 	if err != nil {
 		return err
 	}

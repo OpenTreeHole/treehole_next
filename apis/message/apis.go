@@ -16,7 +16,7 @@ import (
 // @Success 200 {array} Message
 // @Param object query ListModel false "query"
 func ListMessages(c *fiber.Ctx) error {
-	query, err := ValidateQuery[ListModel](c)
+	query, err := common.ValidateQuery[ListModel](c)
 	if err != nil {
 		return err
 	}
@@ -58,7 +58,7 @@ func ListMessages(c *fiber.Ctx) error {
 // @Router /messages [post]
 // @Success 201 {object} Message
 func SendMail(c *fiber.Ctx) error {
-	body, err := ValidateBody[CreateModel](c)
+	body, err := common.ValidateBody[CreateModel](c)
 	if err != nil {
 		return err
 	}

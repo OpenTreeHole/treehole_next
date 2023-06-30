@@ -24,7 +24,7 @@ import (
 //	@Failure	404			{object}	MessageModel
 //	@Failure	500			{object}	MessageModel
 func ListHolesByDivision(c *fiber.Ctx) error {
-	query, err := ValidateQuery[QueryTime](c)
+	query, err := common.ValidateQuery[QueryTime](c)
 	if err != nil {
 		return err
 	}
@@ -58,7 +58,7 @@ func ListHolesByDivision(c *fiber.Ctx) error {
 //	@Success	200			{array}		Hole
 //	@Failure	404			{object}	MessageModel
 func ListHolesByTag(c *fiber.Ctx) error {
-	query, err := ValidateQuery[QueryTime](c)
+	query, err := common.ValidateQuery[QueryTime](c)
 	if err != nil {
 		return err
 	}
@@ -95,7 +95,7 @@ func ListHolesByTag(c *fiber.Ctx) error {
 //	@Param		object		query		QueryTime	false	"query"
 //	@Success	200			{array}		Hole
 func ListHolesByMe(c *fiber.Ctx) error {
-	query, err := ValidateQuery[QueryTime](c)
+	query, err := common.ValidateQuery[QueryTime](c)
 	if err != nil {
 		return err
 	}
@@ -126,7 +126,7 @@ func ListHolesByMe(c *fiber.Ctx) error {
 //	@Param		object	query	ListOldModel	false	"query"
 //	@Success	200		{array}	Hole
 func ListHolesOld(c *fiber.Ctx) error {
-	query, err := ValidateQuery[ListOldModel](c)
+	query, err := common.ValidateQuery[ListOldModel](c)
 	if err != nil {
 		return err
 	}
@@ -198,7 +198,7 @@ func GetHole(c *fiber.Ctx) error {
 //	@Success		201			{object}	Hole
 func CreateHole(c *fiber.Ctx) error {
 	// validate body
-	body, err := ValidateBody[CreateModel](c)
+	body, err := common.ValidateBody[CreateModel](c)
 	if err != nil {
 		return err
 	}
@@ -247,7 +247,7 @@ func CreateHole(c *fiber.Ctx) error {
 //	@Success	201		{object}	CreateOldResponse
 func CreateHoleOld(c *fiber.Ctx) error {
 	// validate body
-	body, err := ValidateBody[CreateOldModel](c)
+	body, err := common.ValidateBody[CreateOldModel](c)
 	if err != nil {
 		return err
 	}
@@ -296,7 +296,7 @@ func CreateHoleOld(c *fiber.Ctx) error {
 //	@Failure	404		{object}	MessageModel
 func ModifyHole(c *fiber.Ctx) error {
 	// validate
-	body, err := ValidateBody[ModifyModel](c)
+	body, err := common.ValidateBody[ModifyModel](c)
 	if err != nil {
 		return err
 	}

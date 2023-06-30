@@ -1,6 +1,7 @@
 package favourite
 
 import (
+	"github.com/opentreehole/go-common"
 	"gorm.io/gorm"
 	"gorm.io/plugin/dbresolver"
 	. "treehole_next/models"
@@ -25,7 +26,7 @@ func ListFavorites(c *fiber.Ctx) error {
 		return err
 	}
 
-	query, err := ValidateQuery[ListModel](c)
+	query, err := common.ValidateQuery[ListModel](c)
 	if err != nil {
 		return err
 	}
@@ -73,7 +74,7 @@ func ListFavorites(c *fiber.Ctx) error {
 //	@Success	200		{object}	Response
 func AddFavorite(c *fiber.Ctx) error {
 	// validate body
-	body, err := ValidateBody[AddModel](c)
+	body, err := common.ValidateBody[AddModel](c)
 	if err != nil {
 		return err
 	}
@@ -118,7 +119,7 @@ func AddFavorite(c *fiber.Ctx) error {
 //	@Failure	404		{object}	Response
 func ModifyFavorite(c *fiber.Ctx) error {
 	// validate body
-	body, err := ValidateBody[ModifyModel](c)
+	body, err := common.ValidateBody[ModifyModel](c)
 	if err != nil {
 		return err
 	}
@@ -158,7 +159,7 @@ func ModifyFavorite(c *fiber.Ctx) error {
 //	@Failure	404		{object}	Response
 func DeleteFavorite(c *fiber.Ctx) error {
 	// validate body
-	body, err := ValidateBody[DeleteModel](c)
+	body, err := common.ValidateBody[DeleteModel](c)
 	if err != nil {
 		return err
 	}

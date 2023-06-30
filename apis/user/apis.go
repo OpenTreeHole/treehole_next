@@ -5,7 +5,6 @@ import (
 	"github.com/opentreehole/go-common"
 	"gorm.io/gorm/clause"
 	. "treehole_next/models"
-	"treehole_next/utils"
 )
 
 func RegisterRoutes(app fiber.Router) {
@@ -83,7 +82,7 @@ func ModifyUser(c *fiber.Ctx) error {
 		return common.Forbidden()
 	}
 
-	body, err := utils.ValidateBody[ModifyModel](c)
+	body, err := common.ValidateBody[ModifyModel](c)
 	if err != nil {
 		return err
 	}

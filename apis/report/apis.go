@@ -1,6 +1,7 @@
 package report
 
 import (
+	"github.com/opentreehole/go-common"
 	. "treehole_next/models"
 	"treehole_next/utils"
 	. "treehole_next/utils"
@@ -45,7 +46,7 @@ func GetReport(c *fiber.Ctx) error {
 //	@Failure	404		{object}	MessageModel
 func ListReports(c *fiber.Ctx) error {
 	// validate query
-	query, err := ValidateQuery[ListModel](c)
+	query, err := common.ValidateQuery[ListModel](c)
 	if err != nil {
 		return err
 	}
@@ -82,7 +83,7 @@ func ListReports(c *fiber.Ctx) error {
 //	@Failure		400	{object}	utils.HttpError
 func AddReport(c *fiber.Ctx) error {
 	// validate body
-	body, err := ValidateBody[AddModel](c)
+	body, err := common.ValidateBody[AddModel](c)
 	if err != nil {
 		return err
 	}
@@ -127,7 +128,7 @@ func DeleteReport(c *fiber.Ctx) error {
 	}
 
 	// validate body
-	body, err := ValidateBody[DeleteModel](c)
+	body, err := common.ValidateBody[DeleteModel](c)
 	if err != nil {
 		return err
 	}
