@@ -23,7 +23,8 @@ import (
 //	@Success	200		{object}	models.Division
 func AddDivision(c *fiber.Ctx) error {
 	// validate body
-	body, err := common.ValidateBody[CreateModel](c)
+	var body CreateModel
+	err := common.ValidateBody(c, &body)
 	if err != nil {
 		return err
 	}
@@ -92,7 +93,8 @@ func GetDivision(c *fiber.Ctx) error {
 //	@Failure	404		{object}	MessageModel
 func ModifyDivision(c *fiber.Ctx) error {
 	// validate body
-	body, err := common.ValidateBody[ModifyModel](c)
+	var body ModifyModel
+	err := common.ValidateBody(c, &body)
 	if err != nil {
 		return err
 	}
@@ -141,7 +143,8 @@ func ModifyDivision(c *fiber.Ctx) error {
 //	@Failure		404	{object}	MessageModel
 func DeleteDivision(c *fiber.Ctx) error {
 	// validate body
-	body, err := common.ValidateBody[DeleteModel](c)
+	var body DeleteModel
+	err := common.ValidateBody(c, &body)
 	if err != nil {
 		return err
 	}

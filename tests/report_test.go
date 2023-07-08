@@ -1,8 +1,7 @@
 package tests
 
 import (
-	"fmt"
-	"log"
+	"github.com/rs/zerolog/log"
 	"strconv"
 	"testing"
 	. "treehole_next/models"
@@ -14,7 +13,7 @@ func TestGetReport(t *testing.T) {
 	reportID := REPORT_BASE_ID
 	var report Report
 	DB.First(&report, reportID)
-	fmt.Println(report)
+	log.Info().Any("report", report).Send()
 
 	var getReport Report
 	testAPIModel(t, "get", "/api/reports/"+strconv.Itoa(reportID), 200, &getReport)

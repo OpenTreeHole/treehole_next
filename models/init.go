@@ -1,7 +1,7 @@
 package models
 
 import (
-	"log"
+	"github.com/rs/zerolog/log"
 	"os"
 	"time"
 	"treehole_next/config"
@@ -22,7 +22,7 @@ var gormConfig = &gorm.Config{
 		SingularTable: true, // use singular table name, table for `User` would be `user` with this option enabled
 	},
 	Logger: logger.New(
-		log.Default(),
+		&log.Logger,
 		logger.Config{
 			SlowThreshold:             time.Second,  // 慢 SQL 阈值
 			LogLevel:                  logger.Error, // 日志级别
@@ -38,7 +38,7 @@ func mysqlDB() *gorm.DB {
 	source := mysql.Open(config.Config.DbURL)
 	db, err := gorm.Open(source, gormConfig)
 	if err != nil {
-		panic(err)
+		log.Fatal().Err(err).Send()
 	}
 
 	// set replica databases
@@ -52,7 +52,7 @@ func mysqlDB() *gorm.DB {
 		Policy:   dbresolver.RandomPolicy{},
 	}))
 	if err != nil {
-		panic(err)
+		log.Fatal().Err(err).Send()
 	}
 	return db
 }
@@ -60,16 +60,16 @@ func mysqlDB() *gorm.DB {
 func sqliteDB() *gorm.DB {
 	err := os.MkdirAll("data", 0750)
 	if err != nil {
-		panic(err)
+		log.Fatal().Err(err).Send()
 	}
 	db, err := gorm.Open(sqlite.Open("data/sqlite.db"), gormConfig)
 	if err != nil {
-		panic(err)
+		log.Fatal().Err(err).Send()
 	}
 	// https://github.com/go-gorm/gorm/issues/3709
 	phyDB, err := db.DB()
 	if err != nil {
-		panic(err)
+		log.Fatal().Err(err).Send()
 	}
 	phyDB.SetMaxOpenConns(1)
 	return db
@@ -78,12 +78,12 @@ func sqliteDB() *gorm.DB {
 func memoryDB() *gorm.DB {
 	db, err := gorm.Open(sqlite.Open("file::memory:?cache=shared"), gormConfig)
 	if err != nil {
-		panic(err)
+		log.Fatal().Err(err).Send()
 	}
 	// https://github.com/go-gorm/gorm/issues/3709
 	phyDB, err := db.DB()
 	if err != nil {
-		panic(err)
+		log.Fatal().Err(err).Send()
 	}
 	phyDB.SetMaxOpenConns(1)
 	return db
@@ -105,7 +105,7 @@ func InitDB() {
 			DB = mysqlDB()
 		}
 	default:
-		panic("unknown mode")
+		log.Fatal().Msg("unknown mode")
 	}
 
 	switch config.Config.Mode {
@@ -117,22 +117,22 @@ func InitDB() {
 
 	err = DB.SetupJoinTable(&User{}, "UserFavoriteHoles", &UserFavorite{})
 	if err != nil {
-		panic(err)
+		log.Fatal().Err(err).Send()
 	}
 
 	err = DB.SetupJoinTable(&User{}, "UserLikedFloors", &FloorLike{})
 	if err != nil {
-		panic(err)
+		log.Fatal().Err(err).Send()
 	}
 
 	err = DB.SetupJoinTable(&Hole{}, "Mapping", &AnonynameMapping{})
 	if err != nil {
-		panic(err)
+		log.Fatal().Err(err).Send()
 	}
 
 	err = DB.SetupJoinTable(&Message{}, "Users", &MessageUser{})
 	if err != nil {
-		panic(err)
+		log.Fatal().Err(err).Send()
 	}
 
 	// models must be registered here to migrate into the database
@@ -148,6 +148,6 @@ func InitDB() {
 		&FloorHistory{},
 	)
 	if err != nil {
-		panic(err)
+		log.Fatal().Err(err).Send()
 	}
 }

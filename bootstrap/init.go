@@ -3,8 +3,6 @@ package bootstrap
 import (
 	"context"
 	"github.com/opentreehole/go-common"
-	"github.com/rs/zerolog/log"
-	"time"
 	"treehole_next/apis"
 	"treehole_next/apis/hole"
 	"treehole_next/apis/message"
@@ -26,9 +24,10 @@ func Init() (*fiber.App, context.CancelFunc) {
 	models.InitAdminList()
 
 	app := fiber.New(fiber.Config{
-		ErrorHandler: common.CommonErrorHandler,
-		JSONEncoder:  json.Marshal,
-		JSONDecoder:  json.Unmarshal,
+		ErrorHandler:          common.ErrorHandler,
+		JSONEncoder:           json.Marshal,
+		JSONDecoder:           json.Unmarshal,
+		DisableStartupMessage: true,
 	})
 	registerMiddlewares(app)
 	apis.RegisterRoutes(app)
@@ -38,49 +37,11 @@ func Init() (*fiber.App, context.CancelFunc) {
 
 func registerMiddlewares(app *fiber.App) {
 	app.Use(recover.New(recover.Config{EnableStackTrace: true}))
+	app.Use(common.MiddlewareGetUserID)
 	if config.Config.Mode != "bench" {
-		app.Use(MyLogger)
+		app.Use(common.MiddlewareCustomLogger)
 	}
 	app.Use(pprof.New())
-	app.Use(GetUserID)
-}
-
-func GetUserID(c *fiber.Ctx) error {
-	userID, err := models.GetUserID(c)
-	if err == nil {
-		c.Locals("user_id", userID)
-	}
-
-	return c.Next()
-}
-
-func MyLogger(c *fiber.Ctx) error {
-	startTime := time.Now()
-	chainErr := c.Next()
-
-	if chainErr != nil {
-		if err := c.App().ErrorHandler(c, chainErr); err != nil {
-			_ = c.SendStatus(fiber.StatusInternalServerError)
-		}
-	}
-
-	latency := time.Since(startTime).Milliseconds()
-	userID, ok := c.Locals("user_id").(int)
-
-	output := log.Info().
-		Int("status_code", c.Response().StatusCode()).
-		Str("method", c.Method()).
-		Str("origin_url", c.OriginalURL()).
-		Str("remote_ip", c.Get("X-Real-IP")).
-		Int64("latency", latency)
-	if ok {
-		output = output.Int("user_id", userID)
-	}
-	if chainErr != nil {
-		output = output.Err(chainErr)
-	}
-	output.Msg("http log")
-	return nil
 }
 
 func startTasks() context.CancelFunc {

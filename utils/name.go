@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/binary"
 	"github.com/goccy/go-json"
+	"github.com/rs/zerolog/log"
 	"math/rand"
 	"sort"
 	"time"
@@ -19,7 +20,7 @@ var length int
 func init() {
 	err := json.Unmarshal(data.NamesFile, &names)
 	if err != nil {
-		panic(err)
+		log.Fatal().Err(err).Send()
 	}
 	sort.Strings(names)
 	length = len(names)

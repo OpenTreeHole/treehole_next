@@ -24,7 +24,8 @@ import (
 //	@Failure	404			{object}	MessageModel
 //	@Failure	500			{object}	MessageModel
 func ListHolesByDivision(c *fiber.Ctx) error {
-	query, err := common.ValidateQuery[QueryTime](c)
+	var query QueryTime
+	err := common.ValidateQuery(c, &query)
 	if err != nil {
 		return err
 	}
@@ -58,7 +59,8 @@ func ListHolesByDivision(c *fiber.Ctx) error {
 //	@Success	200			{array}		Hole
 //	@Failure	404			{object}	MessageModel
 func ListHolesByTag(c *fiber.Ctx) error {
-	query, err := common.ValidateQuery[QueryTime](c)
+	var query QueryTime
+	err := common.ValidateQuery(c, &query)
 	if err != nil {
 		return err
 	}
@@ -95,7 +97,8 @@ func ListHolesByTag(c *fiber.Ctx) error {
 //	@Param		object		query		QueryTime	false	"query"
 //	@Success	200			{array}		Hole
 func ListHolesByMe(c *fiber.Ctx) error {
-	query, err := common.ValidateQuery[QueryTime](c)
+	var query QueryTime
+	err := common.ValidateQuery(c, &query)
 	if err != nil {
 		return err
 	}
@@ -126,7 +129,8 @@ func ListHolesByMe(c *fiber.Ctx) error {
 //	@Param		object	query	ListOldModel	false	"query"
 //	@Success	200		{array}	Hole
 func ListHolesOld(c *fiber.Ctx) error {
-	query, err := common.ValidateQuery[ListOldModel](c)
+	var query ListOldModel
+	err := common.ValidateQuery(c, &query)
 	if err != nil {
 		return err
 	}
@@ -198,7 +202,8 @@ func GetHole(c *fiber.Ctx) error {
 //	@Success		201			{object}	Hole
 func CreateHole(c *fiber.Ctx) error {
 	// validate body
-	body, err := common.ValidateBody[CreateModel](c)
+	var body CreateModel
+	err := common.ValidateBody(c, &body)
 	if err != nil {
 		return err
 	}
@@ -247,7 +252,8 @@ func CreateHole(c *fiber.Ctx) error {
 //	@Success	201		{object}	CreateOldResponse
 func CreateHoleOld(c *fiber.Ctx) error {
 	// validate body
-	body, err := common.ValidateBody[CreateOldModel](c)
+	var body CreateOldModel
+	err := common.ValidateBody(c, &body)
 	if err != nil {
 		return err
 	}
@@ -296,7 +302,8 @@ func CreateHoleOld(c *fiber.Ctx) error {
 //	@Failure	404		{object}	MessageModel
 func ModifyHole(c *fiber.Ctx) error {
 	// validate
-	body, err := common.ValidateBody[ModifyModel](c)
+	var body ModifyModel
+	err := common.ValidateBody(c, &body)
 	if err != nil {
 		return err
 	}

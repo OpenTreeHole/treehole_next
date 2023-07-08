@@ -1,7 +1,7 @@
 package main
 
 import (
-	"log"
+	"github.com/rs/zerolog/log"
 	"os"
 	"os/signal"
 	"syscall"
@@ -26,7 +26,7 @@ func main() {
 	go func() {
 		err := app.Listen("0.0.0.0:8000")
 		if err != nil {
-			log.Fatal(err)
+			log.Fatal().Err(err).Msg("app listen failed")
 		}
 	}()
 
@@ -39,13 +39,8 @@ func main() {
 	// close app
 	err := app.Shutdown()
 	if err != nil {
-		log.Println(err)
+		log.Err(err).Msg("error shutdown app")
 	}
 	// stop tasks
 	cancel()
-
-	// sync logger
-	if err != nil {
-		log.Println(err)
-	}
 }

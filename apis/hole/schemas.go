@@ -10,18 +10,18 @@ import (
 type QueryTime struct {
 	Size int `json:"size" query:"size" default:"10" validate:"max=10"`
 	// updated time < offset (default is now)
-	Offset models.CustomTime `json:"offset" query:"offset" swaggertype:"string"`
+	Offset common.CustomTime `json:"offset" query:"offset" swaggertype:"string"`
 	Order  string            `json:"order" query:"order"`
 }
 
 func (q *QueryTime) SetDefaults() {
 	if q.Offset.IsZero() {
-		q.Offset = models.CustomTime{Time: time.Now()}
+		q.Offset = common.CustomTime{Time: time.Now()}
 	}
 }
 
 type ListOldModel struct {
-	Offset     models.CustomTime `json:"start_time" query:"start_time" swaggertype:"string"`
+	Offset     common.CustomTime `json:"start_time" query:"start_time" swaggertype:"string"`
 	Size       int               `json:"length" query:"length" default:"10" validate:"max=10" `
 	Tag        string            `json:"tag" query:"tag"`
 	DivisionID int               `json:"division_id" query:"division_id"`
@@ -30,7 +30,7 @@ type ListOldModel struct {
 
 func (q *ListOldModel) SetDefaults() {
 	if q.Offset.IsZero() {
-		q.Offset = models.CustomTime{Time: time.Now()}
+		q.Offset = common.CustomTime{Time: time.Now()}
 	}
 }
 

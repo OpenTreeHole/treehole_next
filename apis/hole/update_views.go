@@ -61,7 +61,7 @@ func UpdateHoleViews(ctx context.Context) {
 			holeViews[holeID]++
 		case <-ctx.Done():
 			updateHoleViews()
-			fmt.Println("task UpdateHoleViews stopped...")
+			log.Info().Msg("task UpdateHoleViews stopped...")
 			return
 		}
 	}

@@ -7,6 +7,7 @@ import (
 	"github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v2"
 	"github.com/opentreehole/go-common"
+	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"gorm.io/plugin/dbresolver"
@@ -137,7 +138,7 @@ func init() {
 	var err error
 	maxTime, err = time.Parse(time.RFC3339, "9999-01-01T00:00:00+00:00")
 	if err != nil {
-		panic(err)
+		log.Fatal().Err(err).Send()
 	}
 	minTime = time.Unix(0, 0)
 }

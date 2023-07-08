@@ -30,6 +30,12 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Login to Aliyun ACR
+        uses: docker/login-action@master
+        with:
+          registry: registry.cn-shanghai.aliyuncs.com
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
       - name: Build and push
         id: docker_build
         uses: docker/build-push-action@master
@@ -37,4 +43,5 @@ jobs:
           push: true
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.APP_NAME }}:dev-v2.1
+            registry.cn-shanghai.aliyuncs.com/${{ secrets.ACR_NAMESPACE }}/${{ env.APP_NAME }}:dev-v2.1
 

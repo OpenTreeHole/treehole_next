@@ -3,6 +3,7 @@ package models
 import (
 	"fmt"
 	"github.com/gofiber/fiber/v2"
+	"github.com/opentreehole/go-common"
 	"golang.org/x/exp/slices"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -257,7 +258,7 @@ func MakeQuerySet(c *fiber.Ctx) (*gorm.DB, error) {
 	}
 }
 
-func (holes Holes) MakeQuerySet(offset CustomTime, size int, order string, c *fiber.Ctx) (*gorm.DB, error) {
+func (holes Holes) MakeQuerySet(offset common.CustomTime, size int, order string, c *fiber.Ctx) (*gorm.DB, error) {
 	querySet, err := MakeQuerySet(c)
 	if err != nil {
 		return nil, err

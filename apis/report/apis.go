@@ -46,7 +46,8 @@ func GetReport(c *fiber.Ctx) error {
 //	@Failure	404		{object}	MessageModel
 func ListReports(c *fiber.Ctx) error {
 	// validate query
-	query, err := common.ValidateQuery[ListModel](c)
+	var query ListModel
+	err := common.ValidateQuery(c, &query)
 	if err != nil {
 		return err
 	}
@@ -83,7 +84,8 @@ func ListReports(c *fiber.Ctx) error {
 //	@Failure		400	{object}	utils.HttpError
 func AddReport(c *fiber.Ctx) error {
 	// validate body
-	body, err := common.ValidateBody[AddModel](c)
+	var body AddModel
+	err := common.ValidateBody(c, &body)
 	if err != nil {
 		return err
 	}
@@ -128,7 +130,8 @@ func DeleteReport(c *fiber.Ctx) error {
 	}
 
 	// validate body
-	body, err := common.ValidateBody[DeleteModel](c)
+	var body DeleteModel
+	err = common.ValidateBody(c, &body)
 	if err != nil {
 		return err
 	}

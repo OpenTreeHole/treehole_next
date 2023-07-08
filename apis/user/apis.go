@@ -82,7 +82,8 @@ func ModifyUser(c *fiber.Ctx) error {
 		return common.Forbidden()
 	}
 
-	body, err := common.ValidateBody[ModifyModel](c)
+	var body ModifyModel
+	err = common.ValidateBody(c, &body)
 	if err != nil {
 		return err
 	}

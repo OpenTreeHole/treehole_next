@@ -1,10 +1,10 @@
 package config
 
 import (
-	"fmt"
+	"github.com/rs/zerolog/log"
 	"sync/atomic"
 
-	"github.com/caarlos0/env/v6"
+	"github.com/caarlos0/env/v9"
 )
 
 var Config struct {
@@ -37,8 +37,8 @@ var DynamicConfig struct {
 
 func InitConfig() { // load config from environment variables
 	if err := env.Parse(&Config); err != nil {
-		panic(err)
+		log.Fatal().Err(err).Send()
 	}
-	fmt.Println(Config)
+	log.Info().Any("config", Config).Msg("init config")
 	DynamicConfig.OpenSearch.Store(Config.OpenSearch)
 }

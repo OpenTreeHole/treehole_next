@@ -6,9 +6,9 @@ import (
 	"github.com/eko/gocache/lib/v4/store"
 	gocache_store "github.com/eko/gocache/store/go_cache/v4"
 	redis_store "github.com/eko/gocache/store/redis/v4"
-	"github.com/go-redis/redis/v8"
 	"github.com/goccy/go-json"
 	gocache "github.com/patrickmn/go-cache"
+	"github.com/redis/go-redis/v9"
 	"time"
 	"treehole_next/config"
 )

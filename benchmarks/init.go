@@ -2,6 +2,7 @@ package benchmarks
 
 import (
 	"fmt"
+	"github.com/rs/zerolog/log"
 	"gorm.io/gorm/logger"
 	"math/rand"
 	"strings"
@@ -78,18 +79,18 @@ func init() {
 	var err error
 	err = DB.Create(divisions).Error
 	if err != nil {
-		panic(err)
+		log.Fatal().Err(err).Send()
 	}
 	err = DB.Create(tags).Error
 	if err != nil {
-		panic(err)
+		log.Fatal().Err(err).Send()
 	}
 	err = DB.Create(holes).Error
 	if err != nil {
-		panic(err)
+		log.Fatal().Err(err).Send()
 	}
 	err = DB.Create(floors).Error
 	if err != nil {
-		panic(err)
+		log.Fatal().Err(err).Send()
 	}
 }

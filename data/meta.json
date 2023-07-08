@@ -5,6 +5,7 @@
   "homepage": "https://github.com/opentreehole",
   "repository": "https://github.com/OpenTreeHole/treehole_next",
   "author": "hasbai",
+  "maintainer": "jingyijun",
   "email": "dev@fduhole.com",
   "license": "Apache-2.0"
 }

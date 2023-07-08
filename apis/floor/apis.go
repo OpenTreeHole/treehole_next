@@ -30,7 +30,8 @@ func ListFloorsInAHole(c *fiber.Ctx) error {
 		return err
 	}
 
-	query, err := common.ValidateQuery[ListModel](c)
+	var query ListModel
+	err = common.ValidateQuery(c, &query)
 	if err != nil {
 		return err
 	}
@@ -60,13 +61,14 @@ func ListFloorsInAHole(c *fiber.Ctx) error {
 //	@Success	200		{array}	Floor
 func ListFloorsOld(c *fiber.Ctx) error {
 	// validate
-	query, err := common.ValidateQuery[ListOldModel](c)
+	var query ListOldModel
+	err := common.ValidateQuery(c, &query)
 	if err != nil {
 		return err
 	}
 
 	if query.Search != "" {
-		return SearchFloorsOld(c, query)
+		return SearchFloorsOld(c, &query)
 	}
 
 	var querySet *gorm.DB
@@ -128,7 +130,8 @@ func GetFloor(c *fiber.Ctx) error {
 //	@Param		json	body		CreateModel	true	"json"
 //	@Success	201		{object}	Floor
 func CreateFloor(c *fiber.Ctx) error {
-	body, err := common.ValidateBody[CreateModel](c)
+	var body CreateModel
+	err := common.ValidateBody(c, &body)
 	if err != nil {
 		return err
 	}
@@ -192,7 +195,8 @@ func CreateFloor(c *fiber.Ctx) error {
 //	@Param		json	body		CreateOldModel	true	"json"
 //	@Success	201		{object}	CreateOldResponse
 func CreateFloorOld(c *fiber.Ctx) error {
-	body, err := common.ValidateBody[CreateOldModel](c)
+	var body CreateOldModel
+	err := common.ValidateBody(c, &body)
 	if err != nil {
 		return err
 	}
@@ -255,7 +259,8 @@ func CreateFloorOld(c *fiber.Ctx) error {
 //	@Failure		404		{object}	MessageModel
 func ModifyFloor(c *fiber.Ctx) error {
 	// validate request body
-	body, err := common.ValidateBody[ModifyModel](c)
+	var body ModifyModel
+	err := common.ValidateBody(c, &body)
 	if err != nil {
 		return err
 	}
@@ -473,7 +478,8 @@ func ModifyFloorLike(c *fiber.Ctx) error {
 //	@Failure	404		{object}	MessageModel
 func DeleteFloor(c *fiber.Ctx) error {
 	// validate body
-	body, err := common.ValidateBody[DeleteModel](c)
+	var body DeleteModel
+	err := common.ValidateBody(c, &body)
 	if err != nil {
 		return err
 	}
@@ -581,7 +587,8 @@ func GetFloorHistory(c *fiber.Ctx) error {
 //	@Failure		404					{object}	MessageModel
 func RestoreFloor(c *fiber.Ctx) error {
 	// validate body
-	body, err := common.ValidateBody[RestoreModel](c)
+	var body RestoreModel
+	err := common.ValidateBody(c, &body)
 	if err != nil {
 		return err
 	}
