@@ -82,7 +82,7 @@ func BanUser(c *fiber.Ctx) error {
 	punishment := Punishment{
 		UserID:     floor.UserID,
 		MadeBy:     user.ID,
-		FloorID:    floor.ID,
+		FloorID:    &floor.ID,
 		DivisionID: hole.DivisionID,
 		Duration:   time.Duration(days) * 24 * time.Hour,
 		Reason:     body.Reason,
@@ -116,6 +116,69 @@ func BanUser(c *fiber.Ctx) error {
 	return c.JSON(user)
 }
 
+// ListMyPunishments godoc
+// @Summary List my punishments
+// @Tags Penalty
+// @Produce json
+// @Router /users/me/punishments [get]
+// @Success 200 {array} Punishment
+func ListMyPunishments(c *fiber.Ctx) error {
+	userID, err := common.GetUserID(c)
+	if err != nil {
+		return err
+	}
+
+	punishments, err := listPunishmentsByUserID(userID)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(punishments)
+}
+
+// ListPunishmentsByUserID godoc
+// @Summary List punishments by user id
+// @Tags Penalty
+// @Produce json
+// @Router /users/{id}/punishments [get]
+// @Param id path int true "User ID"
+// @Success 200 {array} Punishment
+func ListPunishmentsByUserID(c *fiber.Ctx) error {
+	userID, err := c.ParamsInt("id")
+	if err != nil {
+		return err
+	}
+
+	currentUser, err := GetUser(c)
+	if !currentUser.IsAdmin && currentUser.ID != userID {
+		return common.Forbidden()
+	}
+
+	punishments, err := listPunishmentsByUserID(userID)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(punishments)
+}
+
+func listPunishmentsByUserID(userID int) ([]Punishment, error) {
+	var punishments []Punishment
+	err := DB.Where("user_id = ?", userID).Preload("Floor").Find(&punishments).Error
+	if err != nil {
+		return nil, err
+	}
+
+	// remove made_by
+	for i := range punishments {
+		punishments[i].MadeBy = 0
+	}
+
+	return punishments, nil
+}
+
 func RegisterRoutes(app fiber.Router) {
 	app.Post("/penalty/:id", BanUser)
+	app.Get("/users/me/punishments", ListMyPunishments)
+	app.Get("/users/:id/punishments", ListPunishmentsByUserID)
 }

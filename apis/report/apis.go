@@ -81,7 +81,8 @@ func ListReports(c *fiber.Ctx) error {
 //	@Router			/reports [post]
 //	@Param			json	body	AddModel	true	"json"
 //	@Success		204
-//	@Failure		400	{object}	utils.HttpError
+//
+// @Failure 400 {object} common.HttpError
 func AddReport(c *fiber.Ctx) error {
 	// validate body
 	var body AddModel
@@ -121,7 +122,7 @@ func AddReport(c *fiber.Ctx) error {
 //	@Param			id		path		int			true	"id"
 //	@Param			json	body		DeleteModel	true	"json"
 //	@Success		200		{object}	Report
-//	@Failure		400		{object}	utils.HttpError
+//	@Failure		400		{object}	common.HttpError
 func DeleteReport(c *fiber.Ctx) error {
 	// validate query
 	reportID, err := c.ParamsInt("id")
