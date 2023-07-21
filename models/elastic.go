@@ -4,10 +4,10 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/opentreehole/go-common"
+	"github.com/rs/zerolog/log"
 	"io"
-	"log"
 	"strconv"
-	"strings"
 	"time"
 	"treehole_next/config"
 	"treehole_next/utils"
@@ -33,30 +33,29 @@ func Init() {
 		Addresses: []string{config.Config.ElasticsearchUrl},
 	})
 	if err != nil {
-		log.Printf("Error creating elasticsearch client: %s", err)
+		log.Printf("error creating elasticsearch client: %s", err)
 		ES = nil
 		return
 	}
 
 	res, err := ES.Info()
 	if err != nil {
-		log.Fatalf("Error getting elasticsearch response: %s", err)
+		log.Fatal().Err(err).Msg("error getting elasticsearch response")
 	}
 	defer func(Body io.ReadCloser) {
 		_ = Body.Close()
 	}(res.Body)
 	if res.IsError() {
-		log.Fatalf("Error: %s", res.String())
+		log.Fatal().Str("status", res.Status()).Msg("error getting elasticsearch response")
 	}
 	var r Map
 	if err = json.NewDecoder(res.Body).Decode(&r); err != nil {
-		log.Fatalf("Error parsing the elasticsearch response body: %s", err.Error())
+		log.Fatal().Err(err).Msg("Error parsing the elasticsearch response body")
 	}
 
 	// print Client and Server Info
-	log.Printf("elasticsearch Client: %s\n", elasticsearch.Version)
-	log.Printf("elasticsearch Server: %s", r["version"].(map[string]interface{})["number"])
-	log.Println(strings.Repeat("~", 37))
+	log.Info().Msgf("elasticsearch Client: %s\n", elasticsearch.Version)
+	log.Info().Msgf("elasticsearch Server: %s", r["version"].(map[string]interface{})["number"])
 }
 
 type SearchResponse struct {
@@ -118,7 +117,7 @@ func Search(keyword string, size, offset int) (Floors, error) {
 		if err != nil {
 			return nil, err
 		} else {
-			return nil, &utils.HttpError{Code: 502, Message: string(data)}
+			return nil, &common.HttpError{Code: 502, Message: string(data)}
 		}
 	}
 
@@ -139,10 +138,10 @@ func Search(keyword string, size, offset int) (Floors, error) {
 	for i, hit := range response.Hits.Hits {
 		floorIDs[i] = hit.Source.ID
 		if err != nil {
-			return nil, &utils.HttpError{Code: 500, Message: "error parse floor_id from elasticsearch ID"}
+			return nil, &common.HttpError{Code: 500, Message: "error parse floor_id from elasticsearch ID"}
 		}
 	}
-	fmt.Printf("search response: %d\n", floorIDs)
+	log.Info().Ints("floor_ids", floorIDs).Msg("search response")
 
 	err = DB.Preload("Mention").Find(&floors, floorIDs).Error
 	if err != nil {
@@ -192,7 +191,7 @@ func BulkInsert(floors []FloorModel) {
 	for _, floorModel := range floors {
 		floorIDs = append(floorIDs, floorModel.ID)
 	}
-	fmt.Printf("Preparing insert floors %v\n", floorIDs)
+	log.Info().Ints("floor_ids", floorIDs).Msg("Preparing insert floors")
 
 	res, err := ES.Bulk(BulkBuffer, ES.Bulk.WithIndex(IndexName))
 	defer func() {
@@ -202,7 +201,7 @@ func BulkInsert(floors []FloorModel) {
 		log.Printf("error indexing floors %v: %s", floorIDs, err)
 		return
 	}
-	fmt.Printf("index floors %v success\n", floorIDs)
+	log.Info().Ints("floor_ids", floorIDs).Msg("index floors success")
 }
 
 // BulkDelete used when a hole becomes hidden and delete all of its floors
@@ -220,7 +219,7 @@ func BulkDelete(floorIDs []int) {
 		// meta: use index, it will insert or replace a document
 		BulkBuffer.WriteString(fmt.Sprintf(`{ "delete" : { "_id" : "%d" } }%s`, floorID, "\n"))
 	}
-	fmt.Printf("Preparing delete floors %v\n", floorIDs)
+	log.Info().Ints("floor_ids", floorIDs).Msg("Preparing delete floors")
 
 	res, err := ES.Bulk(BulkBuffer, ES.Bulk.WithIndex(IndexName))
 	defer func() {
@@ -230,7 +229,7 @@ func BulkDelete(floorIDs []int) {
 		log.Printf("error deleting floors %v: %s", floorIDs, err)
 		return
 	}
-	fmt.Printf("delete floors %v success\n", floorIDs)
+	log.Info().Ints("floor_ids", floorIDs).Msg("delete floors success")
 }
 
 // FloorIndex insert or replace a document, used when a floor is created or restored
@@ -242,7 +241,7 @@ func FloorIndex(floorModel FloorModel) {
 
 	data, err := json.Marshal(&floorModel)
 	if err != nil {
-		log.Printf("floor encode error: floor_id: %v", floorModel.ID)
+		log.Err(err).Int("floor_id", floorModel.ID).Msg("floor encode error")
 		return
 	}
 
@@ -258,10 +257,14 @@ func FloorIndex(floorModel FloorModel) {
 		_ = res.Body.Close()
 	}()
 	if err != nil || res.IsError() {
-		data, _ := io.ReadAll(res.Body)
-		log.Printf("error index floor: %d: %s\n", floorModel.ID, string(data))
+		response, _ := io.ReadAll(res.Body)
+		log.Err(err).
+			Str("status", res.Status()).
+			Int("floor_id", floorModel.ID).
+			Bytes("data", response).
+			Msg("error index floor")
 	} else {
-		fmt.Printf("index floor success: %d\n", floorModel.ID)
+		log.Info().Int("floor_id", floorModel.ID).Msg("index floor success")
 	}
 }
 
@@ -277,9 +280,13 @@ func FloorDelete(floorID int) {
 		_ = res.Body.Close()
 	}()
 	if err != nil || res.IsError() {
-		data, _ := io.ReadAll(res.Body)
-		log.Printf("error delete floor: %d: %s\n", floorID, string(data))
+		response, _ := io.ReadAll(res.Body)
+		log.Err(err).
+			Str("status", res.Status()).
+			Int("floor_id", floorID).
+			Bytes("data", response).
+			Msg("error delete floor")
 	} else {
-		fmt.Printf("delete floor success: %d\n", floorID)
+		log.Info().Int("floor_id", floorID).Msg("delete floor success")
 	}
 }

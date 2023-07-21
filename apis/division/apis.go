@@ -1,6 +1,7 @@
 package division
 
 import (
+	"github.com/opentreehole/go-common"
 	"strconv"
 	"treehole_next/config"
 	. "treehole_next/models"
@@ -22,7 +23,8 @@ import (
 //	@Success	200		{object}	models.Division
 func AddDivision(c *fiber.Ctx) error {
 	// validate body
-	body, err := ValidateBody[CreateModel](c)
+	var body CreateModel
+	err := common.ValidateBody(c, &body)
 	if err != nil {
 		return err
 	}
@@ -91,7 +93,8 @@ func GetDivision(c *fiber.Ctx) error {
 //	@Failure	404		{object}	MessageModel
 func ModifyDivision(c *fiber.Ctx) error {
 	// validate body
-	body, err := ValidateBody[ModifyModel](c)
+	var body ModifyModel
+	err := common.ValidateBody(c, &body)
 	if err != nil {
 		return err
 	}
@@ -140,7 +143,8 @@ func ModifyDivision(c *fiber.Ctx) error {
 //	@Failure		404	{object}	MessageModel
 func DeleteDivision(c *fiber.Ctx) error {
 	// validate body
-	body, err := ValidateBody[DeleteModel](c)
+	var body DeleteModel
+	err := common.ValidateBody(c, &body)
 	if err != nil {
 		return err
 	}
@@ -155,11 +159,11 @@ func DeleteDivision(c *fiber.Ctx) error {
 		return err
 	}
 	if !user.IsAdmin {
-		return Forbidden()
+		return common.Forbidden()
 	}
 
 	if id == body.To {
-		return BadRequest("The deleted division can't be the same as to.")
+		return common.BadRequest("The deleted division can't be the same as to.")
 	}
 	err = DB.Exec("UPDATE hole SET division_id = ? WHERE division_id = ?", body.To, id).Error
 	if err != nil {

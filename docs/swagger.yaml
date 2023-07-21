@@ -1,5 +1,25 @@
 basePath: /api
 definitions:
+  common.ErrorDetailElement:
+    properties:
+      field:
+        type: string
+      tag:
+        type: string
+      value:
+        type: string
+    type: object
+  common.HttpError:
+    properties:
+      code:
+        type: integer
+      detail:
+        items:
+          $ref: '#/definitions/common.ErrorDetailElement'
+        type: array
+      message:
+        type: string
+    type: object
   division.CreateModel:
     properties:
       description:
@@ -427,6 +447,49 @@ definitions:
     - MessageTypeReport
     - MessageTypeReportDealt
     - MessageTypeMail
+  models.Punishment:
+    properties:
+      created_at:
+        description: time when this punishment creates
+        type: string
+      deleted_at:
+        description: time when this punishment revoked
+        type: string
+      division:
+        allOf:
+        - $ref: '#/definitions/models.Division'
+        description: foreign key
+      division_id:
+        type: integer
+      duration:
+        $ref: '#/definitions/time.Duration'
+      end_time:
+        description: end_time of this punishment
+        type: string
+      floor:
+        allOf:
+        - $ref: '#/definitions/models.Floor'
+        description: foreign key
+      floor_id:
+        description: punished because of this floor
+        type: integer
+      id:
+        type: integer
+      made_by:
+        description: admin user_id who made this punish
+        type: integer
+      reason:
+        description: reason
+        type: string
+      start_time:
+        description: |-
+          start from end_time of previous punishment (punishment accumulation of different floors)
+          if no previous punishment or previous punishment end time less than time.Now() (synced), set start time time.Now()
+        type: string
+      user_id:
+        description: user punished
+        type: integer
+    type: object
   models.Report:
     properties:
       dealt:
@@ -580,26 +643,26 @@ definitions:
         description: Admin only
         type: integer
     type: object
-  utils.ErrorDetailElement:
-    properties:
-      field:
-        type: string
-      tag:
-        type: string
-      value:
-        type: string
-    type: object
-  utils.HttpError:
-    properties:
-      code:
-        type: integer
-      detail:
-        items:
-          $ref: '#/definitions/utils.ErrorDetailElement'
-        type: array
-      message:
-        type: string
-    type: object
+  time.Duration:
+    enum:
+    - -9223372036854775808
+    - 9223372036854775807
+    - 1
+    - 1000
+    - 1000000
+    - 1000000000
+    - 60000000000
+    - 3600000000000
+    type: integer
+    x-enum-varnames:
+    - minDuration
+    - maxDuration
+    - Nanosecond
+    - Microsecond
+    - Millisecond
+    - Second
+    - Minute
+    - Hour
 info:
   contact:
     email: dev@fduhole.com
@@ -689,6 +752,9 @@ paths:
       - description: updated time < offset (default is now)
         in: query
         name: offset
+        type: string
+      - in: query
+        name: order
         type: string
       - default: 10
         in: query
@@ -992,17 +1058,17 @@ paths:
             $ref: '#/definitions/models.MessageModel'
       summary: Modify A Floor's like
       tags:
-        - Floor
+      - Floor
   /floors/{id}/punishment:
     get:
       parameters:
-        - description: id
-          in: path
-          name: id
-          required: true
-          type: integer
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: integer
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
@@ -1016,7 +1082,7 @@ paths:
             $ref: '#/definitions/models.MessageModel'
       summary: Get A Floor's Punishment History, admin only
       tags:
-        - Floor
+      - Floor
   /floors/{id}/restore/{floor_history_id}:
     post:
       description: Restore A Floor From A History Version
@@ -1396,6 +1462,18 @@ paths:
         in: query
         name: orderBy
         type: string
+      - description: 'Range, 0: not dealt, 1: dealt, 2: all'
+        enum:
+        - 0
+        - 1
+        - 2
+        in: query
+        name: range
+        type: integer
+        x-enum-varnames:
+        - RangeNotDealt
+        - RangeDealt
+        - RangeAll
       - default: 30
         in: query
         maximum: 50
@@ -1443,7 +1521,7 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/utils.HttpError'
+            $ref: '#/definitions/common.HttpError'
       summary: Add a report
       tags:
       - Report
@@ -1472,7 +1550,7 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/utils.HttpError'
+            $ref: '#/definitions/common.HttpError'
       summary: Deal a report
       tags:
       - Report
@@ -1628,6 +1706,9 @@ paths:
         in: query
         name: offset
         type: string
+      - in: query
+        name: order
+        type: string
       - default: 10
         in: query
         maximum: 10
@@ -1744,6 +1825,26 @@ paths:
       summary: Modify User's Favorites
       tags:
       - Favorite
+  /users/{id}/punishments:
+    get:
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Punishment'
+            type: array
+      summary: List punishments by user id
+      tags:
+      - Penalty
   /users/{user_id}:
     get:
       produces:
@@ -1771,7 +1872,7 @@ paths:
     get:
       deprecated: true
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
@@ -1779,21 +1880,24 @@ paths:
             $ref: '#/definitions/models.User'
       summary: get current user
       tags:
-        - user
+      - user
   /users/me/holes:
     get:
       parameters:
-        - description: updated time < offset (default is now)
-          in: query
-          name: offset
-          type: string
-        - default: 10
-          in: query
-          maximum: 10
-          name: size
-          type: integer
+      - description: updated time < offset (default is now)
+        in: query
+        name: offset
+        type: string
+      - in: query
+        name: order
+        type: string
+      - default: 10
+        in: query
+        maximum: 10
+        name: size
+        type: integer
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
@@ -1803,5 +1907,19 @@ paths:
             type: array
       summary: List a Hole Created By User
       tags:
-        - Hole
+      - Hole
+  /users/me/punishments:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Punishment'
+            type: array
+      summary: List my punishments
+      tags:
+      - Penalty
 swagger: "2.0"

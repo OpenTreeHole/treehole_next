@@ -5,8 +5,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/rs/zerolog/log"
 	"io"
-	"log"
 	"math/rand"
 	"net/http"
 	"sync"
@@ -42,19 +42,19 @@ func readRespNotification(body io.ReadCloser) Notification {
 	defer func(body io.ReadCloser) {
 		err := body.Close()
 		if err != nil {
-			utils.Logger.Error("[notification] Close error: " + err.Error())
+			log.Err(err).Str("model", "Notification").Msg("error close body")
 		}
 	}(body)
 
 	data, err := io.ReadAll(body)
 	if err != nil {
-		utils.Logger.Error("[notification] Read body failed: " + err.Error())
+		log.Err(err).Str("model", "Notification").Msg("error read body")
 		return Notification{}
 	}
 	var response Notification
 	err = json.Unmarshal(data, &response)
 	if err != nil {
-		utils.Logger.Error("[notification] Unmarshal body failed: " + err.Error())
+		log.Err(err).Str("model", "Notification").Msg("error unmarshal body")
 		return Notification{}
 	}
 	return response
@@ -145,7 +145,7 @@ func (message Notification) Send() (Message, error) {
 	}
 	err = DB.Omit(clause.Associations).Create(&body).Error
 	if err != nil {
-		log.Println("[notification] message save failed: " + err.Error())
+		log.Err(err).Str("model", "Notification").Msg("message save failed: " + err.Error())
 		return Message{}, err
 	}
 	if config.Config.NotificationUrl == "" {
@@ -155,7 +155,7 @@ func (message Notification) Send() (Message, error) {
 	// construct form
 	form, err := json.Marshal(message)
 	if err != nil {
-		utils.Logger.Error("[notification] error encoding notification: " + err.Error())
+		log.Err(err).Str("model", "Notification").Msg("error encoding notification")
 		return Message{}, err
 	}
 
@@ -166,7 +166,7 @@ func (message Notification) Send() (Message, error) {
 		bytes.NewBuffer(form),
 	)
 	if err != nil {
-		utils.Logger.Error("[notification] error making request: " + err.Error())
+		log.Err(err).Str("model", "Notification").Msg("error making request")
 		return Message{}, err
 	}
 	req.Header.Add("Content-Type", "application/json")
@@ -180,13 +180,13 @@ func (message Notification) Send() (Message, error) {
 	// get response
 	resp, err := client.Do(req)
 	if err != nil {
-		utils.Logger.Error("[notification] error sending notification: " + err.Error())
+		log.Err(err).Str("model", "Notification").Msg("error sending notification")
 		return Message{}, err
 	}
 
 	response := readRespNotification(resp.Body)
 	if resp.StatusCode != 201 {
-		utils.Logger.Error("[notification] notification response failed: " + fmt.Sprint(response))
+		log.Error().Str("model", "Notification").Any("response", response).Msg("notification response failed")
 		return Message{}, errors.New(fmt.Sprint(response))
 	}
 
@@ -209,7 +209,7 @@ func InitAdminList() {
 
 	// handle err
 	if err != nil {
-		utils.Logger.Error("[get admin] error sending auth server" + err.Error())
+		log.Err(err).Str("model", "get admin").Msg("error sending auth server")
 		return
 	}
 
@@ -218,13 +218,13 @@ func InitAdminList() {
 	}()
 
 	if res.StatusCode != 200 {
-		utils.Logger.Error("[get admin] auth server response failed" + res.Status)
+		log.Error().Str("model", "get admin").Msg("auth server response failed" + res.Status)
 		return
 	}
 
 	data, err := io.ReadAll(res.Body)
 	if err != nil {
-		utils.Logger.Error("[get admin] auth server response failed" + err.Error())
+		log.Err(err).Str("model", "get admin").Msg("error reading auth server response")
 		return
 	}
 
@@ -233,7 +233,7 @@ func InitAdminList() {
 
 	err = json.Unmarshal(data, &adminList.data)
 	if err != nil {
-		utils.Logger.Error("[get admin] auth server response failed" + err.Error())
+		log.Err(err).Str("model", "get admin").Msg("error unmarshal auth server response")
 		return
 	}
 

@@ -1,6 +1,7 @@
 package tag
 
 import (
+	"github.com/opentreehole/go-common"
 	"gorm.io/plugin/dbresolver"
 	. "treehole_next/models"
 	. "treehole_next/utils"
@@ -18,7 +19,8 @@ import (
 //	@Router		/tags [get]
 //	@Success	200	{array}	Tag
 func ListTags(c *fiber.Ctx) error {
-	query, err := ValidateQuery[SearchModel](c)
+	var query SearchModel
+	err := common.ValidateQuery(c, &query)
 	if err != nil {
 		return err
 	}
@@ -76,7 +78,8 @@ func GetTag(c *fiber.Ctx) error {
 func CreateTag(c *fiber.Ctx) error {
 	// validate body
 	var tag Tag
-	body, err := ValidateBody[CreateModel](c)
+	var body CreateModel
+	err := common.ValidateBody(c, &body)
 	if err != nil {
 		return err
 	}
@@ -104,7 +107,8 @@ func CreateTag(c *fiber.Ctx) error {
 //	@Failure	404		{object}	MessageModel
 func ModifyTag(c *fiber.Ctx) error {
 	// validate body
-	body, err := ValidateBody[ModifyModel](c)
+	var body ModifyModel
+	err := common.ValidateBody(c, &body)
 	if err != nil {
 		return err
 	}
@@ -142,7 +146,8 @@ func ModifyTag(c *fiber.Ctx) error {
 //	@Failure		404		{object}	MessageModel
 func DeleteTag(c *fiber.Ctx) error {
 	// validate body
-	body, err := ValidateBody[DeleteModel](c)
+	var body DeleteModel
+	err := common.ValidateBody(c, &body)
 	if err != nil {
 		return err
 	}

@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v2"
+	"github.com/opentreehole/go-common"
+	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"gorm.io/plugin/dbresolver"
@@ -13,7 +15,6 @@ import (
 	"strings"
 	"time"
 	"treehole_next/config"
-	"treehole_next/utils"
 )
 
 type User struct {
@@ -137,7 +138,7 @@ func init() {
 	var err error
 	maxTime, err = time.Parse(time.RFC3339, "9999-01-01T00:00:00+00:00")
 	if err != nil {
-		panic(err)
+		log.Fatal().Err(err).Send()
 	}
 	minTime = time.Unix(0, 0)
 }
@@ -150,6 +151,10 @@ func GetUser(c *fiber.Ctx) (*User, error) {
 		user.ID = 1
 		user.IsAdmin = true
 		return user, nil
+	}
+
+	if c.Locals("user") != nil {
+		return c.Locals("user").(*User), nil
 	}
 
 	// get id
@@ -165,7 +170,7 @@ func GetUser(c *fiber.Ctx) (*User, error) {
 	}
 	err = user.parseJWT(tokenString)
 	if err != nil {
-		return nil, utils.Unauthorized(err.Error())
+		return nil, common.Unauthorized(err.Error())
 	}
 
 	// load user from database in transaction
@@ -178,6 +183,10 @@ func GetUser(c *fiber.Ctx) (*User, error) {
 	}
 	user.Permission.Silent = user.BanDivision
 	user.Permission.OffenseCount = user.OffenceCount
+
+	// save user in c.Locals
+	c.Locals("user", user)
+
 	return user, err
 }
 
@@ -188,7 +197,7 @@ func GetUserID(c *fiber.Ctx) (int, error) {
 
 	id, err := strconv.Atoi(c.Get("X-Consumer-Username"))
 	if err != nil {
-		return 0, utils.Unauthorized("Unauthorized")
+		return 0, common.Unauthorized("Unauthorized")
 	}
 
 	return id, nil

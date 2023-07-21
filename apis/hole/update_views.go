@@ -3,12 +3,11 @@ package hole
 import (
 	"context"
 	"fmt"
-	"go.uber.org/zap"
+	"github.com/rs/zerolog/log"
 	"strconv"
 	"strings"
 	"time"
 	. "treehole_next/models"
-	"treehole_next/utils"
 )
 
 var holeViewsChan = make(chan int, 1000)
@@ -44,12 +43,9 @@ func updateHoleViews() {
 
 	result := DB.Exec(builder.String())
 	if result.Error != nil {
-		utils.Logger.Error(result.Error.Error())
+		log.Err(result.Error).Msg("update hole views failed")
 	} else {
-		utils.Logger.Info(
-			"update hole views success",
-			zap.Strings("updated", keys),
-		)
+		log.Info().Strs("updated", keys).Msg("update hole views success")
 	}
 }
 
@@ -65,7 +61,7 @@ func UpdateHoleViews(ctx context.Context) {
 			holeViews[holeID]++
 		case <-ctx.Done():
 			updateHoleViews()
-			fmt.Println("task UpdateHoleViews stopped...")
+			log.Info().Msg("task UpdateHoleViews stopped...")
 			return
 		}
 	}

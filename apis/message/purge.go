@@ -1,12 +1,11 @@
 package message
 
 import (
+	"github.com/rs/zerolog/log"
+	"gorm.io/gorm"
 	"time"
 	"treehole_next/config"
 	. "treehole_next/models"
-	"treehole_next/utils"
-
-	"gorm.io/gorm"
 )
 
 func purgeMessage() error {
@@ -30,7 +29,7 @@ func PurgeMessage() {
 	for range ticker.C {
 		err := purgeMessage()
 		if err != nil {
-			utils.Logger.Error("error purge message: " + err.Error())
+			log.Err(err).Msg("error purge message")
 		}
 	}
 }

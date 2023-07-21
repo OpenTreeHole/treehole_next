@@ -1,6 +1,7 @@
 package message
 
 import (
+	"github.com/opentreehole/go-common"
 	. "treehole_next/models"
 	. "treehole_next/utils"
 
@@ -15,7 +16,8 @@ import (
 // @Success 200 {array} Message
 // @Param object query ListModel false "query"
 func ListMessages(c *fiber.Ctx) error {
-	query, err := ValidateQuery[ListModel](c)
+	var query ListModel
+	err := common.ValidateQuery(c, &query)
 	if err != nil {
 		return err
 	}
@@ -57,7 +59,8 @@ func ListMessages(c *fiber.Ctx) error {
 // @Router /messages [post]
 // @Success 201 {object} Message
 func SendMail(c *fiber.Ctx) error {
-	body, err := ValidateBody[CreateModel](c)
+	var body CreateModel
+	err := common.ValidateBody(c, &body)
 	if err != nil {
 		return err
 	}
@@ -70,7 +73,7 @@ func SendMail(c *fiber.Ctx) error {
 
 	// permission
 	if !user.IsAdmin {
-		return Forbidden()
+		return common.Forbidden()
 	}
 
 	// construct mail

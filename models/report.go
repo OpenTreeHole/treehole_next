@@ -2,12 +2,11 @@ package models
 
 import (
 	"fmt"
+	"github.com/gofiber/fiber/v2"
+	"github.com/rs/zerolog/log"
+	"gorm.io/gorm"
 	"sync/atomic"
 	"time"
-	"treehole_next/utils"
-
-	"github.com/gofiber/fiber/v2"
-	"gorm.io/gorm"
 )
 
 type Report struct {
@@ -118,7 +117,7 @@ func (report *Report) SendCreate(_ *gorm.DB) error {
 	currentCounter := atomic.AddInt32(adminCounter, 1)
 	result := atomic.CompareAndSwapInt32(adminCounter, int32(len(adminList.data)), 0)
 	if result {
-		utils.Logger.Info("[get admin] adminCounter Reset")
+		log.Info().Str("model", "get admin").Msg("adminCounter Reset")
 	}
 	userIDs := []int{adminList.data[currentCounter-1]}
 

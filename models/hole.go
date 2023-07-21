@@ -3,6 +3,7 @@ package models
 import (
 	"fmt"
 	"github.com/gofiber/fiber/v2"
+	"github.com/opentreehole/go-common"
 	"golang.org/x/exp/slices"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -190,7 +191,7 @@ func (hole *Hole) Preprocess(c *fiber.Ctx) error {
 	return Holes{hole}.Preprocess(c)
 }
 
-func (holes Holes) Preprocess(_ *fiber.Ctx) error {
+func (holes Holes) Preprocess(c *fiber.Ctx) error {
 	notInCache := make(Holes, 0, len(holes))
 
 	for _, hole := range holes {
@@ -207,6 +208,18 @@ func (holes Holes) Preprocess(_ *fiber.Ctx) error {
 		err := UpdateHoleCache(notInCache)
 		if err != nil {
 			return err
+		}
+	}
+
+	user, err := GetUser(c)
+	if err != nil {
+		return err
+	}
+
+	// only admin can see hole is hidden
+	if !user.IsAdmin {
+		for _, hole := range holes {
+			hole.Hidden = false
 		}
 	}
 
@@ -245,7 +258,7 @@ func MakeQuerySet(c *fiber.Ctx) (*gorm.DB, error) {
 	}
 }
 
-func (holes Holes) MakeQuerySet(offset CustomTime, size int, order string, c *fiber.Ctx) (*gorm.DB, error) {
+func (holes Holes) MakeQuerySet(offset common.CustomTime, size int, order string, c *fiber.Ctx) (*gorm.DB, error) {
 	querySet, err := MakeQuerySet(c)
 	if err != nil {
 		return nil, err

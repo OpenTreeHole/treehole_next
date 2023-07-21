@@ -2,9 +2,9 @@ package user
 
 import (
 	"github.com/gofiber/fiber/v2"
+	"github.com/opentreehole/go-common"
 	"gorm.io/gorm/clause"
 	. "treehole_next/models"
-	"treehole_next/utils"
 )
 
 func RegisterRoutes(app fiber.Router) {
@@ -48,7 +48,7 @@ func GetUserByID(c *fiber.Ctx) error {
 	}
 
 	if !user.IsAdmin || user.ID == userID {
-		return utils.Forbidden()
+		return common.Forbidden()
 	}
 
 	var getUser User
@@ -79,10 +79,11 @@ func ModifyUser(c *fiber.Ctx) error {
 	}
 
 	if !user.IsAdmin && user.ID != userID {
-		return utils.Forbidden()
+		return common.Forbidden()
 	}
 
-	body, err := utils.ValidateBody[ModifyModel](c)
+	var body ModifyModel
+	err = common.ValidateBody(c, &body)
 	if err != nil {
 		return err
 	}

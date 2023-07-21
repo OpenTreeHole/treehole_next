@@ -3,6 +3,7 @@ package hole
 import (
 	"fmt"
 	"github.com/gofiber/fiber/v2"
+	"github.com/opentreehole/go-common"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"gorm.io/plugin/dbresolver"
@@ -23,7 +24,8 @@ import (
 //	@Failure	404			{object}	MessageModel
 //	@Failure	500			{object}	MessageModel
 func ListHolesByDivision(c *fiber.Ctx) error {
-	query, err := ValidateQuery[QueryTime](c)
+	var query QueryTime
+	err := common.ValidateQuery(c, &query)
 	if err != nil {
 		return err
 	}
@@ -34,7 +36,7 @@ func ListHolesByDivision(c *fiber.Ctx) error {
 
 	// get holes
 	var holes Holes
-	querySet, err := holes.MakeQuerySet(query.Offset, query.Size, "", c)
+	querySet, err := holes.MakeQuerySet(query.Offset, query.Size, query.Order, c)
 	if err != nil {
 		return err
 	}
@@ -57,7 +59,8 @@ func ListHolesByDivision(c *fiber.Ctx) error {
 //	@Success	200			{array}		Hole
 //	@Failure	404			{object}	MessageModel
 func ListHolesByTag(c *fiber.Ctx) error {
-	query, err := ValidateQuery[QueryTime](c)
+	var query QueryTime
+	err := common.ValidateQuery(c, &query)
 	if err != nil {
 		return err
 	}
@@ -94,7 +97,8 @@ func ListHolesByTag(c *fiber.Ctx) error {
 //	@Param		object		query		QueryTime	false	"query"
 //	@Success	200			{array}		Hole
 func ListHolesByMe(c *fiber.Ctx) error {
-	query, err := ValidateQuery[QueryTime](c)
+	var query QueryTime
+	err := common.ValidateQuery(c, &query)
 	if err != nil {
 		return err
 	}
@@ -125,7 +129,8 @@ func ListHolesByMe(c *fiber.Ctx) error {
 //	@Param		object	query	ListOldModel	false	"query"
 //	@Success	200		{array}	Hole
 func ListHolesOld(c *fiber.Ctx) error {
-	query, err := ValidateQuery[ListOldModel](c)
+	var query ListOldModel
+	err := common.ValidateQuery(c, &query)
 	if err != nil {
 		return err
 	}
@@ -197,13 +202,14 @@ func GetHole(c *fiber.Ctx) error {
 //	@Success		201			{object}	Hole
 func CreateHole(c *fiber.Ctx) error {
 	// validate body
-	body, err := ValidateBody[CreateModel](c)
+	var body CreateModel
+	err := common.ValidateBody(c, &body)
 	if err != nil {
 		return err
 	}
 
 	if len([]rune(body.Content)) > 15000 {
-		return BadRequest("文本限制 15000 字")
+		return common.BadRequest("文本限制 15000 字")
 	}
 
 	divisionID, err := c.ParamsInt("id")
@@ -219,7 +225,7 @@ func CreateHole(c *fiber.Ctx) error {
 
 	// permission
 	if user.BanDivision[divisionID] != nil {
-		return Forbidden(user.BanDivisionMessage(divisionID))
+		return common.Forbidden(user.BanDivisionMessage(divisionID))
 	}
 
 	hole := Hole{
@@ -246,13 +252,14 @@ func CreateHole(c *fiber.Ctx) error {
 //	@Success	201		{object}	CreateOldResponse
 func CreateHoleOld(c *fiber.Ctx) error {
 	// validate body
-	body, err := ValidateBody[CreateOldModel](c)
+	var body CreateOldModel
+	err := common.ValidateBody(c, &body)
 	if err != nil {
 		return err
 	}
 
 	if len([]rune(body.Content)) > 15000 {
-		return BadRequest("文本限制 15000 字")
+		return common.BadRequest("文本限制 15000 字")
 	}
 
 	// get user from auth
@@ -263,7 +270,7 @@ func CreateHoleOld(c *fiber.Ctx) error {
 
 	// permission
 	if user.BanDivision[body.DivisionID] != nil {
-		return Forbidden(user.BanDivisionMessage(body.DivisionID))
+		return common.Forbidden(user.BanDivisionMessage(body.DivisionID))
 	}
 
 	// create hole
@@ -295,7 +302,8 @@ func CreateHoleOld(c *fiber.Ctx) error {
 //	@Failure	404		{object}	MessageModel
 func ModifyHole(c *fiber.Ctx) error {
 	// validate
-	body, err := ValidateBody[ModifyModel](c)
+	var body ModifyModel
+	err := common.ValidateBody(c, &body)
 	if err != nil {
 		return err
 	}
@@ -305,7 +313,7 @@ func ModifyHole(c *fiber.Ctx) error {
 	}
 
 	if body.DoNothing() {
-		return BadRequest("无效请求")
+		return common.BadRequest("无效请求")
 	}
 
 	// get user
@@ -462,7 +470,7 @@ func DeleteHole(c *fiber.Ctx) error {
 
 	// permission
 	if !user.IsAdmin {
-		return Forbidden()
+		return common.Forbidden()
 	}
 
 	var hole Hole

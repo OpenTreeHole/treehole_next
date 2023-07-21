@@ -2,11 +2,11 @@ package models
 
 import (
 	"errors"
+	"github.com/opentreehole/go-common"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"gorm.io/plugin/dbresolver"
 	"time"
-	"treehole_next/utils"
 )
 
 // Punishment
@@ -21,6 +21,9 @@ type Punishment struct {
 	// time when this punishment creates
 	CreatedAt time.Time `json:"created_at" gorm:"not null"`
 
+	// time when this punishment revoked
+	DeletedAt time.Time `json:"deleted_at"`
+
 	// start from end_time of previous punishment (punishment accumulation of different floors)
 	// if no previous punishment or previous punishment end time less than time.Now() (synced), set start time time.Now()
 	StartTime time.Time `json:"start_time" gorm:"not null"`
@@ -31,19 +34,19 @@ type Punishment struct {
 	Duration time.Duration `json:"duration" gorm:"not null"`
 
 	// user punished
-	UserID int `json:"user_id" gorm:"not null;index:idx_user_div,priority:1"`
+	UserID int `json:"user_id" gorm:"not null;index:idx_user_div"`
 
 	// admin user_id who made this punish
-	MadeBy int `json:"made_by"`
+	MadeBy int `json:"made_by,omitempty"`
 
 	// punished because of this floor
-	FloorID int `json:"floor_id" gorm:"not null;uniqueIndex:idx_user_floor,priority:2"`
+	FloorID *int `json:"floor_id" gorm:"uniqueIndex:idx_user_floor"`
 
-	Floor *Floor `json:"floor"` // foreign key
+	Floor *Floor `json:"floor,omitempty"` // foreign key
 
 	DivisionID int `json:"division_id" gorm:"not null"`
 
-	Division *Division `json:"division"` // foreign key
+	Division *Division `json:"division,omitempty"` // foreign key
 
 	// reason
 	Reason string `json:"reason" gorm:"size:128"`
@@ -63,7 +66,7 @@ func (punishment *Punishment) Create() (*User, error) {
 		var floorPunishment Punishment
 		err = tx.Where("user_id = ? and floor_id = ?", user.ID, punishment.FloorID).Take(&floorPunishment).Error
 		if err == nil {
-			return utils.BadRequest("该用户已被禁言")
+			return common.Forbidden("该用户已被禁言")
 		} else if !errors.Is(err, gorm.ErrRecordNotFound) {
 			return err
 		}

@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"github.com/rs/zerolog/log"
 	"strconv"
 	"strings"
 	. "treehole_next/models"
@@ -33,11 +34,11 @@ func initTestDivision() {
 	holes[9].DivisionID = 4 // for TestDeleteDivisionDefaultValue
 	err := DB.Create(&divisions).Error
 	if err != nil {
-		panic(err)
+		log.Fatal().Err(err).Send()
 	}
 	err = DB.Create(&holes).Error
 	if err != nil {
-		panic(err)
+		log.Fatal().Err(err).Send()
 	}
 }
 
@@ -54,12 +55,12 @@ func initTestHoles() {
 	holes[3].Tags = Tags{{Name: "111", Temperature: 23}, {Name: "222", Temperature: 45}}
 	err := DB.Create(&holes).Error
 	if err != nil {
-		panic(err)
+		log.Fatal().Err(err).Send()
 	}
 	tag = Tag{Name: "115"}
 	err = DB.Create(&tag).Error
 	if err != nil {
-		panic(err)
+		log.Fatal().Err(err).Send()
 	}
 }
 
@@ -88,7 +89,7 @@ func initTestFloors() {
 	holes[5].Floors = Floors{{Content: "123456789", UserID: 1}, {Content: "23333", UserID: 5, Ranking: 1}} // for TestDelete
 	err := DB.Create(&holes).Error
 	if err != nil {
-		panic(err)
+		log.Fatal().Err(err).Send()
 	}
 }
 
@@ -120,7 +121,7 @@ func initTestTags() {
 	tags[5].Temperature = 34
 	err := DB.Create(&tags).Error
 	if err != nil {
-		panic(err)
+		log.Fatal().Err(err).Send()
 	}
 }
 
@@ -132,7 +133,7 @@ func initTestFavorites() {
 	}
 	err := DB.Create(&userFavorites).Error
 	if err != nil {
-		panic(err)
+		log.Fatal().Err(err).Send()
 	}
 }
 
@@ -164,14 +165,14 @@ func initTestReports() {
 
 	err := DB.Create(&hole).Error
 	if err != nil {
-		panic(err)
+		log.Fatal().Err(err).Send()
 	}
 	err = DB.Create(&floors).Error
 	if err != nil {
-		panic(err)
+		log.Fatal().Err(err).Send()
 	}
 	err = DB.Create(&reports).Error
 	if err != nil {
-		panic(err)
+		log.Fatal().Err(err).Send()
 	}
 }

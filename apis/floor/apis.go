@@ -2,6 +2,8 @@ package floor
 
 import (
 	"fmt"
+	"github.com/opentreehole/go-common"
+	"github.com/rs/zerolog/log"
 	"time"
 	. "treehole_next/models"
 	. "treehole_next/utils"
@@ -28,7 +30,8 @@ func ListFloorsInAHole(c *fiber.Ctx) error {
 		return err
 	}
 
-	query, err := ValidateQuery[ListModel](c)
+	var query ListModel
+	err = common.ValidateQuery(c, &query)
 	if err != nil {
 		return err
 	}
@@ -58,13 +61,14 @@ func ListFloorsInAHole(c *fiber.Ctx) error {
 //	@Success	200		{array}	Floor
 func ListFloorsOld(c *fiber.Ctx) error {
 	// validate
-	query, err := ValidateQuery[ListOldModel](c)
+	var query ListOldModel
+	err := common.ValidateQuery(c, &query)
 	if err != nil {
 		return err
 	}
 
 	if query.Search != "" {
-		return SearchFloorsOld(c, query)
+		return SearchFloorsOld(c, &query)
 	}
 
 	var querySet *gorm.DB
@@ -126,13 +130,14 @@ func GetFloor(c *fiber.Ctx) error {
 //	@Param		json	body		CreateModel	true	"json"
 //	@Success	201		{object}	Floor
 func CreateFloor(c *fiber.Ctx) error {
-	body, err := ValidateBody[CreateModel](c)
+	var body CreateModel
+	err := common.ValidateBody(c, &body)
 	if err != nil {
 		return err
 	}
 
 	if len([]rune(body.Content)) > 15000 {
-		return BadRequest("文本限制 15000 字")
+		return common.BadRequest("文本限制 15000 字")
 	}
 
 	holeID, err := c.ParamsInt("id")
@@ -157,10 +162,10 @@ func CreateFloor(c *fiber.Ctx) error {
 
 	// permission
 	if user.BanDivision[hole.DivisionID] != nil {
-		return Forbidden(user.BanDivisionMessage(hole.DivisionID))
+		return common.Forbidden(user.BanDivisionMessage(hole.DivisionID))
 	}
 	if hole.Locked && !user.IsAdmin {
-		return Forbidden("该帖子已被锁定，非管理员禁止发帖")
+		return common.Forbidden("该帖子已被锁定，非管理员禁止发帖")
 	}
 
 	// create floor
@@ -190,13 +195,14 @@ func CreateFloor(c *fiber.Ctx) error {
 //	@Param		json	body		CreateOldModel	true	"json"
 //	@Success	201		{object}	CreateOldResponse
 func CreateFloorOld(c *fiber.Ctx) error {
-	body, err := ValidateBody[CreateOldModel](c)
+	var body CreateOldModel
+	err := common.ValidateBody(c, &body)
 	if err != nil {
 		return err
 	}
 
 	if len([]rune(body.Content)) > 15000 {
-		return BadRequest("文本限制 15000 字")
+		return common.BadRequest("文本限制 15000 字")
 	}
 
 	// get hole to check DivisionID and Locked
@@ -214,10 +220,10 @@ func CreateFloorOld(c *fiber.Ctx) error {
 
 	// permission
 	if user.BanDivision[hole.DivisionID] != nil {
-		return Forbidden(user.BanDivisionMessage(hole.DivisionID))
+		return common.Forbidden(user.BanDivisionMessage(hole.DivisionID))
 	}
 	if hole.Locked && !user.IsAdmin {
-		return Forbidden("该帖子已被锁定，非管理员禁止发帖")
+		return common.Forbidden("该帖子已被锁定，非管理员禁止发帖")
 	}
 
 	// create floor
@@ -253,17 +259,18 @@ func CreateFloorOld(c *fiber.Ctx) error {
 //	@Failure		404		{object}	MessageModel
 func ModifyFloor(c *fiber.Ctx) error {
 	// validate request body
-	body, err := ValidateBody[ModifyModel](c)
+	var body ModifyModel
+	err := common.ValidateBody(c, &body)
 	if err != nil {
 		return err
 	}
 
 	if body.DoNothing() {
-		return BadRequest("无效请求")
+		return common.BadRequest("无效请求")
 	}
 
 	if body.Content != nil && len([]rune(*body.Content)) > 15000 {
-		return BadRequest("文本限制 15000 字")
+		return common.BadRequest("文本限制 15000 字")
 	}
 
 	// parse floor_id
@@ -309,7 +316,7 @@ func ModifyFloor(c *fiber.Ctx) error {
 				reason = "该内容已被管理员修改"
 				MyLog("Floor", "Modify", floorID, user.ID, RoleAdmin, "content")
 			} else {
-				return Forbidden()
+				return common.Forbidden()
 			}
 			floor.Modified += 1
 			err = floor.Backup(tx, user.ID, reason)
@@ -395,7 +402,7 @@ func ModifyFloor(c *fiber.Ctx) error {
 		user.ID != floor.UserID {
 		err = floor.SendModify(DB)
 		if err != nil {
-			Logger.Error("[notification] SendModify failed: " + err.Error())
+			log.Err(err).Str("model", "Notification").Msg("SendModify failed")
 			// return err // only for test
 		}
 	}
@@ -422,7 +429,7 @@ func ModifyFloorLike(c *fiber.Ctx) error {
 
 	// validate like option
 	if likeOption > 1 || likeOption < -1 {
-		return BadRequest("like option must be -1, 0 or 1")
+		return common.BadRequest("like option must be -1, 0 or 1")
 	}
 
 	// parse floor_id
@@ -471,7 +478,8 @@ func ModifyFloorLike(c *fiber.Ctx) error {
 //	@Failure	404		{object}	MessageModel
 func DeleteFloor(c *fiber.Ctx) error {
 	// validate body
-	body, err := ValidateBody[DeleteModel](c)
+	var body DeleteModel
+	err := common.ValidateBody(c, &body)
 	if err != nil {
 		return err
 	}
@@ -497,7 +505,7 @@ func DeleteFloor(c *fiber.Ctx) error {
 
 		// permission
 		if !((user.ID == floor.UserID && !floor.Deleted) || user.IsAdmin) {
-			return Forbidden()
+			return common.Forbidden()
 		}
 
 		err = floor.Backup(tx, user.ID, body.Reason)
@@ -524,7 +532,7 @@ func DeleteFloor(c *fiber.Ctx) error {
 		// SendModify when admin delete floor
 		err = floor.SendModify(DB)
 		if err != nil {
-			Logger.Error("[notification] SendModify failed: " + err.Error())
+			log.Err(err).Str("model", "Notification").Msg("SendModify failed")
 			// return err // only for test
 		}
 	}
@@ -555,7 +563,7 @@ func GetFloorHistory(c *fiber.Ctx) error {
 
 	// permission
 	if !user.IsAdmin {
-		return Forbidden()
+		return common.Forbidden()
 	}
 
 	var histories []FloorHistory
@@ -579,7 +587,8 @@ func GetFloorHistory(c *fiber.Ctx) error {
 //	@Failure		404					{object}	MessageModel
 func RestoreFloor(c *fiber.Ctx) error {
 	// validate body
-	body, err := ValidateBody[RestoreModel](c)
+	var body RestoreModel
+	err := common.ValidateBody(c, &body)
 	if err != nil {
 		return err
 	}
@@ -602,7 +611,7 @@ func RestoreFloor(c *fiber.Ctx) error {
 
 	// permission check
 	if !user.IsAdmin {
-		return Forbidden()
+		return common.Forbidden()
 	}
 
 	var floor Floor
@@ -616,7 +625,7 @@ func RestoreFloor(c *fiber.Ctx) error {
 		return result.Error
 	}
 	if floorHistory.FloorID != floorID {
-		return BadRequest(fmt.Sprintf("%v 不是 #%v 的历史版本", floorHistoryID, floorID))
+		return common.BadRequest(fmt.Sprintf("%v 不是 #%v 的历史版本", floorHistoryID, floorID))
 	}
 	reason := body.Reason
 	err = floor.Backup(DB, user.ID, reason)
@@ -661,7 +670,7 @@ func GetPunishmentHistory(c *fiber.Ctx) error {
 
 	// permission, admin only
 	if !user.IsAdmin {
-		return Forbidden()
+		return common.Forbidden()
 	}
 
 	// get floor userID

@@ -1,10 +1,10 @@
 package models
 
 import (
+	"github.com/rs/zerolog/log"
 	"golang.org/x/exp/slices"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
-	"log"
 	"time"
 	"treehole_next/utils"
 )

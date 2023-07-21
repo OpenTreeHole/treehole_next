@@ -2,6 +2,7 @@ package floor
 
 import (
 	"github.com/gofiber/fiber/v2"
+	"github.com/opentreehole/go-common"
 	. "treehole_next/config"
 	. "treehole_next/models"
 	. "treehole_next/utils"
@@ -22,7 +23,8 @@ type SearchQuery struct {
 //	@Param		object	query	SearchQuery	true	"search_query"
 //	@Success	200		{array}	models.Floor
 func SearchFloors(c *fiber.Ctx) error {
-	query, err := ValidateQuery[SearchQuery](c)
+	var query SearchQuery
+	err := common.ValidateQuery(c, &query)
 	if err != nil {
 		return err
 	}
@@ -54,7 +56,7 @@ func SearchConfig(c *fiber.Ctx) error {
 		return err
 	}
 	if !user.IsAdmin {
-		return Forbidden()
+		return common.Forbidden()
 	}
 	if DynamicConfig.OpenSearch.Load() == body.Open {
 		return c.Status(200).JSON(Map{"message": "已经被修改"})
@@ -66,7 +68,7 @@ func SearchConfig(c *fiber.Ctx) error {
 
 func SearchFloorsOld(c *fiber.Ctx, query *ListOldModel) error {
 	if DynamicConfig.OpenSearch.Load() == false {
-		return Forbidden("树洞流量激增，搜索功能暂缓开放")
+		return common.Forbidden("树洞流量激增，搜索功能暂缓开放")
 	}
 
 	floors, err := Search(query.Search, query.Size, query.Offset)

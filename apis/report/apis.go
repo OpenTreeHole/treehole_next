@@ -1,8 +1,9 @@
 package report
 
 import (
+	"github.com/opentreehole/go-common"
+	"github.com/rs/zerolog/log"
 	. "treehole_next/models"
-	"treehole_next/utils"
 	. "treehole_next/utils"
 
 	"github.com/gofiber/fiber/v2"
@@ -45,7 +46,8 @@ func GetReport(c *fiber.Ctx) error {
 //	@Failure	404		{object}	MessageModel
 func ListReports(c *fiber.Ctx) error {
 	// validate query
-	query, err := ValidateQuery[ListModel](c)
+	var query ListModel
+	err := common.ValidateQuery(c, &query)
 	if err != nil {
 		return err
 	}
@@ -79,10 +81,12 @@ func ListReports(c *fiber.Ctx) error {
 //	@Router			/reports [post]
 //	@Param			json	body	AddModel	true	"json"
 //	@Success		204
-//	@Failure		400	{object}	utils.HttpError
+//
+// @Failure 400 {object} common.HttpError
 func AddReport(c *fiber.Ctx) error {
 	// validate body
-	body, err := ValidateBody[AddModel](c)
+	var body AddModel
+	err := common.ValidateBody(c, &body)
 	if err != nil {
 		return err
 	}
@@ -101,7 +105,7 @@ func AddReport(c *fiber.Ctx) error {
 	// Send Notification
 	err = report.SendCreate(DB)
 	if err != nil {
-		utils.Logger.Error("[notification] SendCreate failed: " + err.Error())
+		log.Err(err).Str("model", "Notification").Msg("SendCreate failed: ")
 		// return err // only for test
 	}
 
@@ -118,7 +122,7 @@ func AddReport(c *fiber.Ctx) error {
 //	@Param			id		path		int			true	"id"
 //	@Param			json	body		DeleteModel	true	"json"
 //	@Success		200		{object}	Report
-//	@Failure		400		{object}	utils.HttpError
+//	@Failure		400		{object}	common.HttpError
 func DeleteReport(c *fiber.Ctx) error {
 	// validate query
 	reportID, err := c.ParamsInt("id")
@@ -127,7 +131,8 @@ func DeleteReport(c *fiber.Ctx) error {
 	}
 
 	// validate body
-	body, err := ValidateBody[DeleteModel](c)
+	var body DeleteModel
+	err = common.ValidateBody(c, &body)
 	if err != nil {
 		return err
 	}
@@ -154,7 +159,7 @@ func DeleteReport(c *fiber.Ctx) error {
 	// Send Notification
 	err = report.SendModify(DB)
 	if err != nil {
-		utils.Logger.Error("[notification] SendModify failed: " + err.Error())
+		log.Err(err).Str("model", "Notification").Msg("SendModify failed")
 		// return err // only for test
 	}
 
