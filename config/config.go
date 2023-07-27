@@ -1,8 +1,9 @@
 package config
 
 import (
-	"github.com/rs/zerolog/log"
 	"sync/atomic"
+
+	"github.com/rs/zerolog/log"
 
 	"github.com/caarlos0/env/v9"
 )

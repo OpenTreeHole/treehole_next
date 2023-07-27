@@ -157,6 +157,14 @@ definitions:
       open:
         type: boolean
     type: object
+  gorm.DeletedAt:
+    properties:
+      time:
+        type: string
+      valid:
+        description: Valid is true if Time is not NULL
+        type: boolean
+    type: object
   hole.CreateModel:
     properties:
       content:
@@ -453,8 +461,9 @@ definitions:
         description: time when this punishment creates
         type: string
       deleted_at:
+        allOf:
+        - $ref: '#/definitions/gorm.DeletedAt'
         description: time when this punishment revoked
-        type: string
       division:
         allOf:
         - $ref: '#/definitions/models.Division'
@@ -1332,6 +1341,10 @@ paths:
       tags:
       - Hole
     put:
+      description: |-
+        Modify a hole, modify tags and set the name mapping
+        Only admin can modify division, tags, hidden, lock
+        `unhidden` take effect only when hole is hidden and set to true
       parameters:
       - description: id
         in: path

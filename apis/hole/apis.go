@@ -2,12 +2,14 @@ package hole
 
 import (
 	"fmt"
+	"strconv"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/opentreehole/go-common"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"gorm.io/plugin/dbresolver"
-	"strconv"
+
 	. "treehole_next/models"
 	. "treehole_next/utils"
 )
@@ -292,14 +294,17 @@ func CreateHoleOld(c *fiber.Ctx) error {
 
 // ModifyHole
 //
-//	@Summary	Modify A Hole
-//	@Tags		Hole
-//	@Produce	application/json
-//	@Router		/holes/{id} [put]
-//	@Param		id		path		int			true	"id"
-//	@Param		json	body		ModifyModel	true	"json"
-//	@Success	200		{object}	Hole
-//	@Failure	404		{object}	MessageModel
+// @Summary Modify A Hole
+// @Description Modify a hole, modify tags and set the name mapping
+// @Description Only admin can modify division, tags, hidden, lock
+// @Description `unhidden` take effect only when hole is hidden and set to true
+// @Tags Hole
+// @Produce application/json
+// @Router /holes/{id} [put]
+// @Param id path int true "id"
+// @Param json body ModifyModel true "json"
+// @Success 200 {object} Hole
+// @Failure 404 {object} MessageModel
 func ModifyHole(c *fiber.Ctx) error {
 	// validate
 	var body ModifyModel
