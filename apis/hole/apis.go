@@ -235,7 +235,7 @@ func CreateHole(c *fiber.Ctx) error {
 		UserID:     user.ID,
 		DivisionID: divisionID,
 	}
-	err = hole.Create(DB, body.ToName())
+	err = hole.Create(DB, user, body.ToName())
 	if err != nil {
 		return err
 	}
@@ -281,7 +281,7 @@ func CreateHoleOld(c *fiber.Ctx) error {
 		UserID:     user.ID,
 		DivisionID: body.DivisionID,
 	}
-	err = hole.Create(DB, body.ToName())
+	err = hole.Create(DB, user, body.ToName())
 	if err != nil {
 		return err
 	}
@@ -377,7 +377,7 @@ func ModifyHole(c *fiber.Ctx) error {
 		// modify tags
 		if len(body.Tags) != 0 {
 			changed = true
-			hole.Tags, err = FindOrCreateTags(tx, body.ToName())
+			hole.Tags, err = FindOrCreateTags(tx, user, body.ToName())
 			if err != nil {
 				return err
 			}

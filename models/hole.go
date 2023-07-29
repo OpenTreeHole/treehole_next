@@ -2,13 +2,15 @@ package models
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/opentreehole/go-common"
 	"golang.org/x/exp/slices"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"gorm.io/plugin/dbresolver"
-	"time"
+
 	"treehole_next/config"
 	"treehole_next/utils"
 )
@@ -293,9 +295,9 @@ func (hole *Hole) SetHoleFloor() {
 	}
 }
 
-func (hole *Hole) Create(tx *gorm.DB, tagNames []string) (err error) {
+func (hole *Hole) Create(tx *gorm.DB, user *User, tagNames []string) (err error) {
 	// Create hole.Tags, in different sql session
-	hole.Tags, err = FindOrCreateTags(tx, tagNames)
+	hole.Tags, err = FindOrCreateTags(tx, user, tagNames)
 	if err != nil {
 		return err
 	}
