@@ -1,9 +1,10 @@
 package division
 
 import (
-	"github.com/opentreehole/go-common"
 	"strconv"
-	"treehole_next/config"
+
+	"github.com/opentreehole/go-common"
+
 	. "treehole_next/models"
 	. "treehole_next/utils"
 
@@ -121,10 +122,10 @@ func ModifyDivision(c *fiber.Ctx) error {
 
 	MyLog("Division", "Modify", division.ID, userID, RoleAdmin)
 
-	if config.Config.Mode != "test" {
-		go refreshCache()
-	} else {
-		refreshCache()
+	// refresh cache. here should not use `go refreshCache`
+	err = refreshCache(c)
+	if err != nil {
+		return err
 	}
 
 	return Serialize(c, &division)
@@ -180,7 +181,10 @@ func DeleteDivision(c *fiber.Ctx) error {
 	}
 	MyLog("Division", "Delete", id, user.ID, RoleAdmin, "To: ", strconv.Itoa(body.To))
 
-	go refreshCache()
+	err = refreshCache(c)
+	if err != nil {
+		return err
+	}
 
 	return c.Status(204).JSON(nil)
 }
