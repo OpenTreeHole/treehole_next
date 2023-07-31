@@ -3,8 +3,10 @@ package penalty
 
 import (
 	"fmt"
-	"github.com/opentreehole/go-common"
 	"time"
+
+	"github.com/opentreehole/go-common"
+
 	. "treehole_next/models"
 
 	"github.com/gofiber/fiber/v2"
@@ -79,12 +81,14 @@ func BanUser(c *fiber.Ctx) error {
 		}
 	}
 
+	duration := time.Duration(days) * 24 * time.Hour
+
 	punishment := Punishment{
 		UserID:     floor.UserID,
 		MadeBy:     user.ID,
 		FloorID:    &floor.ID,
 		DivisionID: hole.DivisionID,
-		Duration:   time.Duration(days) * 24 * time.Hour,
+		Duration:   &duration,
 		Reason:     body.Reason,
 	}
 	user, err = punishment.Create()

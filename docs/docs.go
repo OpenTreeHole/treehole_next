@@ -958,6 +958,7 @@ const docTemplate = `{
                 }
             },
             "put": {
+                "description": "Modify a hole, modify tags and set the name mapping\nOnly admin can modify division, tags, hidden, lock\n` + "`" + `unhidden` + "`" + ` take effect only when hole is hidden and set to true",
                 "produces": [
                     "application/json"
                 ],
@@ -2155,6 +2156,18 @@ const docTemplate = `{
                 }
             }
         },
+        "gorm.DeletedAt": {
+            "type": "object",
+            "properties": {
+                "time": {
+                    "type": "string"
+                },
+                "valid": {
+                    "description": "Valid is true if Time is not NULL",
+                    "type": "boolean"
+                }
+            }
+        },
         "hole.CreateModel": {
             "type": "object",
             "required": [
@@ -2573,7 +2586,11 @@ const docTemplate = `{
                 },
                 "deleted_at": {
                     "description": "time when this punishment revoked",
-                    "type": "string"
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/gorm.DeletedAt"
+                        }
+                    ]
                 },
                 "division": {
                     "description": "foreign key",

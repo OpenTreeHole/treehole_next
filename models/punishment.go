@@ -2,11 +2,12 @@ package models
 
 import (
 	"errors"
+	"time"
+
 	"github.com/opentreehole/go-common"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"gorm.io/plugin/dbresolver"
-	"time"
 )
 
 // Punishment
@@ -19,7 +20,7 @@ type Punishment struct {
 	ID int `json:"id" gorm:"primaryKey"`
 
 	// time when this punishment creates
-	CreatedAt time.Time `json:"created_at" gorm:"not null"`
+	CreatedAt time.Time `json:"created_at"`
 
 	// time when this punishment revoked
 	DeletedAt gorm.DeletedAt `json:"deleted_at"`
@@ -31,16 +32,16 @@ type Punishment struct {
 	// end_time of this punishment
 	EndTime time.Time `json:"end_time" gorm:"not null"`
 
-	Duration time.Duration `json:"duration" gorm:"not null"`
+	Duration *time.Duration `json:"duration"`
 
 	// user punished
-	UserID int `json:"user_id" gorm:"not null;index:idx_user_div"`
+	UserID int `json:"user_id" gorm:"not null;index"`
 
 	// admin user_id who made this punish
 	MadeBy int `json:"made_by,omitempty"`
 
 	// punished because of this floor
-	FloorID *int `json:"floor_id" gorm:"uniqueIndex:idx_user_floor"`
+	FloorID *int `json:"floor_id" gorm:"uniqueIndex"`
 
 	Floor *Floor `json:"floor,omitempty"` // foreign key
 
@@ -85,7 +86,7 @@ func (punishment *Punishment) Create() (*User, error) {
 			return err
 		}
 
-		punishment.EndTime = punishment.StartTime.Add(punishment.Duration)
+		punishment.EndTime = punishment.StartTime.Add(*punishment.Duration)
 		user.BanDivision[punishment.DivisionID] = &punishment.EndTime
 		user.OffenceCount += 1
 

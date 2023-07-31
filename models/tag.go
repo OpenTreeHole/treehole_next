@@ -1,11 +1,15 @@
 package models
 
 import (
+	"strings"
+	"time"
+
+	"github.com/opentreehole/go-common"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/exp/slices"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
-	"time"
+
 	"treehole_next/utils"
 )
 
@@ -42,7 +46,7 @@ func (tag *Tag) AfterCreate(_ *gorm.DB) (err error) {
 	return nil
 }
 
-func FindOrCreateTags(tx *gorm.DB, names []string) (Tags, error) {
+func FindOrCreateTags(tx *gorm.DB, user *User, names []string) (Tags, error) {
 	tags := make(Tags, 0)
 	err := tx.Where("name in ?", names).Find(&tags).Error
 	if err != nil {
@@ -63,6 +67,14 @@ func FindOrCreateTags(tx *gorm.DB, names []string) (Tags, error) {
 
 	if len(newTags) == 0 {
 		return tags, nil
+	}
+
+	for _, tag := range newTags {
+		if strings.HasPrefix(tag.Name, "#") {
+			if !user.IsAdmin {
+				return nil, common.BadRequest("只有管理员才能创建 # 开头的 tag")
+			}
+		}
 	}
 
 	err = tx.Clauses(clause.OnConflict{DoNothing: true}).Create(&newTags).Error
