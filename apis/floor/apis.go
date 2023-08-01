@@ -545,13 +545,13 @@ func DeleteFloor(c *fiber.Ctx) error {
 //	@Summary	List User's Reply Floors
 //	@Tags		Floor
 //	@Produce	application/json
-//	@Router		/floors/reply [get]
+//	@Router		/users/me/floors [get]
 //	@Param		object	query		ListModel	false	"query"
 //	@Success	200		{array}		Floor
 //	@Failure	404		{object}	MessageModel
 func ListReplyFloors(c *fiber.Ctx) error {
-	//get user
-	user, err := GetUser(c)
+	//get userID
+	userID, err := common.GetUserID(c)
 	if err != nil {
 		return err
 	}
@@ -564,14 +564,17 @@ func ListReplyFloors(c *fiber.Ctx) error {
 
 	// get floors
 	var floors Floors
-	result := DB.Limit(query.Size).Order(query.OrderBy+" "+query.Sort).
-		Where("user_id = ? and ranking >= ?", user.ID, query.Offset).
+	result := DB.
+		Limit(query.Size).
+		Offset(query.Offset).
+		Order(query.OrderBy+" "+query.Sort).
+		Where("user_id = ? and ranking <> 0", userID).
 		Preload("Mention").
 		Find(&floors)
-
 	if result.Error != nil {
 		return result.Error
 	}
+
 	return Serialize(c, &floors)
 }
 
