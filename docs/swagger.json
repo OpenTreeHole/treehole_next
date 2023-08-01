@@ -1785,6 +1785,75 @@
                 }
             }
         },
+        "/users/me/floors": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Floor"
+                ],
+                "summary": "List User's Reply Floors",
+                "parameters": [
+                    {
+                        "minimum": 0,
+                        "type": "integer",
+                        "default": 0,
+                        "description": "offset of object array",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "id",
+                            "like"
+                        ],
+                        "type": "string",
+                        "default": "id",
+                        "description": "SQL ORDER BY field",
+                        "name": "order_by",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 50,
+                        "minimum": 0,
+                        "type": "integer",
+                        "default": 30,
+                        "description": "length of object array",
+                        "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "asc",
+                            "desc"
+                        ],
+                        "type": "string",
+                        "default": "asc",
+                        "description": "Sort order",
+                        "name": "sort",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Floor"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.MessageModel"
+                        }
+                    }
+                }
+            }
+        },
         "/users/me/holes": {
             "get": {
                 "produces": [

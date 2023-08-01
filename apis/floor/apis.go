@@ -540,6 +540,44 @@ func DeleteFloor(c *fiber.Ctx) error {
 	return Serialize(c, &floor)
 }
 
+// ListReplyFloors
+//
+//	@Summary	List User's Reply Floors
+//	@Tags		Floor
+//	@Produce	application/json
+//	@Router		/users/me/floors [get]
+//	@Param		object	query		ListModel	false	"query"
+//	@Success	200		{array}		Floor
+//	@Failure	404		{object}	MessageModel
+func ListReplyFloors(c *fiber.Ctx) error {
+	//get userID
+	userID, err := common.GetUserID(c)
+	if err != nil {
+		return err
+	}
+
+	var query ListModel
+	err = common.ValidateQuery(c, &query)
+	if err != nil {
+		return err
+	}
+
+	// get floors
+	var floors Floors
+	result := DB.
+		Limit(query.Size).
+		Offset(query.Offset).
+		Order(query.OrderBy+" "+query.Sort).
+		Where("user_id = ? and ranking <> 0", userID).
+		Preload("Mention").
+		Find(&floors)
+	if result.Error != nil {
+		return result.Error
+	}
+
+	return Serialize(c, &floors)
+}
+
 // GetFloorHistory
 //
 //	@Summary	Get A Floor's History, admin only
