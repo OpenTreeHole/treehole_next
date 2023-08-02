@@ -60,7 +60,9 @@ func FindOrCreateTags(tx *gorm.DB, user *User, names []string) (Tags, error) {
 
 	newTags := make(Tags, 0)
 	for _, name := range names {
-		if !slices.Contains(existTagName, name) {
+		if !slices.ContainsFunc(existTagName, func(s string) bool {
+			return strings.EqualFold(s, name)
+		}) {
 			newTags = append(newTags, &Tag{Name: name})
 		}
 	}
