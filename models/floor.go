@@ -214,7 +214,7 @@ func (floor *Floor) Create(tx *gorm.DB) (err error) {
 	var messages Notifications
 	messages = messages.Merge(floor.SendReply(tx))
 	messages = messages.Merge(floor.SendMention(tx))
-	messages = messages.Merge(floor.SendFavorite(tx))
+	messages = messages.Merge(floor.SendSubscription(tx))
 
 	err = messages.Send()
 	if err != nil {
@@ -312,10 +312,10 @@ func (floor *Floor) ModifyLike(tx *gorm.DB, userID int, likeOption int8) (err er
 Send Notifications
 ******************/
 
-func (floor *Floor) SendFavorite(tx *gorm.DB) Notification {
+func (floor *Floor) SendSubscription(tx *gorm.DB) Notification {
 	// get recipients
 	var tmpIDs []int
-	result := tx.Raw("SELECT user_id from user_favorites WHERE hole_id = ?", floor.HoleID).Scan(&tmpIDs)
+	result := tx.Raw("SELECT user_id from user_subscription WHERE hole_id = ?", floor.HoleID).Scan(&tmpIDs)
 	if result.Error != nil {
 		tmpIDs = []int{}
 	}
