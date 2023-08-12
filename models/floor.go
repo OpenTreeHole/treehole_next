@@ -333,7 +333,7 @@ func (floor *Floor) SendSubscription(tx *gorm.DB) Notification {
 		Data:        floor,
 		Recipients:  userIDs,
 		Description: floor.Content,
-		Title:       "您收藏的树洞有新回复",
+		Title:       "您关注的树洞有新回复",
 		Type:        MessageTypeFavorite,
 		URL:         fmt.Sprintf("/api/floors/%d", floor.ID),
 	}

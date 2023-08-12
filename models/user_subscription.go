@@ -21,7 +21,7 @@ func (UserSubscription) TableName() string {
 
 func UserGetSubscriptionData(tx *gorm.DB, userID int) ([]int, error) {
 	data := make([]int, 0, 10)
-	err := tx.Clauses(dbresolver.Write).Raw("SELECT hole_id FROM user_subscription WHERE user_id = ?", userID).Scan(&data).Error
+	err := tx.Clauses(dbresolver.Write).Raw("SELECT hole_id FROM user_subscription WHERE user_id = ? ORDER BY created_at", userID).Scan(&data).Error
 	return data, err
 }
 

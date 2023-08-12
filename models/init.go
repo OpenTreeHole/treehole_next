@@ -148,6 +148,7 @@ func InitDB() {
 		&Punishment{},
 		&Message{},
 		&FloorHistory{},
+		&UserSubscription{},
 	)
 	if err != nil {
 		log.Fatal().Err(err).Send()

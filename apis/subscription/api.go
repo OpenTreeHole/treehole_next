@@ -14,7 +14,7 @@ import (
 // @Summary		List User's Subscriptions
 // @Tags		Subscription
 // @Produce		application/json
-// @Router		/user/subscriptions [get]
+// @Router		/users/subscriptions [get]
 // @Param		object 	query		ListModel	false	"query"
 // @Success		200		{object}	models.Map
 // @Success		200		{array}		models.Hole
@@ -55,7 +55,7 @@ func ListSubscriptions(c *fiber.Ctx) error {
 //	@Tags		Subscription
 //	@Accept		application/json
 //	@Produce	application/json
-//	@Router		/user/subscriptions [post]
+//	@Router		/users/subscriptions [post]
 //	@Param		json	body		AddModel	true	"json"
 //	@Success	201		{object}	Response
 func AddSubscription(c *fiber.Ctx) error {
@@ -100,7 +100,7 @@ func AddSubscription(c *fiber.Ctx) error {
 //	@Summary	Delete A Subscription
 //	@Tags		Subscription
 //	@Produce	application/json
-//	@Router		/user/subscription [delete]
+//	@Router		/users/subscription [delete]
 //	@Param		json	body		DeleteModel	true	"json"
 //	@Success	200		{object}	Response
 //	@Failure	404		{object}	Response
