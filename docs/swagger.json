@@ -1220,22 +1220,6 @@
                         "in": "query"
                     },
                     {
-                        "enum": [
-                            0,
-                            1,
-                            2
-                        ],
-                        "type": "integer",
-                        "x-enum-varnames": [
-                            "RangeNotDealt",
-                            "RangeDealt",
-                            "RangeAll"
-                        ],
-                        "description": "Range, 0: not dealt, 1: dealt, 2: all",
-                        "name": "range",
-                        "in": "query"
-                    },
-                    {
                         "maximum": 50,
                         "minimum": 0,
                         "type": "integer",
@@ -1913,6 +1897,103 @@
                             "items": {
                                 "$ref": "#/definitions/models.Punishment"
                             }
+                        }
+                    }
+                }
+            }
+        },
+        "/users/subscription": {
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Subscription"
+                ],
+                "summary": "Delete A Subscription",
+                "parameters": [
+                    {
+                        "description": "json",
+                        "name": "json",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/subscription.DeleteModel"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/subscription.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/subscription.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/subscriptions": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Subscription"
+                ],
+                "summary": "List User's Subscriptions",
+                "parameters": [
+                    {
+                        "type": "boolean",
+                        "default": false,
+                        "name": "plain",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Hole"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Subscription"
+                ],
+                "summary": "Add A Subscription",
+                "parameters": [
+                    {
+                        "description": "json",
+                        "name": "json",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/subscription.AddModel"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/subscription.Response"
                         }
                     }
                 }
@@ -2884,6 +2965,36 @@
                 "RangeDealt",
                 "RangeAll"
             ]
+        },
+        "subscription.AddModel": {
+            "type": "object",
+            "properties": {
+                "hole_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "subscription.DeleteModel": {
+            "type": "object",
+            "properties": {
+                "hole_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "subscription.Response": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
         },
         "tag.CreateModel": {
             "type": "object",

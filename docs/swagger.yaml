@@ -627,6 +627,25 @@ definitions:
     - RangeNotDealt
     - RangeDealt
     - RangeAll
+  subscription.AddModel:
+    properties:
+      hole_id:
+        type: integer
+    type: object
+  subscription.DeleteModel:
+    properties:
+      hole_id:
+        type: integer
+    type: object
+  subscription.Response:
+    properties:
+      data:
+        items:
+          type: integer
+        type: array
+      message:
+        type: string
+    type: object
   tag.CreateModel:
     properties:
       name:
@@ -1475,18 +1494,6 @@ paths:
         in: query
         name: orderBy
         type: string
-      - description: 'Range, 0: not dealt, 1: dealt, 2: all'
-        enum:
-        - 0
-        - 1
-        - 2
-        in: query
-        name: range
-        type: integer
-        x-enum-varnames:
-        - RangeNotDealt
-        - RangeDealt
-        - RangeAll
       - default: 30
         in: query
         maximum: 50
@@ -1983,4 +1990,66 @@ paths:
       summary: List my punishments
       tags:
       - Penalty
+  /users/subscription:
+    delete:
+      parameters:
+        - description: json
+          in: body
+          name: json
+          required: true
+          schema:
+            $ref: '#/definitions/subscription.DeleteModel'
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/subscription.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/subscription.Response'
+      summary: Delete A Subscription
+      tags:
+        - Subscription
+  /users/subscriptions:
+    get:
+      parameters:
+        - default: false
+          in: query
+          name: plain
+          type: boolean
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Hole'
+            type: array
+      summary: List User's Subscriptions
+      tags:
+        - Subscription
+    post:
+      consumes:
+        - application/json
+      parameters:
+        - description: json
+          in: body
+          name: json
+          required: true
+          schema:
+            $ref: '#/definitions/subscription.AddModel'
+      produces:
+        - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/subscription.Response'
+      summary: Add A Subscription
+      tags:
+        - Subscription
 swagger: "2.0"
