@@ -1,6 +1,7 @@
 package models
 
 import (
+	"errors"
 	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/rs/zerolog/log"
@@ -58,13 +59,27 @@ func (report *Report) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 	} else {
 		tx = DB
 	}
-
 	userID, err := GetUserID(c)
 	if err != nil {
 		return err
 	}
-	report.UserID = userID
-	tx.Create(&report)
+
+	existingReport := Report{}
+	err = tx.Where("user_id = ? AND floor_id = ?", userID, report.FloorID).First(&existingReport).Error
+	if err != nil {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return err
+		}
+	}
+
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		report.UserID = userID
+		tx.Create(&report)
+	} else {
+		existingReport.Reason = existingReport.Reason + "\n" + report.Reason
+		tx.Save(&existingReport)
+	}
+
 	return nil
 }
 
