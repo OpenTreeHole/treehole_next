@@ -44,9 +44,7 @@ func registerMiddlewares(app *fiber.App) {
 		app.Use(common.MiddlewareCustomLogger)
 	}
 	app.Use(pprof.New())
-	if config.Config.Mode != "test" && config.Config.Mode != "bench" {
-		app.Use(middlewareHasAnsweredQuestions)
-	}
+
 }
 
 func startTasks() context.CancelFunc {
@@ -57,7 +55,10 @@ func startTasks() context.CancelFunc {
 	return cancel
 }
 
-func middlewareHasAnsweredQuestions(c *fiber.Ctx) error {
+func MiddlewareHasAnsweredQuestions(c *fiber.Ctx) error {
+	if config.Config.Mode != "test" && config.Config.Mode != "bench" {
+		return c.Next()
+	}
 	var user struct {
 		HasAnsweredQuestions bool `json:"has_answered_questions"`
 	}
