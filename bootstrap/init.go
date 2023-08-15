@@ -2,7 +2,9 @@ package bootstrap
 
 import (
 	"context"
+
 	"github.com/opentreehole/go-common"
+
 	"treehole_next/apis"
 	"treehole_next/apis/hole"
 	"treehole_next/apis/message"
@@ -42,6 +44,7 @@ func registerMiddlewares(app *fiber.App) {
 		app.Use(common.MiddlewareCustomLogger)
 	}
 	app.Use(pprof.New())
+	app.Use(middlewareHasAnsweredQuestions)
 }
 
 func startTasks() context.CancelFunc {
@@ -50,4 +53,18 @@ func startTasks() context.CancelFunc {
 	go message.PurgeMessage()
 	go models.UpdateAdminList(ctx)
 	return cancel
+}
+
+func middlewareHasAnsweredQuestions(c *fiber.Ctx) error {
+	var user struct {
+		HasAnsweredQuestions bool `json:"has_answered_questions"`
+	}
+	err := common.ParseJWTToken(common.GetJWTToken(c), &user)
+	if err != nil {
+		return err
+	}
+	if !user.HasAnsweredQuestions {
+		return common.Forbidden("请先通过注册答题")
+	}
+	return c.Next()
 }
