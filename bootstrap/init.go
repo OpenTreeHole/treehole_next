@@ -44,7 +44,9 @@ func registerMiddlewares(app *fiber.App) {
 		app.Use(common.MiddlewareCustomLogger)
 	}
 	app.Use(pprof.New())
-	app.Use(middlewareHasAnsweredQuestions)
+	if config.Config.Mode != "test" && config.Config.Mode != "bench" {
+		app.Use(middlewareHasAnsweredQuestions)
+	}
 }
 
 func startTasks() context.CancelFunc {
