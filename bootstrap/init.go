@@ -2,7 +2,7 @@ package bootstrap
 
 import (
 	"context"
-
+	"github.com/gofiber/fiber/v2"
 	"github.com/opentreehole/go-common"
 
 	"treehole_next/apis"
@@ -13,7 +13,6 @@ import (
 	"treehole_next/utils"
 
 	"github.com/goccy/go-json"
-	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/pprof"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 )
@@ -53,21 +52,4 @@ func startTasks() context.CancelFunc {
 	go message.PurgeMessage()
 	go models.UpdateAdminList(ctx)
 	return cancel
-}
-
-func MiddlewareHasAnsweredQuestions(c *fiber.Ctx) error {
-	if config.Config.Mode != "test" && config.Config.Mode != "bench" {
-		return c.Next()
-	}
-	var user struct {
-		HasAnsweredQuestions bool `json:"has_answered_questions"`
-	}
-	err := common.ParseJWTToken(common.GetJWTToken(c), &user)
-	if err != nil {
-		return err
-	}
-	if !user.HasAnsweredQuestions {
-		return common.Forbidden("请先通过注册答题")
-	}
-	return c.Next()
 }
