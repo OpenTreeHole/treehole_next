@@ -1052,6 +1052,44 @@
                 }
             }
         },
+        "/holes/{id}/_force": {
+            "delete": {
+                "description": "Delete a hole, admin only",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Hole"
+                ],
+                "summary": "Delete A Hole",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/models.MessageModel"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.MessageModel"
+                        }
+                    }
+                }
+            }
+        },
         "/messages": {
             "get": {
                 "produces": [
@@ -1217,6 +1255,22 @@
                         "type": "string",
                         "default": "id",
                         "name": "orderBy",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            0,
+                            1,
+                            2
+                        ],
+                        "type": "integer",
+                        "x-enum-varnames": [
+                            "RangeNotDealt",
+                            "RangeDealt",
+                            "RangeAll"
+                        ],
+                        "description": "Range, 0: not dealt, 1: dealt, 2: all",
+                        "name": "range",
                         "in": "query"
                     },
                     {

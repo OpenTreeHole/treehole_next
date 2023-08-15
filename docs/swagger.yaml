@@ -1390,6 +1390,31 @@ paths:
       summary: Modify A Hole
       tags:
       - Hole
+  /holes/{id}/_force:
+    delete:
+      description: Delete a hole, admin only
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.MessageModel'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.MessageModel'
+      summary: Delete A Hole
+      tags:
+      - Hole
   /messages:
     get:
       parameters:
@@ -1494,6 +1519,18 @@ paths:
         in: query
         name: orderBy
         type: string
+      - description: 'Range, 0: not dealt, 1: dealt, 2: all'
+        enum:
+        - 0
+        - 1
+        - 2
+        in: query
+        name: range
+        type: integer
+        x-enum-varnames:
+        - RangeNotDealt
+        - RangeDealt
+        - RangeAll
       - default: 30
         in: query
         maximum: 50
@@ -1993,14 +2030,14 @@ paths:
   /users/subscription:
     delete:
       parameters:
-        - description: json
-          in: body
-          name: json
-          required: true
-          schema:
-            $ref: '#/definitions/subscription.DeleteModel'
+      - description: json
+        in: body
+        name: json
+        required: true
+        schema:
+          $ref: '#/definitions/subscription.DeleteModel'
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
@@ -2012,16 +2049,16 @@ paths:
             $ref: '#/definitions/subscription.Response'
       summary: Delete A Subscription
       tags:
-        - Subscription
+      - Subscription
   /users/subscriptions:
     get:
       parameters:
-        - default: false
-          in: query
-          name: plain
-          type: boolean
+      - default: false
+        in: query
+        name: plain
+        type: boolean
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
@@ -2031,19 +2068,19 @@ paths:
             type: array
       summary: List User's Subscriptions
       tags:
-        - Subscription
+      - Subscription
     post:
       consumes:
-        - application/json
+      - application/json
       parameters:
-        - description: json
-          in: body
-          name: json
-          required: true
-          schema:
-            $ref: '#/definitions/subscription.AddModel'
+      - description: json
+        in: body
+        name: json
+        required: true
+        schema:
+          $ref: '#/definitions/subscription.AddModel'
       produces:
-        - application/json
+      - application/json
       responses:
         "201":
           description: Created
@@ -2051,5 +2088,5 @@ paths:
             $ref: '#/definitions/subscription.Response'
       summary: Add A Subscription
       tags:
-        - Subscription
+      - Subscription
 swagger: "2.0"
