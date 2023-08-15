@@ -2,7 +2,7 @@ package hole
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"treehole_next/bootstrap"
+	"treehole_next/utils"
 )
 
 func RegisterRoutes(app fiber.Router) {
@@ -11,8 +11,8 @@ func RegisterRoutes(app fiber.Router) {
 	app.Get("/users/me/holes", ListHolesByMe)
 	app.Get("/holes/:id", GetHole)
 	app.Get("/holes", ListHolesOld)
-	app.Post("/divisions/:id/holes", bootstrap.MiddlewareHasAnsweredQuestions, CreateHole)
-	app.Post("/holes", bootstrap.MiddlewareHasAnsweredQuestions, CreateHoleOld)
+	app.Post("/divisions/:id/holes", utils.MiddlewareHasAnsweredQuestions, CreateHole)
+	app.Post("/holes", utils.MiddlewareHasAnsweredQuestions, CreateHoleOld)
 	app.Patch("/holes/:id", PatchHole)
 	app.Put("/holes/:id", ModifyHole)
 	app.Delete("/holes/:id", HideHole)
