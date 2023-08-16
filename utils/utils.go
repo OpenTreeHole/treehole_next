@@ -52,7 +52,7 @@ func StripContent(content string, contentMaxSize int) string {
 }
 
 func MiddlewareHasAnsweredQuestions(c *fiber.Ctx) error {
-	if config.Config.Mode != "test" && config.Config.Mode != "bench" {
+	if config.Config.Mode == "test" || config.Config.Mode == "bench" {
 		return c.Next()
 	}
 	var user struct {
