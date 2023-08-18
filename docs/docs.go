@@ -2914,6 +2914,9 @@ const docTemplate = `{
                 "config": {
                     "$ref": "#/definitions/models.UserConfig"
                 },
+                "has_answered_questions": {
+                    "type": "boolean"
+                },
                 "id": {
                     "description": "/ base info",
                     "type": "integer"

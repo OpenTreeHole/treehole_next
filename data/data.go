@@ -2,9 +2,10 @@ package data
 
 import (
 	_ "embed"
+	"os"
+
 	"github.com/goccy/go-json"
 	"github.com/rs/zerolog/log"
-	"os"
 )
 
 //go:embed names.json

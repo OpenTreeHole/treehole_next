@@ -1,8 +1,10 @@
 package models
 
 import (
-	"gorm.io/gorm"
 	"regexp"
+
+	"gorm.io/gorm"
+
 	"treehole_next/utils"
 )
 

@@ -107,7 +107,7 @@ func ListHolesByMe(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	userID, err := GetUserID(c)
+	userID, err := common.GetUserID(c)
 	if err != nil {
 		return err
 	}

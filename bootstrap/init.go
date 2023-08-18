@@ -2,6 +2,7 @@ package bootstrap
 
 import (
 	"context"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/opentreehole/go-common"
 

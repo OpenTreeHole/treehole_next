@@ -1,10 +1,12 @@
 package utils
 
 import (
+	"strconv"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/opentreehole/go-common"
 	"golang.org/x/exp/constraints"
-	"strconv"
+
 	"treehole_next/config"
 )
 
@@ -63,7 +65,10 @@ func MiddlewareHasAnsweredQuestions(c *fiber.Ctx) error {
 		return err
 	}
 	if !user.HasAnsweredQuestions {
-		return common.Forbidden("请先通过注册答题")
+		return &common.HttpError{
+			Code:    ErrCodeNotAnsweredQuestions,
+			Message: "请先通过注册答题",
+		}
 	}
 	return c.Next()
 }

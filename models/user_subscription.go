@@ -1,10 +1,11 @@
 package models
 
 import (
+	"time"
+
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"gorm.io/plugin/dbresolver"
-	"time"
 )
 
 type UserSubscription struct {

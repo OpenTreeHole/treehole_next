@@ -5,22 +5,23 @@ import (
 	"github.com/opentreehole/go-common"
 	"gorm.io/gorm"
 	"gorm.io/plugin/dbresolver"
+
 	. "treehole_next/models"
 	. "treehole_next/utils"
 )
 
 // ListSubscriptions
 //
-// @Summary		List User's Subscriptions
-// @Tags		Subscription
-// @Produce		application/json
-// @Router		/users/subscriptions [get]
-// @Param		object 	query		ListModel	false	"query"
-// @Success		200		{object}	models.Map
-// @Success		200		{array}		models.Hole
+// @Summary List User's Subscriptions
+// @Tags Subscription
+// @Produce application/json
+// @Router /users/subscriptions [get]
+// @Param object query ListModel false "query"
+// @Success 200 {object} models.Map
+// @Success 200 {array} models.Hole
 func ListSubscriptions(c *fiber.Ctx) error {
 	// get userID
-	userID, err := GetUserID(c)
+	userID, err := common.GetUserID(c)
 	if err != nil {
 		return err
 	}
@@ -51,13 +52,13 @@ func ListSubscriptions(c *fiber.Ctx) error {
 
 // AddSubscription
 //
-//	@Summary	Add A Subscription
-//	@Tags		Subscription
-//	@Accept		application/json
-//	@Produce	application/json
-//	@Router		/users/subscriptions [post]
-//	@Param		json	body		AddModel	true	"json"
-//	@Success	201		{object}	Response
+// @Summary Add A Subscription
+// @Tags Subscription
+// @Accept application/json
+// @Produce application/json
+// @Router /users/subscriptions [post]
+// @Param json body AddModel true "json"
+// @Success 201 {object} Response
 func AddSubscription(c *fiber.Ctx) error {
 	// validate body
 	var body AddModel
@@ -67,7 +68,7 @@ func AddSubscription(c *fiber.Ctx) error {
 	}
 
 	// get userID
-	userID, err := GetUserID(c)
+	userID, err := common.GetUserID(c)
 	if err != nil {
 		return err
 	}
@@ -97,13 +98,13 @@ func AddSubscription(c *fiber.Ctx) error {
 
 // DeleteSubscription
 //
-//	@Summary	Delete A Subscription
-//	@Tags		Subscription
-//	@Produce	application/json
-//	@Router		/users/subscription [delete]
-//	@Param		json	body		DeleteModel	true	"json"
-//	@Success	200		{object}	Response
-//	@Failure	404		{object}	Response
+// @Summary Delete A Subscription
+// @Tags Subscription
+// @Produce application/json
+// @Router /users/subscription [delete]
+// @Param json body DeleteModel true "json"
+// @Success 200 {object} Response
+// @Failure 404 {object} Response
 func DeleteSubscription(c *fiber.Ctx) error {
 	// validate body
 	var body DeleteModel
@@ -113,7 +114,7 @@ func DeleteSubscription(c *fiber.Ctx) error {
 	}
 
 	// get userID
-	userID, err := GetUserID(c)
+	userID, err := common.GetUserID(c)
 	if err != nil {
 		return err
 	}

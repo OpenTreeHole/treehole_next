@@ -2,11 +2,13 @@ package tests
 
 import (
 	"bytes"
-	"github.com/goccy/go-json"
 	"io"
 	"net/http"
 	"strings"
 	"testing"
+
+	"github.com/goccy/go-json"
+
 	"treehole_next/bootstrap"
 	. "treehole_next/models"
 
@@ -35,6 +37,7 @@ func testCommon(t *testing.T, method string, route string, statusCode int, data 
 		bytes.NewBuffer(requestData),
 	)
 	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add("X-Consumer-Username", "1") // for common.GetUserID
 	assert.Nilf(t, err, "constructs http request")
 
 	res, err := App.Test(req, -1)
@@ -62,6 +65,7 @@ func testCommonQuery(t *testing.T, method string, route string, statusCode int, 
 	}
 
 	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add("X-Consumer-Username", "1") // for common.GetUserID
 	assert.Nilf(t, err, "constructs http request")
 
 	res, err := App.Test(req, -1)

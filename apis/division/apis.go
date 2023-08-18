@@ -14,14 +14,14 @@ import (
 
 // AddDivision
 //
-//	@Summary	Add A Division
-//	@Tags		Division
-//	@Accept		application/json
-//	@Produce	application/json
-//	@Router		/divisions [post]
-//	@Param		json	body		CreateModel	true	"json"
-//	@Success	201		{object}	models.Division
-//	@Success	200		{object}	models.Division
+// @Summary Add A Division
+// @Tags Division
+// @Accept application/json
+// @Produce application/json
+// @Router /divisions [post]
+// @Param json body CreateModel true "json"
+// @Success 201 {object} models.Division
+// @Success 200 {object} models.Division
 func AddDivision(c *fiber.Ctx) error {
 	// validate body
 	var body CreateModel
@@ -46,11 +46,11 @@ func AddDivision(c *fiber.Ctx) error {
 
 // ListDivisions
 //
-//	@Summary	List All Divisions
-//	@Tags		Division
-//	@Produce	application/json
-//	@Router		/divisions [get]
-//	@Success	200	{array}	models.Division
+// @Summary List All Divisions
+// @Tags Division
+// @Produce application/json
+// @Router /divisions [get]
+// @Success 200 {array} models.Division
 func ListDivisions(c *fiber.Ctx) error {
 	var divisions Divisions
 	if GetCache("divisions", &divisions) {
@@ -62,13 +62,13 @@ func ListDivisions(c *fiber.Ctx) error {
 
 // GetDivision
 //
-//	@Summary	Get Division
-//	@Tags		Division
-//	@Produce	application/json
-//	@Router		/divisions/{id} [get]
-//	@Param		id	path		int	true	"id"
-//	@Success	200	{object}	models.Division
-//	@Failure	404	{object}	MessageModel
+// @Summary Get Division
+// @Tags Division
+// @Produce application/json
+// @Router /divisions/{id} [get]
+// @Param id path int true "id"
+// @Success 200 {object} models.Division
+// @Failure 404 {object} MessageModel
 func GetDivision(c *fiber.Ctx) error {
 	id, err := c.ParamsInt("id")
 	if err != nil {
@@ -84,14 +84,14 @@ func GetDivision(c *fiber.Ctx) error {
 
 // ModifyDivision
 //
-//	@Summary	Modify A Division
-//	@Tags		Division
-//	@Produce	json
-//	@Router		/divisions/{id} [put]
-//	@Param		id		path		int			true	"id"
-//	@Param		json	body		ModifyModel	true	"json"
-//	@Success	200		{object}	models.Division
-//	@Failure	404		{object}	MessageModel
+// @Summary Modify A Division
+// @Tags Division
+// @Produce json
+// @Router /divisions/{id} [put]
+// @Param id path int true "id"
+// @Param json body ModifyModel true "json"
+// @Success 200 {object} models.Division
+// @Failure 404 {object} MessageModel
 func ModifyDivision(c *fiber.Ctx) error {
 	// validate body
 	var body ModifyModel
@@ -115,7 +115,7 @@ func ModifyDivision(c *fiber.Ctx) error {
 		return gorm.ErrRecordNotFound
 	}
 	// log
-	userID, err := GetUserID(c)
+	userID, err := common.GetUserID(c)
 	if err != nil {
 		return err
 	}
@@ -133,15 +133,15 @@ func ModifyDivision(c *fiber.Ctx) error {
 
 // DeleteDivision
 //
-//	@Summary		Delete A Division
-//	@Description	Delete a division and move all of its holes to another given division
-//	@Tags			Division
-//	@Produce		application/json
-//	@Router			/divisions/{id} [delete]
-//	@Param			id		path	int			true	"id"
-//	@Param			json	body	DeleteModel	true	"json"
-//	@Success		204
-//	@Failure		404	{object}	MessageModel
+// @Summary Delete A Division
+// @Description Delete a division and move all of its holes to another given division
+// @Tags Division
+// @Produce application/json
+// @Router /divisions/{id} [delete]
+// @Param id path int true "id"
+// @Param json body DeleteModel true "json"
+// @Success 204
+// @Failure 404 {object} MessageModel
 func DeleteDivision(c *fiber.Ctx) error {
 	// validate body
 	var body DeleteModel

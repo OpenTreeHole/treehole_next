@@ -2,8 +2,11 @@ package models
 
 import (
 	"fmt"
-	"github.com/rs/zerolog/log"
 	"time"
+
+	"github.com/opentreehole/go-common"
+	"github.com/rs/zerolog/log"
+
 	"treehole_next/utils"
 
 	"github.com/gofiber/fiber/v2"
@@ -103,7 +106,7 @@ func (floor *Floor) Preprocess(c *fiber.Ctx) error {
 }
 
 func (floors Floors) Preprocess(c *fiber.Ctx) error {
-	userID, err := GetUserID(c)
+	userID, err := common.GetUserID(c)
 	if err != nil {
 		return err
 	}
