@@ -435,6 +435,10 @@ func ModifyHole(c *fiber.Ctx) error {
 			if err != nil {
 				return err
 			}
+
+			if user.IsAdmin {
+				CreateAdminLog(AdminLogTypeHole, user.ID, body)
+			}
 		}
 		return nil
 	})
