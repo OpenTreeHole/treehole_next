@@ -122,6 +122,8 @@ func ModifyDivision(c *fiber.Ctx) error {
 
 	MyLog("Division", "Modify", division.ID, userID, RoleAdmin)
 
+	CreateAdminLog(AdminLogTypeDivision, userID, body)
+
 	// refresh cache. here should not use `go refreshCache`
 	err = refreshCache(c)
 	if err != nil {

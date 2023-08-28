@@ -93,6 +93,8 @@ func SendMail(c *fiber.Ctx) error {
 		return err
 	}
 
+	CreateAdminLog(AdminLogTypeMessage, user.ID, body)
+
 	return Serialize(c.Status(201), &message)
 }
 
