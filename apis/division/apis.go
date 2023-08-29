@@ -140,7 +140,7 @@ func ModifyDivision(c *fiber.Ctx) error {
 
 	MyLog("Division", "Modify", division.ID, user.ID, RoleAdmin)
 
-	CreateAdminLog(AdminLogTypeDivision, user.ID, body)
+	CreateAdminLog(DB, AdminLogTypeDivision, user.ID, body)
 
 	// refresh cache. here should not use `go refreshCache`
 	err = refreshCache(c)

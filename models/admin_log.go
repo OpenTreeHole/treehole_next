@@ -1,6 +1,9 @@
 package models
 
-import "time"
+import (
+	"gorm.io/gorm"
+	"time"
+)
 
 type AdminLog struct {
 	ID        int `gorm:"primaryKey"`
@@ -20,11 +23,11 @@ const (
 
 // CreateAdminLog
 // save admin edit log for audit purpose
-func CreateAdminLog(logType AdminLogType, userID int, data any) {
+func CreateAdminLog(tx *gorm.DB, logType AdminLogType, userID int, data any) {
 	log := AdminLog{
 		Type:   logType,
 		UserID: userID,
 		Data:   data,
 	}
-	DB.Create(&log) // omit error
+	tx.Create(&log) // omit error
 }
