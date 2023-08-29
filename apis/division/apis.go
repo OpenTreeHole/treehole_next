@@ -30,6 +30,17 @@ func AddDivision(c *fiber.Ctx) error {
 		return err
 	}
 
+	// get user
+	user, err := GetUser(c)
+	if err != nil {
+		return err
+	}
+
+	// permission check
+	if !user.IsAdmin {
+		return common.Forbidden()
+	}
+
 	// bind division
 	division := Division{
 		Name:        body.Name,
@@ -103,6 +114,18 @@ func ModifyDivision(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
+
+	// get user
+	user, err := GetUser(c)
+	if err != nil {
+		return err
+	}
+
+	// permission check
+	if !user.IsAdmin {
+		return common.Forbidden()
+	}
+
 	division := Division{
 		Name:        body.Name,
 		Description: body.Description,
@@ -114,15 +137,10 @@ func ModifyDivision(c *fiber.Ctx) error {
 	if result.RowsAffected == 0 {
 		return gorm.ErrRecordNotFound
 	}
-	// log
-	userID, err := common.GetUserID(c)
-	if err != nil {
-		return err
-	}
 
-	MyLog("Division", "Modify", division.ID, userID, RoleAdmin)
+	MyLog("Division", "Modify", division.ID, user.ID, RoleAdmin)
 
-	CreateAdminLog(AdminLogTypeDivision, userID, body)
+	CreateAdminLog(AdminLogTypeDivision, user.ID, body)
 
 	// refresh cache. here should not use `go refreshCache`
 	err = refreshCache(c)
