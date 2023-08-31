@@ -1148,6 +1148,10 @@ paths:
   /floors/search:
     get:
       parameters:
+      - default: false
+        in: query
+        name: accurate
+        type: boolean
       - default: 0
         in: query
         minimum: 0

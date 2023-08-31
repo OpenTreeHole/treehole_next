@@ -425,6 +425,12 @@ const docTemplate = `{
                 "summary": "SearchFloors In ElasticSearch",
                 "parameters": [
                     {
+                        "type": "boolean",
+                        "default": false,
+                        "name": "accurate",
+                        "in": "query"
+                    },
+                    {
                         "minimum": 0,
                         "type": "integer",
                         "default": 0,
