@@ -10,6 +10,7 @@ import (
 	"github.com/elastic/go-elasticsearch/v8/typedapi/core/update"
 	"github.com/elastic/go-elasticsearch/v8/typedapi/types"
 	"github.com/elastic/go-elasticsearch/v8/typedapi/types/enums/refresh"
+	"github.com/elastic/go-elasticsearch/v8/typedapi/types/enums/sortorder"
 	"github.com/opentreehole/go-common"
 	"github.com/rs/zerolog/log"
 
@@ -74,7 +75,14 @@ func Search(keyword string, size, offset int, accurate bool) (Floors, error) {
 	res, err := ES.Search().
 		Index(IndexName).From(offset).
 		Size(size).Query(&query).
-		Sort("_score:desc", "updated_at:desc").
+		Sort([]types.SortOptions{
+			{
+				SortOptions: map[string]types.FieldSort{
+					"_score":     {Order: &sortorder.Desc},
+					"updated_at": {Order: &sortorder.Desc},
+				},
+			},
+		}).
 		Do(context.Background())
 
 	//res, err := req.Do(context.Background(), ES)
