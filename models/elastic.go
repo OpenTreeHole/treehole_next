@@ -68,9 +68,23 @@ func Search(keyword string, size, offset int, accurate bool) (Floors, error) {
 
 	var query types.Query
 	if accurate {
-		query = types.Query{MatchPhrase: map[string]types.MatchPhraseQuery{"content": {Query: keyword}}}
+		query = types.Query{
+			DisMax: &types.DisMaxQuery{
+				Queries: []types.Query{
+					{MatchPhrase: map[string]types.MatchPhraseQuery{"content": {Query: keyword}}},
+					{MatchPhrase: map[string]types.MatchPhraseQuery{"content.ik_smart": {Query: keyword}}},
+				},
+			},
+		}
 	} else {
-		query = types.Query{Match: map[string]types.MatchQuery{"content": {Query: keyword}}}
+		query = types.Query{
+			DisMax: &types.DisMaxQuery{
+				Queries: []types.Query{
+					{Match: map[string]types.MatchQuery{"content": {Query: keyword}}},
+					{Match: map[string]types.MatchQuery{"content.ik_smart": {Query: keyword}}},
+				},
+			},
+		}
 	}
 
 	res, err := ES.Search().
