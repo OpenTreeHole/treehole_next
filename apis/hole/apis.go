@@ -367,8 +367,9 @@ func ModifyHole(c *fiber.Ctx) error {
 			var floorModels []FloorModel
 			for _, floor := range floors {
 				floorModels = append(floorModels, FloorModel{
-					ID:      floor.ID,
-					Content: floor.Content,
+					ID:        floor.ID,
+					UpdatedAt: floor.UpdatedAt,
+					Content:   floor.Content,
 				})
 			}
 			go BulkInsert(floorModels)

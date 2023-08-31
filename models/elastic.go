@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/elastic/go-elasticsearch/v8/typedapi/core/update"
 	"github.com/elastic/go-elasticsearch/v8/typedapi/types"
 	"github.com/elastic/go-elasticsearch/v8/typedapi/types/enums/refresh"
 	"github.com/elastic/go-elasticsearch/v8/typedapi/types/enums/sortorder"
@@ -213,18 +212,10 @@ func FloorIndex(floorModel FloorModel) {
 		return
 	}
 
-	data, err := json.Marshal(&floorModel)
-	if err != nil {
-		log.Err(err).Int("floor_id", floorModel.ID).Msg("floor encode error")
-		return
-	}
-
-	_, err = ES.
-		Update(IndexName, strconv.Itoa(floorModel.ID)).
-		Request(
-			&update.Request{
-				Doc: data,
-			}).
+	_, err := ES.
+		Index(IndexName).
+		Id(strconv.Itoa(floorModel.ID)).
+		Document(&floorModel).
 		Refresh(refresh.Refresh{Name: "false"}).
 		Do(context.Background())
 
