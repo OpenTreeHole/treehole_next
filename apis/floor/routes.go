@@ -7,6 +7,9 @@ import (
 )
 
 func RegisterRoutes(app fiber.Router) {
+	app.Post("/floors/search", SearchFloors)
+	app.Get("/floors/search", SearchFloors)
+
 	app.Get("/holes/:id/floors", ListFloorsInAHole)
 	app.Get("/floors", ListFloorsOld)
 	app.Get("/floors/:id", GetFloor)
@@ -21,7 +24,6 @@ func RegisterRoutes(app fiber.Router) {
 	app.Get("/floors/:id/history", GetFloorHistory)
 	app.Post("/floors/:id/restore/:floor_history_id", RestoreFloor)
 
-	app.Post("/floors/search", SearchFloors)
 	app.Post("/config/search", SearchConfig)
 	app.Get("/floors/:id/punishment", GetPunishmentHistory)
 }

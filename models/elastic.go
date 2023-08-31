@@ -3,6 +3,7 @@ package models
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
 	"time"
@@ -72,22 +73,35 @@ func Search(keyword string, size, offset int, accurate bool) (Floors, error) {
 	} else {
 		query = types.Query{Match: map[string]types.MatchQuery{"content": {Query: keyword}}}
 	}
+
 	res, err := ES.Search().
 		Index(IndexName).From(offset).
 		Size(size).Query(&query).
-		Sort([]types.SortOptions{
-			{
+		Sort(
+			types.SortOptions{
 				SortOptions: map[string]types.FieldSort{
-					"_score":     {Order: &sortorder.Desc},
-					"updated_at": {Order: &sortorder.Desc},
+					"_score": {Order: &sortorder.Desc},
 				},
 			},
-		}).
+			types.SortOptions{
+				SortOptions: map[string]types.FieldSort{
+					"updated_at": {Order: &sortorder.Desc},
+				},
+			}).
 		Do(context.Background())
 
 	//res, err := req.Do(context.Background(), ES)
 	if err != nil {
-		return nil, err
+		var errorMsg = fmt.Sprintf("error searching floors: %e", err)
+		var elasticsearchError *types.ElasticsearchError
+		if errors.As(err, &elasticsearchError) {
+			data, _ := json.Marshal(elasticsearchError)
+			log.Err(err).
+				Bytes("error_detail", data).
+				Msg("error searching floors")
+			return nil, &common.HttpError{Code: elasticsearchError.Status, Message: errorMsg}
+		}
+		return nil, common.InternalServerError(errorMsg)
 	}
 
 	// get floors

@@ -22,6 +22,7 @@ type SearchQuery struct {
 // @Tags Search
 // @Produce application/json
 // @Router /floors/search [get]
+// @Router /floors/search [post]
 // @Param object query SearchQuery true "search_query"
 // @Success 200 {array} models.Floor
 func SearchFloors(c *fiber.Ctx) error {

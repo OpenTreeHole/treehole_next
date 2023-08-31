@@ -1178,6 +1178,38 @@ paths:
       summary: SearchFloors In ElasticSearch
       tags:
       - Search
+    post:
+      parameters:
+      - default: false
+        in: query
+        name: accurate
+        type: boolean
+      - default: 0
+        in: query
+        minimum: 0
+        name: offset
+        type: integer
+      - in: query
+        name: search
+        required: true
+        type: string
+      - default: 10
+        in: query
+        minimum: 0
+        name: size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Floor'
+            type: array
+      summary: SearchFloors In ElasticSearch
+      tags:
+      - Search
   /holes:
     get:
       deprecated: true
