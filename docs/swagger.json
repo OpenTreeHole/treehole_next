@@ -417,6 +417,60 @@
                 "summary": "SearchFloors In ElasticSearch",
                 "parameters": [
                     {
+                        "type": "boolean",
+                        "default": false,
+                        "name": "accurate",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 0,
+                        "type": "integer",
+                        "default": 0,
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "name": "search",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "minimum": 0,
+                        "type": "integer",
+                        "default": 10,
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Floor"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Search"
+                ],
+                "summary": "SearchFloors In ElasticSearch",
+                "parameters": [
+                    {
+                        "type": "boolean",
+                        "default": false,
+                        "name": "accurate",
+                        "in": "query"
+                    },
+                    {
                         "minimum": 0,
                         "type": "integer",
                         "default": 0,
@@ -1042,6 +1096,44 @@
                 "responses": {
                     "204": {
                         "description": "No Content"
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.MessageModel"
+                        }
+                    }
+                }
+            }
+        },
+        "/holes/{id}/_force": {
+            "delete": {
+                "description": "Delete a hole, admin only",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Hole"
+                ],
+                "summary": "Delete A Hole",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/models.MessageModel"
+                        }
                     },
                     "404": {
                         "description": "Not Found",
@@ -1918,6 +2010,103 @@
                 }
             }
         },
+        "/users/subscription": {
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Subscription"
+                ],
+                "summary": "Delete A Subscription",
+                "parameters": [
+                    {
+                        "description": "json",
+                        "name": "json",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/subscription.DeleteModel"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/subscription.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/subscription.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/subscriptions": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Subscription"
+                ],
+                "summary": "List User's Subscriptions",
+                "parameters": [
+                    {
+                        "type": "boolean",
+                        "default": false,
+                        "name": "plain",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Hole"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Subscription"
+                ],
+                "summary": "Add A Subscription",
+                "parameters": [
+                    {
+                        "description": "json",
+                        "name": "json",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/subscription.AddModel"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/subscription.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/users/{id}/punishments": {
             "get": {
                 "produces": [
@@ -2771,6 +2960,9 @@
                 "config": {
                     "$ref": "#/definitions/models.UserConfig"
                 },
+                "has_answered_questions": {
+                    "type": "boolean"
+                },
                 "id": {
                     "description": "/ base info",
                     "type": "integer"
@@ -2884,6 +3076,36 @@
                 "RangeDealt",
                 "RangeAll"
             ]
+        },
+        "subscription.AddModel": {
+            "type": "object",
+            "properties": {
+                "hole_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "subscription.DeleteModel": {
+            "type": "object",
+            "properties": {
+                "hole_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "subscription.Response": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
         },
         "tag.CreateModel": {
             "type": "object",

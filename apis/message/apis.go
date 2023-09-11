@@ -2,6 +2,7 @@ package message
 
 import (
 	"github.com/opentreehole/go-common"
+
 	. "treehole_next/models"
 	. "treehole_next/utils"
 
@@ -22,7 +23,7 @@ func ListMessages(c *fiber.Ctx) error {
 		return err
 	}
 
-	userID, err := GetUserID(c)
+	userID, err := common.GetUserID(c)
 	if err != nil {
 		return err
 	}
@@ -92,6 +93,8 @@ func SendMail(c *fiber.Ctx) error {
 		return err
 	}
 
+	CreateAdminLog(DB, AdminLogTypeMessage, user.ID, body)
+
 	return Serialize(c.Status(201), &message)
 }
 
@@ -102,7 +105,7 @@ func SendMail(c *fiber.Ctx) error {
 // @Router /messages/clear [post]
 // @Success 204
 func ClearMessages(c *fiber.Ctx) error {
-	userID, err := GetUserID(c)
+	userID, err := common.GetUserID(c)
 	if err != nil {
 		return err
 	}
@@ -135,7 +138,7 @@ func ClearMessagesDeprecated(c *fiber.Ctx) error {
 // @Param id path int true "message id"
 // @Success 204
 func DeleteMessage(c *fiber.Ctx) error {
-	userID, err := GetUserID(c)
+	userID, err := common.GetUserID(c)
 	if err != nil {
 		return err
 	}

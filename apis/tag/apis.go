@@ -3,6 +3,7 @@ package tag
 import (
 	"github.com/opentreehole/go-common"
 	"gorm.io/plugin/dbresolver"
+
 	. "treehole_next/models"
 	. "treehole_next/utils"
 
@@ -12,12 +13,12 @@ import (
 
 // ListTags
 //
-//	@Summary	List All Tags
-//	@Tags		Tag
-//	@Produce	application/json
-//	@Param		object	query	SearchModel	false	"query"
-//	@Router		/tags [get]
-//	@Success	200	{array}	Tag
+// @Summary List All Tags
+// @Tags Tag
+// @Produce application/json
+// @Param object query SearchModel false "query"
+// @Router /tags [get]
+// @Success 200 {array} Tag
 func ListTags(c *fiber.Ctx) error {
 	var query SearchModel
 	err := common.ValidateQuery(c, &query)
@@ -48,13 +49,13 @@ func ListTags(c *fiber.Ctx) error {
 
 // GetTag
 //
-//	@Summary	Get A Tag
-//	@Tags		Tag
-//	@Produce	application/json
-//	@Router		/tags/{id} [get]
-//	@Param		id	path		int	true	"id"
-//	@Success	200	{object}	Tag
-//	@Failure	404	{object}	MessageModel
+// @Summary Get A Tag
+// @Tags Tag
+// @Produce application/json
+// @Router /tags/{id} [get]
+// @Param id path int true "id"
+// @Success 200 {object} Tag
+// @Failure 404 {object} MessageModel
 func GetTag(c *fiber.Ctx) error {
 	id, _ := c.ParamsInt("id")
 	var tag Tag
@@ -68,13 +69,13 @@ func GetTag(c *fiber.Ctx) error {
 
 // CreateTag
 //
-//	@Summary	Create A Tag
-//	@Tags		Tag
-//	@Produce	application/json
-//	@Router		/tags [post]
-//	@Param		json	body		CreateModel	true	"json"
-//	@Success	200		{object}	Tag
-//	@Success	201		{object}	Tag
+// @Summary Create A Tag
+// @Tags Tag
+// @Produce application/json
+// @Router /tags [post]
+// @Param json body CreateModel true "json"
+// @Success 200 {object} Tag
+// @Success 201 {object} Tag
 func CreateTag(c *fiber.Ctx) error {
 	// validate body
 	var tag Tag
@@ -97,14 +98,14 @@ func CreateTag(c *fiber.Ctx) error {
 
 // ModifyTag
 //
-//	@Summary	Modify A Tag
-//	@Tags		Tag
-//	@Produce	application/json
-//	@Router		/tags/{id} [put]
-//	@Param		id		path		int			true	"id"
-//	@Param		json	body		ModifyModel	true	"json"
-//	@Success	200		{object}	Tag
-//	@Failure	404		{object}	MessageModel
+// @Summary Modify A Tag
+// @Tags Tag
+// @Produce application/json
+// @Router /tags/{id} [put]
+// @Param id path int true "id"
+// @Param json body ModifyModel true "json"
+// @Success 200 {object} Tag
+// @Failure 404 {object} MessageModel
 func ModifyTag(c *fiber.Ctx) error {
 	// validate body
 	var body ModifyModel
@@ -125,7 +126,7 @@ func ModifyTag(c *fiber.Ctx) error {
 	DB.Save(&tag)
 
 	// log
-	userID, err := GetUserID(c)
+	userID, err := common.GetUserID(c)
 	if err != nil {
 		return err
 	}
@@ -135,15 +136,15 @@ func ModifyTag(c *fiber.Ctx) error {
 
 // DeleteTag
 //
-//	@Summary		Delete A Tag
-//	@Description	Delete a tag and link all of its holes to another given tag
-//	@Tags			Tag
-//	@Produce		application/json
-//	@Router			/tags/{id} [delete]
-//	@Param			id		path		int			true	"id"
-//	@Param			json	body		DeleteModel	true	"json"
-//	@Success		200		{object}	Tag
-//	@Failure		404		{object}	MessageModel
+// @Summary Delete A Tag
+// @Description Delete a tag and link all of its holes to another given tag
+// @Tags Tag
+// @Produce application/json
+// @Router /tags/{id} [delete]
+// @Param id path int true "id"
+// @Param json body DeleteModel true "json"
+// @Success 200 {object} Tag
+// @Failure 404 {object} MessageModel
 func DeleteTag(c *fiber.Ctx) error {
 	// validate body
 	var body DeleteModel
@@ -172,10 +173,10 @@ func DeleteTag(c *fiber.Ctx) error {
 
 	err = DB.Clauses(dbresolver.Write).Transaction(func(tx *gorm.DB) error {
 		result = tx.Exec(`
-			DELETE FROM hole_tags WHERE tag_id = ? AND hole_id IN
-				(SELECT a.hole_id FROM
-					(SELECT hole_id FROM hole_tags WHERE tag_id = ?)a
-			)`, id, newTag.ID)
+ DELETE FROM hole_tags WHERE tag_id = ? AND hole_id IN
+ (SELECT a.hole_id FROM
+ (SELECT hole_id FROM hole_tags WHERE tag_id = ?)a
+ )`, id, newTag.ID)
 		if result.Error != nil {
 			return result.Error
 		}
@@ -202,7 +203,7 @@ func DeleteTag(c *fiber.Ctx) error {
 	}
 
 	// log
-	userID, err := GetUserID(c)
+	userID, err := common.GetUserID(c)
 	if err != nil {
 		return err
 	}

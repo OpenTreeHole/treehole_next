@@ -2,13 +2,15 @@ package benchmarks
 
 import (
 	"bytes"
-	"github.com/goccy/go-json"
-	"github.com/hetiansu5/urlquery"
-	"github.com/stretchr/testify/assert"
 	"io"
 	"net/http"
 	"strings"
 	"testing"
+
+	"github.com/goccy/go-json"
+	"github.com/hetiansu5/urlquery"
+	"github.com/stretchr/testify/assert"
+
 	"treehole_next/bootstrap"
 	. "treehole_next/models"
 )

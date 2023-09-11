@@ -2,10 +2,12 @@ package benchmarks
 
 import (
 	"fmt"
-	"github.com/rs/zerolog/log"
-	"gorm.io/gorm/logger"
 	"math/rand"
 	"strings"
+
+	"github.com/rs/zerolog/log"
+	"gorm.io/gorm/logger"
+
 	. "treehole_next/models"
 	"treehole_next/utils"
 )

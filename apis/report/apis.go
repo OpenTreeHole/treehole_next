@@ -3,6 +3,7 @@ package report
 import (
 	"github.com/opentreehole/go-common"
 	"github.com/rs/zerolog/log"
+
 	. "treehole_next/models"
 	. "treehole_next/utils"
 
@@ -12,13 +13,13 @@ import (
 
 // GetReport
 //
-//	@Summary	Get A Report
-//	@Tags		Report
-//	@Produce	application/json
-//	@Router		/reports/{id} [get]
-//	@Param		id	path		int	true	"id"
-//	@Success	200	{object}	Report
-//	@Failure	404	{object}	MessageModel
+// @Summary Get A Report
+// @Tags Report
+// @Produce application/json
+// @Router /reports/{id} [get]
+// @Param id path int true "id"
+// @Success 200 {object} Report
+// @Failure 404 {object} MessageModel
 func GetReport(c *fiber.Ctx) error {
 	// validate query
 	reportID, err := c.ParamsInt("id")
@@ -37,13 +38,13 @@ func GetReport(c *fiber.Ctx) error {
 
 // ListReports
 //
-//	@Summary	List All Reports
-//	@Tags		Report
-//	@Produce	application/json
-//	@Router		/reports [get]
-//	@Param		object	query		ListModel	false	"query"
-//	@Success	200		{array}		Report
-//	@Failure	404		{object}	MessageModel
+// @Summary List All Reports
+// @Tags Report
+// @Produce application/json
+// @Router /reports [get]
+// @Param object query ListModel false "query"
+// @Success 200 {array} Report
+// @Failure 404 {object} MessageModel
 func ListReports(c *fiber.Ctx) error {
 	// validate query
 	var query ListModel
@@ -74,13 +75,13 @@ func ListReports(c *fiber.Ctx) error {
 
 // AddReport
 //
-//	@Summary		Add a report
-//	@Description	Add a report and send notification to admins
-//	@Tags			Report
-//	@Produce		application/json
-//	@Router			/reports [post]
-//	@Param			json	body	AddModel	true	"json"
-//	@Success		204
+// @Summary Add a report
+// @Description Add a report and send notification to admins
+// @Tags Report
+// @Produce application/json
+// @Router /reports [post]
+// @Param json body AddModel true "json"
+// @Success 204
 //
 // @Failure 400 {object} common.HttpError
 func AddReport(c *fiber.Ctx) error {
@@ -114,15 +115,15 @@ func AddReport(c *fiber.Ctx) error {
 
 // DeleteReport
 //
-//	@Summary		Deal a report
-//	@Description	Mark a report as "dealt" and send notification to reporter
-//	@Tags			Report
-//	@Produce		application/json
-//	@Router			/reports/{id} [delete]
-//	@Param			id		path		int			true	"id"
-//	@Param			json	body		DeleteModel	true	"json"
-//	@Success		200		{object}	Report
-//	@Failure		400		{object}	common.HttpError
+// @Summary Deal a report
+// @Description Mark a report as "dealt" and send notification to reporter
+// @Tags Report
+// @Produce application/json
+// @Router /reports/{id} [delete]
+// @Param id path int true "id"
+// @Param json body DeleteModel true "json"
+// @Success 200 {object} Report
+// @Failure 400 {object} common.HttpError
 func DeleteReport(c *fiber.Ctx) error {
 	// validate query
 	reportID, err := c.ParamsInt("id")
@@ -138,7 +139,7 @@ func DeleteReport(c *fiber.Ctx) error {
 	}
 
 	// get user id
-	userID, err := GetUserID(c)
+	userID, err := common.GetUserID(c)
 	if err != nil {
 		return err
 	}

@@ -2,7 +2,10 @@ package bootstrap
 
 import (
 	"context"
+
+	"github.com/gofiber/fiber/v2"
 	"github.com/opentreehole/go-common"
+
 	"treehole_next/apis"
 	"treehole_next/apis/hole"
 	"treehole_next/apis/message"
@@ -11,7 +14,6 @@ import (
 	"treehole_next/utils"
 
 	"github.com/goccy/go-json"
-	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/pprof"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 )
@@ -42,6 +44,7 @@ func registerMiddlewares(app *fiber.App) {
 		app.Use(common.MiddlewareCustomLogger)
 	}
 	app.Use(pprof.New())
+
 }
 
 func startTasks() context.CancelFunc {
