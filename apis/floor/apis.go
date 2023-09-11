@@ -170,6 +170,11 @@ func CreateFloor(c *fiber.Ctx) error {
 		return common.Forbidden("该帖子已被锁定，非管理员禁止发帖")
 	}
 
+	// special tag
+	if body.SpecialTag != "" && !user.IsAdmin {
+		return common.Forbidden("非管理员禁止发含有特殊标签的帖")
+	}
+
 	// create floor
 	floor := Floor{
 		HoleID:     holeID,

@@ -233,6 +233,11 @@ func CreateHole(c *fiber.Ctx) error {
 		return common.Forbidden(user.BanDivisionMessage(divisionID))
 	}
 
+	// special tag
+	if body.SpecialTag != "" && !user.IsAdmin {
+		return common.Forbidden("非管理员禁止创建特殊标签")
+	}
+
 	hole := Hole{
 		Floors:     Floors{{UserID: user.ID, Content: body.Content, SpecialTag: body.SpecialTag, IsMe: true}},
 		UserID:     user.ID,
