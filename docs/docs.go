@@ -1406,6 +1406,36 @@ const docTemplate = `{
                 }
             }
         },
+        "/reports/ban/{id}": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Report"
+                ],
+                "summary": "Ban reporter of a report",
+                "parameters": [
+                    {
+                        "description": "json",
+                        "name": "json",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/report.banBody"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/models.User"
+                        }
+                    }
+                }
+            }
+        },
         "/reports/{id}": {
             "get": {
                 "produces": [
@@ -3084,6 +3114,19 @@ const docTemplate = `{
                 "RangeDealt",
                 "RangeAll"
             ]
+        },
+        "report.banBody": {
+            "type": "object",
+            "properties": {
+                "days": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "reason": {
+                    "description": "optional",
+                    "type": "string"
+                }
+            }
         },
         "subscription.AddModel": {
             "type": "object",

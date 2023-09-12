@@ -7,4 +7,6 @@ func RegisterRoutes(app fiber.Router) {
 	app.Get("/reports", ListReports)
 	app.Post("/reports", AddReport)
 	app.Delete("/reports/:id", DeleteReport)
+
+	app.Post("/reports/ban/:id", BanReporter)
 }

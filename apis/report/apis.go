@@ -92,6 +92,18 @@ func AddReport(c *fiber.Ctx) error {
 		return err
 	}
 
+	user, err := GetUser(c)
+	if err != nil {
+		if err != nil {
+			return err
+		}
+	}
+
+	// permission
+	if user.BanReport != nil {
+		return common.Forbidden(user.BanReportMessage())
+	}
+
 	// add report
 	report := Report{
 		FloorID: body.FloorID,
