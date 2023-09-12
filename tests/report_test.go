@@ -1,9 +1,11 @@
 package tests
 
 import (
-	"github.com/rs/zerolog/log"
 	"strconv"
 	"testing"
+
+	"github.com/rs/zerolog/log"
+
 	. "treehole_next/models"
 
 	"github.com/stretchr/testify/assert"

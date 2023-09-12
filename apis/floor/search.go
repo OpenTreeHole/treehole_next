@@ -3,25 +3,28 @@ package floor
 import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/opentreehole/go-common"
+
 	. "treehole_next/config"
 	. "treehole_next/models"
 	. "treehole_next/utils"
 )
 
 type SearchQuery struct {
-	Search string `json:"search" query:"search" validate:"required"`
-	Size   int    `json:"size" query:"size" validate:"min=0" default:"10"`
-	Offset int    `json:"offset" query:"offset" validate:"min=0" default:"0"`
+	Search   string `json:"search" query:"search" validate:"required"`
+	Size     int    `json:"size" query:"size" validate:"min=0" default:"10"`
+	Offset   int    `json:"offset" query:"offset" validate:"min=0" default:"0"`
+	Accurate bool   `json:"accurate" query:"accurate" default:"false"`
 }
 
 // SearchFloors
 //
-//	@Summary	SearchFloors In ElasticSearch
-//	@Tags		Search
-//	@Produce	application/json
-//	@Router		/floors/search [get]
-//	@Param		object	query	SearchQuery	true	"search_query"
-//	@Success	200		{array}	models.Floor
+// @Summary SearchFloors In ElasticSearch
+// @Tags Search
+// @Produce application/json
+// @Router /floors/search [get]
+// @Router /floors/search [post]
+// @Param object query SearchQuery true "search_query"
+// @Success 200 {array} models.Floor
 func SearchFloors(c *fiber.Ctx) error {
 	var query SearchQuery
 	err := common.ValidateQuery(c, &query)
@@ -29,7 +32,7 @@ func SearchFloors(c *fiber.Ctx) error {
 		return err
 	}
 
-	floors, err := Search(query.Search, query.Size, query.Offset)
+	floors, err := Search(query.Search, query.Size, query.Offset, query.Accurate)
 	if err != nil {
 		return err
 	}
@@ -39,12 +42,12 @@ func SearchFloors(c *fiber.Ctx) error {
 
 // SearchConfig
 //
-//	@Summary	change search config
-//	@Tags		Search
-//	@Produce	application/json
-//	@Router		/config/search [post]
-//	@Param		json	body		SearchConfigModel	true	"json"
-//	@Success	200		{object}	Map
+// @Summary change search config
+// @Tags Search
+// @Produce application/json
+// @Router /config/search [post]
+// @Param json body SearchConfigModel true "json"
+// @Success 200 {object} Map
 func SearchConfig(c *fiber.Ctx) error {
 	var body SearchConfigModel
 	err := c.BodyParser(&body)
@@ -71,7 +74,7 @@ func SearchFloorsOld(c *fiber.Ctx, query *ListOldModel) error {
 		return common.Forbidden("树洞流量激增，搜索功能暂缓开放")
 	}
 
-	floors, err := Search(query.Search, query.Size, query.Offset)
+	floors, err := Search(query.Search, query.Size, query.Offset, false)
 	if err != nil {
 		return err
 	}

@@ -17,9 +17,10 @@ import (
 
 type Hole struct {
 	/// saved fields
-	ID        int       `json:"id" gorm:"primaryKey"`
-	CreatedAt time.Time `json:"time_created" gorm:"not null;index:idx_hole_div_cre,priority:2,sort:desc"`
-	UpdatedAt time.Time `json:"time_updated" gorm:"not null;index:idx_hole_div_upd,priority:2,sort:desc"`
+	ID        int            `json:"id" gorm:"primaryKey"`
+	CreatedAt time.Time      `json:"time_created" gorm:"not null;index:idx_hole_div_cre,priority:2,sort:desc"`
+	UpdatedAt time.Time      `json:"time_updated" gorm:"not null;index:idx_hole_div_upd,priority:2,sort:desc"`
+	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
 
 	/// base info
 
@@ -332,13 +333,7 @@ func (hole *Hole) Create(tx *gorm.DB, user *User, tagNames []string) (err error)
 		}
 
 		// Create floor, set floor_mention association in AfterCreate hook
-		err = tx.Omit(clause.Associations).Create(&hole.Floors[0]).Error
-		if err != nil {
-			return err
-		}
-
-		// Create Favorite
-		return AddUserFavourite(tx, hole.UserID, hole.ID)
+		return tx.Omit(clause.Associations).Create(&hole.Floors[0]).Error
 	})
 	// transaction commit here
 	if err != nil {

@@ -1,19 +1,17 @@
 package models
 
 import (
-	"encoding/base64"
 	"errors"
 	"fmt"
-	"github.com/goccy/go-json"
+	"time"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/opentreehole/go-common"
 	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"gorm.io/plugin/dbresolver"
-	"strconv"
-	"strings"
-	"time"
+
 	"treehole_next/config"
 )
 
@@ -69,9 +67,10 @@ type User struct {
 	} `json:"permission" gorm:"-:all"`
 
 	// get from jwt
-	IsAdmin    bool      `json:"is_admin" gorm:"-:all"`
-	JoinedTime time.Time `json:"joined_time" gorm:"-:all"`
-	Nickname   string    `json:"nickname" gorm:"-:all"`
+	IsAdmin              bool      `json:"is_admin" gorm:"-:all"`
+	JoinedTime           time.Time `json:"joined_time" gorm:"-:all"`
+	Nickname             string    `json:"nickname" gorm:"-:all"`
+	HasAnsweredQuestions bool      `json:"has_answered_questions" gorm:"-:all"`
 }
 
 type Users []*User
@@ -104,31 +103,6 @@ func (user *User) AfterFind(_ *gorm.DB) error {
 	return nil
 }
 
-// parseJWT extracts and parse token
-func (user *User) parseJWT(token string) error {
-	if len(token) < 7 {
-		return errors.New("bearer token required")
-	}
-
-	payloads := strings.SplitN(token[7:], ".", 3) // extract "Bearer "
-	if len(payloads) < 3 {
-		return errors.New("jwt token required")
-	}
-
-	// jwt encoding ignores padding, so RawStdEncoding should be used instead of StdEncoding
-	payloadBytes, err := base64.RawStdEncoding.DecodeString(payloads[1]) // the middle one is payload
-	if err != nil {
-		return err
-	}
-
-	err = json.Unmarshal(payloadBytes, user)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
 var (
 	maxTime time.Time
 	minTime time.Time
@@ -150,6 +124,7 @@ func GetUser(c *fiber.Ctx) (*User, error) {
 	if config.Config.Mode == "dev" || config.Config.Mode == "test" {
 		user.ID = 1
 		user.IsAdmin = true
+		user.HasAnsweredQuestions = true
 		return user, nil
 	}
 
@@ -158,19 +133,15 @@ func GetUser(c *fiber.Ctx) (*User, error) {
 	}
 
 	// get id
-	userID, err := GetUserID(c)
+	userID, err := common.GetUserID(c)
 	if err != nil {
 		return nil, err
 	}
 
-	// parse JWT first
-	tokenString := c.Get("Authorization")
-	if tokenString == "" { // token can be in either header or cookie
-		tokenString = c.Cookies("access")
-	}
-	err = user.parseJWT(tokenString)
+	// parse JWT
+	err = common.ParseJWTToken(common.GetJWTToken(c), user)
 	if err != nil {
-		return nil, common.Unauthorized(err.Error())
+		return nil, err
 	}
 
 	// load user from database in transaction
@@ -188,19 +159,6 @@ func GetUser(c *fiber.Ctx) (*User, error) {
 	c.Locals("user", user)
 
 	return user, err
-}
-
-func GetUserID(c *fiber.Ctx) (int, error) {
-	if config.Config.Mode == "dev" || config.Config.Mode == "test" {
-		return 1, nil
-	}
-
-	id, err := strconv.Atoi(c.Get("X-Consumer-Username"))
-	if err != nil {
-		return 0, common.Unauthorized("Unauthorized")
-	}
-
-	return id, nil
 }
 
 func (user *User) LoadUserByID(userID int) error {
@@ -252,6 +210,8 @@ func (user *User) BanDivisionMessage(divisionID int) string {
 	if user.BanDivision[divisionID] == nil {
 		return fmt.Sprintf("您在此板块已被禁言")
 	} else {
-		return fmt.Sprintf("您在此板块已被禁言，解封时间：%s", user.BanDivision[divisionID].Format("2006-01-02 15:04:05"))
+		return fmt.Sprintf(
+			"您在此板块已被禁言，解封时间：%s",
+			user.BanDivision[divisionID].Format("2006-01-02 15:04:05"))
 	}
 }

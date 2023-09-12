@@ -6,31 +6,34 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/opentreehole/go-common"
+	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"gorm.io/plugin/dbresolver"
 
 	. "treehole_next/models"
+	"treehole_next/utils"
 	. "treehole_next/utils"
 )
 
 // ListHolesByDivision
 //
-//	@Summary	List Holes In A Division
-//	@Tags		Hole
-//	@Produce	json
-//	@Router		/divisions/{division_id}/holes [get]
-//	@Param		division_id	path		int			true	"division_id"
-//	@Param		object		query		QueryTime	false	"query"
-//	@Success	200			{array}		Hole
-//	@Failure	404			{object}	MessageModel
-//	@Failure	500			{object}	MessageModel
+// @Summary List Holes In A Division
+// @Tags Hole
+// @Produce json
+// @Router /divisions/{division_id}/holes [get]
+// @Param division_id path int true "division_id"
+// @Param object query QueryTime false "query"
+// @Success 200 {array} Hole
+// @Failure 404 {object} MessageModel
+// @Failure 500 {object} MessageModel
 func ListHolesByDivision(c *fiber.Ctx) error {
 	var query QueryTime
 	err := common.ValidateQuery(c, &query)
 	if err != nil {
 		return err
 	}
+
 	id, err := c.ParamsInt("id")
 	if err != nil {
 		return err
@@ -52,14 +55,14 @@ func ListHolesByDivision(c *fiber.Ctx) error {
 
 // ListHolesByTag
 //
-//	@Summary	List Holes By Tag
-//	@Tags		Hole
-//	@Produce	json
-//	@Router		/tags/{tag_name}/holes [get]
-//	@Param		tag_name	path		string		true	"tag_name"
-//	@Param		object		query		QueryTime	false	"query"
-//	@Success	200			{array}		Hole
-//	@Failure	404			{object}	MessageModel
+// @Summary List Holes By Tag
+// @Tags Hole
+// @Produce json
+// @Router /tags/{tag_name}/holes [get]
+// @Param tag_name path string true "tag_name"
+// @Param object query QueryTime false "query"
+// @Success 200 {array} Hole
+// @Failure 404 {object} MessageModel
 func ListHolesByTag(c *fiber.Ctx) error {
 	var query QueryTime
 	err := common.ValidateQuery(c, &query)
@@ -92,19 +95,19 @@ func ListHolesByTag(c *fiber.Ctx) error {
 
 // ListHolesByMe
 //
-//	@Summary	List a Hole Created By User
-//	@Tags		Hole
-//	@Produce	json
-//	@Router		/users/me/holes [get]
-//	@Param		object		query		QueryTime	false	"query"
-//	@Success	200			{array}		Hole
+// @Summary List a Hole Created By User
+// @Tags Hole
+// @Produce json
+// @Router /users/me/holes [get]
+// @Param object query QueryTime false "query"
+// @Success 200 {array} Hole
 func ListHolesByMe(c *fiber.Ctx) error {
 	var query QueryTime
 	err := common.ValidateQuery(c, &query)
 	if err != nil {
 		return err
 	}
-	userID, err := GetUserID(c)
+	userID, err := common.GetUserID(c)
 	if err != nil {
 		return err
 	}
@@ -123,13 +126,13 @@ func ListHolesByMe(c *fiber.Ctx) error {
 
 // ListHolesOld
 //
-//	@Summary	Old API for Listing Holes
-//	@Deprecated
-//	@Tags		Hole
-//	@Produce	json
-//	@Router		/holes [get]
-//	@Param		object	query	ListOldModel	false	"query"
-//	@Success	200		{array}	Hole
+// @Summary Old API for Listing Holes
+// @Deprecated
+// @Tags Hole
+// @Produce json
+// @Router /holes [get]
+// @Param object query ListOldModel false "query"
+// @Success 200 {array} Hole
 func ListHolesOld(c *fiber.Ctx) error {
 	var query ListOldModel
 	err := common.ValidateQuery(c, &query)
@@ -172,13 +175,13 @@ func ListHolesOld(c *fiber.Ctx) error {
 
 // GetHole
 //
-//	@Summary	Get A Hole
-//	@Tags		Hole
-//	@Produce	application/json
-//	@Router		/holes/{id} [get]
-//	@Param		id	path		int	true	"id"
-//	@Success	200	{object}	Hole
-//	@Failure	404	{object}	MessageModel
+// @Summary Get A Hole
+// @Tags Hole
+// @Produce application/json
+// @Router /holes/{id} [get]
+// @Param id path int true "id"
+// @Success 200 {object} Hole
+// @Failure 404 {object} MessageModel
 func GetHole(c *fiber.Ctx) error {
 	id, _ := c.ParamsInt("id")
 
@@ -194,14 +197,14 @@ func GetHole(c *fiber.Ctx) error {
 
 // CreateHole
 //
-//	@Summary		Create A Hole
-//	@Description	Create a hole, create tags and floor binding to it and set the name mapping
-//	@Tags			Hole
-//	@Produce		application/json
-//	@Router			/divisions/{division_id}/holes [post]
-//	@Param			division_id	path		int			true	"division id"
-//	@Param			json		body		CreateModel	true	"json"
-//	@Success		201			{object}	Hole
+// @Summary Create A Hole
+// @Description Create a hole, create tags and floor binding to it and set the name mapping
+// @Tags Hole
+// @Produce application/json
+// @Router /divisions/{division_id}/holes [post]
+// @Param division_id path int true "division id"
+// @Param json body CreateModel true "json"
+// @Success 201 {object} Hole
 func CreateHole(c *fiber.Ctx) error {
 	// validate body
 	var body CreateModel
@@ -245,13 +248,13 @@ func CreateHole(c *fiber.Ctx) error {
 
 // CreateHoleOld
 //
-//	@Summary	Old API for Creating A Hole
-//	@Deprecated
-//	@Tags		Hole
-//	@Produce	application/json
-//	@Router		/holes [post]
-//	@Param		json	body		CreateOldModel	true	"json"
-//	@Success	201		{object}	CreateOldResponse
+// @Summary Old API for Creating A Hole
+// @Deprecated
+// @Tags Hole
+// @Produce application/json
+// @Router /holes [post]
+// @Param json body CreateOldModel true "json"
+// @Success 201 {object} CreateOldResponse
 func CreateHoleOld(c *fiber.Ctx) error {
 	// validate body
 	var body CreateOldModel
@@ -364,8 +367,9 @@ func ModifyHole(c *fiber.Ctx) error {
 			var floorModels []FloorModel
 			for _, floor := range floors {
 				floorModels = append(floorModels, FloorModel{
-					ID:      floor.ID,
-					Content: floor.Content,
+					ID:        floor.ID,
+					UpdatedAt: floor.UpdatedAt,
+					Content:   floor.Content,
 				})
 			}
 			go BulkInsert(floorModels)
@@ -432,6 +436,10 @@ func ModifyHole(c *fiber.Ctx) error {
 			if err != nil {
 				return err
 			}
+
+			if user.IsAdmin {
+				CreateAdminLog(tx, AdminLogTypeHole, user.ID, body)
+			}
 		}
 		return nil
 	})
@@ -450,17 +458,17 @@ func ModifyHole(c *fiber.Ctx) error {
 	return c.JSON(&hole)
 }
 
-// DeleteHole
+// HideHole
 //
-//	@Summary		Delete A Hole
-//	@Description	Hide a hole, but visible to admins. This may affect many floors, DO NOT ABUSE!!!
-//	@Tags			Hole
-//	@Produce		application/json
-//	@Router			/holes/{id} [delete]
-//	@Param			id	path	int	true	"id"
-//	@Success		204
-//	@Failure		404	{object}	MessageModel
-func DeleteHole(c *fiber.Ctx) error {
+// @Summary Delete A Hole
+// @Description Hide a hole, but visible to admins. This may affect many floors, DO NOT ABUSE!!!
+// @Tags Hole
+// @Produce application/json
+// @Router /holes/{id} [delete]
+// @Param id path int true "id"
+// @Success 204
+// @Failure 404 {object} MessageModel
+func HideHole(c *fiber.Ctx) error {
 	// validate holeID
 	holeID, err := c.ParamsInt("id")
 	if err != nil {
@@ -486,9 +494,10 @@ func DeleteHole(c *fiber.Ctx) error {
 	}
 
 	// log
-	MyLog("Hole", "Delete", holeID, user.ID, RoleAdmin)
+	MyLog("Hole", "Hide", holeID, user.ID, RoleAdmin)
 
 	// find hole and update cache
+
 	err = DB.Take(&hole).Error
 	if err != nil {
 		return err
@@ -510,14 +519,14 @@ func DeleteHole(c *fiber.Ctx) error {
 
 // PatchHole
 //
-//	@Summary		Patch A Hole
-//	@Description	Add hole.view
-//	@Tags			Hole
-//	@Produce		application/json
-//	@Router			/holes/{id} [patch]
-//	@Param			id	path	int	true	"id"
-//	@Success		204
-//	@Failure		404	{object}	MessageModel
+// @Summary Patch A Hole
+// @Description Add hole.view
+// @Tags Hole
+// @Produce application/json
+// @Router /holes/{id} [patch]
+// @Param id path int true "id"
+// @Success 204
+// @Failure 404 {object} MessageModel
 func PatchHole(c *fiber.Ctx) error {
 	holeID, err := c.ParamsInt("id")
 	if err != nil {
@@ -525,6 +534,69 @@ func PatchHole(c *fiber.Ctx) error {
 	}
 
 	holeViewsChan <- holeID
+
+	return c.Status(204).JSON(nil)
+}
+
+// DeleteHole godoc
+//
+// @Summary Delete A Hole
+// @Description Delete a hole, admin only
+// @Tags Hole
+// @Produce json
+// @Router /holes/{id}/_force [delete]
+// @Param id path int true "id"
+// @Success 204
+// @Failure 401 {object} MessageModel "Unauthorized"
+// @Failure 404 {object} MessageModel "Not Found"
+func DeleteHole(c *fiber.Ctx) error {
+	holeID, err := c.ParamsInt("id")
+	if err != nil {
+		return err
+	}
+
+	user, err := GetUser(c)
+	if err != nil {
+		return err
+	}
+
+	var userType Role = RoleOwner
+
+	if user.IsAdmin {
+		userType = RoleAdmin
+	}
+
+	var hole Hole
+	err = DB.Take(&hole, holeID).Error
+
+	if hole.UserID != user.UserID && !user.IsAdmin {
+		return common.Forbidden()
+	}
+
+	result := DB.Where("hole_id = ? ", holeID).Delete(&hole)
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+
+	MyLog("Hole", "Delete", holeID, user.ID, userType)
+
+	err = utils.DeleteCache(hole.CacheName())
+	if err != nil {
+		log.Err(err).Msg("DeleteHole: delete cache")
+	}
+
+	// delete floors from Elasticsearch
+	var floors Floors
+	err = DB.Where("hole_id = ?", hole.ID).Find(&floors).Error
+	if err != nil {
+		return err
+	}
+	go BulkDelete(Models2IDSlice(floors))
+
+	err = DeleteCache("divisions")
+	if err != nil {
+		log.Err(err).Msg("DeleteHole: delete cache divisions")
+	}
 
 	return c.Status(204).JSON(nil)
 }

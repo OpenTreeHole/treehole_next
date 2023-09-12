@@ -1,9 +1,13 @@
 package utils
 
 import (
-	"github.com/gofiber/fiber/v2"
-	"golang.org/x/exp/constraints"
 	"strconv"
+
+	"github.com/gofiber/fiber/v2"
+	"github.com/opentreehole/go-common"
+	"golang.org/x/exp/constraints"
+
+	"treehole_next/config"
 )
 
 type CanPreprocess interface {
@@ -47,4 +51,24 @@ func Min[T constraints.Ordered](x T, y T) T {
 
 func StripContent(content string, contentMaxSize int) string {
 	return string([]rune(content)[:Min(len([]rune(content)), contentMaxSize)])
+}
+
+func MiddlewareHasAnsweredQuestions(c *fiber.Ctx) error {
+	if config.Config.Mode == "test" || config.Config.Mode == "bench" {
+		return c.Next()
+	}
+	var user struct {
+		HasAnsweredQuestions bool `json:"has_answered_questions"`
+	}
+	err := common.ParseJWTToken(common.GetJWTToken(c), &user)
+	if err != nil {
+		return err
+	}
+	if !user.HasAnsweredQuestions {
+		return &common.HttpError{
+			Code:    ErrCodeNotAnsweredQuestions,
+			Message: "请先通过注册答题",
+		}
+	}
+	return c.Next()
 }

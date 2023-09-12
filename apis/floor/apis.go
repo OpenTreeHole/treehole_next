@@ -2,9 +2,11 @@ package floor
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/opentreehole/go-common"
 	"github.com/rs/zerolog/log"
-	"time"
+
 	. "treehole_next/models"
 	. "treehole_next/utils"
 
@@ -16,13 +18,13 @@ import (
 
 // ListFloorsInAHole
 //
-//	@Summary	List Floors In A Hole
-//	@Tags		Floor
-//	@Produce	application/json
-//	@Router		/holes/{hole_id}/floors [get]
-//	@Param		hole_id	path	int			true	"hole id"
-//	@Param		object	query	ListModel	false	"query"
-//	@Success	200		{array}	Floor
+// @Summary List Floors In A Hole
+// @Tags Floor
+// @Produce application/json
+// @Router /holes/{hole_id}/floors [get]
+// @Param hole_id path int true "hole id"
+// @Param object query ListModel false "query"
+// @Success 200 {array} Floor
 func ListFloorsInAHole(c *fiber.Ctx) error {
 	// validate
 	holeID, err := c.ParamsInt("id")
@@ -52,13 +54,13 @@ func ListFloorsInAHole(c *fiber.Ctx) error {
 
 // ListFloorsOld
 //
-//	@Summary	Old API for Listing Floors
-//	@Deprecated
-//	@Tags		Floor
-//	@Produce	application/json
-//	@Router		/floors [get]
-//	@Param		object	query	ListOldModel	false	"query"
-//	@Success	200		{array}	Floor
+// @Summary Old API for Listing Floors
+// @Deprecated
+// @Tags Floor
+// @Produce application/json
+// @Router /floors [get]
+// @Param object query ListOldModel false "query"
+// @Success 200 {array} Floor
 func ListFloorsOld(c *fiber.Ctx) error {
 	// validate
 	var query ListOldModel
@@ -96,13 +98,13 @@ func ListFloorsOld(c *fiber.Ctx) error {
 
 // GetFloor
 //
-//	@Summary	Get A Floor
-//	@Tags		Floor
-//	@Produce	application/json
-//	@Router		/floors/{id} [get]
-//	@Param		id	path		int	true	"id"
-//	@Success	200	{object}	Floor
-//	@Failure	404	{object}	MessageModel
+// @Summary Get A Floor
+// @Tags Floor
+// @Produce application/json
+// @Router /floors/{id} [get]
+// @Param id path int true "id"
+// @Success 200 {object} Floor
+// @Failure 404 {object} MessageModel
 func GetFloor(c *fiber.Ctx) error {
 	// validate floor id
 	floorID, err := c.ParamsInt("id")
@@ -122,13 +124,13 @@ func GetFloor(c *fiber.Ctx) error {
 
 // CreateFloor
 //
-//	@Summary	Create A Floor
-//	@Tags		Floor
-//	@Produce	application/json
-//	@Router		/holes/{hole_id}/floors [post]
-//	@Param		hole_id	path		int			true	"hole id"
-//	@Param		json	body		CreateModel	true	"json"
-//	@Success	201		{object}	Floor
+// @Summary Create A Floor
+// @Tags Floor
+// @Produce application/json
+// @Router /holes/{hole_id}/floors [post]
+// @Param hole_id path int true "hole id"
+// @Param json body CreateModel true "json"
+// @Success 201 {object} Floor
 func CreateFloor(c *fiber.Ctx) error {
 	var body CreateModel
 	err := common.ValidateBody(c, &body)
@@ -187,13 +189,13 @@ func CreateFloor(c *fiber.Ctx) error {
 
 // CreateFloorOld
 //
-//	@Summary	Old API for Creating A Floor
-//	@Deprecated
-//	@Tags		Floor
-//	@Produce	application/json
-//	@Router		/floors [post]
-//	@Param		json	body		CreateOldModel	true	"json"
-//	@Success	201		{object}	CreateOldResponse
+// @Summary Old API for Creating A Floor
+// @Deprecated
+// @Tags Floor
+// @Produce application/json
+// @Router /floors [post]
+// @Param json body CreateOldModel true "json"
+// @Success 201 {object} CreateOldResponse
 func CreateFloorOld(c *fiber.Ctx) error {
 	var body CreateOldModel
 	err := common.ValidateBody(c, &body)
@@ -248,15 +250,15 @@ func CreateFloorOld(c *fiber.Ctx) error {
 
 // ModifyFloor
 //
-//	@Summary		Modify A Floor
-//	@Description	when both "fold_v2" and "fold" are empty, reset fold; else, "fold_v2" has the priority
-//	@Tags			Floor
-//	@Produce		application/json
-//	@Router			/floors/{id} [put]
-//	@Param			id		path		int			true	"id"
-//	@Param			json	body		ModifyModel	true	"json"
-//	@Success		200		{object}	Floor
-//	@Failure		404		{object}	MessageModel
+// @Summary Modify A Floor
+// @Description when both "fold_v2" and "fold" are empty, reset fold; else, "fold_v2" has the priority
+// @Tags Floor
+// @Produce application/json
+// @Router /floors/{id} [put]
+// @Param id path int true "id"
+// @Param json body ModifyModel true "json"
+// @Success 200 {object} Floor
+// @Failure 404 {object} MessageModel
 func ModifyFloor(c *fiber.Ctx) error {
 	// validate request body
 	var body ModifyModel
@@ -412,14 +414,14 @@ func ModifyFloor(c *fiber.Ctx) error {
 
 // ModifyFloorLike
 //
-//	@Summary	Modify A Floor's like
-//	@Tags		Floor
-//	@Produce	application/json
-//	@Router		/floors/{id}/like/{like} [post]
-//	@Param		id		path		int	true	"id"
-//	@Param		like	path		int	true	"1 is like, 0 is reset, -1 is dislike"
-//	@Success	200		{object}	Floor
-//	@Failure	404		{object}	MessageModel
+// @Summary Modify A Floor's like
+// @Tags Floor
+// @Produce application/json
+// @Router /floors/{id}/like/{like} [post]
+// @Param id path int true "id"
+// @Param like path int true "1 is like, 0 is reset, -1 is dislike"
+// @Success 200 {object} Floor
+// @Failure 404 {object} MessageModel
 func ModifyFloorLike(c *fiber.Ctx) error {
 	// validate like option
 	likeOption, err := c.ParamsInt("like")
@@ -438,7 +440,7 @@ func ModifyFloorLike(c *fiber.Ctx) error {
 		return err
 	}
 
-	userID, err := GetUserID(c)
+	userID, err := common.GetUserID(c)
 	if err != nil {
 		return err
 	}
@@ -468,14 +470,14 @@ func ModifyFloorLike(c *fiber.Ctx) error {
 
 // DeleteFloor
 //
-//	@Summary	Delete A Floor
-//	@Tags		Floor
-//	@Produce	application/json
-//	@Router		/floors/{id} [delete]
-//	@Param		id		path		int			true	"id"
-//	@Param		json	body		DeleteModel	true	"json"
-//	@Success	200		{object}	Floor
-//	@Failure	404		{object}	MessageModel
+// @Summary Delete A Floor
+// @Tags Floor
+// @Produce application/json
+// @Router /floors/{id} [delete]
+// @Param id path int true "id"
+// @Param json body DeleteModel true "json"
+// @Success 200 {object} Floor
+// @Failure 404 {object} MessageModel
 func DeleteFloor(c *fiber.Ctx) error {
 	// validate body
 	var body DeleteModel
@@ -542,13 +544,13 @@ func DeleteFloor(c *fiber.Ctx) error {
 
 // ListReplyFloors
 //
-//	@Summary	List User's Reply Floors
-//	@Tags		Floor
-//	@Produce	application/json
-//	@Router		/users/me/floors [get]
-//	@Param		object	query		ListModel	false	"query"
-//	@Success	200		{array}		Floor
-//	@Failure	404		{object}	MessageModel
+// @Summary List User's Reply Floors
+// @Tags Floor
+// @Produce application/json
+// @Router /users/me/floors [get]
+// @Param object query ListModel false "query"
+// @Success 200 {array} Floor
+// @Failure 404 {object} MessageModel
 func ListReplyFloors(c *fiber.Ctx) error {
 	//get userID
 	userID, err := common.GetUserID(c)
@@ -580,13 +582,13 @@ func ListReplyFloors(c *fiber.Ctx) error {
 
 // GetFloorHistory
 //
-//	@Summary	Get A Floor's History, admin only
-//	@Tags		Floor
-//	@Produce	application/json
-//	@Router		/floors/{id}/history [get]
-//	@Param		id	path		int	true	"id"
-//	@Success	200	{array}		FloorHistory
-//	@Failure	404	{object}	MessageModel
+// @Summary Get A Floor's History, admin only
+// @Tags Floor
+// @Produce application/json
+// @Router /floors/{id}/history [get]
+// @Param id path int true "id"
+// @Success 200 {array} FloorHistory
+// @Failure 404 {object} MessageModel
 func GetFloorHistory(c *fiber.Ctx) error {
 	floorID, err := c.ParamsInt("id")
 	if err != nil {
@@ -614,15 +616,15 @@ func GetFloorHistory(c *fiber.Ctx) error {
 
 // RestoreFloor
 //
-//	@Summary		Restore A Floor, admin only
-//	@Description	Restore A Floor From A History Version
-//	@Tags			Floor
-//	@Router			/floors/{id}/restore/{floor_history_id} [post]
-//	@Param			id					path		int				true	"id"
-//	@Param			floor_history_id	path		int				true	"floor_history_id"
-//	@Param			json				body		RestoreModel	true	"json"
-//	@Success		200					{object}	Floor
-//	@Failure		404					{object}	MessageModel
+// @Summary Restore A Floor, admin only
+// @Description Restore A Floor From A History Version
+// @Tags Floor
+// @Router /floors/{id}/restore/{floor_history_id} [post]
+// @Param id path int true "id"
+// @Param floor_history_id path int true "floor_history_id"
+// @Param json body RestoreModel true "json"
+// @Success 200 {object} Floor
+// @Failure 404 {object} MessageModel
 func RestoreFloor(c *fiber.Ctx) error {
 	// validate body
 	var body RestoreModel
@@ -687,13 +689,13 @@ func RestoreFloor(c *fiber.Ctx) error {
 
 // GetPunishmentHistory
 //
-//	@Summary	Get A Floor's Punishment History, admin only
-//	@Tags		Floor
-//	@Produce	application/json
-//	@Router		/floors/{id}/punishment [get]
-//	@Param		id	path		int	true	"id"
-//	@Success	200	{array}		string
-//	@Failure	404	{object}	MessageModel
+// @Summary Get A Floor's Punishment History, admin only
+// @Tags Floor
+// @Produce application/json
+// @Router /floors/{id}/punishment [get]
+// @Param id path int true "id"
+// @Success 200 {array} string
+// @Failure 404 {object} MessageModel
 func GetPunishmentHistory(c *fiber.Ctx) error {
 	floorID, err := c.ParamsInt("id")
 	if err != nil {
@@ -723,10 +725,10 @@ func GetPunishmentHistory(c *fiber.Ctx) error {
 	punishments := make([]string, 0, 10)
 	err = DB.Raw(
 		`SELECT floor.content 
-			FROM floor JOIN floor_history ON floor.id = floor_history.floor_id 
-			WHERE floor.user_id <> floor_history.user_id 
-			AND floor.user_id = ? 
-			AND floor.deleted`, userID).Scan(&punishments).Error
+ FROM floor JOIN floor_history ON floor.id = floor_history.floor_id 
+ WHERE floor.user_id <> floor_history.user_id 
+ AND floor.user_id = ? 
+ AND floor.deleted`, userID).Scan(&punishments).Error
 	if err != nil {
 		return err
 	}

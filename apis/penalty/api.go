@@ -20,12 +20,12 @@ type PostBody struct {
 
 // BanUser
 //
-//	@Summary	Ban publisher of a floor
-//	@Tags		Penalty
-//	@Produce	json
-//	@Router		/penalty/{floor_id} [post]
-//	@Param		json	body		PostBody	true	"json"
-//	@Success	201		{object}	User
+// @Summary Ban publisher of a floor
+// @Tags Penalty
+// @Produce json
+// @Router /penalty/{floor_id} [post]
+// @Param json body PostBody true "json"
+// @Success 201 {object} User
 func BanUser(c *fiber.Ctx) error {
 	// validate body
 	var body PostBody

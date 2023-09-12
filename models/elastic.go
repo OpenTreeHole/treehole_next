@@ -3,21 +3,25 @@ package models
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
-	"github.com/opentreehole/go-common"
-	"github.com/rs/zerolog/log"
-	"io"
 	"strconv"
 	"time"
+
+	"github.com/elastic/go-elasticsearch/v8/typedapi/types"
+	"github.com/elastic/go-elasticsearch/v8/typedapi/types/enums/refresh"
+	"github.com/elastic/go-elasticsearch/v8/typedapi/types/enums/sortorder"
+	"github.com/opentreehole/go-common"
+	"github.com/rs/zerolog/log"
+
 	"treehole_next/config"
 	"treehole_next/utils"
 
 	"github.com/elastic/go-elasticsearch/v8"
-	"github.com/elastic/go-elasticsearch/v8/esapi"
 	"github.com/goccy/go-json"
 )
 
-var ES *elasticsearch.Client
+var ES *elasticsearch.TypedClient
 
 const IndexName = "floors"
 
@@ -29,7 +33,7 @@ func Init() {
 	// export ELASTICSEARCH_URL environment variable to set the ElasticSearch URL
 	// example: http://user:pass@127.0.0.1:9200
 	var err error
-	ES, err = elasticsearch.NewClient(elasticsearch.Config{
+	ES, err = elasticsearch.NewTypedClient(elasticsearch.Config{
 		Addresses: []string{config.Config.ElasticsearchUrl},
 	})
 	if err != nil {
@@ -38,47 +42,17 @@ func Init() {
 		return
 	}
 
-	res, err := ES.Info()
+	info, err := ES.Info().Do(context.Background())
 	if err != nil {
 		log.Fatal().Err(err).Msg("error getting elasticsearch response")
-	}
-	defer func(Body io.ReadCloser) {
-		_ = Body.Close()
-	}(res.Body)
-	if res.IsError() {
-		log.Fatal().Str("status", res.Status()).Msg("error getting elasticsearch response")
-	}
-	var r Map
-	if err = json.NewDecoder(res.Body).Decode(&r); err != nil {
-		log.Fatal().Err(err).Msg("Error parsing the elasticsearch response body")
 	}
 
 	// print Client and Server Info
 	log.Info().Msgf("elasticsearch Client: %s\n", elasticsearch.Version)
-	log.Info().Msgf("elasticsearch Server: %s", r["version"].(map[string]interface{})["number"])
-}
-
-type SearchResponse struct {
-	Took     int  `json:"took"`
-	TimedOut bool `json:"timed_out"`
-	Shards   struct {
-		Total      int `json:"total"`
-		Successful int `json:"successful"`
-		Failed     int `json:"failed"`
-		Skipped    int `json:"skipped"`
-	} `json:"_shards"`
-	Hits struct {
-		Total struct {
-			Value    int    `json:"value"`
-			Relation string `json:"relation"`
-		} `json:"total"`
-		Hits []struct {
-			Index  string     `json:"_index"`
-			ID     string     `json:"_id"`
-			Score  float64    `json:"_score"`
-			Source FloorModel `json:"_source"`
-		} `json:"hits"`
-	} `json:"hits"`
+	//log.Info().Msgf("elasticsearch Server: %s", r["version"].(map[string]interface{})["number"])
+	log.Info().Msgf("elasticsearch Server: %s\n", info.Version.Int)
+	log.Info().Msgf("elasticsearch Server Minimum Index Compatibility Version: %s\n", info.Version.MinimumIndexCompatibilityVersion)
+	log.Info().Msgf("elasticsearch Server Minimum Wire Compatibility Version: %s\n", info.Version.MinimumWireCompatibilityVersion)
 }
 
 type FloorModel struct {
@@ -87,58 +61,74 @@ type FloorModel struct {
 	Content   string    `json:"content"`
 }
 
-func Search(keyword string, size, offset int) (Floors, error) {
+func Search(keyword string, size, offset int, accurate bool) (Floors, error) {
 	if ES == nil {
 		return SearchOld(keyword, size, offset)
 	}
-	req := esapi.SearchRequest{
-		Index: []string{IndexName},
-		From:  &offset,
-		Size:  &size,
-		Query: keyword,
-		Sort: []string{
-			"_score:desc",
-			"updated_at:desc",
-		},
-	}
 
-	res, err := req.Do(context.Background(), ES)
-	if err != nil {
-		return nil, err
-	}
-
-	defer func(Body io.ReadCloser) {
-		_ = Body.Close()
-	}(res.Body)
-
-	if res.IsError() {
-		var data []byte
-		data, err = io.ReadAll(res.Body)
-		if err != nil {
-			return nil, err
-		} else {
-			return nil, &common.HttpError{Code: 502, Message: string(data)}
+	var query types.Query
+	if accurate {
+		query = types.Query{
+			DisMax: &types.DisMaxQuery{
+				Queries: []types.Query{
+					{MatchPhrase: map[string]types.MatchPhraseQuery{"content": {Query: keyword}}},
+					{MatchPhrase: map[string]types.MatchPhraseQuery{"content.ik_smart": {Query: keyword}}},
+				},
+			},
+		}
+	} else {
+		query = types.Query{
+			DisMax: &types.DisMaxQuery{
+				Queries: []types.Query{
+					{Match: map[string]types.MatchQuery{"content": {Query: keyword}}},
+					{Match: map[string]types.MatchQuery{"content.ik_smart": {Query: keyword}}},
+				},
+			},
 		}
 	}
 
-	var response SearchResponse
-	err = json.NewDecoder(res.Body).Decode(&response)
+	res, err := ES.Search().
+		Index(IndexName).From(offset).
+		Size(size).Query(&query).
+		Sort(
+			types.SortOptions{
+				SortOptions: map[string]types.FieldSort{
+					"_score": {Order: &sortorder.Desc},
+				},
+			},
+			types.SortOptions{
+				SortOptions: map[string]types.FieldSort{
+					"updated_at": {Order: &sortorder.Desc},
+				},
+			}).
+		Do(context.Background())
+
+	//res, err := req.Do(context.Background(), ES)
 	if err != nil {
-		return nil, err
+		var errorMsg = fmt.Sprintf("error searching floors: %e", err)
+		var elasticsearchError *types.ElasticsearchError
+		if errors.As(err, &elasticsearchError) {
+			data, _ := json.Marshal(elasticsearchError)
+			log.Err(err).
+				Bytes("error_detail", data).
+				Msg("error searching floors")
+			return nil, &common.HttpError{Code: elasticsearchError.Status, Message: errorMsg}
+		}
+		return nil, common.InternalServerError(errorMsg)
 	}
 
 	// get floors
-	floorSize := len(response.Hits.Hits)
+	floorSize := len(res.Hits.Hits)
 	floors := make(Floors, 0, floorSize)
 	if floorSize == 0 {
 		return floors, nil
 	}
 
 	floorIDs := make([]int, floorSize)
-	for i, hit := range response.Hits.Hits {
-		floorIDs[i] = hit.Source.ID
+	for i, hit := range res.Hits.Hits {
+		floorIDs[i], err = strconv.Atoi(hit.Id_)
 		if err != nil {
-			return nil, &common.HttpError{Code: 500, Message: "error parse floor_id from elasticsearch ID"}
+			return nil, common.InternalServerError("error parse floor_id from elasticsearch ID")
 		}
 	}
 	log.Info().Ints("floor_ids", floorIDs).Msg("search response")
@@ -193,11 +183,8 @@ func BulkInsert(floors []FloorModel) {
 	}
 	log.Info().Ints("floor_ids", floorIDs).Msg("Preparing insert floors")
 
-	res, err := ES.Bulk(BulkBuffer, ES.Bulk.WithIndex(IndexName))
-	defer func() {
-		_ = res.Body.Close()
-	}()
-	if err != nil || res.IsError() {
+	_, err := ES.Bulk().Index(IndexName).Raw(BulkBuffer).Do(context.Background())
+	if err != nil {
 		log.Printf("error indexing floors %v: %s", floorIDs, err)
 		return
 	}
@@ -221,11 +208,11 @@ func BulkDelete(floorIDs []int) {
 	}
 	log.Info().Ints("floor_ids", floorIDs).Msg("Preparing delete floors")
 
-	res, err := ES.Bulk(BulkBuffer, ES.Bulk.WithIndex(IndexName))
-	defer func() {
-		_ = res.Body.Close()
-	}()
-	if err != nil || res.IsError() {
+	_, err := ES.Bulk().
+		Index(IndexName).
+		Raw(BulkBuffer).
+		Do(context.Background())
+	if err != nil {
 		log.Printf("error deleting floors %v: %s", floorIDs, err)
 		return
 	}
@@ -239,29 +226,15 @@ func FloorIndex(floorModel FloorModel) {
 		return
 	}
 
-	data, err := json.Marshal(&floorModel)
+	_, err := ES.
+		Index(IndexName).
+		Id(strconv.Itoa(floorModel.ID)).
+		Document(&floorModel).
+		Refresh(refresh.Refresh{Name: "false"}).
+		Do(context.Background())
+
 	if err != nil {
-		log.Err(err).Int("floor_id", floorModel.ID).Msg("floor encode error")
-		return
-	}
-
-	req := esapi.IndexRequest{
-		Index:      IndexName,
-		DocumentID: strconv.Itoa(floorModel.ID),
-		Body:       bytes.NewBuffer(data),
-		Refresh:    "false",
-	}
-
-	res, err := req.Do(context.Background(), ES)
-	defer func() {
-		_ = res.Body.Close()
-	}()
-	if err != nil || res.IsError() {
-		response, _ := io.ReadAll(res.Body)
 		log.Err(err).
-			Str("status", res.Status()).
-			Int("floor_id", floorModel.ID).
-			Bytes("data", response).
 			Msg("error index floor")
 	} else {
 		log.Info().Int("floor_id", floorModel.ID).Msg("index floor success")
@@ -273,18 +246,12 @@ func FloorDelete(floorID int) {
 	if ES == nil {
 		return
 	}
-	res, err := ES.Delete(
+	_, err := ES.Delete(
 		IndexName,
-		strconv.Itoa(floorID))
-	defer func() {
-		_ = res.Body.Close()
-	}()
-	if err != nil || res.IsError() {
-		response, _ := io.ReadAll(res.Body)
+		strconv.Itoa(floorID)).Do(context.Background())
+
+	if err != nil {
 		log.Err(err).
-			Str("status", res.Status()).
-			Int("floor_id", floorID).
-			Bytes("data", response).
 			Msg("error delete floor")
 	} else {
 		log.Info().Int("floor_id", floorID).Msg("delete floor success")
