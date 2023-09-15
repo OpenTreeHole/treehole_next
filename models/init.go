@@ -146,6 +146,7 @@ func InitDB() {
 		&Hole{},
 		&Report{},
 		&Punishment{},
+		&ReportPunishment{},
 		&Message{},
 		&FloorHistory{},
 		&UserSubscription{},

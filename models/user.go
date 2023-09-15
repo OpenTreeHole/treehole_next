@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"time"
+	"treehole_next/config"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/opentreehole/go-common"
@@ -11,8 +12,6 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"gorm.io/plugin/dbresolver"
-
-	"treehole_next/config"
 )
 
 type User struct {
@@ -24,6 +23,10 @@ type User struct {
 	BanDivision map[int]*time.Time `json:"-" gorm:"serializer:json;not null;default:\"{}\""`
 
 	OffenceCount int `json:"-" gorm:"not null;default:0"`
+
+	BanReport *time.Time `json:"-" gorm:"serializer:json"`
+
+	BanReportCount int `json:"-" gorm:"not null;default:0"`
 
 	/// association fields, should add foreign key
 
@@ -53,6 +56,12 @@ type User struct {
 
 	// punishments made by this user
 	UserMakePunishments Punishments `json:"-" gorm:"foreignKey:MadeBy"`
+
+	// user punishments on report
+	UserReportPunishments ReportPunishments `json:"-"`
+
+	// report punishments made by this user
+	UserMakeReportPunishments ReportPunishments `json:"-" gorm:"foreignKey:MadeBy"`
 
 	/// dynamically generated field
 
@@ -123,7 +132,7 @@ func GetUser(c *fiber.Ctx) (*User, error) {
 	}
 	if config.Config.Mode == "dev" || config.Config.Mode == "test" {
 		user.ID = 1
-		user.IsAdmin = true
+		user.IsAdmin = false
 		user.HasAnsweredQuestions = true
 		return user, nil
 	}
@@ -202,6 +211,14 @@ func (user *User) LoadUserByID(userID int) error {
 			}
 		}
 
+		// get report punishment
+		if user.BanReport != nil && user.BanReport.Before(time.Now()) {
+			user.BanReport = nil
+			err = tx.Select("BanReport").Save(&user).Error
+			if err != nil {
+				return err
+			}
+		}
 		return nil
 	})
 }
@@ -213,5 +230,15 @@ func (user *User) BanDivisionMessage(divisionID int) string {
 		return fmt.Sprintf(
 			"您在此板块已被禁言，解封时间：%s",
 			user.BanDivision[divisionID].Format("2006-01-02 15:04:05"))
+	}
+}
+
+func (user *User) BanReportMessage() string {
+	if user.BanReport == nil {
+		return fmt.Sprintf("您已被限制使用举报功能")
+	} else {
+		return fmt.Sprintf(
+			"您已被限制使用举报功能，解封时间：%s",
+			user.BanReport.Format("2006-01-02 15:04:05"))
 	}
 }

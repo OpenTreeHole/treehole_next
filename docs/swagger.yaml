@@ -629,6 +629,15 @@ definitions:
     - RangeNotDealt
     - RangeDealt
     - RangeAll
+  report.banBody:
+    properties:
+      days:
+        minimum: 1
+        type: integer
+      reason:
+        description: optional
+        type: string
+    type: object
   subscription.AddModel:
     properties:
       hole_id:
@@ -1668,6 +1677,25 @@ paths:
           schema:
             $ref: '#/definitions/models.MessageModel'
       summary: Get A Report
+      tags:
+      - Report
+  /reports/ban/{id}:
+    post:
+      parameters:
+      - description: json
+        in: body
+        name: json
+        required: true
+        schema:
+          $ref: '#/definitions/report.banBody'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.User'
+      summary: Ban reporter of a report
       tags:
       - Report
   /tags:
