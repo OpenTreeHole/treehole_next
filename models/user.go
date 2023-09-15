@@ -132,7 +132,7 @@ func GetUser(c *fiber.Ctx) (*User, error) {
 	}
 	if config.Config.Mode == "dev" || config.Config.Mode == "test" {
 		user.ID = 1
-		user.IsAdmin = false
+		user.IsAdmin = true
 		user.HasAnsweredQuestions = true
 		return user, nil
 	}
