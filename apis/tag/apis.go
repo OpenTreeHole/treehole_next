@@ -107,9 +107,18 @@ func CreateTag(c *fiber.Ctx) error {
 // @Success 200 {object} Tag
 // @Failure 404 {object} MessageModel
 func ModifyTag(c *fiber.Ctx) error {
+	// admin
+	user, err := GetUser(c)
+	if err != nil {
+		return err
+	}
+	if !user.IsAdmin {
+		return common.Forbidden()
+	}
+
 	// validate body
 	var body ModifyModel
-	err := common.ValidateBody(c, &body)
+	err = common.ValidateBody(c, &body)
 	if err != nil {
 		return err
 	}
@@ -146,12 +155,22 @@ func ModifyTag(c *fiber.Ctx) error {
 // @Success 200 {object} Tag
 // @Failure 404 {object} MessageModel
 func DeleteTag(c *fiber.Ctx) error {
-	// validate body
-	var body DeleteModel
-	err := common.ValidateBody(c, &body)
+	// admin
+	user, err := GetUser(c)
 	if err != nil {
 		return err
 	}
+	if !user.IsAdmin {
+		return common.Forbidden()
+	}
+
+	// validate body
+	var body DeleteModel
+	err = common.ValidateBody(c, &body)
+	if err != nil {
+		return err
+	}
+
 	id, err := c.ParamsInt("id")
 	if err != nil {
 		return err
