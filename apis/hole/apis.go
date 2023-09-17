@@ -2,6 +2,7 @@ package hole
 
 import (
 	"fmt"
+	"slices"
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
@@ -234,12 +235,19 @@ func CreateHole(c *fiber.Ctx) error {
 	}
 
 	// special tag
-	if body.SpecialTag != "" && !user.IsAdmin {
-		return common.Forbidden("非管理员禁止创建特殊标签")
+	if body.SpecialTag != "" && !user.IsAdmin && !slices.Contains(user.SpecialTags, body.SpecialTag) {
+		return common.Forbidden("非管理员禁止发含有特殊标签的洞")
+	} else if body.SpecialTag == "" && user.DefaultSpecialTag != "" {
+		body.SpecialTag = user.DefaultSpecialTag
 	}
 
 	hole := Hole{
-		Floors:     Floors{{UserID: user.ID, Content: body.Content, SpecialTag: body.SpecialTag, IsMe: true}},
+		Floors: Floors{{
+			UserID:     user.ID,
+			Content:    body.Content,
+			SpecialTag: body.SpecialTag,
+			IsMe:       true,
+		}},
 		UserID:     user.ID,
 		DivisionID: divisionID,
 	}
@@ -283,9 +291,21 @@ func CreateHoleOld(c *fiber.Ctx) error {
 		return common.Forbidden(user.BanDivisionMessage(body.DivisionID))
 	}
 
+	// special tag
+	if body.SpecialTag != "" && !user.IsAdmin && !slices.Contains(user.SpecialTags, body.SpecialTag) {
+		return common.Forbidden("非管理员禁止发含有特殊标签的洞")
+	} else if body.SpecialTag == "" && user.DefaultSpecialTag != "" {
+		body.SpecialTag = user.DefaultSpecialTag
+	}
+
 	// create hole
 	hole := Hole{
-		Floors:     Floors{{UserID: user.ID, Content: body.Content, SpecialTag: body.SpecialTag, IsMe: true}},
+		Floors: Floors{{
+			UserID:     user.ID,
+			Content:    body.Content,
+			SpecialTag: body.SpecialTag,
+			IsMe:       true,
+		}},
 		UserID:     user.ID,
 		DivisionID: body.DivisionID,
 	}

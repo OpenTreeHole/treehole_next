@@ -2436,18 +2436,6 @@
                 }
             }
         },
-        "gorm.DeletedAt": {
-            "type": "object",
-            "properties": {
-                "time": {
-                    "type": "string"
-                },
-                "valid": {
-                    "description": "Valid is true if Time is not NULL",
-                    "type": "boolean"
-                }
-            }
-        },
         "hole.CreateModel": {
             "type": "object",
             "required": [
@@ -2864,14 +2852,6 @@
                     "description": "time when this punishment creates",
                     "type": "string"
                 },
-                "deleted_at": {
-                    "description": "time when this punishment revoked",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/gorm.DeletedAt"
-                        }
-                    ]
-                },
                 "division": {
                     "description": "foreign key",
                     "allOf": [
@@ -2990,6 +2970,9 @@
                 "config": {
                     "$ref": "#/definitions/models.UserConfig"
                 },
+                "default_special_tag": {
+                    "type": "string"
+                },
                 "has_answered_questions": {
                     "type": "boolean"
                 },
@@ -3024,6 +3007,12 @@
                                 "type": "string"
                             }
                         }
+                    }
+                },
+                "special_tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
                     }
                 },
                 "user_id": {

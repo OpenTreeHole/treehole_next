@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"time"
+
 	"treehole_next/config"
 
 	"github.com/gofiber/fiber/v2"
@@ -27,6 +28,10 @@ type User struct {
 	BanReport *time.Time `json:"-" gorm:"serializer:json"`
 
 	BanReportCount int `json:"-" gorm:"not null;default:0"`
+
+	DefaultSpecialTag string `json:"default_special_tag" gorm:"size:32"`
+
+	SpecialTags []string `json:"special_tags" gorm:"serializer:json;not null;default:\"[]\""`
 
 	/// association fields, should add foreign key
 

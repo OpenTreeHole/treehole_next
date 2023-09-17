@@ -23,7 +23,7 @@ type Punishment struct {
 	CreatedAt time.Time `json:"created_at"`
 
 	// time when this punishment revoked
-	DeletedAt gorm.DeletedAt `json:"deleted_at"`
+	DeletedAt gorm.DeletedAt `json:"-"`
 
 	// start from end_time of previous punishment (punishment accumulation of different floors)
 	// if no previous punishment or previous punishment end time less than time.Now() (synced), set start time time.Now()

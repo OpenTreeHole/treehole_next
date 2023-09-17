@@ -2,6 +2,7 @@ package floor
 
 import (
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/opentreehole/go-common"
@@ -171,8 +172,10 @@ func CreateFloor(c *fiber.Ctx) error {
 	}
 
 	// special tag
-	if body.SpecialTag != "" && !user.IsAdmin {
+	if body.SpecialTag != "" && !user.IsAdmin && !slices.Contains(user.SpecialTags, body.SpecialTag) {
 		return common.Forbidden("非管理员禁止发含有特殊标签的帖")
+	} else if body.SpecialTag == "" && user.DefaultSpecialTag != "" {
+		body.SpecialTag = user.DefaultSpecialTag
 	}
 
 	// create floor
@@ -231,6 +234,13 @@ func CreateFloorOld(c *fiber.Ctx) error {
 	}
 	if hole.Locked && !user.IsAdmin {
 		return common.Forbidden("该帖子已被锁定，非管理员禁止发帖")
+	}
+
+	// special tag
+	if body.SpecialTag != "" && !user.IsAdmin && !slices.Contains(user.SpecialTags, body.SpecialTag) {
+		return common.Forbidden("非管理员禁止发含有特殊标签的帖子")
+	} else if body.SpecialTag == "" && user.DefaultSpecialTag != "" {
+		body.SpecialTag = user.DefaultSpecialTag
 	}
 
 	// create floor

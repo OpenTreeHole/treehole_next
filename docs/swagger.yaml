@@ -157,14 +157,6 @@ definitions:
       open:
         type: boolean
     type: object
-  gorm.DeletedAt:
-    properties:
-      time:
-        type: string
-      valid:
-        description: Valid is true if Time is not NULL
-        type: boolean
-    type: object
   hole.CreateModel:
     properties:
       content:
@@ -460,10 +452,6 @@ definitions:
       created_at:
         description: time when this punishment creates
         type: string
-      deleted_at:
-        allOf:
-        - $ref: '#/definitions/gorm.DeletedAt'
-        description: time when this punishment revoked
       division:
         allOf:
         - $ref: '#/definitions/models.Division'
@@ -545,6 +533,8 @@ definitions:
     properties:
       config:
         $ref: '#/definitions/models.UserConfig'
+      default_special_tag:
+        type: string
       has_answered_questions:
         type: boolean
       id:
@@ -570,6 +560,10 @@ definitions:
             description: 'key: division_id value: 对应分区禁言解除时间'
             type: object
         type: object
+      special_tags:
+        items:
+          type: string
+        type: array
       user_id:
         type: integer
     type: object
