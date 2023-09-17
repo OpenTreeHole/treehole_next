@@ -1,6 +1,8 @@
 package tag
 
 import (
+	"strings"
+
 	"github.com/opentreehole/go-common"
 	"gorm.io/plugin/dbresolver"
 
@@ -83,6 +85,20 @@ func CreateTag(c *fiber.Ctx) error {
 	err := common.ValidateBody(c, &body)
 	if err != nil {
 		return err
+	}
+
+	// check tag prefix
+	user, err := GetUser(c)
+	if err != nil {
+		return err
+	}
+	if !user.IsAdmin {
+		if strings.HasPrefix(body.Name, "#") {
+			return common.BadRequest("只有管理员才能创建 # 开头的 tag")
+		}
+		if strings.HasPrefix(body.Name, "@") {
+			return common.BadRequest("只有管理员才能创建 @ 开头的 tag")
+		}
 	}
 
 	// bind and create tag
