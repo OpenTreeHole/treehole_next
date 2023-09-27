@@ -79,7 +79,8 @@ func (report *Report) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 		err = tx.Create(&report).Error
 	} else {
 		existingReport.Reason = existingReport.Reason + "\n" + report.Reason
-		err = tx.Save(&existingReport).Error
+		err = tx.Model(&existingReport).Update("reason", existingReport.Reason).Error // update reason and load floor in AfterUpdate hook
+		report.Floor = existingReport.Floor
 	}
 
 	if err != nil {
