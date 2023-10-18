@@ -42,7 +42,7 @@ func ListSubscriptions(c *fiber.Ctx) error {
 		holes := make(Holes, 0)
 		err := DB.
 			Joins("JOIN user_subscription ON user_subscription.hole_id = hole.id AND user_subscription.user_id = ?", userID).
-			Find(&holes).Error
+			Order("user_subscription.created_at desc").Find(&holes).Error
 		if err != nil {
 			return err
 		}
