@@ -102,6 +102,7 @@ func CreateTag(c *fiber.Ctx) error {
 	}
 
 	// bind and create tag
+	body.Name = strings.TrimSpace(body.Name)
 	tag.Name = body.Name
 	result := DB.Where("name = ?", body.Name).FirstOrCreate(&tag)
 	if result.RowsAffected == 0 {
