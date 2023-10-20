@@ -739,11 +739,16 @@ func GetPunishmentHistory(c *fiber.Ctx) error {
 	// search DB for user punishment history
 	punishments := make([]string, 0, 10)
 	err = DB.Raw(
-		`SELECT floor.content 
- FROM floor JOIN floor_history ON floor.id = floor_history.floor_id 
- WHERE floor.user_id <> floor_history.user_id 
- AND floor.user_id = ? 
- AND floor.deleted`, userID).Scan(&punishments).Error
+		`SELECT f.content 
+FROM floor f
+WHERE f.id IN (
+	SELECT distinct floor.id
+	FROM floor
+	JOIN floor_history ON floor.id = floor_history.floor_id 
+	WHERE floor.user_id <> floor_history.user_id 
+	AND floor.user_id = ? 
+	AND floor.deleted = true
+)`, userID).Scan(&punishments).Error
 	if err != nil {
 		return err
 	}
