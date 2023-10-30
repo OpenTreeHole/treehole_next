@@ -125,6 +125,40 @@ func ListHolesByMe(c *fiber.Ctx) error {
 	return Serialize(c, &holes)
 }
 
+// ListGoodHoles
+//
+// @Summary List good holes
+// @Tags Hole
+// @Produce json
+// @Router /holes/_good [get]
+// @Param object query QueryTime false "query"
+// @Success 200 {array} Hole
+func ListGoodHoles(c *fiber.Ctx) error {
+	var query QueryTime
+	err := common.ValidateQuery(c, &query)
+	if err != nil {
+		return err
+	}
+	_, err = common.GetUserID(c)
+	if err != nil {
+		return err
+	}
+
+	// get holes
+	var holes Holes
+	querySet, err := holes.MakeQuerySet(query.Offset, query.Size, query.Order, c)
+	if err != nil {
+		return err
+	}
+	querySet = querySet.Where("good = 1")
+	err = querySet.Find(&holes).Error
+	if err != nil {
+		return err
+	}
+
+	return Serialize(c, &holes)
+}
+
 // ListHolesOld
 //
 // @Summary Old API for Listing Holes

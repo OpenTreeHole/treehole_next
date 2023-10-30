@@ -32,7 +32,7 @@ type Punishment struct {
 	// end_time of this punishment
 	EndTime time.Time `json:"end_time" gorm:"not null"`
 
-	Duration *time.Duration `json:"duration"`
+	Duration *time.Duration `json:"duration" swaggertype:"integer"`
 
 	// user punished
 	UserID int `json:"user_id" gorm:"not null;index"`

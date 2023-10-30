@@ -12,6 +12,7 @@ func RegisterRoutes(app fiber.Router) {
 	app.Get("/users/me/holes", ListHolesByMe)
 	app.Get("/holes/:id", GetHole)
 	app.Get("/holes", ListHolesOld)
+	app.Get("/holes/_good", ListGoodHoles)
 	app.Post("/divisions/:id/holes", utils.MiddlewareHasAnsweredQuestions, CreateHole)
 	app.Post("/holes", utils.MiddlewareHasAnsweredQuestions, CreateHoleOld)
 	app.Patch("/holes/:id", PatchHole)
