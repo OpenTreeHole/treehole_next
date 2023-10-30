@@ -10,7 +10,7 @@ func RegisterRoutes(app fiber.Router) {
 	app.Get("/divisions/:id/holes", ListHolesByDivision)
 	app.Get("/tags/:name/holes", ListHolesByTag)
 	app.Get("/users/me/holes", ListHolesByMe)
-	app.Get("/holes/:id", GetHole)
+	app.Get("/holes/:id<int>", GetHole)
 	app.Get("/holes", ListHolesOld)
 	app.Get("/holes/_good", ListGoodHoles)
 	app.Post("/divisions/:id/holes", utils.MiddlewareHasAnsweredQuestions, CreateHole)
