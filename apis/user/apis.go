@@ -90,7 +90,7 @@ func ModifyUser(c *fiber.Ctx) error {
 	}
 
 	var newUser User
-	err = DB.Where("user_id = ?", userID).Select("config").First(&newUser).Error
+	err = DB.Select("config").First(&newUser, userID).Error
 	if err != nil {
 		return err
 	}
