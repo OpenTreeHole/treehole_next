@@ -31,6 +31,7 @@ var Config struct {
 	OpenSearch        bool     `env:"OPEN_SEARCH" envDefault:"true"`
 	OpenFuzzName      bool     `env:"OPEN_FUZZ_NAME" envDefault:"false"`
 	UserAllShowHidden bool     `env:"USER_ALL_HIDDEN" envDefault:"false"`
+	AdminOnly         bool     `env:"ADMIN_ONLY" envDefault:"false"`
 }
 
 var DynamicConfig struct {
