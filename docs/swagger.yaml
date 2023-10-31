@@ -365,6 +365,8 @@ definitions:
               $ref: '#/definitions/models.Floor'
             type: array
         type: object
+      good:
+        type: boolean
       hidden:
         description: 是否隐藏，隐藏的洞用户不可见，管理员可见
         type: boolean
@@ -459,7 +461,7 @@ definitions:
       division_id:
         type: integer
       duration:
-        $ref: '#/definitions/time.Duration'
+        type: integer
       end_time:
         description: end_time of this punishment
         type: string
@@ -676,26 +678,6 @@ definitions:
         description: Admin only
         type: integer
     type: object
-  time.Duration:
-    enum:
-    - -9223372036854775808
-    - 9223372036854775807
-    - 1
-    - 1000
-    - 1000000
-    - 1000000000
-    - 60000000000
-    - 3600000000000
-    type: integer
-    x-enum-varnames:
-    - minDuration
-    - maxDuration
-    - Nanosecond
-    - Microsecond
-    - Millisecond
-    - Second
-    - Minute
-    - Hour
 info:
   contact:
     email: dev@fduhole.com
@@ -1263,6 +1245,33 @@ paths:
           schema:
             $ref: '#/definitions/hole.CreateOldResponse'
       summary: Old API for Creating A Hole
+      tags:
+      - Hole
+  /holes/_good:
+    get:
+      parameters:
+      - description: updated time < offset (default is now)
+        in: query
+        name: offset
+        type: string
+      - in: query
+        name: order
+        type: string
+      - default: 10
+        in: query
+        maximum: 10
+        name: size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Hole'
+            type: array
+      summary: List good holes
       tags:
       - Hole
   /holes/{hole_id}/floors:

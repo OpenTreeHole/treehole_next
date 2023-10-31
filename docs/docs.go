@@ -872,6 +872,48 @@ const docTemplate = `{
                 }
             }
         },
+        "/holes/_good": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Hole"
+                ],
+                "summary": "List good holes",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "updated time \u003c offset (default is now)",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "name": "order",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 10,
+                        "type": "integer",
+                        "default": 10,
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Hole"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/holes/{hole_id}/floors": {
             "get": {
                 "produces": [
@@ -2740,6 +2782,9 @@ const docTemplate = `{
                         }
                     }
                 },
+                "good": {
+                    "type": "boolean"
+                },
                 "hidden": {
                     "description": "是否隐藏，隐藏的洞用户不可见，管理员可见",
                     "type": "boolean"
@@ -2871,7 +2916,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "duration": {
-                    "$ref": "#/definitions/time.Duration"
+                    "type": "integer"
                 },
                 "end_time": {
                     "description": "end_time of this punishment",
@@ -3178,29 +3223,6 @@ const docTemplate = `{
                     "type": "integer"
                 }
             }
-        },
-        "time.Duration": {
-            "type": "integer",
-            "enum": [
-                -9223372036854775808,
-                9223372036854775807,
-                1,
-                1000,
-                1000000,
-                1000000000,
-                60000000000,
-                3600000000000
-            ],
-            "x-enum-varnames": [
-                "minDuration",
-                "maxDuration",
-                "Nanosecond",
-                "Microsecond",
-                "Millisecond",
-                "Second",
-                "Minute",
-                "Hour"
-            ]
         }
     }
 }`
