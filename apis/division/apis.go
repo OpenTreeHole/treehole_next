@@ -67,7 +67,10 @@ func ListDivisions(c *fiber.Ctx) error {
 	if GetCache("divisions", &divisions) {
 		return c.JSON(divisions)
 	}
-	DB.Find(&divisions)
+	err := DB.Find(&divisions, "hidden = false").Error
+	if err != nil {
+		return err
+	}
 	return Serialize(c, divisions)
 }
 
@@ -86,7 +89,7 @@ func GetDivision(c *fiber.Ctx) error {
 		return err
 	}
 	var division Division
-	result := DB.First(&division, id)
+	result := DB.Where("hidden = false").First(&division, id)
 	if result.Error != nil {
 		return result.Error
 	}

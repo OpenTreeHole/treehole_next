@@ -18,6 +18,7 @@ type Division struct {
 	/// base info
 	Name        string `json:"name" gorm:"unique;size:10"`
 	Description string `json:"description" gorm:"size:64"`
+	Hidden      bool   `json:"hidden" gorm:"not null;default:false"`
 
 	// pinned holes in given order
 	Pinned []int `json:"-" gorm:"serializer:json;size:100;not null;default:\"[]\""`

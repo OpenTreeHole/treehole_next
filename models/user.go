@@ -169,6 +169,10 @@ func GetUser(c *fiber.Ctx) (*User, error) {
 	user.Permission.Silent = user.BanDivision
 	user.Permission.OffenseCount = user.OffenceCount
 
+	if config.Config.UserAllShowHidden {
+		user.Config.ShowFolded = "hide"
+	}
+
 	// save user in c.Locals
 	c.Locals("user", user)
 

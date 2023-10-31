@@ -89,8 +89,14 @@ func ModifyUser(c *fiber.Ctx) error {
 		return err
 	}
 
+	var newUser User
+	err = DB.Where("user_id = ?", userID).Select("config").First(&newUser).Error
+	if err != nil {
+		return err
+	}
+
 	if body.Config != nil {
-		user.Config = *body.Config
+		newUser.Config = *body.Config
 	}
 
 	err = DB.Model(&user).Omit(clause.Associations).Select("Config").Updates(&user).Error
@@ -98,5 +104,6 @@ func ModifyUser(c *fiber.Ctx) error {
 		return err
 	}
 
+	user.Config = newUser.Config
 	return c.JSON(&user)
 }
