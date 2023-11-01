@@ -549,8 +549,8 @@ func DeleteFloor(c *fiber.Ctx) error {
 // @Produce 	application/json
 // @Router 		/floors [delete]
 // @Param 		hole_id body DeleteMultipleModel true "hole_id"
-// @Success 200 {array} Floor
-// @Failure 404 {object} MessageModel
+// @Success 	204
+// @Failure 	404 	{object} 	MessageModel
 func DeleteFloors(c *fiber.Ctx) error {
 	// Validate body
 	var body DeleteMultipleModel
@@ -565,44 +565,38 @@ func DeleteFloors(c *fiber.Ctx) error {
 		return err
 	}
 
+	// permission
+	if !user.IsAdmin {
+		return common.Forbidden()
+	}
+
 	// Get a list of floor IDs based on the hole_id
 	var floorIDs []int
 	err = DB.Table("floors").Where("hole_id = ?", body.HoleID).Pluck("id", &floorIDs).Error
+
 	if err != nil {
 		return err
 	}
 
-	// Delete floors in a transaction
-	var deletedFloors Floors
+	// Update floors and move to history in a transaction
 	err = DB.Transaction(func(tx *gorm.DB) error {
+		// Mark matching floors as deleted
+		result := tx.Model(&Floor{}).Where("hole_id = ? AND deleted = ?", body.HoleID, false).Updates(Floor{
+			Deleted: true,
+		})
+		if result.Error != nil {
+			return result.Error
+		}
 
-		for _, floorID := range floorIDs {
-			var floor Floor
+		// Move to history
+		result = tx.Exec(`
+            INSERT INTO floor_history (floor_id, user_id, content, reason)
+            SELECT id, ?, content, ? FROM floors
+            WHERE hole_id = ? AND deleted = true;
+        `, user.ID, body.Reason, body.HoleID)
 
-			result := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Take(&floor, floorID)
-			if result.Error != nil {
-				return result.Error
-			}
-
-			// permission
-			if !((user.ID == floor.UserID && !floor.Deleted) || user.IsAdmin) {
-				return common.Forbidden()
-			}
-
-			err = floor.Backup(tx, user.ID, body.Reason)
-			if err != nil {
-				return err
-			}
-
-			floor.Deleted = true
-			floor.Content = generateDeleteReason(body.Reason, user.ID == floor.UserID)
-			err = tx.Save(&floor).Error
-
-			if err != nil {
-				return err
-			}
-
-			deletedFloors = append(deletedFloors, &floor)
+		if result.Error != nil {
+			return result.Error
 		}
 
 		return nil
@@ -612,17 +606,13 @@ func DeleteFloors(c *fiber.Ctx) error {
 		return err
 	}
 
-	for _, floor := range deletedFloors {
-		go FloorDelete(floor.ID)
-	}
-
 	// Log the deletion
-	for _, floor := range deletedFloors {
-		MyLog("Floor", "Delete", floor.ID, user.ID, RoleOperator, "reason: ", body.Reason)
+	for floorID := range floorIDs {
+		MyLog("Floor", "Delete", floorID, user.ID, RoleOperator, "reason: ", body.Reason)
 	}
 
 	// Return the deleted floors
-	return Serialize(c, &deletedFloors)
+	return c.Status(204).JSON(nil)
 }
 
 // ListReplyFloors
