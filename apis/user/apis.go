@@ -99,7 +99,7 @@ func ModifyUser(c *fiber.Ctx) error {
 		newUser.Config = *body.Config
 	}
 
-	err = DB.Model(&user).Omit(clause.Associations).Select("Config").Updates(&user).Error
+	err = DB.Model(&user).Omit(clause.Associations).Select("Config").Updates(&newUser).Error
 	if err != nil {
 		return err
 	}
