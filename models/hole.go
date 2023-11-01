@@ -48,10 +48,10 @@ type Hole struct {
 	Tags Tags `json:"tags" gorm:"many2many:hole_tags;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 
 	// 楼层列表
-	Floors Floors `json:"-"`
+	Floors Floors `json:"-" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 
 	// 匿名映射表
-	Mapping Users `json:"-" gorm:"many2many:anonyname_mapping"`
+	Mapping Users `json:"-" gorm:"many2many:anonyname_mapping;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 
 	/// generated field
 

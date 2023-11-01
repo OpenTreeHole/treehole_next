@@ -31,25 +31,22 @@ type User struct {
 	/// association fields, should add foreign key
 
 	// favorite holes of the user
-	UserFavoriteHoles Holes `json:"-" gorm:"many2many:user_favorite"`
+	UserFavoriteHoles Holes `json:"-" gorm:"many2many:user_favorite;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 
 	// holes owned by the user
-	UserHoles Holes `json:"-"`
+	UserHoles Holes `json:"-" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 
 	// floors owned by the user
-	UserFloors Floors `json:"-"`
+	UserFloors Floors `json:"-" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 
 	// reports made by the user; a user has many report
 	UserReports Reports `json:"-"`
 
 	// floors liked by the user
-	UserLikedFloors Floors `json:"-" gorm:"many2many:floor_like"`
-
-	// floors disliked by the user
-	UserDislikedFloors Floors `json:"-" gorm:"many2many:floor_dislike"`
+	UserLikedFloors Floors `json:"-" gorm:"many2many:floor_like;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 
 	// floor history made by the user
-	UserFloorHistory FloorHistorySlice `json:"-"`
+	UserFloorHistory FloorHistorySlice `json:"-" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 
 	// user punishments on division
 	UserPunishments Punishments `json:"-"`
