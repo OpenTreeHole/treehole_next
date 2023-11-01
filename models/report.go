@@ -19,7 +19,7 @@ type Report struct {
 	ReportID  int       `json:"report_id" gorm:"-:all"`
 	FloorID   int       `json:"floor_id"`
 	HoleID    int       `json:"hole_id" gorm:"-:all"`
-	Floor     *Floor    `json:"floor"`
+	Floor     *Floor    `json:"floor" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	UserID    int       `json:"-"` // the reporter's id, should keep a secret
 	Reason    string    `json:"reason" gorm:"size:128"`
 	Dealt     bool      `json:"dealt"` // the report has been dealt
