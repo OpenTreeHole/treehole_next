@@ -63,12 +63,12 @@ type Floor struct {
 	HoleID int `json:"hole_id" gorm:"not null;uniqueIndex:idx_hole_ranking,priority:1"`
 
 	// many to many mentions
-	Mention Floors `json:"mention" gorm:"many2many:floor_mention"`
+	Mention Floors `json:"mention" gorm:"many2many:floor_mention;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 
-	LikedUsers Users `json:"-" gorm:"many2many:floor_like"`
+	LikedUsers Users `json:"-" gorm:"many2many:floor_like;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 
 	// a floor has many history
-	History FloorHistorySlice `json:"-"`
+	History FloorHistorySlice `json:"-" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 
 	/// dynamically generated fields
 

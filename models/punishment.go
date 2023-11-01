@@ -45,7 +45,7 @@ type Punishment struct {
 	// punished because of this floor
 	FloorID *int `json:"floor_id" gorm:"uniqueIndex"`
 
-	Floor *Floor `json:"floor,omitempty"` // foreign key
+	Floor *Floor `json:"floor,omitempty" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"` // foreign key
 
 	DivisionID int `json:"division_id" gorm:"not null"`
 
