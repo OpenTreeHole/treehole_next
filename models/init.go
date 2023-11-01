@@ -137,6 +137,11 @@ func InitDB() {
 		log.Fatal().Err(err).Send()
 	}
 
+	err = DB.SetupJoinTable(&User{}, "UserSubscription", &UserSubscription{})
+	if err != nil {
+		log.Fatal().Err(err).Send()
+	}
+
 	// models must be registered here to migrate into the database
 	err = DB.AutoMigrate(
 		&Division{},
@@ -149,7 +154,6 @@ func InitDB() {
 		&ReportPunishment{},
 		&Message{},
 		&FloorHistory{},
-		&UserSubscription{},
 		&AdminLog{},
 	)
 	if err != nil {

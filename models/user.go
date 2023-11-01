@@ -60,6 +60,8 @@ type User struct {
 	// report punishments made by this user
 	UserMakeReportPunishments ReportPunishments `json:"-" gorm:"foreignKey:MadeBy"`
 
+	UserSubscription Holes `json:"-" gorm:"many2many:user_subscription;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+
 	/// dynamically generated field
 
 	UserID int `json:"user_id" gorm:"-:all"`

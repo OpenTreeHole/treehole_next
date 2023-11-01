@@ -53,6 +53,9 @@ type Hole struct {
 	// 匿名映射表
 	Mapping Users `json:"-" gorm:"many2many:anonyname_mapping;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 
+	// UserSubscriptionHoles
+	UserSubscription Users `json:"-" gorm:"many2many:user_subscription;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+
 	/// generated field
 
 	// 兼容旧版 id
