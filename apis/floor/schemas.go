@@ -2,6 +2,7 @@ package floor
 
 import (
 	"github.com/opentreehole/go-common"
+
 	"treehole_next/models"
 )
 
@@ -84,6 +85,11 @@ func (body ModifyModel) CheckPermission(user *models.User, floor *models.Floor, 
 }
 
 type DeleteModel struct {
+	Reason string `json:"delete_reason" validate:"max=32"`
+}
+
+type DeleteMultipleModel struct {
+	HoleID int    `query:"hole_id"     json:"hole_id"`
 	Reason string `json:"delete_reason" validate:"max=32"`
 }
 

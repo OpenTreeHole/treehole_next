@@ -2,9 +2,11 @@ package floor
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/opentreehole/go-common"
 	"github.com/rs/zerolog/log"
-	"time"
+
 	. "treehole_next/models"
 	. "treehole_next/utils"
 
@@ -538,6 +540,89 @@ func DeleteFloor(c *fiber.Ctx) error {
 	}
 
 	return Serialize(c, &floor)
+}
+
+// DeleteFloors is used to delete multiple floors based on hole_id
+//
+// @Summary 	Delete Multiple Floors
+// @Tags 		Floor
+// @Produce 	application/json
+// @Router 		/floors [delete]
+// @Param 		hole_id body DeleteMultipleModel true "hole_id"
+// @Success 200 {array} Floor
+// @Failure 404 {object} MessageModel
+func DeleteFloors(c *fiber.Ctx) error {
+	// Validate body
+	var body DeleteMultipleModel
+	err := common.ValidateBody(c, &body)
+	if err != nil {
+		return err
+	}
+
+	// get user
+	user, err := GetUser(c)
+	if err != nil {
+		return err
+	}
+
+	// Get a list of floor IDs based on the hole_id
+	var floorIDs []int
+	err = DB.Table("floors").Where("hole_id = ?", body.HoleID).Pluck("id", &floorIDs).Error
+	if err != nil {
+		return err
+	}
+
+	// Delete floors in a transaction
+	var deletedFloors Floors
+	err = DB.Transaction(func(tx *gorm.DB) error {
+
+		for _, floorID := range floorIDs {
+			var floor Floor
+
+			result := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Take(&floor, floorID)
+			if result.Error != nil {
+				return result.Error
+			}
+
+			// permission
+			if !((user.ID == floor.UserID && !floor.Deleted) || user.IsAdmin) {
+				return common.Forbidden()
+			}
+
+			err = floor.Backup(tx, user.ID, body.Reason)
+			if err != nil {
+				return err
+			}
+
+			floor.Deleted = true
+			floor.Content = generateDeleteReason(body.Reason, user.ID == floor.UserID)
+			err = tx.Save(&floor).Error
+
+			if err != nil {
+				return err
+			}
+
+			deletedFloors = append(deletedFloors, &floor)
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return err
+	}
+
+	for _, floor := range deletedFloors {
+		go FloorDelete(floor.ID)
+	}
+
+	// Log the deletion
+	for _, floor := range deletedFloors {
+		MyLog("Floor", "Delete", floor.ID, user.ID, RoleOperator, "reason: ", body.Reason)
+	}
+
+	// Return the deleted floors
+	return Serialize(c, &deletedFloors)
 }
 
 // ListReplyFloors
