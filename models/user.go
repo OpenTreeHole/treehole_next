@@ -194,6 +194,23 @@ func (user *User) LoadUserByID(userID int) error {
 			}
 		}
 
+		// check permission
+		modified := false
+		for divisionID := range user.BanDivision {
+			endTime := user.BanDivision[divisionID]
+			if endTime != nil && endTime.Before(time.Now()) {
+				delete(user.BanDivision, divisionID)
+				modified = true
+			}
+		}
+
+		if modified {
+			err = tx.Select("BanDivision").Save(&user).Error
+			if err != nil {
+				return err
+			}
+		}
+
 		return nil
 	})
 }
