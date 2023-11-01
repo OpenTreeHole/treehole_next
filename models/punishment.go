@@ -34,6 +34,8 @@ type Punishment struct {
 
 	Duration *time.Duration `json:"duration" swaggertype:"integer"`
 
+	Day int `json:"day"`
+
 	// user punished
 	UserID int `json:"user_id" gorm:"not null;index"`
 
@@ -72,22 +74,13 @@ func (punishment *Punishment) Create() (*User, error) {
 			return err
 		}
 
-		var lastPunishment Punishment
-		err = tx.Where("user_id = ?", user.ID).Last(&lastPunishment).Error
-		if err == nil {
-			if lastPunishment.EndTime.Before(time.Now()) {
-				punishment.StartTime = time.Now()
-			} else {
-				punishment.StartTime = lastPunishment.EndTime
-			}
-		} else if errors.Is(err, gorm.ErrRecordNotFound) {
-			punishment.StartTime = time.Now()
-		} else {
-			return err
-		}
-
+		punishment.StartTime = time.Now()
 		punishment.EndTime = punishment.StartTime.Add(*punishment.Duration)
-		user.BanDivision[punishment.DivisionID] = &punishment.EndTime
+		if user.BanDivision[punishment.DivisionID] == nil {
+			user.BanDivision[punishment.DivisionID] = &punishment.EndTime
+		} else {
+			user.BanDivision[punishment.DivisionID].Add(*punishment.Duration)
+		}
 		user.OffenceCount += 1
 
 		err = tx.Create(&punishment).Error

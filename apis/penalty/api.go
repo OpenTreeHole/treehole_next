@@ -90,6 +90,7 @@ func BanUser(c *fiber.Ctx) error {
 		FloorID:    &floor.ID,
 		DivisionID: hole.DivisionID,
 		Duration:   &duration,
+		Day:        days,
 		Reason:     body.Reason,
 	}
 	user, err = punishment.Create()

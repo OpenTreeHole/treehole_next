@@ -11,8 +11,6 @@ import (
 	"github.com/opentreehole/go-common"
 	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
-	"gorm.io/plugin/dbresolver"
 )
 
 type User struct {
@@ -180,8 +178,8 @@ func GetUser(c *fiber.Ctx) (*User, error) {
 }
 
 func (user *User) LoadUserByID(userID int) error {
-	return DB.Clauses(dbresolver.Write).Transaction(func(tx *gorm.DB) error {
-		err := tx.Preload("UserPunishments").Clauses(clause.Locking{Strength: "UPDATE"}).Take(&user, userID).Error
+	return DB.Transaction(func(tx *gorm.DB) error {
+		err := tx.Take(&user, userID).Error
 		if err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				// insert user if not found
@@ -196,38 +194,6 @@ func (user *User) LoadUserByID(userID int) error {
 			}
 		}
 
-		// check permission
-		modified := false
-		for divisionID := range user.BanDivision {
-			// get the latest punishments in divisionID
-			var latestPunishment *Punishment
-			for i := range user.UserPunishments {
-				if user.UserPunishments[i].DivisionID == divisionID {
-					latestPunishment = user.UserPunishments[i]
-				}
-			}
-
-			if latestPunishment == nil || latestPunishment.EndTime.Before(time.Now()) {
-				delete(user.BanDivision, divisionID)
-				modified = true
-			}
-		}
-
-		if modified {
-			err = tx.Select("BanDivision").Save(&user).Error
-			if err != nil {
-				return err
-			}
-		}
-
-		// get report punishment
-		if user.BanReport != nil && user.BanReport.Before(time.Now()) {
-			user.BanReport = nil
-			err = tx.Select("BanReport").Save(&user).Error
-			if err != nil {
-				return err
-			}
-		}
 		return nil
 	})
 }
