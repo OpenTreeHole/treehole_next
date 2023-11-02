@@ -20,14 +20,14 @@ func purgeHole() error {
 }
 
 func PurgeHole(ctx context.Context) {
-	ticker := time.NewTicker(time.Hour * 24)
+	ticker := time.NewTicker(time.Minute * 10)
 	defer ticker.Stop()
 	for {
 		select {
 		case <-ticker.C:
 			err := purgeHole()
 			if err != nil {
-				log.Err(err).Msg("error purge message")
+				log.Err(err).Msg("error purge hole")
 			}
 		case <-ctx.Done():
 			return
