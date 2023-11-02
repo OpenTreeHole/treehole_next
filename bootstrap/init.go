@@ -65,6 +65,7 @@ func MiddlewareGetUser(c *fiber.Ctx) error {
 func startTasks() context.CancelFunc {
 	ctx, cancel := context.WithCancel(context.Background())
 	go hole.UpdateHoleViews(ctx)
+	go hole.PurgeHole(ctx)
 	go message.PurgeMessage()
 	go models.UpdateAdminList(ctx)
 	return cancel

@@ -38,6 +38,8 @@ type Hole struct {
 
 	Good bool `json:"good" gorm:"not null;default:false"`
 
+	NoPurge bool `json:"no_purge" gorm:"not null;default:false"`
+
 	/// association info, should add foreign key
 
 	// 所属 division 的 id

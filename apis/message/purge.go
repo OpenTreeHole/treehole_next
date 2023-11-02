@@ -4,25 +4,16 @@ import (
 	"time"
 
 	"github.com/rs/zerolog/log"
-	"gorm.io/gorm"
 
 	"treehole_next/config"
 	. "treehole_next/models"
 )
 
 func purgeMessage() error {
-	return DB.Transaction(func(tx *gorm.DB) error {
-		// delete outdated messages
-		result := tx.Exec(
-			"DELETE FROM message WHERE created_at < ?",
-			time.Now().Add(-time.Hour*24*time.Duration(config.Config.MessagePurgeDays)),
-		)
-		if result.Error != nil {
-			return result.Error
-		}
-
-		return nil
-	})
+	return DB.Exec(
+		"DELETE FROM message WHERE created_at < ?",
+		time.Now().Add(-time.Hour*24*time.Duration(config.Config.MessagePurgeDays)),
+	).Error
 }
 
 func PurgeMessage() {
