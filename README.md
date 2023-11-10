@@ -16,7 +16,7 @@ git clone https://github.com/OpenTreeHole/treehole_next.git
 cd treehole_next
 # install swag and generate docs
 go install github.com/swaggo/swag/cmd/swag@latest
-swag init --parseInternal --parseDepth 1 # to generate the latest docs, this should be run before compiling
+swag init --parseDependency --parseDepth 1 # to generate the latest docs, this should be run before compiling
 # build for debug
 go build -o treehole.exe
 # build for release

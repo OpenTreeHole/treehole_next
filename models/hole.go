@@ -310,8 +310,14 @@ func (hole *Hole) Create(tx *gorm.DB, user *User, tagNames []string) (err error)
 		return err
 	}
 
+	var firstFloor = hole.Floors[0]
+	err = firstFloor.SensitiveCheck(tx, hole)
+	if err != nil {
+		return err
+	}
+
 	// Find floor.Mentions, in different sql session
-	hole.Floors[0].Mention, err = LoadFloorMentions(tx, hole.Floors[0].Content)
+	firstFloor.Mention, err = LoadFloorMentions(tx, firstFloor.Content)
 
 	err = tx.Clauses(dbresolver.Write).Transaction(func(tx *gorm.DB) error {
 		// Create hole
@@ -319,7 +325,7 @@ func (hole *Hole) Create(tx *gorm.DB, user *User, tagNames []string) (err error)
 		if err != nil {
 			return err
 		}
-		hole.Floors[0].HoleID = hole.ID
+		firstFloor.HoleID = hole.ID
 
 		// Create hole_tags association only
 		err = tx.Omit("Tags.*", "UpdatedAt").Select("Tags").Save(&hole).Error
@@ -334,13 +340,13 @@ func (hole *Hole) Create(tx *gorm.DB, user *User, tagNames []string) (err error)
 		}
 
 		// New anonyname
-		hole.Floors[0].Anonyname, err = NewAnonyname(tx, hole.ID, hole.UserID)
+		firstFloor.Anonyname, err = NewAnonyname(tx, hole.ID, hole.UserID)
 		if err != nil {
 			return err
 		}
 
 		// Create floor, set floor_mention association in AfterCreate hook
-		return tx.Omit(clause.Associations).Create(&hole.Floors[0]).Error
+		return tx.Omit(clause.Associations).Create(&firstFloor).Error
 	})
 	// transaction commit here
 	if err != nil {
@@ -351,13 +357,13 @@ func (hole *Hole) Create(tx *gorm.DB, user *User, tagNames []string) (err error)
 	hole.SetHoleFloor()
 
 	// half preprocess hole.Floor
-	hole.Floors[0].SetDefaults()
+	firstFloor.SetDefaults()
 
 	// index
 	go FloorIndex(FloorModel{
-		ID:        hole.Floors[0].ID,
+		ID:        firstFloor.ID,
 		UpdatedAt: time.Now(),
-		Content:   hole.Floors[0].Content,
+		Content:   firstFloor.Content,
 	})
 
 	// store into cache

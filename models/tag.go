@@ -23,6 +23,8 @@ type Tag struct {
 	Name        string `json:"name" gorm:"not null;unique;size:32"`
 	Temperature int    `json:"temperature" gorm:"not null;default:0"`
 
+	IsZZMG bool `json:"is_zzmg" gorm:"not null;default:false"`
+
 	/// association info, should add foreign key
 	Holes Holes `json:"-" gorm:"many2many:hole_tags;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 

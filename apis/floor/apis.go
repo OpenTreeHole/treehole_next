@@ -187,7 +187,7 @@ func CreateFloor(c *fiber.Ctx) error {
 		SpecialTag: body.SpecialTag,
 		IsMe:       true,
 	}
-	err = floor.Create(DB)
+	err = floor.Create(DB, &hole)
 	if err != nil {
 		return err
 	}
@@ -252,7 +252,7 @@ func CreateFloorOld(c *fiber.Ctx) error {
 		SpecialTag: body.SpecialTag,
 		IsMe:       true,
 	}
-	err = floor.Create(DB)
+	err = floor.Create(DB, &hole)
 	if err != nil {
 		return err
 	}
@@ -341,6 +341,12 @@ func ModifyFloor(c *fiber.Ctx) error {
 				return err
 			}
 			floor.Content = *body.Content
+
+			// sensitive check
+			err = floor.SensitiveCheck(tx, &hole)
+			if err != nil {
+				return err
+			}
 
 			// update floor.mention after update floor.content
 			err = tx.Where("floor_id = ?", floorID).Delete(&FloorMention{}).Error
@@ -753,4 +759,122 @@ WHERE f.id IN (
 		return err
 	}
 	return c.JSON(punishments)
+}
+
+// ListSensitiveFloors
+//
+// @Summary List sensitive floors, admin only
+// @Tags Floor
+// @Produce application/json
+// @Router /floors/_sensitive [get]
+// @Param object query SensitiveFloorRequest false "query"
+// @Success 200 {array} SensitiveFloorResponse
+// @Failure 404 {object} MessageModel
+func ListSensitiveFloors(c *fiber.Ctx) (err error) {
+	// validate query
+	var query SensitiveFloorRequest
+	err = common.ValidateQuery(c, &query)
+	if err != nil {
+		return err
+	}
+
+	// get user
+	user, err := GetUser(c)
+	if err != nil {
+		return err
+	}
+
+	// permission, admin only
+	if !user.IsAdmin {
+		return common.Forbidden()
+	}
+
+	// get floors
+	var floors Floors
+	querySet := DB
+	if query.All == true {
+		querySet = querySet.Where("is_sensitive = true")
+	} else {
+		if query.Open == true {
+			querySet = querySet.Where("is_sensitive = true and is_actual_sensitive IS NULL")
+		} else {
+			querySet = querySet.Where("is_sensitive = true and is_actual_sensitive IS NOT NULL")
+		}
+	}
+
+	result := querySet.
+		Order("updated_at desc").
+		Find(&floors)
+	if result.Error != nil {
+		return result.Error
+	}
+
+	var responses = make([]SensitiveFloorResponse, len(floors))
+	for i := range responses {
+		responses[i].FromModel(floors[i])
+	}
+
+	return c.JSON(responses)
+}
+
+// ModifyFloorSensitive
+//
+// @Summary Modify A Floor's actual_sensitive, admin only
+// @Tags Floor
+// @Produce application/json
+// @Router /floors/{id}/_sensitive [put]
+// @Param id path int true "id"
+// @Param json body ModifySensitiveFloorRequest true "json"
+// @Success 200 {object} Floor
+// @Failure 404 {object} MessageModel
+func ModifyFloorSensitive(c *fiber.Ctx) (err error) {
+	// validate body
+	var body ModifySensitiveFloorRequest
+	err = common.ValidateBody(c, &body)
+	if err != nil {
+		return err
+	}
+
+	// parse floor_id
+	floorID, err := c.ParamsInt("id")
+	if err != nil {
+		return err
+	}
+
+	// get user
+	user, err := GetUser(c)
+	if err != nil {
+		return err
+	}
+
+	// permission check
+	if !user.IsAdmin {
+		return common.Forbidden()
+	}
+
+	var floor Floor
+	err = DB.Clauses(dbresolver.Write).Transaction(func(tx *gorm.DB) error {
+		err = tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&floor, floorID).Error
+		if err != nil {
+			return err
+		}
+
+		// modify actual_sensitive
+		floor.IsActualSensitive = &body.IsActualSensitive
+		MyLog("Floor", "Modify", floorID, user.ID, RoleAdmin, "actual_sensitive to: ", fmt.Sprintf("%v", body.IsActualSensitive))
+
+		// save actual_sensitive only
+		return tx.Model(&floor).Select("IsActualSensitive").Updates(&floor).Error
+	})
+	if err != nil {
+		return err
+	}
+
+	// clear cache
+	err = DeleteCache(fmt.Sprintf("hole_%v", floor.HoleID))
+	if err != nil {
+		return err
+	}
+
+	return Serialize(c, &floor)
 }

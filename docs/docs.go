@@ -413,6 +413,58 @@ const docTemplate = `{
                 }
             }
         },
+        "/floors/_sensitive": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Floor"
+                ],
+                "summary": "List sensitive floors, admin only",
+                "parameters": [
+                    {
+                        "type": "boolean",
+                        "name": "all",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "name": "open",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 10,
+                        "type": "integer",
+                        "default": 10,
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/floor.SensitiveFloorResponse"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.MessageModel"
+                        }
+                    }
+                }
+            }
+        },
         "/floors/search": {
             "get": {
                 "produces": [
@@ -609,6 +661,49 @@ const docTemplate = `{
                         "required": true,
                         "schema": {
                             "$ref": "#/definitions/floor.DeleteModel"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Floor"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.MessageModel"
+                        }
+                    }
+                }
+            }
+        },
+        "/floors/{id}/_sensitive": {
+            "put": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Floor"
+                ],
+                "summary": "Modify A Floor's actual_sensitive, admin only",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "json",
+                        "name": "json",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/floor.ModifySensitiveFloorRequest"
                         }
                     }
                 ],
@@ -2465,6 +2560,14 @@ const docTemplate = `{
                 }
             }
         },
+        "floor.ModifySensitiveFloorRequest": {
+            "type": "object",
+            "properties": {
+                "is_actual_sensitive": {
+                    "type": "boolean"
+                }
+            }
+        },
         "floor.RestoreModel": {
             "type": "object",
             "required": [
@@ -2482,6 +2585,32 @@ const docTemplate = `{
             "properties": {
                 "open": {
                     "type": "boolean"
+                }
+            }
+        },
+        "floor.SensitiveFloorResponse": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "hole_id": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "is_actual_sensitive": {
+                    "type": "boolean"
+                },
+                "modified": {
+                    "type": "integer"
+                },
+                "time_created": {
+                    "type": "string"
+                },
+                "time_updated": {
+                    "type": "string"
                 }
             }
         },
@@ -2606,6 +2735,9 @@ const docTemplate = `{
                     "description": "/ generated field",
                     "type": "integer"
                 },
+                "hidden": {
+                    "type": "boolean"
+                },
                 "id": {
                     "description": "/ saved fields",
                     "type": "integer"
@@ -2675,8 +2807,16 @@ const docTemplate = `{
                     "description": "/ saved fields",
                     "type": "integer"
                 },
+                "is_actual_sensitive": {
+                    "description": "manual sensitive check",
+                    "type": "boolean"
+                },
                 "is_me": {
                     "description": "whether the user is the author of the floor",
+                    "type": "boolean"
+                },
+                "is_sensitive": {
+                    "description": "auto sensitive check",
                     "type": "boolean"
                 },
                 "like": {
@@ -2801,6 +2941,9 @@ const docTemplate = `{
                     "description": "锁定帖子，如果锁定则非管理员无法发帖，也无法修改已有发帖",
                     "type": "boolean"
                 },
+                "no_purge": {
+                    "type": "boolean"
+                },
                 "reply": {
                     "description": "回复量（即该洞下 floor 的数量 - 1）",
                     "type": "integer"
@@ -2904,6 +3047,9 @@ const docTemplate = `{
                     "description": "time when this punishment creates",
                     "type": "string"
                 },
+                "day": {
+                    "type": "integer"
+                },
                 "division": {
                     "description": "foreign key",
                     "allOf": [
@@ -3003,6 +3149,9 @@ const docTemplate = `{
                     "description": "/ saved fields",
                     "type": "integer"
                 },
+                "is_zzmg": {
+                    "type": "boolean"
+                },
                 "name": {
                     "description": "/ base info",
                     "type": "string"
@@ -3095,6 +3244,14 @@ const docTemplate = `{
                     "description": "high priority",
                     "type": "integer",
                     "minimum": 1
+                },
+                "divisions": {
+                    "description": "high priority",
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "type": "integer"
+                    }
                 },
                 "penalty_level": {
                     "description": "low priority, deprecated",

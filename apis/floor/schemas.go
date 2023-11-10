@@ -1,6 +1,8 @@
 package floor
 
 import (
+	"time"
+
 	"github.com/opentreehole/go-common"
 
 	"treehole_next/models"
@@ -94,4 +96,35 @@ type RestoreModel struct {
 
 type SearchConfigModel struct {
 	Open bool `json:"open"`
+}
+
+type SensitiveFloorRequest struct {
+	Size   int               `json:"size" query:"size" default:"10" validate:"max=10"`
+	Offset common.CustomTime `json:"offset" query:"offset" swaggertype:"string"`
+	Open   bool              `json:"open" query:"open"`
+	All    bool              `json:"all" query:"all"`
+}
+
+type SensitiveFloorResponse struct {
+	ID                int       `json:"id"`
+	CreatedAt         time.Time `json:"time_created"`
+	UpdatedAt         time.Time `json:"time_updated"`
+	Content           string    `json:"content"`
+	Modified          int       `json:"modified"`
+	IsActualSensitive *bool     `json:"is_actual_sensitive"`
+	HoleID            int       `json:"hole_id"`
+}
+
+func (s *SensitiveFloorResponse) FromModel(floor *models.Floor) *SensitiveFloorResponse {
+	s.ID = floor.ID
+	s.CreatedAt = floor.CreatedAt
+	s.UpdatedAt = floor.UpdatedAt
+	s.Content = floor.Content
+	s.Modified = floor.Modified
+	s.HoleID = floor.HoleID
+	return s
+}
+
+type ModifySensitiveFloorRequest struct {
+	IsActualSensitive bool `json:"is_actual_sensitive"`
 }

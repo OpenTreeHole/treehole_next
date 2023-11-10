@@ -16,16 +16,34 @@ var MetaFile []byte
 
 var NamesMapping map[string]string
 
+var SensitiveWords []string
+
 func init() {
-	NamesMappingData, err := os.ReadFile(`data/names_mapping.json`)
+	err := initNamesMapping()
 	if err != nil {
-		log.Err(err).Msg("could not load names_mapping.json")
-		return
+		log.Err(err).Msg("could not init names mapping")
 	}
 
-	err = json.Unmarshal(NamesMappingData, &NamesMapping)
+	err = initSensitiveWords()
 	if err != nil {
-		log.Err(err).Msg("could not unmarshal names_mapping.json")
-		return
+		log.Err(err).Msg("could not init sensitive words")
 	}
+}
+
+func initNamesMapping() error {
+	NamesMappingData, err := os.ReadFile(`data/names_mapping.json`)
+	if err != nil {
+		return err
+	}
+
+	return json.Unmarshal(NamesMappingData, &NamesMapping)
+}
+
+func initSensitiveWords() error {
+	sensitiveWordsData, err := os.ReadFile(`data/sensitive_words.json`)
+	if err != nil {
+		return err
+	}
+
+	return json.Unmarshal(sensitiveWordsData, &SensitiveWords)
 }

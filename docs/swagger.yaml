@@ -144,6 +144,11 @@ definitions:
         maxLength: 16
         type: string
     type: object
+  floor.ModifySensitiveFloorRequest:
+    properties:
+      is_actual_sensitive:
+        type: boolean
+    type: object
   floor.RestoreModel:
     properties:
       restore_reason:
@@ -156,6 +161,23 @@ definitions:
     properties:
       open:
         type: boolean
+    type: object
+  floor.SensitiveFloorResponse:
+    properties:
+      content:
+        type: string
+      hole_id:
+        type: integer
+      id:
+        type: integer
+      is_actual_sensitive:
+        type: boolean
+      modified:
+        type: integer
+      time_created:
+        type: string
+      time_updated:
+        type: string
     type: object
   hole.CreateModel:
     properties:
@@ -243,6 +265,8 @@ definitions:
       division_id:
         description: / generated field
         type: integer
+      hidden:
+        type: boolean
       id:
         description: / saved fields
         type: integer
@@ -293,8 +317,14 @@ definitions:
       id:
         description: / saved fields
         type: integer
+      is_actual_sensitive:
+        description: manual sensitive check
+        type: boolean
       is_me:
         description: whether the user is the author of the floor
+        type: boolean
+      is_sensitive:
+        description: auto sensitive check
         type: boolean
       like:
         description: like number
@@ -379,6 +409,8 @@ definitions:
       locked:
         description: 锁定帖子，如果锁定则非管理员无法发帖，也无法修改已有发帖
         type: boolean
+      no_purge:
+        type: boolean
       reply:
         description: 回复量（即该洞下 floor 的数量 - 1）
         type: integer
@@ -454,6 +486,8 @@ definitions:
       created_at:
         description: time when this punishment creates
         type: string
+      day:
+        type: integer
       division:
         allOf:
         - $ref: '#/definitions/models.Division'
@@ -522,6 +556,8 @@ definitions:
       id:
         description: / saved fields
         type: integer
+      is_zzmg:
+        type: boolean
       name:
         description: / base info
         type: string
@@ -588,6 +624,12 @@ definitions:
         description: high priority
         minimum: 1
         type: integer
+      divisions:
+        description: high priority
+        items:
+          type: integer
+        minItems: 1
+        type: array
       penalty_level:
         description: low priority, deprecated
         type: integer
@@ -945,6 +987,39 @@ paths:
       summary: Old API for Creating A Floor
       tags:
       - Floor
+  /floors/_sensitive:
+    get:
+      parameters:
+      - in: query
+        name: all
+        type: boolean
+      - in: query
+        name: offset
+        type: string
+      - in: query
+        name: open
+        type: boolean
+      - default: 10
+        in: query
+        maximum: 10
+        name: size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/floor.SensitiveFloorResponse'
+            type: array
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.MessageModel'
+      summary: List sensitive floors, admin only
+      tags:
+      - Floor
   /floors/{id}:
     delete:
       parameters:
@@ -1021,6 +1096,34 @@ paths:
           schema:
             $ref: '#/definitions/models.MessageModel'
       summary: Modify A Floor
+      tags:
+      - Floor
+  /floors/{id}/_sensitive:
+    put:
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: json
+        in: body
+        name: json
+        required: true
+        schema:
+          $ref: '#/definitions/floor.ModifySensitiveFloorRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Floor'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.MessageModel'
+      summary: Modify A Floor's actual_sensitive, admin only
       tags:
       - Floor
   /floors/{id}/history:

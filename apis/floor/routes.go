@@ -10,20 +10,23 @@ func RegisterRoutes(app fiber.Router) {
 	app.Post("/floors/search", SearchFloors)
 	app.Get("/floors/search", SearchFloors)
 
-	app.Get("/holes/:id/floors", ListFloorsInAHole)
+	app.Get("/holes/:id<int>/floors", ListFloorsInAHole)
 	app.Get("/floors", ListFloorsOld)
-	app.Get("/floors/:id", GetFloor)
-	app.Post("/holes/:id/floors", utils.MiddlewareHasAnsweredQuestions, CreateFloor)
+	app.Get("/floors/:id<int>", GetFloor)
+	app.Post("/holes/:id<int>/floors", utils.MiddlewareHasAnsweredQuestions, CreateFloor)
 	app.Post("/floors", utils.MiddlewareHasAnsweredQuestions, CreateFloorOld)
-	app.Put("/floors/:id", ModifyFloor)
-	app.Post("/floors/:id/like/:like", ModifyFloorLike)
-	app.Delete("/floors/:id", DeleteFloor)
+	app.Put("/floors/:id<int>", ModifyFloor)
+	app.Post("/floors/:id<int>/like/:like<int>", ModifyFloorLike)
+	app.Delete("/floors/:id<int>", DeleteFloor)
 
 	app.Get("/users/me/floors", ListReplyFloors)
 
-	app.Get("/floors/:id/history", GetFloorHistory)
-	app.Post("/floors/:id/restore/:floor_history_id", RestoreFloor)
+	app.Get("/floors/:id<int>/history", GetFloorHistory)
+	app.Post("/floors/:id<int>/restore/:floor_history_id<int>", RestoreFloor)
 
 	app.Post("/config/search", SearchConfig)
-	app.Get("/floors/:id/punishment", GetPunishmentHistory)
+	app.Get("/floors/:id<int>/punishment", GetPunishmentHistory)
+
+	app.Get("/floors/_sensitive", ListSensitiveFloors)
+	app.Put("/floors/:id<int>/_sensitive", ModifyFloorSensitive)
 }

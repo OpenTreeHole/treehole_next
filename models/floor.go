@@ -54,6 +54,12 @@ type Floor struct {
 	// additional info, like "树洞管理团队"
 	SpecialTag string `json:"special_tag"`
 
+	// auto sensitive check
+	IsSensitive bool `json:"is_sensitive" gorm:"not null;default:0"`
+
+	// manual sensitive check
+	IsActualSensitive *bool `json:"is_actual_sensitive"`
+
 	/// association info, should add foreign key
 
 	// the user who wrote it
@@ -164,19 +170,28 @@ func (floor *Floor) SetDefaults() {
 	} else {
 		floor.FoldFrontend = []string{}
 	}
+
+	if floor.IsSensitive == true && (floor.IsActualSensitive == nil || *floor.IsActualSensitive == true) {
+		floor.Content = "此内容正在审核中"
+	}
 }
 
 /******************************
 Create
 *******************************/
 
-func (floor *Floor) Create(tx *gorm.DB) (err error) {
+func (floor *Floor) Create(tx *gorm.DB, hole *Hole) (err error) {
+	// sensitive check
+	err = floor.SensitiveCheck(tx, hole)
+	if err != nil {
+		return err
+	}
+
 	// load floor mention, in another session
 	floor.Mention, err = LoadFloorMentions(DB, floor.Content)
 	if err != nil {
 		return err
 	}
-	var hole Hole
 
 	err = tx.Clauses(dbresolver.Write).Transaction(func(tx *gorm.DB) error {
 		// get anonymous name
@@ -308,6 +323,32 @@ func (floor *Floor) ModifyLike(tx *gorm.DB, userID int, likeOption int8) (err er
 	} else if likeOption == -1 {
 		floor.DislikedFrontend = true
 	}
+	return nil
+}
+
+func (floor *Floor) SensitiveCheck(tx *gorm.DB, hole *Hole) (err error) {
+	var tags Tags
+	if hole.Tags != nil {
+		tags = hole.Tags
+	} else {
+		err = tx.Model(&Tag{}).Joins("JOIN hole_tags ON hole_tags.tag_id = tag.id").
+			Where("hole_tags.hole_id = ?", floor.HoleID).Find(&tags).Error
+		if err != nil {
+			return err
+		}
+	}
+
+	hasZZMGTag := hole.DivisionID == 2
+	for _, tag := range tags {
+		if tag.IsZZMG {
+			hasZZMGTag = true
+		}
+	}
+	if hasZZMGTag && utils.IsSensitive(floor.Content) {
+		floor.IsSensitive = true
+		floor.IsActualSensitive = nil
+	}
+
 	return nil
 }
 
