@@ -241,7 +241,7 @@ func (floor *Floor) Create(tx *gorm.DB, hole *Hole) (err error) {
 		// return err // only for test
 	}
 
-	if !hole.Hidden {
+	if !hole.Hidden && !floor.IsSensitive {
 		// insert into Elasticsearch
 		go FloorIndex(FloorModel{
 			ID:        floor.ID,

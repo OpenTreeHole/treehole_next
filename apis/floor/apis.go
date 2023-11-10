@@ -864,7 +864,7 @@ func ModifyFloorSensitive(c *fiber.Ctx) (err error) {
 		MyLog("Floor", "Modify", floorID, user.ID, RoleAdmin, "actual_sensitive to: ", fmt.Sprintf("%v", body.IsActualSensitive))
 
 		// save actual_sensitive only
-		return tx.Model(&floor).Select("IsActualSensitive").Updates(&floor).Error
+		return tx.Model(&floor).Select("IsActualSensitive").UpdateColumns(&floor).Error
 	})
 	if err != nil {
 		return err
@@ -874,6 +874,14 @@ func ModifyFloorSensitive(c *fiber.Ctx) (err error) {
 	err = DeleteCache(fmt.Sprintf("hole_%v", floor.HoleID))
 	if err != nil {
 		return err
+	}
+
+	if *floor.IsActualSensitive == false {
+		go FloorIndex(FloorModel{
+			ID:        floor.ID,
+			UpdatedAt: floor.UpdatedAt,
+			Content:   floor.Content,
+		})
 	}
 
 	return Serialize(c, &floor)

@@ -360,11 +360,13 @@ func (hole *Hole) Create(tx *gorm.DB, user *User, tagNames []string) (err error)
 	firstFloor.SetDefaults()
 
 	// index
-	go FloorIndex(FloorModel{
-		ID:        firstFloor.ID,
-		UpdatedAt: time.Now(),
-		Content:   firstFloor.Content,
-	})
+	if !firstFloor.IsSensitive {
+		go FloorIndex(FloorModel{
+			ID:        firstFloor.ID,
+			UpdatedAt: time.Now(),
+			Content:   firstFloor.Content,
+		})
+	}
 
 	// store into cache
 	return utils.SetCache(hole.CacheName(), hole, HoleCacheExpire)
