@@ -173,6 +173,7 @@ func (floor *Floor) SetDefaults() {
 
 	if floor.IsSensitive == true && (floor.IsActualSensitive == nil || *floor.IsActualSensitive == true) {
 		floor.Content = "该内容被猫猫吃掉了"
+		floor.FoldFrontend = []string{"该内容被猫猫吃掉了"}
 	}
 }
 
