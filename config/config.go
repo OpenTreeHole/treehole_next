@@ -34,6 +34,7 @@ var Config struct {
 	AdminOnly          bool     `env:"ADMIN_ONLY" envDefault:"false"`
 	HolePurgeDivisions []int    `env:"HOLE_PURGE_DIVISIONS" envDefault:"2"`
 	HolePurgeDays      int      `env:"HOLE_PURGE_DAYS" envDefault:"30"`
+	OpenSensitiveCheck bool     `env:"OPEN_SENSITIVE_CHECK" envDefault:"true"`
 }
 
 var DynamicConfig struct {

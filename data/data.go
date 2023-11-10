@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/goccy/go-json"
+	"github.com/importcjj/sensitive"
 	"github.com/rs/zerolog/log"
 )
 
@@ -16,7 +17,7 @@ var MetaFile []byte
 
 var NamesMapping map[string]string
 
-var SensitiveWords []string
+var SensitiveWordFilter *sensitive.Filter
 
 func init() {
 	err := initNamesMapping()
@@ -40,10 +41,11 @@ func initNamesMapping() error {
 }
 
 func initSensitiveWords() error {
-	sensitiveWordsData, err := os.ReadFile(`data/sensitive_words.json`)
+	SensitiveWordFilter = sensitive.New()
+	err := SensitiveWordFilter.LoadWordDict("data/sensitive_words.txt")
 	if err != nil {
+		SensitiveWordFilter = nil
 		return err
 	}
-
-	return json.Unmarshal(sensitiveWordsData, &SensitiveWords)
+	return nil
 }
