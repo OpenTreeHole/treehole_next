@@ -1,6 +1,8 @@
 package apis
 
 import (
+	"github.com/opentreehole/go-common"
+
 	"treehole_next/apis/division"
 	"treehole_next/apis/favourite"
 	"treehole_next/apis/floor"
@@ -11,7 +13,9 @@ import (
 	"treehole_next/apis/subscription"
 	"treehole_next/apis/tag"
 	"treehole_next/apis/user"
+	"treehole_next/config"
 	_ "treehole_next/docs"
+	"treehole_next/models"
 
 	"github.com/gofiber/fiber/v2"
 	fiberSwagger "github.com/swaggo/fiber-swagger"
@@ -32,6 +36,7 @@ func RegisterRoutes(app *fiber.App) {
 
 	group := app.Group("/api")
 	group.Get("/", Index)
+	group.Use(MiddlewareGetUser)
 	division.RegisterRoutes(group)
 	tag.RegisterRoutes(group)
 	hole.RegisterRoutes(group)
@@ -42,4 +47,18 @@ func RegisterRoutes(app *fiber.App) {
 	penalty.RegisterRoutes(group)
 	user.RegisterRoutes(group)
 	message.RegisterRoutes(group)
+}
+
+func MiddlewareGetUser(c *fiber.Ctx) error {
+	userObject, err := models.GetUser(c)
+	if err != nil {
+		return err
+	}
+	c.Locals("user", userObject)
+	if config.Config.AdminOnly {
+		if !userObject.IsAdmin {
+			return common.Forbidden()
+		}
+	}
+	return c.Next()
 }

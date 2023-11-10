@@ -43,23 +43,7 @@ func registerMiddlewares(app *fiber.App) {
 	if config.Config.Mode != "bench" {
 		app.Use(common.MiddlewareCustomLogger)
 	}
-	app.Use(MiddlewareGetUser)
 	app.Use(pprof.New())
-
-}
-
-func MiddlewareGetUser(c *fiber.Ctx) error {
-	user, err := models.GetUser(c)
-	if err != nil {
-		return err
-	}
-	c.Locals("user", user)
-	if config.Config.AdminOnly {
-		if !user.IsAdmin {
-			return common.Forbidden()
-		}
-	}
-	return c.Next()
 }
 
 func startTasks() context.CancelFunc {
