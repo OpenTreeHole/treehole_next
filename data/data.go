@@ -19,6 +19,8 @@ var NamesMapping map[string]string
 
 var SensitiveWordFilter *sensitive.Filter
 
+var WeakSensitiveWordFilter *sensitive.Filter
+
 func init() {
 	err := initNamesMapping()
 	if err != nil {
@@ -28,6 +30,11 @@ func init() {
 	err = initSensitiveWords()
 	if err != nil {
 		log.Err(err).Msg("could not init sensitive words")
+	}
+
+	err = initWeakSensitiveWords()
+	if err != nil {
+		log.Err(err).Msg("could not init weak sensitive words")
 	}
 }
 
@@ -42,7 +49,17 @@ func initNamesMapping() error {
 
 func initSensitiveWords() error {
 	SensitiveWordFilter = sensitive.New()
-	err := SensitiveWordFilter.LoadWordDict("data/sensitive_words.txt")
+	err := WeakSensitiveWordFilter.LoadWordDict("data/sensitive_words.txt")
+	if err != nil {
+		WeakSensitiveWordFilter = nil
+		return err
+	}
+	return nil
+}
+
+func initWeakSensitiveWords() error {
+	WeakSensitiveWordFilter = sensitive.New()
+	err := SensitiveWordFilter.LoadWordDict("data/weak_sensitive_words.txt")
 	if err != nil {
 		SensitiveWordFilter = nil
 		return err

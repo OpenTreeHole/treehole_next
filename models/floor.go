@@ -345,7 +345,8 @@ func (floor *Floor) SensitiveCheck(tx *gorm.DB, hole *Hole) (err error) {
 			hasZZMGTag = true
 		}
 	}
-	if hasZZMGTag && utils.IsSensitive(floor.Content) {
+
+	if utils.IsSensitive(floor.Content, !hasZZMGTag) {
 		floor.IsSensitive = true
 		floor.IsActualSensitive = nil
 	}
