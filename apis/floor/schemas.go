@@ -121,6 +121,7 @@ func (s *SensitiveFloorResponse) FromModel(floor *models.Floor) *SensitiveFloorR
 	s.UpdatedAt = floor.UpdatedAt
 	s.Content = floor.Content
 	s.Modified = floor.Modified
+	s.IsActualSensitive = floor.IsActualSensitive
 	s.HoleID = floor.HoleID
 	return s
 }
