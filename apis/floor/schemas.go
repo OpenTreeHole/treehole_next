@@ -113,6 +113,7 @@ type SensitiveFloorResponse struct {
 	Modified          int       `json:"modified"`
 	IsActualSensitive *bool     `json:"is_actual_sensitive"`
 	HoleID            int       `json:"hole_id"`
+	Deleted           bool      `json:"deleted"`
 }
 
 func (s *SensitiveFloorResponse) FromModel(floor *models.Floor) *SensitiveFloorResponse {
@@ -123,6 +124,7 @@ func (s *SensitiveFloorResponse) FromModel(floor *models.Floor) *SensitiveFloorR
 	s.Modified = floor.Modified
 	s.IsActualSensitive = floor.IsActualSensitive
 	s.HoleID = floor.HoleID
+	s.Deleted = floor.Deleted
 	return s
 }
 

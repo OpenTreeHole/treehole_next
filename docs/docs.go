@@ -2594,6 +2594,9 @@ const docTemplate = `{
                 "content": {
                     "type": "string"
                 },
+                "deleted": {
+                    "type": "boolean"
+                },
                 "hole_id": {
                     "type": "integer"
                 },
