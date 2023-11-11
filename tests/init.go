@@ -6,6 +6,7 @@ import (
 
 	"github.com/rs/zerolog/log"
 
+	"treehole_next/config"
 	. "treehole_next/models"
 )
 
@@ -16,6 +17,8 @@ func init() {
 	initTestTags()
 	initTestFavorites()
 	initTestReports()
+
+	config.Config.OpenSensitiveCheck = false
 }
 
 func initTestDivision() {
