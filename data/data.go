@@ -49,9 +49,9 @@ func initNamesMapping() error {
 
 func initSensitiveWords() error {
 	SensitiveWordFilter = sensitive.New()
-	err := WeakSensitiveWordFilter.LoadWordDict("data/sensitive_words.txt")
+	err := SensitiveWordFilter.LoadWordDict("data/sensitive_words.txt")
 	if err != nil {
-		WeakSensitiveWordFilter = nil
+		SensitiveWordFilter = nil
 		return err
 	}
 	return nil
@@ -59,9 +59,9 @@ func initSensitiveWords() error {
 
 func initWeakSensitiveWords() error {
 	WeakSensitiveWordFilter = sensitive.New()
-	err := SensitiveWordFilter.LoadWordDict("data/weak_sensitive_words.txt")
+	err := WeakSensitiveWordFilter.LoadWordDict("data/weak_sensitive_words.txt")
 	if err != nil {
-		SensitiveWordFilter = nil
+		WeakSensitiveWordFilter = nil
 		return err
 	}
 	return nil
