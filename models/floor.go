@@ -19,8 +19,8 @@ import (
 type Floor struct {
 	/// saved fields
 	ID        int       `json:"id" gorm:"primaryKey"`
-	CreatedAt time.Time `json:"time_created" gorm:"index"`
-	UpdatedAt time.Time `json:"time_updated" gorm:"index"`
+	CreatedAt time.Time `json:"time_created" gorm:"index:,sort:desc"`
+	UpdatedAt time.Time `json:"time_updated" gorm:"index:,sort:desc;index:idx_floor_actual_sensitive_updated_at,priority:3,sort:desc"`
 
 	/// base info
 
@@ -55,10 +55,10 @@ type Floor struct {
 	SpecialTag string `json:"special_tag"`
 
 	// auto sensitive check
-	IsSensitive bool `json:"is_sensitive"`
+	IsSensitive bool `json:"is_sensitive" gorm:"index:idx_floor_actual_sensitive_updated_at,priority:1"`
 
 	// manual sensitive check
-	IsActualSensitive *bool `json:"is_actual_sensitive"`
+	IsActualSensitive *bool `json:"is_actual_sensitive" gorm:"index:idx_floor_actual_sensitive_updated_at,priority:2"`
 
 	/// association info, should add foreign key
 
