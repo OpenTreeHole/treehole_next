@@ -803,7 +803,7 @@ func ListSensitiveFloors(c *fiber.Ctx) (err error) {
 	}
 
 	result := querySet.
-		Where("updated_at < ?", query.Offset).
+		Where("updated_at < ?", query.Offset.Time).
 		Order("updated_at desc").
 		Limit(query.Size).
 		Find(&floors)
