@@ -19,8 +19,8 @@ import (
 type Floor struct {
 	/// saved fields
 	ID        int       `json:"id" gorm:"primaryKey"`
-	CreatedAt time.Time `json:"time_created"`
-	UpdatedAt time.Time `json:"time_updated"`
+	CreatedAt time.Time `json:"time_created" gorm:"index"`
+	UpdatedAt time.Time `json:"time_updated" gorm:"index"`
 
 	/// base info
 
@@ -55,7 +55,7 @@ type Floor struct {
 	SpecialTag string `json:"special_tag"`
 
 	// auto sensitive check
-	IsSensitive bool `json:"is_sensitive" gorm:"not null;default:0"`
+	IsSensitive bool `json:"is_sensitive"`
 
 	// manual sensitive check
 	IsActualSensitive *bool `json:"is_actual_sensitive"`
