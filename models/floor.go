@@ -251,6 +251,8 @@ func (floor *Floor) Create(tx *gorm.DB, hole *Hole) (err error) {
 			UpdatedAt: time.Now(),
 			Content:   floor.Content,
 		})
+	} else {
+		go FloorDelete(floor.ID)
 	}
 
 	// delete cache
@@ -349,10 +351,8 @@ func (floor *Floor) SensitiveCheck(tx *gorm.DB, hole *Hole) (err error) {
 		}
 	}
 
-	if utils.IsSensitive(floor.Content, !hasZZMGTag) {
-		floor.IsSensitive = true
-		floor.IsActualSensitive = nil
-	}
+	floor.IsSensitive = utils.IsSensitive(floor.Content, !hasZZMGTag)
+	floor.IsActualSensitive = nil
 
 	return nil
 }

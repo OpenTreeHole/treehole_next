@@ -375,11 +375,13 @@ func ModifyFloor(c *fiber.Ctx) error {
 			}
 
 			// reindex floor
-			go FloorIndex(FloorModel{
-				ID:        floor.ID,
-				UpdatedAt: time.Now(),
-				Content:   floor.Content,
-			})
+			if !hole.Hidden && !floor.IsSensitive {
+				go FloorIndex(FloorModel{
+					ID:        floor.ID,
+					UpdatedAt: time.Now(),
+					Content:   floor.Content,
+				})
+			}
 		}
 
 		// update fold
@@ -923,6 +925,8 @@ func ModifyFloorSensitive(c *fiber.Ctx) (err error) {
 			UpdatedAt: floor.UpdatedAt,
 			Content:   floor.Content,
 		})
+	} else {
+		go FloorDelete(floor.ID)
 	}
 
 	return Serialize(c, &floor)
