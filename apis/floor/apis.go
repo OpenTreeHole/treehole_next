@@ -367,6 +367,13 @@ func ModifyFloor(c *fiber.Ctx) error {
 				}
 			}
 
+			err = tx.Model(&floor).
+				Select([]string{"Content", "Modified", "IsSensitive", "IsActualSensitive"}).
+				Updates(&floor).Error
+			if err != nil {
+				return err
+			}
+
 			// reindex floor
 			go FloorIndex(FloorModel{
 				ID:        floor.ID,
@@ -375,6 +382,7 @@ func ModifyFloor(c *fiber.Ctx) error {
 			})
 		}
 
+		// update fold
 		if body.Fold != nil {
 			if *body.Fold != "" {
 				floor.Fold = *body.Fold
@@ -383,6 +391,14 @@ func ModifyFloor(c *fiber.Ctx) error {
 				floor.Fold = ""
 				MyLog("Floor", "Modify", floorID, user.ID, RoleAdmin, "fold reset")
 			}
+
+			err = tx.Model(&floor).
+				Select("Fold").
+				Updates(&floor).Error
+			if err != nil {
+				return err
+			}
+
 		} else if body.FoldFrontend != nil {
 			if len(body.FoldFrontend) != 0 {
 				floor.Fold = body.FoldFrontend[0]
@@ -391,29 +407,52 @@ func ModifyFloor(c *fiber.Ctx) error {
 				floor.Fold = ""
 				MyLog("Floor", "Modify", floorID, user.ID, RoleAdmin, "fold reset")
 			}
-		}
 
-		if body.SpecialTag != nil {
-			floor.SpecialTag = *body.SpecialTag
-			MyLog("Floor", "Modify", floorID, user.ID, RoleAdmin, "specialTag to: ", fmt.Sprintf("%s", floor.SpecialTag))
-		}
-
-		if body.Like != nil {
-			if *body.Like == "add" {
-				err = floor.ModifyLike(tx, user.ID, 1)
-			} else if *body.Like == "cancel" {
-				err = floor.ModifyLike(tx, user.ID, 0)
-			}
+			err = tx.Model(&floor).
+				Select("Fold").
+				Updates(&floor).Error
 			if err != nil {
 				return err
 			}
 		}
 
-		// save all maybe-modified fields above
-		// including Like when Like == 0
-		return tx.Model(&floor).
-			Select("Content", "Fold", "SpecialTag", "Like", "DisLike", "Modified").
-			Updates(&floor).Error
+		// update special tag
+		if body.SpecialTag != nil {
+			floor.SpecialTag = *body.SpecialTag
+
+			err = tx.Model(&floor).
+				Select("SpecialTag").
+				Updates(&floor).Error
+			if err != nil {
+				return err
+			}
+
+			MyLog("Floor", "Modify", floorID, user.ID, RoleAdmin, "specialTag to: ", fmt.Sprintf("%s", floor.SpecialTag))
+		}
+
+		// update like
+		if body.Like != nil {
+			if *body.Like == "add" {
+				err = floor.ModifyLike(tx, user.ID, 1)
+			} else if *body.Like == "cancel" {
+				err = floor.ModifyLike(tx, user.ID, 0)
+			} else {
+				return common.BadRequest("like option must be add or cancel")
+			}
+			if err != nil {
+				return err
+			}
+
+			// save like and dislike, include like == 0 and dislike == 0
+			err = tx.Model(&floor).
+				Select("Like", "DisLike").
+				Updates(&floor).Error
+			if err != nil {
+				return err
+			}
+		}
+
+		return nil
 	})
 	if err != nil {
 		return err
