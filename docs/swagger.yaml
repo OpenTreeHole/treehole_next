@@ -1662,6 +1662,24 @@ paths:
       summary: Ban publisher of a floor
       tags:
       - Penalty
+    put:
+      parameters:
+      - description: json
+        in: body
+        name: json
+        required: true
+        schema:
+          $ref: '#/definitions/penalty.PostBody'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.User'
+      summary: Unban user of a floor
+      tags:
+      - Penalty
   /reports:
     get:
       parameters:
@@ -2074,6 +2092,24 @@ paths:
               $ref: '#/definitions/models.Punishment'
             type: array
       summary: List punishments by user id
+      tags:
+      - Penalty
+    put:
+      parameters:
+      - description: json
+        in: body
+        name: json
+        required: true
+        schema:
+          $ref: '#/definitions/penalty.PostBody'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.User'
+      summary: Unban user by user id
       tags:
       - Penalty
   /users/{user_id}:
