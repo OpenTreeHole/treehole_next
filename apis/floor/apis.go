@@ -381,6 +381,8 @@ func ModifyFloor(c *fiber.Ctx) error {
 					UpdatedAt: time.Now(),
 					Content:   floor.Content,
 				})
+			} else {
+				go FloorDelete(floorID)
 			}
 		}
 
