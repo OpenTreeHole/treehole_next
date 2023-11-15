@@ -89,6 +89,12 @@ func purgeHole() (err error) {
 			return err
 		}
 
+		// log
+		log.Info().
+			Ints("hole_ids", holeIDs).
+			Ints("floor_ids", floorIDs).
+			Msg("purge hole")
+
 		return nil
 	})
 }
