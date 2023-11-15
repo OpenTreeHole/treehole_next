@@ -821,6 +821,11 @@ func ListSensitiveFloors(c *fiber.Ctx) (err error) {
 		return err
 	}
 
+	// set default time
+	if query.Offset.Time.IsZero() {
+		query.Offset.Time = time.Now()
+	}
+
 	// get user
 	user, err := GetUser(c)
 	if err != nil {
