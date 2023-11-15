@@ -83,7 +83,7 @@ func purgeHole() (err error) {
 
 		/* delete all holes in holeIDs */
 		err = tx.
-			Where("hole_id IN ?", holeIDs).
+			Where("id IN ?", holeIDs).
 			Delete(&Hole{}).Error
 		if err != nil {
 			return err
