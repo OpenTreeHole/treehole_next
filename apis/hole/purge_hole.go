@@ -89,6 +89,9 @@ func purgeHole() (err error) {
 			return err
 		}
 
+		// delete floor in search engine
+		go BulkDelete(floorIDs)
+
 		// log
 		log.Info().
 			Ints("hole_ids", holeIDs).
