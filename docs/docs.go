@@ -1418,7 +1418,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/penalty.PostBody"
+                            "$ref": "#/definitions/penalty.ModifyModel"
                         }
                     }
                 ],
@@ -2354,7 +2354,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/penalty.PostBody"
+                            "$ref": "#/definitions/penalty.ModifyModel"
                         }
                     }
                 ],
@@ -3292,6 +3292,25 @@ const docTemplate = `{
                 },
                 "show_folded": {
                     "description": "对折叠内容的处理\nfold 折叠, hide 隐藏, show 展示",
+                    "type": "string"
+                }
+            }
+        },
+        "penalty.ModifyModel": {
+            "type": "object",
+            "properties": {
+                "days": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "division_ids": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "reason": {
                     "type": "string"
                 }
             }

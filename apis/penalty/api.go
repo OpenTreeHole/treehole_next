@@ -12,13 +12,6 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-type PostBody struct {
-	PenaltyLevel *int   `json:"penalty_level" validate:"omitempty"`   // low priority, deprecated
-	Days         *int   `json:"days" validate:"omitempty,min=1"`      // high priority
-	Divisions    []int  `json:"divisions" validate:"omitempty,min=1"` // high priority
-	Reason       string `json:"reason"`                               // optional
-}
-
 // BanUser
 //
 // @Summary Ban publisher of a floor
@@ -128,11 +121,11 @@ func BanUser(c *fiber.Ctx) error {
 // @Tags Penalty
 // @Produce json
 // @Router /penalty/{floor_id} [put]
-// @Param json body PostBody true "json"
+// @Param json body ModifyModel true "json"
 // @Success 201 {object} User
 func UnBanUser(c *fiber.Ctx) error {
 	//validate body
-	var body PostBody
+	var body ModifyModel
 	err := common.ValidateBody(c, &body)
 	if err != nil {
 		return err
@@ -186,7 +179,7 @@ func UnBanUser(c *fiber.Ctx) error {
 		Day:        days,
 		Reason:     body.Reason,
 	}
-	user, err = punishment.Update()
+	user, err = punishment.Update(&[]int{hole.DivisionID})
 	if err != nil {
 		return err
 	}
@@ -222,11 +215,11 @@ func UnBanUser(c *fiber.Ctx) error {
 // @Tags Penalty
 // @Produce json
 // @Router /users/{id}/punishments [put]
-// @Param json body PostBody true "json"
+// @Param json body ModifyModel true "json"
 // @Success 201 {object} User
 func UnBanUserByID(c *fiber.Ctx) error {
 	//validate body
-	var body PostBody
+	var body ModifyModel
 	err := common.ValidateBody(c, &body)
 	if err != nil {
 		return err
@@ -250,7 +243,7 @@ func UnBanUserByID(c *fiber.Ctx) error {
 	}
 
 	//get division
-	if body.Divisions == nil {
+	if len(body.DivisionIDs) == 0 {
 		return common.BadRequest("分区不能为空")
 	}
 
@@ -262,16 +255,17 @@ func UnBanUserByID(c *fiber.Ctx) error {
 		}
 	}
 	duration := -time.Duration(days) * 24 * time.Hour
+
 	punishment := Punishment{
 		UserID:     userID,
 		MadeBy:     user.ID,
 		FloorID:    nil,
-		DivisionID: body.Divisions[0],
+		DivisionID: 0,
 		Duration:   &duration,
 		Day:        days,
 		Reason:     body.Reason,
 	}
-	user, err = punishment.Update()
+	user, err = punishment.Update(&body.DivisionIDs)
 	if err != nil {
 		return err
 	}

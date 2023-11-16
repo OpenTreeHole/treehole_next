@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/opentreehole/go-common"
@@ -99,7 +100,7 @@ func (punishment *Punishment) Create() (*User, error) {
 	return &user, err
 }
 
-func (punishment *Punishment) Update() (*User, error) {
+func (punishment *Punishment) Update(DivisionIDS *[]int) (*User, error) {
 	var user User
 
 	err := DB.Clauses(dbresolver.Write).Transaction(func(tx *gorm.DB) error {
@@ -120,22 +121,27 @@ func (punishment *Punishment) Update() (*User, error) {
 			}
 		}
 
-		punishment.StartTime = time.Now()
-		//endtime is useless when unban
-		punishment.EndTime = punishment.StartTime.Add(*punishment.Duration)
-		if user.BanDivision[punishment.DivisionID] != nil {
-			newTime := user.BanDivision[punishment.DivisionID].Add(*punishment.Duration)
-			user.BanDivision[punishment.DivisionID] = &newTime
-		} else {
-			return common.Forbidden("该用户未被禁言")
+		for _, DivisionID := range *DivisionIDS {
+			punishment.DivisionID = DivisionID
+			punishment.StartTime = time.Now()
+			//endtime is useless when unban
+			punishment.EndTime = punishment.StartTime.Add(*punishment.Duration)
+
+			if user.BanDivision[punishment.DivisionID] != nil {
+				newTime := user.BanDivision[punishment.DivisionID].Add(*punishment.Duration)
+				user.BanDivision[punishment.DivisionID] = &newTime
+			} else {
+				return common.Forbidden(fmt.Sprintf("该用户在分区 %d 未被禁言", punishment.DivisionID))
+			}
+
+			recordPunishment := *punishment
+			err = tx.Create(&recordPunishment).Error
+			if err != nil {
+				return err
+			}
 		}
 		// modify OffenceCount value when unban a user?
 		// user.OffenceCount -= 1
-
-		err = tx.Create(&punishment).Error
-		if err != nil {
-			return err
-		}
 
 		err = tx.Select("BanDivision", "OffenceCount").Save(&user).Error
 		if err != nil {

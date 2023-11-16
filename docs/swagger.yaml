@@ -620,6 +620,19 @@ definitions:
           fold 折叠, hide 隐藏, show 展示
         type: string
     type: object
+  penalty.ModifyModel:
+    properties:
+      days:
+        minimum: 1
+        type: integer
+      division_ids:
+        items:
+          type: integer
+        minItems: 1
+        type: array
+      reason:
+        type: string
+    type: object
   penalty.PostBody:
     properties:
       days:
@@ -1669,7 +1682,7 @@ paths:
         name: json
         required: true
         schema:
-          $ref: '#/definitions/penalty.PostBody'
+          $ref: '#/definitions/penalty.ModifyModel'
       produces:
       - application/json
       responses:
@@ -2101,7 +2114,7 @@ paths:
         name: json
         required: true
         schema:
-          $ref: '#/definitions/penalty.PostBody'
+          $ref: '#/definitions/penalty.ModifyModel'
       produces:
       - application/json
       responses:
