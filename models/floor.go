@@ -172,11 +172,20 @@ func (floor *Floor) SetDefaults() {
 	}
 
 	if !floor.Deleted &&
-		floor.IsSensitive == true &&
-		(floor.IsActualSensitive == nil ||
-			*floor.IsActualSensitive == true) {
-		floor.Content = "该内容被猫猫吃掉了"
-		floor.FoldFrontend = []string{"该内容被猫猫吃掉了"}
+		floor.IsSensitive == true {
+		var alterContent string
+		if floor.IsActualSensitive == nil {
+			alterContent = "该内容被猫猫吃掉了"
+		} else if *floor.IsActualSensitive == true {
+			alterContent = "该内容因违规被删除"
+		} else {
+			alterContent = ""
+		}
+
+		if alterContent != "" {
+			floor.Content = alterContent
+			floor.FoldFrontend = []string{alterContent}
+		}
 	}
 }
 
