@@ -177,7 +177,7 @@ func (floor *Floor) SetDefaults() {
 		if floor.IsActualSensitive == nil {
 			alterContent = "该内容被猫猫吃掉了"
 		} else if *floor.IsActualSensitive == true {
-			alterContent = "该内容因违规被删除"
+			alterContent = "该内容因违反社区公约被删除"
 		} else {
 			alterContent = ""
 		}
