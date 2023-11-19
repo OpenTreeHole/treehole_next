@@ -1403,6 +1403,34 @@ const docTemplate = `{
             }
         },
         "/penalty/{floor_id}": {
+            "put": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Penalty"
+                ],
+                "summary": "Unban user of a floor",
+                "parameters": [
+                    {
+                        "description": "json",
+                        "name": "json",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/penalty.ModifyModel"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/models.User"
+                        }
+                    }
+                }
+            },
             "post": {
                 "produces": [
                     "application/json"
@@ -2307,6 +2335,34 @@ const docTemplate = `{
                             "items": {
                                 "$ref": "#/definitions/models.Punishment"
                             }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Penalty"
+                ],
+                "summary": "Unban user by user id",
+                "parameters": [
+                    {
+                        "description": "json",
+                        "name": "json",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/penalty.ModifyModel"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/models.User"
                         }
                     }
                 }
@@ -3236,6 +3292,25 @@ const docTemplate = `{
                 },
                 "show_folded": {
                     "description": "对折叠内容的处理\nfold 折叠, hide 隐藏, show 展示",
+                    "type": "string"
+                }
+            }
+        },
+        "penalty.ModifyModel": {
+            "type": "object",
+            "properties": {
+                "days": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "division_ids": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "reason": {
                     "type": "string"
                 }
             }

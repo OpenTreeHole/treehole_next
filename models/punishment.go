@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/opentreehole/go-common"
@@ -43,7 +44,7 @@ type Punishment struct {
 	MadeBy int `json:"made_by,omitempty"`
 
 	// punished because of this floor
-	FloorID *int `json:"floor_id" gorm:"uniqueIndex"`
+	FloorID *int `json:"floor_id" gorm:"index"`
 
 	Floor *Floor `json:"floor,omitempty" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"` // foreign key
 
@@ -79,7 +80,8 @@ func (punishment *Punishment) Create() (*User, error) {
 		if user.BanDivision[punishment.DivisionID] == nil {
 			user.BanDivision[punishment.DivisionID] = &punishment.EndTime
 		} else {
-			user.BanDivision[punishment.DivisionID].Add(*punishment.Duration)
+			newTime := user.BanDivision[punishment.DivisionID].Add(*punishment.Duration)
+			user.BanDivision[punishment.DivisionID] = &newTime
 		}
 		user.OffenceCount += 1
 
@@ -95,5 +97,59 @@ func (punishment *Punishment) Create() (*User, error) {
 
 		return nil
 	})
+	return &user, err
+}
+
+func (punishment *Punishment) Update(DivisionIDS *[]int) (*User, error) {
+	var user User
+
+	err := DB.Clauses(dbresolver.Write).Transaction(func(tx *gorm.DB) error {
+		err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Take(&user, punishment.UserID).Error
+		if err != nil {
+			return err
+		}
+
+		if punishment.FloorID != nil {
+			var floorPunishment Punishment
+			err = tx.Where("user_id = ? and floor_id = ?", user.ID, punishment.FloorID).Take(&floorPunishment).Error
+			if err != nil {
+				if errors.Is(err, gorm.ErrRecordNotFound) {
+					return common.Forbidden("该用户本楼层未被禁言")
+				} else {
+					return err
+				}
+			}
+		}
+
+		for _, DivisionID := range *DivisionIDS {
+			punishment.DivisionID = DivisionID
+			punishment.StartTime = time.Now()
+			//endtime is useless when unban
+			punishment.EndTime = punishment.StartTime.Add(*punishment.Duration)
+
+			if user.BanDivision[punishment.DivisionID] != nil {
+				newTime := user.BanDivision[punishment.DivisionID].Add(*punishment.Duration)
+				user.BanDivision[punishment.DivisionID] = &newTime
+			} else {
+				return common.Forbidden(fmt.Sprintf("该用户在分区 %d 未被禁言", punishment.DivisionID))
+			}
+
+			recordPunishment := *punishment
+			err = tx.Create(&recordPunishment).Error
+			if err != nil {
+				return err
+			}
+		}
+		// modify OffenceCount value when unban a user?
+		// user.OffenceCount -= 1
+
+		err = tx.Select("BanDivision", "OffenceCount").Save(&user).Error
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+
 	return &user, err
 }

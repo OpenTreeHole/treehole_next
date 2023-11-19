@@ -620,6 +620,19 @@ definitions:
           fold 折叠, hide 隐藏, show 展示
         type: string
     type: object
+  penalty.ModifyModel:
+    properties:
+      days:
+        minimum: 1
+        type: integer
+      division_ids:
+        items:
+          type: integer
+        minItems: 1
+        type: array
+      reason:
+        type: string
+    type: object
   penalty.PostBody:
     properties:
       days:
@@ -1662,6 +1675,24 @@ paths:
       summary: Ban publisher of a floor
       tags:
       - Penalty
+    put:
+      parameters:
+      - description: json
+        in: body
+        name: json
+        required: true
+        schema:
+          $ref: '#/definitions/penalty.ModifyModel'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.User'
+      summary: Unban user of a floor
+      tags:
+      - Penalty
   /reports:
     get:
       parameters:
@@ -2074,6 +2105,24 @@ paths:
               $ref: '#/definitions/models.Punishment'
             type: array
       summary: List punishments by user id
+      tags:
+      - Penalty
+    put:
+      parameters:
+      - description: json
+        in: body
+        name: json
+        required: true
+        schema:
+          $ref: '#/definitions/penalty.ModifyModel'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.User'
+      summary: Unban user by user id
       tags:
       - Penalty
   /users/{user_id}:
