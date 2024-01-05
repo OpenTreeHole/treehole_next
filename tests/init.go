@@ -56,7 +56,7 @@ func initTestHoles() {
 	}
 	tag := Tag{Name: "114", Temperature: 15}
 	holes[1].Tags = Tags{&tag}
-	holes[2].Tags = Tags{&tag}
+	holes[2].Tags = Tags{&tag} // here it will insert twice in latest version gorm
 	holes[3].Tags = Tags{{Name: "111", Temperature: 23}, {Name: "222", Temperature: 45}}
 	err := DB.Create(&holes).Error
 	if err != nil {

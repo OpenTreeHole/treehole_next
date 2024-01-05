@@ -54,8 +54,10 @@ func TestModifyTag(t *testing.T) {
 func TestDeleteTag(t *testing.T) {
 
 	// Move holes to existed tag
-	id := 5
+	fromName := "1"
 	toName := "6"
+	var id int
+	DB.Model(Tag{}).Where("name = ?", fromName).Pluck("id", &id)
 	data := Map{"to": toName}
 	testAPI(t, "delete", "/api/tags/"+strconv.Itoa(id), 200, data)
 	var tag Tag
