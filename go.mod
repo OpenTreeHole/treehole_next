@@ -9,7 +9,7 @@ require (
 	github.com/eko/gocache/store/redis/v4 v4.2.1
 	github.com/elastic/go-elasticsearch/v8 v8.11.1
 	github.com/goccy/go-json v0.10.2
-	github.com/gofiber/fiber/v2 v2.51.0
+	github.com/gofiber/fiber/v2 v2.52.1
 	github.com/hetiansu5/urlquery v1.2.7
 	github.com/importcjj/sensitive v0.0.0-20200106142752-42d1c505be7b
 	github.com/opentreehole/go-common v0.1.1
