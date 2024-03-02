@@ -112,6 +112,9 @@ func UserGetFavoriteDataByFavoriteGroup(tx *gorm.DB, userID int, favoriteGroupID
 	return data, err
 }
 
+// DeleteUserFavorite delete user favorite
+// if user favorite hole only once, delete the hole
+// otherwise, delete the favorite in the specific favorite group
 func DeleteUserFavorite(tx *gorm.DB, userID int, holeID int, favoriteGroupID int) error {
 	return tx.Clauses(dbresolver.Write).Transaction(func(tx *gorm.DB) error {
 		var num int64

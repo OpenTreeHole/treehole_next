@@ -92,7 +92,7 @@ func AddFavorite(c *fiber.Ctx) error {
 
 	err = DB.Clauses(dbresolver.Write).Transaction(func(tx *gorm.DB) error {
 		// add favorite
-		err = AddUserFavorite(tx, userID, body.HoleID, 0)
+		err = AddUserFavorite(tx, userID, body.HoleID, body.FavoriteGroupID)
 		if err != nil {
 			return err
 		}
