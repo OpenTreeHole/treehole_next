@@ -35,7 +35,7 @@ func ListFavorites(c *fiber.Ctx) error {
 
 	if query.Plain {
 		// get favorite ids
-		data, err := UserGetFavoriteData(DB, userID)
+		data, err := UserGetFavoriteDataByFavoriteGroup(DB, userID, query.FavoriteGroupID)
 		if err != nil {
 			return err
 		}
@@ -55,7 +55,7 @@ func ListFavorites(c *fiber.Ctx) error {
 		// get favorites
 		holes := make(Holes, 0)
 		err = DB.
-			Joins("JOIN user_favorites ON user_favorites.hole_id = hole.id AND user_favorites.user_id = ?", userID).
+			Joins("JOIN user_favorites ON user_favorites.hole_id = hole.id AND user_favorites.user_id = ? AND user_favorites.favorite_group_id = ?", userID, query.FavoriteGroupID).
 			Order(order).Find(&holes).Error
 		if err != nil {
 			return err
@@ -92,7 +92,7 @@ func AddFavorite(c *fiber.Ctx) error {
 
 	err = DB.Clauses(dbresolver.Write).Transaction(func(tx *gorm.DB) error {
 		// add favorite
-		err = AddUserFavourite(tx, userID, body.HoleID)
+		err = AddUserFavorite(tx, userID, body.HoleID, 0)
 		if err != nil {
 			return err
 		}
@@ -135,7 +135,7 @@ func ModifyFavorite(c *fiber.Ctx) error {
 	}
 
 	// modify favorite
-	err = ModifyUserFavourite(DB, userID, body.HoleIDs)
+	err = ModifyUserFavorite(DB, userID, body.HoleIDs, body.FavoriteGroupID)
 	if err != nil {
 		return err
 	}
@@ -176,12 +176,108 @@ func DeleteFavorite(c *fiber.Ctx) error {
 	}
 
 	// delete favorite
-	err = DB.Delete(UserFavorite{UserID: userID, HoleID: body.HoleID}).Error
+	err = DeleteUserFavorite(DB, userID, body.HoleID, body.FavoriteGroupID)
 	if err != nil {
 		return err
 	}
 
 	// create response
+	data, err := UserGetFavoriteData(DB, userID)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(&Response{
+		Message: "删除成功",
+		Data:    data,
+	})
+}
+
+func AddFavoriteGroup(c *fiber.Ctx) error {
+	// validate body
+	var body AddFavoriteGroupModel
+	err := common.ValidateBody(c, &body)
+	if err != nil {
+		return err
+	}
+
+	// get userID
+	userID, err := common.GetUserID(c)
+	if err != nil {
+		return err
+	}
+
+	// add favorite group
+	err = AddUserFavoriteGroup(DB, userID, body.Name)
+	if err != nil {
+		return err
+	}
+
+	// create response
+	data, err := UserGetFavoriteData(DB, userID)
+	if err != nil {
+		return err
+	}
+
+	return c.Status(201).JSON(&Response{
+		Message: "添加成功",
+		Data:    data,
+	})
+}
+
+func ModifyFavoriteGroup(c *fiber.Ctx) error {
+	// validate body
+	var body ModifyFavoriteGroupModel
+	err := common.ValidateBody(c, &body)
+	if err != nil {
+		return err
+	}
+
+	// get userID
+	userID, err := common.GetUserID(c)
+	if err != nil {
+		return err
+	}
+
+	// modify favorite group
+	err = ModifyUserFavoriteGroup(DB, userID, body.FavoriteGroupID, body.Name)
+	if err != nil {
+		return err
+	}
+
+	// create response
+	data, err := UserGetFavoriteData(DB, userID)
+	if err != nil {
+		return err
+	}
+
+	return c.Status(201).JSON(&Response{
+		Message: "修改成功",
+		Data:    data,
+	})
+}
+
+func DeleteFavoriteGroup(c *fiber.Ctx) error {
+	// validate body
+	var body DeleteModel
+	err := common.ValidateBody(c, &body)
+	if err != nil {
+		return err
+	}
+
+	// get userID
+	userID, err := common.GetUserID(c)
+	if err != nil {
+		return err
+	}
+
+	// delete favorite group
+	err = DeleteUserFavoriteGroup(DB, userID, body.FavoriteGroupID)
+	if err != nil {
+		return err
+	}
+
+	//create response
 	data, err := UserGetFavoriteData(DB, userID)
 	if err != nil {
 		return err
