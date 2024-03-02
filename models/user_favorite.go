@@ -158,6 +158,9 @@ func DeleteUserFavorite(tx *gorm.DB, userID int, holeID int, favoriteGroupID int
 
 // MoveUserFavorite move holes that are really in the fromFavoriteGroup
 func MoveUserFavorite(tx *gorm.DB, userID int, holeIDs []int, fromFavoriteGroupID int, toFavoriteGroupID int) error {
+	if fromFavoriteGroupID == toFavoriteGroupID {
+		return nil
+	}
 	if len(holeIDs) == 0 {
 		return nil
 	}
