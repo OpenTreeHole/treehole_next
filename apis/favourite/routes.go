@@ -11,5 +11,5 @@ func RegisterRoutes(app fiber.Router) {
 	app.Post("/user/favorite_groups", AddFavoriteGroup)
 	app.Put("/user/favorite_groups", ModifyFavoriteGroup)
 	app.Delete("/user/favorite_groups", DeleteFavoriteGroup)
-	app.Put("/user/favorite_groups/move", MoveFavorite)
+	app.Put("/user/favorites/move", MoveFavorite)
 }

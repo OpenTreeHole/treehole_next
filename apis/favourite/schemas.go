@@ -32,17 +32,17 @@ type AddFavoriteGroupModel struct {
 
 type ModifyFavoriteGroupModel struct {
 	Name            string `json:"name" validate:"required,max=64"`
-	FavoriteGroupID int    `json:"favorite_group_id" validate:"required"`
+	FavoriteGroupID *int   `json:"favorite_group_id" validate:"required"`
 }
 
 type DeleteFavoriteGroupModel struct {
-	FavoriteGroupID int `json:"favorite_group_id" validate:"required"`
+	FavoriteGroupID *int `json:"favorite_group_id" validate:"required"`
 }
 
 type MoveModel struct {
 	HoleIDs             []int `json:"hole_ids"`
-	FromFavoriteGroupID int   `json:"from_favorite_group_id" default:"0"`
-	ToFavoriteGroupID   int   `json:"to_favorite_group_id" validate:"required"`
+	FromFavoriteGroupID *int  `json:"from_favorite_group_id" default:"0" validate:"required"`
+	ToFavoriteGroupID   *int  `json:"to_favorite_group_id" validate:"required"`
 }
 
 type ListFavoriteGroupModel struct {
