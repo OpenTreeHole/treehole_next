@@ -4,10 +4,15 @@ definitions:
     properties:
       field:
         type: string
+      message:
+        type: string
+      param:
+        type: string
+      struct_field:
+        type: string
       tag:
         type: string
-      value:
-        type: string
+      value: {}
     type: object
   common.HttpError:
     properties:
@@ -47,22 +52,64 @@ definitions:
           type: integer
         type: array
     type: object
+  favourite.AddFavoriteGroupModel:
+    properties:
+      name:
+        maxLength: 64
+        type: string
+    required:
+    - name
+    type: object
   favourite.AddModel:
     properties:
+      favorite_group_id:
+        default: 0
+        type: integer
       hole_id:
         type: integer
     type: object
   favourite.DeleteModel:
     properties:
+      favorite_group_id:
+        default: 0
+        type: integer
       hole_id:
         type: integer
     type: object
+  favourite.ModifyFavoriteGroupModel:
+    properties:
+      favorite_group_id:
+        type: integer
+      name:
+        maxLength: 64
+        type: string
+    required:
+    - favorite_group_id
+    - name
+    type: object
   favourite.ModifyModel:
     properties:
+      favorite_group_id:
+        default: 0
+        type: integer
       hole_ids:
         items:
           type: integer
         type: array
+    type: object
+  favourite.MoveModel:
+    properties:
+      from_favorite_group_id:
+        default: 0
+        type: integer
+      hole_ids:
+        items:
+          type: integer
+        type: array
+      to_favorite_group_id:
+        type: integer
+    required:
+    - to_favorite_group_id
     type: object
   favourite.Response:
     properties:
@@ -284,6 +331,24 @@ definitions:
         type: string
       time_updated:
         type: string
+    type: object
+  models.FavoriteGroup:
+    properties:
+      count:
+        type: integer
+      deleted:
+        type: boolean
+      id:
+        type: integer
+      name:
+        default: 默认
+        type: string
+      time_created:
+        type: string
+      time_updated:
+        type: string
+      user_id:
+        type: integer
     type: object
   models.Floor:
     properties:
@@ -575,6 +640,8 @@ definitions:
         $ref: '#/definitions/models.UserConfig'
       default_special_tag:
         type: string
+      favorite_group_count:
+        type: integer
       has_answered_questions:
         type: boolean
       id:
@@ -1961,6 +2028,126 @@ paths:
       summary: List Holes By Tag
       tags:
       - Hole
+  /user/favorite_group:
+    delete:
+      parameters:
+      - description: json
+        in: body
+        name: json
+        required: true
+        schema:
+          $ref: '#/definitions/favourite.DeleteModel'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/favourite.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/favourite.Response'
+      summary: Delete A Favorite Group
+      tags:
+      - Favorite
+    get:
+      parameters:
+      - default: time_created
+        enum:
+        - id
+        - time_created
+        - time_updated
+        in: query
+        name: order
+        type: string
+      - default: false
+        in: query
+        name: plain
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              items:
+                $ref: '#/definitions/models.FavoriteGroup'
+              type: array
+            type: array
+      summary: List User's Favorite Groups
+      tags:
+      - Favorite
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: json
+        in: body
+        name: json
+        required: true
+        schema:
+          $ref: '#/definitions/favourite.AddFavoriteGroupModel'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/favourite.Response'
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/favourite.Response'
+      summary: Add A Favorite Group
+      tags:
+      - Favorite
+    put:
+      parameters:
+      - description: json
+        in: body
+        name: json
+        required: true
+        schema:
+          $ref: '#/definitions/favourite.ModifyFavoriteGroupModel'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/favourite.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/favourite.Response'
+      summary: Modify User's Favorite Group
+      tags:
+      - Favorite
+  /user/favorite_group/move:
+    put:
+      parameters:
+      - description: json
+        in: body
+        name: json
+        required: true
+        schema:
+          $ref: '#/definitions/favourite.MoveModel'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/favourite.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/favourite.Response'
+      summary: Move User's Favorite
+      tags:
+      - Favorite
   /user/favorites:
     delete:
       parameters:
@@ -1986,6 +2173,9 @@ paths:
       - Favorite
     get:
       parameters:
+      - in: query
+        name: favorite_group_id
+        type: integer
       - default: time_created
         enum:
         - id

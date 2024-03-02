@@ -1885,6 +1885,191 @@ const docTemplate = `{
                 }
             }
         },
+        "/user/favorite_group": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Favorite"
+                ],
+                "summary": "List User's Favorite Groups",
+                "parameters": [
+                    {
+                        "enum": [
+                            "id",
+                            "time_created",
+                            "time_updated"
+                        ],
+                        "type": "string",
+                        "default": "time_created",
+                        "name": "order",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "default": false,
+                        "name": "plain",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/definitions/models.FavoriteGroup"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Favorite"
+                ],
+                "summary": "Modify User's Favorite Group",
+                "parameters": [
+                    {
+                        "description": "json",
+                        "name": "json",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/favourite.ModifyFavoriteGroupModel"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/favourite.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/favourite.Response"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Favorite"
+                ],
+                "summary": "Add A Favorite Group",
+                "parameters": [
+                    {
+                        "description": "json",
+                        "name": "json",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/favourite.AddFavoriteGroupModel"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/favourite.Response"
+                        }
+                    },
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/favourite.Response"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Favorite"
+                ],
+                "summary": "Delete A Favorite Group",
+                "parameters": [
+                    {
+                        "description": "json",
+                        "name": "json",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/favourite.DeleteModel"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/favourite.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/favourite.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/favorite_group/move": {
+            "put": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Favorite"
+                ],
+                "summary": "Move User's Favorite",
+                "parameters": [
+                    {
+                        "description": "json",
+                        "name": "json",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/favourite.MoveModel"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/favourite.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/favourite.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/user/favorites": {
             "get": {
                 "produces": [
@@ -1895,6 +2080,11 @@ const docTemplate = `{
                 ],
                 "summary": "List User's Favorites",
                 "parameters": [
+                    {
+                        "type": "integer",
+                        "name": "favorite_group_id",
+                        "in": "query"
+                    },
                     {
                         "enum": [
                             "id",
@@ -2356,12 +2546,19 @@ const docTemplate = `{
                 "field": {
                     "type": "string"
                 },
+                "message": {
+                    "type": "string"
+                },
+                "param": {
+                    "type": "string"
+                },
+                "struct_field": {
+                    "type": "string"
+                },
                 "tag": {
                     "type": "string"
                 },
-                "value": {
-                    "type": "string"
-                }
+                "value": {}
             }
         },
         "common.HttpError": {
@@ -2419,9 +2616,25 @@ const docTemplate = `{
                 }
             }
         },
+        "favourite.AddFavoriteGroupModel": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "maxLength": 64
+                }
+            }
+        },
         "favourite.AddModel": {
             "type": "object",
             "properties": {
+                "favorite_group_id": {
+                    "type": "integer",
+                    "default": 0
+                },
                 "hole_id": {
                     "type": "integer"
                 }
@@ -2430,19 +2643,64 @@ const docTemplate = `{
         "favourite.DeleteModel": {
             "type": "object",
             "properties": {
+                "favorite_group_id": {
+                    "type": "integer",
+                    "default": 0
+                },
                 "hole_id": {
                     "type": "integer"
+                }
+            }
+        },
+        "favourite.ModifyFavoriteGroupModel": {
+            "type": "object",
+            "required": [
+                "favorite_group_id",
+                "name"
+            ],
+            "properties": {
+                "favorite_group_id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 64
                 }
             }
         },
         "favourite.ModifyModel": {
             "type": "object",
             "properties": {
+                "favorite_group_id": {
+                    "type": "integer",
+                    "default": 0
+                },
                 "hole_ids": {
                     "type": "array",
                     "items": {
                         "type": "integer"
                     }
+                }
+            }
+        },
+        "favourite.MoveModel": {
+            "type": "object",
+            "required": [
+                "to_favorite_group_id"
+            ],
+            "properties": {
+                "from_favorite_group_id": {
+                    "type": "integer",
+                    "default": 0
+                },
+                "hole_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "to_favorite_group_id": {
+                    "type": "integer"
                 }
             }
         },
@@ -2761,6 +3019,33 @@ const docTemplate = `{
                 },
                 "time_updated": {
                     "type": "string"
+                }
+            }
+        },
+        "models.FavoriteGroup": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer"
+                },
+                "deleted": {
+                    "type": "boolean"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string",
+                    "default": "默认"
+                },
+                "time_created": {
+                    "type": "string"
+                },
+                "time_updated": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "integer"
                 }
             }
         },
@@ -3176,6 +3461,9 @@ const docTemplate = `{
                 },
                 "default_special_tag": {
                     "type": "string"
+                },
+                "favorite_group_count": {
+                    "type": "integer"
                 },
                 "has_answered_questions": {
                     "type": "boolean"
