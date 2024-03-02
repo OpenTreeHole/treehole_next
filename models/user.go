@@ -31,10 +31,9 @@ type User struct {
 
 	SpecialTags []string `json:"special_tags" gorm:"serializer:json;not null;default:\"[]\""`
 
-	/// association fields, should add foreign key
+	FavoriteGroupCount int `json:"favorite_group_count" gorm:"not null;default:0"`
 
-	// favorite holes of the user
-	UserFavoriteHoles Holes `json:"-" gorm:"many2many:user_favorite;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	/// association fields, should add foreign key
 
 	// holes owned by the user
 	UserHoles Holes `json:"-" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
@@ -189,6 +188,13 @@ func (user *User) LoadUserByID(userID int) error {
 					return err
 				}
 			} else {
+				return err
+			}
+		}
+
+		if user.FavoriteGroupCount == 0 {
+			err = CreateDefaultFavoriteGroup(tx, userID)
+			if err != nil {
 				return err
 			}
 		}

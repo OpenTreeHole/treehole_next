@@ -117,11 +117,6 @@ func InitDB() {
 		DB = DB.Debug()
 	}
 
-	err = DB.SetupJoinTable(&User{}, "UserFavoriteHoles", &UserFavorite{})
-	if err != nil {
-		log.Fatal().Err(err).Send()
-	}
-
 	err = DB.SetupJoinTable(&User{}, "UserLikedFloors", &FloorLike{})
 	if err != nil {
 		log.Fatal().Err(err).Send()
@@ -155,6 +150,8 @@ func InitDB() {
 		&Message{},
 		&FloorHistory{},
 		&AdminLog{},
+		&UserFavorite{},
+		&FavoriteGroup{},
 	)
 	if err != nil {
 		log.Fatal().Err(err).Send()

@@ -5,19 +5,47 @@ type Response struct {
 	Data    []int  `json:"data"`
 }
 
-type ListModel struct {
-	Order string `json:"order" query:"order" validate:"omitempty,oneof=id time_created hole_time_updated" default:"time_created"`
-	Plain bool   `json:"plain" default:"false" query:"plain"`
+type ListFavoriteModel struct {
+	Order           string `json:"order" query:"order" validate:"omitempty,oneof=id time_created hole_time_updated" default:"time_created"`
+	Plain           bool   `json:"plain" default:"false" query:"plain"`
+	FavoriteGroupID *int   `json:"favorite_group_id" query:"favorite_group_id"`
 }
 
 type AddModel struct {
-	HoleID int `json:"hole_id"`
+	HoleID          int `json:"hole_id"`
+	FavoriteGroupID int `json:"favorite_group_id" default:"0"`
 }
 
 type ModifyModel struct {
-	HoleIDs []int `json:"hole_ids"`
+	HoleIDs         []int `json:"hole_ids"`
+	FavoriteGroupID int   `json:"favorite_group_id" default:"0"`
 }
 
 type DeleteModel struct {
-	HoleID int `json:"hole_id"`
+	HoleID          int `json:"hole_id"`
+	FavoriteGroupID int `json:"favorite_group_id" default:"0"`
+}
+
+type AddFavoriteGroupModel struct {
+	Name string `json:"name" validate:"required,max=64"`
+}
+
+type ModifyFavoriteGroupModel struct {
+	Name            string `json:"name" validate:"required,max=64"`
+	FavoriteGroupID *int   `json:"favorite_group_id" validate:"required"`
+}
+
+type DeleteFavoriteGroupModel struct {
+	FavoriteGroupID *int `json:"favorite_group_id" validate:"required"`
+}
+
+type MoveModel struct {
+	HoleIDs             []int `json:"hole_ids"`
+	FromFavoriteGroupID *int  `json:"from_favorite_group_id" default:"0" validate:"required"`
+	ToFavoriteGroupID   *int  `json:"to_favorite_group_id" validate:"required"`
+}
+
+type ListFavoriteGroupModel struct {
+	Order string `json:"order" query:"order" validate:"omitempty,oneof=id time_created time_updated" default:"time_created"`
+	Plain bool   `json:"plain" default:"false" query:"plain"`
 }
