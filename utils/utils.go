@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"golang.org/x/exp/slices"
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
@@ -47,6 +48,16 @@ func Min[T constraints.Ordered](x T, y T) T {
 	} else {
 		return x
 	}
+}
+
+func Intersect[T comparable](x []T, y []T) []T {
+	var result = make([]T, 0)
+	for i := range x {
+		if slices.Contains(y, x[i]) {
+			result = append(result, x[i])
+		}
+	}
+	return result
 }
 
 func StripContent(content string, contentMaxSize int) string {
