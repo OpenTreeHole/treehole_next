@@ -109,6 +109,7 @@ definitions:
       to_favorite_group_id:
         type: integer
     required:
+    - from_favorite_group_id
     - to_favorite_group_id
     type: object
   favourite.Response:
@@ -2028,7 +2029,7 @@ paths:
       summary: List Holes By Tag
       tags:
       - Hole
-  /user/favorite_group:
+  /user/favorite_groups:
     delete:
       parameters:
       - description: json
@@ -2040,14 +2041,12 @@ paths:
       produces:
       - application/json
       responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/favourite.Response'
+        "204":
+          description: No Content
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/favourite.Response'
+            $ref: '#/definitions/common.HttpError'
       summary: Delete A Favorite Group
       tags:
       - Favorite
@@ -2072,9 +2071,7 @@ paths:
           description: OK
           schema:
             items:
-              items:
-                $ref: '#/definitions/models.FavoriteGroup'
-              type: array
+              $ref: '#/definitions/models.FavoriteGroup'
             type: array
       summary: List User's Favorite Groups
       tags:
@@ -2092,14 +2089,12 @@ paths:
       produces:
       - application/json
       responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/favourite.Response'
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/favourite.Response'
+            items:
+              $ref: '#/definitions/models.FavoriteGroup'
+            type: array
       summary: Add A Favorite Group
       tags:
       - Favorite
@@ -2117,35 +2112,14 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/favourite.Response'
+            items:
+              $ref: '#/definitions/models.FavoriteGroup'
+            type: array
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/favourite.Response'
+            $ref: '#/definitions/common.HttpError'
       summary: Modify User's Favorite Group
-      tags:
-      - Favorite
-  /user/favorite_group/move:
-    put:
-      parameters:
-      - description: json
-        in: body
-        name: json
-        required: true
-        schema:
-          $ref: '#/definitions/favourite.MoveModel'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/favourite.Response'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/favourite.Response'
-      summary: Move User's Favorite
       tags:
       - Favorite
   /user/favorites:
@@ -2244,6 +2218,31 @@ paths:
           schema:
             $ref: '#/definitions/favourite.Response'
       summary: Modify User's Favorites
+      tags:
+      - Favorite
+  /user/favorites/move:
+    put:
+      parameters:
+      - description: json
+        in: body
+        name: json
+        required: true
+        schema:
+          $ref: '#/definitions/favourite.MoveModel'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Hole'
+            type: array
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/favourite.Response'
+      summary: Move User's Favorite
       tags:
       - Favorite
   /users/{id}/punishments:

@@ -1878,7 +1878,7 @@
                 }
             }
         },
-        "/user/favorite_group": {
+        "/user/favorite_groups": {
             "get": {
                 "produces": [
                     "application/json"
@@ -1912,10 +1912,7 @@
                         "schema": {
                             "type": "array",
                             "items": {
-                                "type": "array",
-                                "items": {
-                                    "$ref": "#/definitions/models.FavoriteGroup"
-                                }
+                                "$ref": "#/definitions/models.FavoriteGroup"
                             }
                         }
                     }
@@ -1944,13 +1941,16 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/favourite.Response"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.FavoriteGroup"
+                            }
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/favourite.Response"
+                            "$ref": "#/definitions/common.HttpError"
                         }
                     }
                 }
@@ -1978,16 +1978,13 @@
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/favourite.Response"
-                        }
-                    },
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/favourite.Response"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.FavoriteGroup"
+                            }
                         }
                     }
                 }
@@ -2012,52 +2009,13 @@
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/favourite.Response"
-                        }
+                    "204": {
+                        "description": "No Content"
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/favourite.Response"
-                        }
-                    }
-                }
-            }
-        },
-        "/user/favorite_group/move": {
-            "put": {
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Favorite"
-                ],
-                "summary": "Move User's Favorite",
-                "parameters": [
-                    {
-                        "description": "json",
-                        "name": "json",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/favourite.MoveModel"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/favourite.Response"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/favourite.Response"
+                            "$ref": "#/definitions/common.HttpError"
                         }
                     }
                 }
@@ -2203,6 +2161,45 @@
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/favourite.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/favourite.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/favorites/move": {
+            "put": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Favorite"
+                ],
+                "summary": "Move User's Favorite",
+                "parameters": [
+                    {
+                        "description": "json",
+                        "name": "json",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/favourite.MoveModel"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Hole"
+                            }
                         }
                     },
                     "404": {
@@ -2679,6 +2676,7 @@
         "favourite.MoveModel": {
             "type": "object",
             "required": [
+                "from_favorite_group_id",
                 "to_favorite_group_id"
             ],
             "properties": {
