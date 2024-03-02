@@ -9,6 +9,7 @@ type ListFavoriteModel struct {
 	Order           string `json:"order" query:"order" validate:"omitempty,oneof=id time_created hole_time_updated" default:"time_created"`
 	Plain           bool   `json:"plain" default:"false" query:"plain"`
 	FavoriteGroupID int    `json:"favorite_group_id" default:"0" query:"favorite_group_id"`
+	All             bool   `json:"all" default:"true" query:"all"`
 }
 
 type AddModel struct {

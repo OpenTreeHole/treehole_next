@@ -35,7 +35,12 @@ func ListFavorites(c *fiber.Ctx) error {
 
 	if query.Plain {
 		// get favorite ids
-		data, err := UserGetFavoriteDataByFavoriteGroup(DB, userID, query.FavoriteGroupID)
+		var data []int
+		if query.All {
+			data, err = UserGetFavoriteData(DB, userID)
+		} else {
+			data, err = UserGetFavoriteDataByFavoriteGroup(DB, userID, query.FavoriteGroupID)
+		}
 		if err != nil {
 			return err
 		}
@@ -54,9 +59,16 @@ func ListFavorites(c *fiber.Ctx) error {
 
 		// get favorites
 		holes := make(Holes, 0)
-		err = DB.
-			Joins("JOIN user_favorites ON user_favorites.hole_id = hole.id AND user_favorites.user_id = ? AND user_favorites.favorite_group_id = ?", userID, query.FavoriteGroupID).
-			Order(order).Find(&holes).Error
+		if query.All {
+			err = DB.
+				Joins("JOIN user_favorites ON user_favorites.hole_id = hole.id AND user_favorites.user_id = ?", userID).
+				Order(order).Find(&holes).Error
+		} else {
+			err = DB.
+				Joins("JOIN user_favorites ON user_favorites.hole_id = hole.id AND user_favorites.user_id = ? AND user_favorites.favorite_group_id = ?", userID, query.FavoriteGroupID).
+				Order(order).Find(&holes).Error
+		}
+
 		if err != nil {
 			return err
 		}
