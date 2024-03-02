@@ -26,7 +26,7 @@ func (FavoriteGroup) TableName() string {
 	return "favorite_groups"
 }
 
-func UserGetFavoriteGroup(tx *gorm.DB, userID int) (favoriteGroups FavoriteGroups, err error) {
+func UserGetFavoriteGroups(tx *gorm.DB, userID int) (favoriteGroups FavoriteGroups, err error) {
 	err = tx.Transaction(func(tx *gorm.DB) error {
 		return tx.Where("user_id = ? and deleted = false", userID).Find(&favoriteGroups).Error
 	})

@@ -24,14 +24,15 @@ func (UserFavorite) TableName() string {
 }
 
 // ModifyUserFavorite only take effect in the same favorite_group
-// todo
 func ModifyUserFavorite(tx *gorm.DB, userID int, holeIDs []int, favoriteGroupID int) error {
 	if len(holeIDs) == 0 {
 		return nil
 	}
 	return tx.Clauses(dbresolver.Write).Transaction(func(tx *gorm.DB) error {
 		var oldHoleIDs []int
-		err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Model(&UserFavorite{}).Select("hole_id").Scan(&oldHoleIDs).Error
+		err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+			Raw("SELECT hole_id FROM user_favorites WHERE user_id = ? AND favorite_group_id = ?", userID, favoriteGroupID).
+			Scan(&oldHoleIDs).Error
 		if err != nil {
 			return err
 		}
@@ -50,7 +51,7 @@ func ModifyUserFavorite(tx *gorm.DB, userID int, holeIDs []int, favoriteGroupID 
 		if len(removingHoleIDs) > 0 {
 			deleteUserFavorite := make(UserFavorites, 0)
 			for _, holeID := range removingHoleIDs {
-				deleteUserFavorite = append(deleteUserFavorite, UserFavorite{UserID: userID, HoleID: holeID})
+				deleteUserFavorite = append(deleteUserFavorite, UserFavorite{UserID: userID, HoleID: holeID, FavoriteGroupID: favoriteGroupID})
 			}
 			err = tx.Delete(&deleteUserFavorite).Error
 			if err != nil {
@@ -72,7 +73,7 @@ func ModifyUserFavorite(tx *gorm.DB, userID int, holeIDs []int, favoriteGroupID 
 		if len(newHoleIDs) > 0 {
 			insertUserFavorite := make(UserFavorites, 0)
 			for _, holeID := range newHoleIDs {
-				insertUserFavorite = append(insertUserFavorite, UserFavorite{UserID: userID, HoleID: holeID})
+				insertUserFavorite = append(insertUserFavorite, UserFavorite{UserID: userID, HoleID: holeID, FavoriteGroupID: favoriteGroupID})
 			}
 			err = tx.Create(&insertUserFavorite).Error
 			if err != nil {
@@ -134,5 +135,39 @@ func DeleteUserFavorite(tx *gorm.DB, userID int, holeID int, favoriteGroupID int
 			return err
 		}
 		return tx.Clauses(dbresolver.Write).Model(&FavoriteGroup{}).Where("user_id = ? AND id = ?", userID, favoriteGroupID).Update("number", gorm.Expr("number - 1")).Error
+	})
+}
+
+// MoveUserFavorite move holes that are really in the fromFavoriteGroup
+func MoveUserFavorite(tx *gorm.DB, userID int, holeIDs []int, fromFavoriteGroupID int, toFavoriteGroupID int) error {
+	if len(holeIDs) == 0 {
+		return nil
+	}
+	return tx.Clauses(dbresolver.Write).Transaction(func(tx *gorm.DB) error {
+		var oldHoleIDs []int
+		err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+			Raw("SELECT hole_id FROM user_favorites WHERE user_id = ? AND favorite_group_id = ?", userID, fromFavoriteGroupID).
+			Scan(&oldHoleIDs).Error
+		if err != nil {
+			return err
+		}
+
+		// move user_favorite that in holeIDs
+		var removingHoleIDMapping = make(map[int]bool)
+		var removingHoleIDs []int
+		for _, holeID := range oldHoleIDs {
+			removingHoleIDMapping[holeID] = true
+		}
+		for _, holeID := range holeIDs {
+			if removingHoleIDMapping[holeID] {
+				removingHoleIDs = append(removingHoleIDs, holeID)
+			}
+		}
+		if len(removingHoleIDs) > 0 {
+			tx.Table("user_favorites").
+				Where("user_id = ? AND favorite_group_id = ? AND hole_id IN ?", userID, fromFavoriteGroupID, removingHoleIDs).
+				Updates(map[string]interface{}{"favorite_group_id": toFavoriteGroupID})
+		}
+		return err
 	})
 }

@@ -17,7 +17,7 @@ import (
 // @Tags Favorite
 // @Produce application/json
 // @Router /user/favorites [get]
-// @Param object query ListModel false "query"
+// @Param object query ListFavoriteModel false "query"
 // @Success 200 {object} models.Map
 // @Success 200 {array} models.Hole
 func ListFavorites(c *fiber.Ctx) error {
@@ -27,7 +27,7 @@ func ListFavorites(c *fiber.Ctx) error {
 		return err
 	}
 
-	var query ListModel
+	var query ListFavoriteModel
 	err = common.ValidateQuery(c, &query)
 	if err != nil {
 		return err
@@ -193,6 +193,66 @@ func DeleteFavorite(c *fiber.Ctx) error {
 	})
 }
 
+// ListFavoriteGroups
+//
+// @Summary List User's Favorite Groups
+// @Tags Favorite
+// @Produce application/json
+// @Router /user/favorite_group [get]
+// @Param object query ListFavoriteGroupModel false "query"
+// @Success 200 {object} models.Map
+// @Success 200 {array} models.FavoriteGroups
+func ListFavoriteGroups(c *fiber.Ctx) error {
+	// get userID
+	userID, err := common.GetUserID(c)
+	if err != nil {
+		return err
+	}
+
+	var query ListFavoriteGroupModel
+	err = common.ValidateQuery(c, &query)
+	if err != nil {
+		return err
+	}
+
+	if query.Plain {
+		// get favoriteGroups
+		data, err := UserGetFavoriteGroups(DB, userID)
+		if err != nil {
+			return err
+		}
+		return c.JSON(Map{"data": data})
+	} else {
+		// get order
+		var order string
+		switch query.Order {
+		case "id":
+			order = "id desc"
+		case "time_created":
+			order = "created_at desc, id desc"
+		case "time_updated":
+			order = "updated_at desc, id desc"
+		}
+
+		// get favoriteGroups
+		err = DB.Where("user_id = ? AND deleted = false", userID).Order(order).Find(&FavoriteGroups{}).Error
+		if err != nil {
+			return err
+		}
+		return c.JSON(Map{"data": FavoriteGroups{}})
+	}
+}
+
+// AddFavoriteGroup
+//
+// @Summary Add A Favorite Group
+// @Tags Favorite
+// @Accept application/json
+// @Produce application/json
+// @Router /user/favorite_group [post]
+// @Param json body AddFavoriteGroupModel true "json"
+// @Success 201 {object} Response
+// @Success 200 {object} Response
 func AddFavoriteGroup(c *fiber.Ctx) error {
 	// validate body
 	var body AddFavoriteGroupModel
@@ -225,6 +285,15 @@ func AddFavoriteGroup(c *fiber.Ctx) error {
 	})
 }
 
+// ModifyFavoriteGroup
+//
+// @Summary Modify User's Favorite Group
+// @Tags Favorite
+// @Produce application/json
+// @Router /user/favorite_group [put]
+// @Param json body ModifyFavoriteGroupModel true "json"
+// @Success 200 {object} Response
+// @Failure 404 {object} Response
 func ModifyFavoriteGroup(c *fiber.Ctx) error {
 	// validate body
 	var body ModifyFavoriteGroupModel
@@ -257,6 +326,15 @@ func ModifyFavoriteGroup(c *fiber.Ctx) error {
 	})
 }
 
+// DeleteFavoriteGroup
+//
+// @Summary Delete A Favorite Group
+// @Tags Favorite
+// @Produce application/json
+// @Router /user/favorite_group [delete]
+// @Param json body DeleteModel true "json"
+// @Success 200 {object} Response
+// @Failure 404 {object} Response
 func DeleteFavoriteGroup(c *fiber.Ctx) error {
 	// validate body
 	var body DeleteModel
@@ -285,6 +363,47 @@ func DeleteFavoriteGroup(c *fiber.Ctx) error {
 
 	return c.JSON(&Response{
 		Message: "删除成功",
+		Data:    data,
+	})
+}
+
+// MoveFavorite
+//
+// @Summary Move User's Favorite
+// @Tags Favorite
+// @Produce application/json
+// @Router /user/favorite_group/move [put]
+// @Param json body MoveModel true "json"
+// @Success 200 {object} Response
+// @Failure 404 {object} Response
+func MoveFavorite(c *fiber.Ctx) error {
+	// validate body
+	var body MoveModel
+	err := common.ValidateBody(c, &body)
+	if err != nil {
+		return err
+	}
+
+	// get userID
+	userID, err := common.GetUserID(c)
+	if err != nil {
+		return err
+	}
+
+	// move favorite
+	err = MoveUserFavorite(DB, userID, body.HoleIDs, body.FromFavoriteGroupID, body.ToFavoriteGroupID)
+	if err != nil {
+		return err
+	}
+
+	// create response
+	data, err := UserGetFavoriteData(DB, userID)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(&Response{
+		Message: "移动成功",
 		Data:    data,
 	})
 }
