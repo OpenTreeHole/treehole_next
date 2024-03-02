@@ -83,6 +83,12 @@ func (hole *Hole) CacheName() string {
 
 type Holes []*Hole
 
+func IsHolesExist(tx *gorm.DB, holeID []int) bool {
+	var num int64
+	tx.Model(&Hole{}).Where("id in ?", holeID).Count(&num)
+	return num == int64(len(holeID))
+}
+
 /**************
 	get hole methods
  *******************/

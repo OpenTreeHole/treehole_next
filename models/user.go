@@ -193,7 +193,7 @@ func (user *User) LoadUserByID(userID int) error {
 		}
 
 		if user.FavoriteGroupCount == 0 {
-			err = AddUserFavoriteGroup(DB, userID, "默认收藏夹")
+			err = CreateDefaultFavoriteGroup(tx, userID)
 			if err != nil {
 				return err
 			}

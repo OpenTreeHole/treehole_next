@@ -4,11 +4,10 @@ import (
 	"github.com/opentreehole/go-common"
 	"gorm.io/gorm"
 	"gorm.io/plugin/dbresolver"
-
-	. "treehole_next/models"
-	. "treehole_next/utils"
+	"treehole_next/utils"
 
 	"github.com/gofiber/fiber/v2"
+	. "treehole_next/models"
 )
 
 // ListFavorites
@@ -32,14 +31,19 @@ func ListFavorites(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
+	if query.FavoriteGroupID != nil {
+		if !IsFavoriteGroupExist(DB, userID, *query.FavoriteGroupID) {
+			return common.Forbidden("收藏夹不存在")
+		}
+	}
 
 	if query.Plain {
 		// get favorite ids
 		var data []int
-		if query.All {
+		if query.FavoriteGroupID == nil {
 			data, err = UserGetFavoriteData(DB, userID)
 		} else {
-			data, err = UserGetFavoriteDataByFavoriteGroup(DB, userID, query.FavoriteGroupID)
+			data, err = UserGetFavoriteDataByFavoriteGroup(DB, userID, *query.FavoriteGroupID)
 		}
 		if err != nil {
 			return err
@@ -59,20 +63,20 @@ func ListFavorites(c *fiber.Ctx) error {
 
 		// get favorites
 		holes := make(Holes, 0)
-		if query.All {
+		if query.FavoriteGroupID == nil {
 			err = DB.
 				Joins("JOIN user_favorites ON user_favorites.hole_id = hole.id AND user_favorites.user_id = ?", userID).
 				Order(order).Find(&holes).Error
 		} else {
 			err = DB.
-				Joins("JOIN user_favorites ON user_favorites.hole_id = hole.id AND user_favorites.user_id = ? AND user_favorites.favorite_group_id = ?", userID, query.FavoriteGroupID).
+				Joins("JOIN user_favorites ON user_favorites.hole_id = hole.id AND user_favorites.user_id = ? AND user_favorites.favorite_group_id = ?", userID, *query.FavoriteGroupID).
 				Order(order).Find(&holes).Error
 		}
 
 		if err != nil {
 			return err
 		}
-		return Serialize(c, &holes)
+		return utils.Serialize(c, &holes)
 	}
 }
 
@@ -247,11 +251,12 @@ func ListFavoriteGroups(c *fiber.Ctx) error {
 		}
 
 		// get favoriteGroups
-		err = DB.Where("user_id = ? AND deleted = false", userID).Order(order).Find(&FavoriteGroups{}).Error
+		var data FavoriteGroups
+		err = DB.Where("user_id = ? AND deleted = false", userID).Order(order).Find(&data).Error
 		if err != nil {
 			return err
 		}
-		return c.JSON(Map{"data": FavoriteGroups{}})
+		return c.JSON(Map{"data": data})
 	}
 }
 
@@ -349,7 +354,7 @@ func ModifyFavoriteGroup(c *fiber.Ctx) error {
 // @Failure 404 {object} Response
 func DeleteFavoriteGroup(c *fiber.Ctx) error {
 	// validate body
-	var body DeleteModel
+	var body DeleteFavoriteGroupModel
 	err := common.ValidateBody(c, &body)
 	if err != nil {
 		return err

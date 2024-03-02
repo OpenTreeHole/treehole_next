@@ -150,6 +150,8 @@ func InitDB() {
 		&Message{},
 		&FloorHistory{},
 		&AdminLog{},
+		&UserFavorite{},
+		&FavoriteGroup{},
 	)
 	if err != nil {
 		log.Fatal().Err(err).Send()

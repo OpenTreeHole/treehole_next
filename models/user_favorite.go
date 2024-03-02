@@ -26,7 +26,7 @@ func (UserFavorite) TableName() string {
 
 func IsFavoriteGroupExist(tx *gorm.DB, userID int, favoriteGroupID int) bool {
 	var num int64
-	tx.Model(&FavoriteGroup{}).Where("user_id = ? AND id = ? AND Deleted = false", userID, favoriteGroupID).Count(&num)
+	tx.Model(&FavoriteGroup{}).Where("user_id = ? AND id = ? AND deleted = false", userID, favoriteGroupID).Count(&num)
 	return num > 0
 }
 
@@ -38,11 +38,14 @@ func ModifyUserFavorite(tx *gorm.DB, userID int, holeIDs []int, favoriteGroupID 
 	if !IsFavoriteGroupExist(tx, userID, favoriteGroupID) {
 		return common.Forbidden("收藏夹不存在")
 	}
+	if !IsHolesExist(tx, holeIDs) {
+		return common.Forbidden("帖子不存在")
+	}
 	return tx.Clauses(dbresolver.Write).Transaction(func(tx *gorm.DB) error {
 		var oldHoleIDs []int
 		err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
 			Model(&UserFavorite{}).Where("user_id = ? AND favorite_group_id = ?", userID, favoriteGroupID).
-			Scan(&oldHoleIDs).Error
+			Pluck("hole_id", &oldHoleIDs).Error
 		if err != nil {
 			return err
 		}
@@ -98,6 +101,9 @@ func AddUserFavorite(tx *gorm.DB, userID int, holeID int, favoriteGroupID int) e
 	if !IsFavoriteGroupExist(tx, userID, favoriteGroupID) {
 		return common.Forbidden("收藏夹不存在")
 	}
+	if !IsHolesExist(tx, []int{holeID}) {
+		return common.Forbidden("帖子不存在")
+	}
 	var err = tx.Clauses(clause.OnConflict{
 		DoUpdates: clause.Assignments(Map{"created_at": time.Now()}),
 	}).Create(&UserFavorite{
@@ -126,8 +132,8 @@ func UserGetFavoriteDataByFavoriteGroup(tx *gorm.DB, userID int, favoriteGroupID
 		return nil, common.Forbidden("收藏夹不存在")
 	}
 	data := make([]int, 0, 10)
-	err := tx.Clauses(dbresolver.Write).
-		Model(&UserFavorite{}).Where("user_id = ? AND favorite_group_id = ?", userID, favoriteGroupID).Scan(&data).Error
+	err := tx.Clauses(dbresolver.Write).Model(&UserFavorite{}).
+		Where("user_id = ? AND favorite_group_id = ?", userID, favoriteGroupID).Pluck("hole_id", &data).Error
 	return data, err
 }
 
@@ -137,6 +143,9 @@ func UserGetFavoriteDataByFavoriteGroup(tx *gorm.DB, userID int, favoriteGroupID
 func DeleteUserFavorite(tx *gorm.DB, userID int, holeID int, favoriteGroupID int) error {
 	if !IsFavoriteGroupExist(tx, userID, favoriteGroupID) {
 		return common.Forbidden("收藏夹不存在")
+	}
+	if !IsHolesExist(tx, []int{holeID}) {
+		return common.Forbidden("帖子不存在")
 	}
 	return tx.Clauses(dbresolver.Write).Transaction(func(tx *gorm.DB) error {
 		err := tx.Delete(&UserFavorite{UserID: userID, HoleID: holeID, FavoriteGroupID: favoriteGroupID}).Error
@@ -149,17 +158,20 @@ func DeleteUserFavorite(tx *gorm.DB, userID int, holeID int, favoriteGroupID int
 
 // MoveUserFavorite move holes that are really in the fromFavoriteGroup
 func MoveUserFavorite(tx *gorm.DB, userID int, holeIDs []int, fromFavoriteGroupID int, toFavoriteGroupID int) error {
+	if len(holeIDs) == 0 {
+		return nil
+	}
 	if !IsFavoriteGroupExist(tx, userID, fromFavoriteGroupID) || !IsFavoriteGroupExist(tx, userID, toFavoriteGroupID) {
 		return common.Forbidden("收藏夹不存在")
 	}
-	if len(holeIDs) == 0 {
-		return nil
+	if !IsHolesExist(tx, holeIDs) {
+		return common.Forbidden("帖子不存在")
 	}
 	return tx.Clauses(dbresolver.Write).Transaction(func(tx *gorm.DB) error {
 		var oldHoleIDs []int
 		err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
 			Model(&UserFavorite{}).Where("user_id = ? AND favorite_group_id = ?", userID, fromFavoriteGroupID).
-			Scan(&oldHoleIDs).Error
+			Pluck("hole_id", &oldHoleIDs).Error
 		if err != nil {
 			return err
 		}
