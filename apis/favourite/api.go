@@ -32,7 +32,7 @@ func ListFavorites(c *fiber.Ctx) error {
 	}
 	if query.FavoriteGroupID != nil {
 		if !IsFavoriteGroupExist(DB, userID, *query.FavoriteGroupID) {
-			return common.Forbidden("收藏夹不存在")
+			return common.NotFound("收藏夹不存在")
 		}
 	}
 

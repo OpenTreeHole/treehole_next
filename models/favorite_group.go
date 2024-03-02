@@ -9,13 +9,13 @@ import (
 )
 
 type FavoriteGroup struct {
-	ID        int       `json:"id" gorm:"primaryKey"`
-	UserID    int       `json:"user_id" gorm:"primaryKey"`
-	Name      string    `json:"name" gorm:"not null;size:64" default:"默认"`
-	CreatedAt time.Time `json:"time_created"`
-	UpdatedAt time.Time `json:"time_updated"`
-	Deleted   bool      `json:"deleted" gorm:"default:false"`
-	Count     int       `json:"count" gorm:"default:0"`
+	FavoriteGroupID int       `json:"favorite_group_id" gorm:"primaryKey"`
+	UserID          int       `json:"user_id" gorm:"primaryKey"`
+	Name            string    `json:"name" gorm:"not null;size:64" default:"默认"`
+	CreatedAt       time.Time `json:"time_created"`
+	UpdatedAt       time.Time `json:"time_updated"`
+	Deleted         bool      `json:"deleted" gorm:"default:false"`
+	Count           int       `json:"count" gorm:"default:0"`
 }
 
 const MaxGroupPerUser = 10
@@ -49,10 +49,10 @@ func DeleteUserFavoriteGroup(tx *gorm.DB, userID int, groupID int) (err error) {
 func CreateDefaultFavoriteGroup(tx *gorm.DB, userID int) (err error) {
 	return tx.Clauses(dbresolver.Write).Transaction(func(tx *gorm.DB) error {
 		err = tx.Create(&FavoriteGroup{
-			UserID:    userID,
-			Name:      "默认收藏夹",
-			ID:        0,
-			CreatedAt: time.Now(),
+			UserID:          userID,
+			Name:            "默认收藏夹",
+			FavoriteGroupID: 0,
+			CreatedAt:       time.Now(),
 		}).Error
 		if err != nil {
 			return err
@@ -82,10 +82,10 @@ func AddUserFavoriteGroup(tx *gorm.DB, userID int, name string) (err error) {
 		}
 
 		err = tx.Create(&FavoriteGroup{
-			UserID:    userID,
-			Name:      name,
-			ID:        groupID,
-			CreatedAt: time.Now(),
+			UserID:          userID,
+			Name:            name,
+			FavoriteGroupID: groupID,
+			CreatedAt:       time.Now(),
 		}).Error
 		if err != nil {
 			return err

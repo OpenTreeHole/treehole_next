@@ -131,12 +131,17 @@ func initTestTags() {
 }
 
 func initTestFavorites() {
+	favoriteGroup := FavoriteGroup{Name: "test", UserID: 1, FavoriteGroupID: 0}
+	err := DB.Create(&favoriteGroup).Error
+	if err != nil {
+		log.Fatal().Err(err).Send()
+	}
 	userFavorites := make([]UserFavorite, 10)
 	for i := range userFavorites {
 		userFavorites[i].HoleID = i + 1
 		userFavorites[i].UserID = 1
 	}
-	err := DB.Create(&userFavorites).Error
+	err = DB.Create(&userFavorites).Error
 	if err != nil {
 		log.Fatal().Err(err).Send()
 	}
