@@ -85,6 +85,11 @@ func FindOrCreateTags(tx *gorm.DB, user *User, names []string) (Tags, error) {
 				return nil, common.BadRequest("只有管理员才能创建 @ 开头的 tag")
 			}
 		}
+		if strings.HasPrefix(tag.Name, "*") {
+			if !user.IsAdmin {
+				return nil, common.BadRequest("只有管理员才能创建 * 开头的 tag")
+			}
+		}
 	}
 
 	err = tx.Clauses(clause.OnConflict{DoNothing: true}).Create(&newTags).Error
