@@ -121,6 +121,9 @@ func (floors Floors) Preprocess(c *fiber.Ctx) error {
 	floorIDs := make([]int, len(floors))
 	IDFloorMapping := make(map[int]*Floor)
 	for i, floor := range floors {
+		if floors[i].IsActualSensitive == nil || *floors[i].IsActualSensitive {
+			floors[i].Content = ""
+		}
 		floors[i].IsMe = userID == floor.UserID
 		floorIDs[i] = floor.ID
 		IDFloorMapping[floor.ID] = floors[i]
@@ -195,10 +198,6 @@ Create
 
 func (floor *Floor) Create(tx *gorm.DB, hole *Hole) (err error) {
 	// sensitive check
-	err = floor.SensitiveCheck(tx, hole)
-	if err != nil {
-		return err
-	}
 
 	// load floor mention, in another session
 	floor.Mention, err = LoadFloorMentions(DB, floor.Content)
@@ -338,31 +337,6 @@ func (floor *Floor) ModifyLike(tx *gorm.DB, userID int, likeOption int8) (err er
 	} else if likeOption == -1 {
 		floor.DislikedFrontend = true
 	}
-	return nil
-}
-
-func (floor *Floor) SensitiveCheck(tx *gorm.DB, hole *Hole) (err error) {
-	var tags Tags
-	if hole.Tags != nil {
-		tags = hole.Tags
-	} else {
-		err = tx.Model(&Tag{}).Joins("JOIN hole_tags ON hole_tags.tag_id = tag.id").
-			Where("hole_tags.hole_id = ?", floor.HoleID).Find(&tags).Error
-		if err != nil {
-			return err
-		}
-	}
-
-	hasZZMGTag := hole.DivisionID == 2
-	for _, tag := range tags {
-		if tag.IsZZMG {
-			hasZZMGTag = true
-		}
-	}
-
-	floor.IsSensitive = utils.IsSensitive(floor.Content, !hasZZMGTag)
-	floor.IsActualSensitive = nil
-
 	return nil
 }
 

@@ -35,6 +35,11 @@ var Config struct {
 	HolePurgeDivisions []int    `env:"HOLE_PURGE_DIVISIONS" envDefault:"2"`
 	HolePurgeDays      int      `env:"HOLE_PURGE_DAYS" envDefault:"30"`
 	OpenSensitiveCheck bool     `env:"OPEN_SENSITIVE_CHECK" envDefault:"true"`
+
+	YiDunBusinessIdText  string `env:"YI_DUN_BUSINESS_ID_TEXT" envDefault:"227fbd5c1e16cdc10e7742ddcb935c00"`
+	YiDunBusinessIdImage string `env:"YI_DUN_BUSINESS_ID_IMAGE" envDefault:"5b2dc6812724444edc100fa19baae5ca"`
+	YiDunSecretId        string `env:"YI_DUN_SECRET_KEY" envDefault:"3f6b2dcde738f6cbddbae2a636961483"`
+	YiDunSecretKey       string `env:"YI_DUN_SECRET_KEY" envDefault:"ae5cbab6ce4750f734ddda25c57c207a"`
 }
 
 var DynamicConfig struct {

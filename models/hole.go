@@ -317,10 +317,6 @@ func (hole *Hole) Create(tx *gorm.DB, user *User, tagNames []string) (err error)
 	}
 
 	var firstFloor = hole.Floors[0]
-	err = firstFloor.SensitiveCheck(tx, hole)
-	if err != nil {
-		return err
-	}
 
 	// Find floor.Mentions, in different sql session
 	firstFloor.Mention, err = LoadFloorMentions(tx, firstFloor.Content)
