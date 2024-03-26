@@ -19,7 +19,7 @@ const (
 
 type ParamsForCheck struct {
 	Content  string
-	Id       int
+	Id       int64
 	TypeName string
 }
 
@@ -29,17 +29,21 @@ type ResponseForCheck struct {
 }
 
 func CheckSensitive(params ParamsForCheck) (resp *ResponseForCheck, err error) {
+	if !checkType(params) {
+		return nil, fmt.Errorf("invalid type for sensitive check")
+	}
+
 	request := single.NewTextCheckRequest(config.Config.YiDunBusinessIdText)
 	textCheckClient := v5.NewTextClientWithAccessKey(config.Config.YiDunSecretId, config.Config.YiDunSecretKey)
 
-	request.SetDataID(strconv.Itoa(params.Id) + "_" + params.TypeName)
+	request.SetDataID(strconv.FormatInt(params.Id, 10) + "_" + params.TypeName)
 	request.SetContent(params.Content)
 	request.SetTimestamp(time.Now().UnixMilli())
 
 	response, err := textCheckClient.SyncCheckText(request)
 	if err != nil {
 		// 处理错误并打印日志
-		utils.RequestLog(fmt.Sprintf("sync request error:%+v", err.Error()), params, false)
+		utils.RequestLog(fmt.Sprintf("sync request error:%+v", err.Error()), params.TypeName, params.Id, false)
 		resp = nil
 	}
 
@@ -47,12 +51,12 @@ func CheckSensitive(params ParamsForCheck) (resp *ResponseForCheck, err error) {
 	if response.GetCode() == 200 {
 
 		if *response.Result.Antispam.Suggestion == 0 {
-			utils.RequestLog("Sensitive Check response code is 200", params, true)
+			utils.RequestLog("Sensitive Check response code is 200", params.TypeName, params.Id, true)
 			resp.Pass = true
 			return
 		}
 
-		utils.RequestLog("Sensitive Check response code is 200", params, false)
+		utils.RequestLog("Sensitive Check response code is 200", params.TypeName, params.Id, false)
 		resp.Pass = false
 		for _, label := range response.Result.Antispam.Labels {
 			resp.Labels = append(resp.Labels, *label.Label)
@@ -60,7 +64,14 @@ func CheckSensitive(params ParamsForCheck) (resp *ResponseForCheck, err error) {
 		return
 	}
 
-	utils.RequestLog("http response code is not 200", params, false)
+	utils.RequestLog("http response code is not 200", params.TypeName, params.Id, false)
 	resp.Pass = false
 	return
+}
+
+func checkType(params ParamsForCheck) bool {
+	if params.TypeName != TypeTag && params.TypeName != TypeHole && params.TypeName != TypeFloor {
+		return true
+	}
+	return false
 }

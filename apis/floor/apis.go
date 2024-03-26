@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"slices"
 	"time"
+	"treehole_next/utils/sensitive"
 
 	"github.com/opentreehole/go-common"
 	"github.com/rs/zerolog/log"
@@ -335,6 +336,16 @@ func ModifyFloor(c *fiber.Ctx) error {
 			} else {
 				return common.Forbidden()
 			}
+			sensitiveResp, err := sensitive.CheckSensitive(sensitive.ParamsForCheck{
+				Content:  *body.Content,
+				Id:       time.Now().UnixNano(),
+				TypeName: sensitive.TypeFloor,
+			})
+			if err != nil {
+				return err
+			}
+
+			floor.IsSensitive = !sensitiveResp.Pass
 			floor.Modified += 1
 			err = floor.Backup(tx, user.ID, reason)
 			if err != nil {

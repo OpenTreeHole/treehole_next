@@ -3,6 +3,7 @@ package models
 import (
 	"fmt"
 	"time"
+	"treehole_next/utils/sensitive"
 
 	"github.com/opentreehole/go-common"
 	"github.com/rs/zerolog/log"
@@ -198,6 +199,12 @@ Create
 
 func (floor *Floor) Create(tx *gorm.DB, hole *Hole) (err error) {
 	// sensitive check
+	sensitiveCheckResp, err := sensitive.CheckSensitive(sensitive.ParamsForCheck{
+		Content:  floor.Content,
+		Id:       time.Now().UnixNano(),
+		TypeName: sensitive.TypeFloor,
+	})
+	floor.IsSensitive = !sensitiveCheckResp.Pass
 
 	// load floor mention, in another session
 	floor.Mention, err = LoadFloorMentions(DB, floor.Content)
@@ -252,7 +259,7 @@ func (floor *Floor) Create(tx *gorm.DB, hole *Hole) (err error) {
 		// return err // only for test
 	}
 
-	if !hole.Hidden && !floor.IsSensitive {
+	if !hole.Hidden && !floor.Sensitive() {
 		// insert into Elasticsearch
 		go FloorIndex(FloorModel{
 			ID:        floor.ID,
@@ -265,6 +272,16 @@ func (floor *Floor) Create(tx *gorm.DB, hole *Hole) (err error) {
 
 	// delete cache
 	return utils.DeleteCache(hole.CacheName())
+}
+
+func (floor *Floor) Sensitive() bool {
+	if floor == nil {
+		return false
+	}
+	if floor.IsActualSensitive != nil {
+		return *floor.IsActualSensitive
+	}
+	return floor.IsSensitive
 }
 
 func (floor *Floor) AfterFind(_ *gorm.DB) (err error) {
@@ -289,10 +306,12 @@ func (floor *Floor) AfterCreate(tx *gorm.DB) (err error) {
 // Backup Update and Modify
 func (floor *Floor) Backup(tx *gorm.DB, userID int, reason string) error {
 	history := FloorHistory{
-		Content: floor.Content,
-		Reason:  reason,
-		FloorID: floor.ID,
-		UserID:  userID,
+		Content:           floor.Content,
+		Reason:            reason,
+		FloorID:           floor.ID,
+		UserID:            userID,
+		IsSensitive:       floor.IsSensitive,
+		IsActualSensitive: floor.IsActualSensitive,
 	}
 	return tx.Create(&history).Error
 }

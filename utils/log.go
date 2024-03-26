@@ -2,7 +2,6 @@ package utils
 
 import (
 	"github.com/rs/zerolog/log"
-	"treehole_next/utils/sensitive"
 )
 
 type Role string
@@ -27,9 +26,9 @@ func MyLog(model string, action string, objectID, userID int, role Role, msg ...
 		Msg(message)
 }
 
-func RequestLog(msg string, params sensitive.ParamsForCheck, ans bool) {
-	log.Info().Str("TypeName", params.TypeName).
-		Int("Id", params.Id).
+func RequestLog(msg string, TypeName string, Id int64, ans bool) {
+	log.Info().Str("TypeName", TypeName).
+		Int64("Id", Id).
 		Bool("CheckAnswer", ans).
 		Msg(msg)
 }

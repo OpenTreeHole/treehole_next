@@ -1,0 +1,11 @@
+{
+  "name": "Open Tree Hole",
+  "description": "Next Generation of OpenTreeHole Implemented In Go ---- An Anonymous BBS",
+  "version": "2.0.0",
+  "homepage": "https://github.com/opentreehole",
+  "repository": "https://github.com/OpenTreeHole/treehole_next",
+  "author": "hasbai",
+  "maintainer": "jingyijun",
+  "email": "dev@fduhole.com",
+  "license": "Apache-2.0"
+}

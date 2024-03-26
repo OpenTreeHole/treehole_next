@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"slices"
 	"strconv"
+	"time"
+	"treehole_next/utils/sensitive"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/opentreehole/go-common"
@@ -275,12 +277,22 @@ func CreateHole(c *fiber.Ctx) error {
 		body.SpecialTag = user.DefaultSpecialTag
 	}
 
+	sensitiveResp, err := sensitive.CheckSensitive(sensitive.ParamsForCheck{
+		Content:  body.Content,
+		Id:       time.Now().UnixNano(),
+		TypeName: sensitive.TypeFloor,
+	})
+	if err != nil {
+		return err
+	}
+
 	hole := Hole{
 		Floors: Floors{{
-			UserID:     user.ID,
-			Content:    body.Content,
-			SpecialTag: body.SpecialTag,
-			IsMe:       true,
+			UserID:      user.ID,
+			Content:     body.Content,
+			SpecialTag:  body.SpecialTag,
+			IsMe:        true,
+			IsSensitive: !sensitiveResp.Pass,
 		}},
 		UserID:     user.ID,
 		DivisionID: divisionID,
@@ -332,13 +344,23 @@ func CreateHoleOld(c *fiber.Ctx) error {
 		body.SpecialTag = user.DefaultSpecialTag
 	}
 
+	sensitiveResp, err := sensitive.CheckSensitive(sensitive.ParamsForCheck{
+		Content:  body.Content,
+		Id:       time.Now().UnixNano(),
+		TypeName: sensitive.TypeFloor,
+	})
+	if err != nil {
+		return err
+	}
+
 	// create hole
 	hole := Hole{
 		Floors: Floors{{
-			UserID:     user.ID,
-			Content:    body.Content,
-			SpecialTag: body.SpecialTag,
-			IsMe:       true,
+			UserID:      user.ID,
+			Content:     body.Content,
+			SpecialTag:  body.SpecialTag,
+			IsMe:        true,
+			IsSensitive: !sensitiveResp.Pass,
 		}},
 		UserID:     user.ID,
 		DivisionID: body.DivisionID,

@@ -234,7 +234,11 @@ func (holes Holes) Preprocess(c *fiber.Ctx) error {
 
 	// only admin can see hole is hidden
 	if !user.IsAdmin {
-		for _, hole := range holes {
+		for i, hole := range holes {
+			err = holes[i].Floors.Preprocess(c)
+			if err != nil {
+				return err
+			}
 			hole.Hidden = false
 		}
 	}
