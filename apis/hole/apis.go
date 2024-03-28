@@ -250,8 +250,8 @@ func CreateHole(c *fiber.Ctx) error {
 		return err
 	}
 
-	if len([]rune(body.Content)) > 15000 {
-		return common.BadRequest("文本限制 15000 字")
+	if len([]rune(body.Content)) > 10000 {
+		return common.BadRequest("文本限制 10000 字")
 	}
 
 	divisionID, err := c.ParamsInt("id")
@@ -322,8 +322,8 @@ func CreateHoleOld(c *fiber.Ctx) error {
 		return err
 	}
 
-	if len([]rune(body.Content)) > 15000 {
-		return common.BadRequest("文本限制 15000 字")
+	if len([]rune(body.Content)) > 10000 {
+		return common.BadRequest("文本限制 10000 字")
 	}
 
 	// get user from auth

@@ -139,8 +139,8 @@ func CreateFloor(c *fiber.Ctx) error {
 		return err
 	}
 
-	if len([]rune(body.Content)) > 15000 {
-		return common.BadRequest("文本限制 15000 字")
+	if len([]rune(body.Content)) > 10000 {
+		return common.BadRequest("文本限制 10000 字")
 	}
 
 	holeID, err := c.ParamsInt("id")
@@ -211,8 +211,8 @@ func CreateFloorOld(c *fiber.Ctx) error {
 		return err
 	}
 
-	if len([]rune(body.Content)) > 15000 {
-		return common.BadRequest("文本限制 15000 字")
+	if len([]rune(body.Content)) > 10000 {
+		return common.BadRequest("文本限制 10000 字")
 	}
 
 	// get hole to check DivisionID and Locked
@@ -286,8 +286,8 @@ func ModifyFloor(c *fiber.Ctx) error {
 		return common.BadRequest("无效请求")
 	}
 
-	if body.Content != nil && len([]rune(*body.Content)) > 15000 {
-		return common.BadRequest("文本限制 15000 字")
+	if body.Content != nil && len([]rune(*body.Content)) > 10000 {
+		return common.BadRequest("文本限制 10000 字")
 	}
 
 	// parse floor_id
