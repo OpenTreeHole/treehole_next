@@ -1,9 +1,11 @@
 package sensitive
 
 import (
+	"golang.org/x/exp/slices"
 	"mvdan.cc/xurls/v2"
 	url2 "net/url"
 	"regexp"
+	"treehole_next/config"
 )
 
 // findImagesInMarkdown 从Markdown文本中查找所有图片链接
@@ -52,7 +54,7 @@ func checkValidUrl(input string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	if url.Hostname() != "jingyijun.com" {
+	if slices.Contains(config.Config.ValidImageUrl, url.Hostname()) {
 		return false, nil
 	}
 	return true, nil
