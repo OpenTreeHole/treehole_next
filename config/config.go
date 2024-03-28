@@ -36,10 +36,11 @@ var Config struct {
 	HolePurgeDays      int      `env:"HOLE_PURGE_DAYS" envDefault:"30"`
 	OpenSensitiveCheck bool     `env:"OPEN_SENSITIVE_CHECK" envDefault:"true"`
 
-	YiDunBusinessIdText  string `env:"YI_DUN_BUSINESS_ID_TEXT" envDefault:""`
-	YiDunBusinessIdImage string `env:"YI_DUN_BUSINESS_ID_IMAGE" envDefault:""`
-	YiDunSecretId        string `env:"YI_DUN_SECRET_KEY" envDefault:""`
-	YiDunSecretKey       string `env:"YI_DUN_SECRET_KEY" envDefault:""`
+	YiDunBusinessIdText  string   `env:"YI_DUN_BUSINESS_ID_TEXT" envDefault:""`
+	YiDunBusinessIdImage string   `env:"YI_DUN_BUSINESS_ID_IMAGE" envDefault:""`
+	YiDunSecretId        string   `env:"YI_DUN_SECRET_KEY" envDefault:""`
+	YiDunSecretKey       string   `env:"YI_DUN_SECRET_KEY" envDefault:""`
+	ValidImageUrl        []string `env:"VALID_IMAGE_URL"`
 }
 
 var DynamicConfig struct {
