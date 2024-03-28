@@ -3055,7 +3055,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "content": {
-                    "description": "content of the floor, no more than 15000",
+                    "description": "content of the floor, no more than 10000",
                     "type": "string"
                 },
                 "deleted": {

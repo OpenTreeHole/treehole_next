@@ -1,8 +1,11 @@
 package models
 
 import (
+	"github.com/gofiber/fiber/v2"
 	"strings"
+	"sync"
 	"time"
+	"treehole_next/utils/sensitive"
 
 	"github.com/opentreehole/go-common"
 	"github.com/rs/zerolog/log"
@@ -27,7 +30,11 @@ type Tag struct {
 
 	/// association info, should add foreign key
 	Holes Holes `json:"-" gorm:"many2many:hole_tags;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	// auto sensitive check
+	IsSensitive bool `json:"is_sensitive" gorm:"index:idx_tag_actual_sensitive,priority:1"`
 
+	// manual sensitive check
+	IsActualSensitive *bool `json:"is_actual_sensitive" gorm:"index:idx_tag_actual_sensitive,priority:2"`
 	/// generated field
 	TagID int `json:"tag_id" gorm:"-:all"`
 }
@@ -73,7 +80,6 @@ func FindOrCreateTags(tx *gorm.DB, user *User, names []string) (Tags, error) {
 	if len(newTags) == 0 {
 		return tags, nil
 	}
-
 	for _, tag := range newTags {
 		if strings.HasPrefix(tag.Name, "#") {
 			if !user.IsAdmin {
@@ -91,6 +97,24 @@ func FindOrCreateTags(tx *gorm.DB, user *User, names []string) (Tags, error) {
 			}
 		}
 	}
+
+	var wg sync.WaitGroup
+	for _, tag := range newTags {
+		wg.Add(1)
+		go func(tag *Tag) {
+			sensitiveResp, err := sensitive.CheckSensitive(sensitive.ParamsForCheck{
+				Content:  tag.Name,
+				Id:       time.Now().UnixNano(),
+				TypeName: sensitive.TypeTag,
+			})
+			if err != nil {
+				return
+			}
+			tag.IsSensitive = !sensitiveResp.Pass
+			wg.Done()
+		}(tag)
+	}
+	wg.Wait()
 
 	err = tx.Clauses(clause.OnConflict{DoNothing: true}).Create(&newTags).Error
 
@@ -111,4 +135,31 @@ func UpdateTagCache(tags Tags) {
 	if err != nil {
 		log.Printf("update tag cache error: %s", err)
 	}
+}
+
+func (tag *Tag) Preprocess(c *fiber.Ctx) error {
+	return Tags{tag}.Preprocess(c)
+}
+
+func (tags Tags) Preprocess(c *fiber.Ctx) error {
+	tagIDs := make([]int, len(tags))
+	IdTagMapping := make(map[int]*Tag)
+	for i, tag := range tags {
+		if tags[i].Sensitive() {
+			tags[i].Name = ""
+		}
+		tagIDs[i] = tag.ID
+		IdTagMapping[tag.ID] = tags[i]
+	}
+	return nil
+}
+
+func (tag *Tag) Sensitive() bool {
+	if tag == nil {
+		return false
+	}
+	if tag.IsActualSensitive != nil {
+		return *tag.IsActualSensitive
+	}
+	return tag.IsSensitive
 }

@@ -3,6 +3,7 @@ package models
 import (
 	"fmt"
 	"time"
+	"treehole_next/utils/sensitive"
 
 	"github.com/opentreehole/go-common"
 	"github.com/rs/zerolog/log"
@@ -24,8 +25,8 @@ type Floor struct {
 
 	/// base info
 
-	// content of the floor, no more than 15000
-	Content string `json:"content" gorm:"not null;size:15000"`
+	// content of the floor, no more than 10000
+	Content string `json:"content" gorm:"not null;size:10000"`
 
 	// a random username
 	Anonyname string `json:"anonyname" gorm:"not null;size:32"`
@@ -121,6 +122,9 @@ func (floors Floors) Preprocess(c *fiber.Ctx) error {
 	floorIDs := make([]int, len(floors))
 	IDFloorMapping := make(map[int]*Floor)
 	for i, floor := range floors {
+		if floor.Sensitive() {
+			floors[i].Content = ""
+		}
 		floors[i].IsMe = userID == floor.UserID
 		floorIDs[i] = floor.ID
 		IDFloorMapping[floor.ID] = floors[i]
@@ -195,10 +199,12 @@ Create
 
 func (floor *Floor) Create(tx *gorm.DB, hole *Hole) (err error) {
 	// sensitive check
-	err = floor.SensitiveCheck(tx, hole)
-	if err != nil {
-		return err
-	}
+	sensitiveCheckResp, err := sensitive.CheckSensitive(sensitive.ParamsForCheck{
+		Content:  floor.Content,
+		Id:       time.Now().UnixNano(),
+		TypeName: sensitive.TypeFloor,
+	})
+	floor.IsSensitive = !sensitiveCheckResp.Pass
 
 	// load floor mention, in another session
 	floor.Mention, err = LoadFloorMentions(DB, floor.Content)
@@ -253,7 +259,7 @@ func (floor *Floor) Create(tx *gorm.DB, hole *Hole) (err error) {
 		// return err // only for test
 	}
 
-	if !hole.Hidden && !floor.IsSensitive {
+	if !hole.Hidden && !floor.Sensitive() {
 		// insert into Elasticsearch
 		go FloorIndex(FloorModel{
 			ID:        floor.ID,
@@ -266,6 +272,16 @@ func (floor *Floor) Create(tx *gorm.DB, hole *Hole) (err error) {
 
 	// delete cache
 	return utils.DeleteCache(hole.CacheName())
+}
+
+func (floor *Floor) Sensitive() bool {
+	if floor == nil {
+		return false
+	}
+	if floor.IsActualSensitive != nil {
+		return *floor.IsActualSensitive
+	}
+	return floor.IsSensitive
 }
 
 func (floor *Floor) AfterFind(_ *gorm.DB) (err error) {
@@ -290,10 +306,12 @@ func (floor *Floor) AfterCreate(tx *gorm.DB) (err error) {
 // Backup Update and Modify
 func (floor *Floor) Backup(tx *gorm.DB, userID int, reason string) error {
 	history := FloorHistory{
-		Content: floor.Content,
-		Reason:  reason,
-		FloorID: floor.ID,
-		UserID:  userID,
+		Content:           floor.Content,
+		Reason:            reason,
+		FloorID:           floor.ID,
+		UserID:            userID,
+		IsSensitive:       floor.IsSensitive,
+		IsActualSensitive: floor.IsActualSensitive,
 	}
 	return tx.Create(&history).Error
 }
@@ -338,31 +356,6 @@ func (floor *Floor) ModifyLike(tx *gorm.DB, userID int, likeOption int8) (err er
 	} else if likeOption == -1 {
 		floor.DislikedFrontend = true
 	}
-	return nil
-}
-
-func (floor *Floor) SensitiveCheck(tx *gorm.DB, hole *Hole) (err error) {
-	var tags Tags
-	if hole.Tags != nil {
-		tags = hole.Tags
-	} else {
-		err = tx.Model(&Tag{}).Joins("JOIN hole_tags ON hole_tags.tag_id = tag.id").
-			Where("hole_tags.hole_id = ?", floor.HoleID).Find(&tags).Error
-		if err != nil {
-			return err
-		}
-	}
-
-	hasZZMGTag := hole.DivisionID == 2
-	for _, tag := range tags {
-		if tag.IsZZMG {
-			hasZZMGTag = true
-		}
-	}
-
-	floor.IsSensitive = utils.IsSensitive(floor.Content, !hasZZMGTag)
-	floor.IsActualSensitive = nil
-
 	return nil
 }
 

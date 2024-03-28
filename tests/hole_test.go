@@ -63,7 +63,7 @@ func TestCreateHole(t *testing.T) {
 
 	content = strings.Repeat("~", 15001)
 	data = Map{"content": content, "tags": []Map{{"name": "a"}, {"name": "ab"}, {"name": "abc"}}}
-	testAPI(t, "post", "/api/divisions/1/holes", 400, data) // data no more than 15000
+	testAPI(t, "post", "/api/divisions/1/holes", 400, data) // data no more than 10000
 
 	tags := make([]Map, 11)
 	for i := range tags {

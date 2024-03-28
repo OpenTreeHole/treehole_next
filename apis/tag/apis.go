@@ -2,6 +2,8 @@ package tag
 
 import (
 	"strings"
+	"time"
+	"treehole_next/utils/sensitive"
 
 	"github.com/opentreehole/go-common"
 	"gorm.io/plugin/dbresolver"
@@ -38,7 +40,7 @@ func ListTags(c *fiber.Ctx) error {
 				return err
 			}
 			go UpdateTagCache(tags)
-			return c.JSON(&tags)
+			return Serialize(c, &tags)
 		}
 	}
 	err = DB.Where("name LIKE ?", "%"+query.Search+"%").
@@ -46,7 +48,7 @@ func ListTags(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	return c.JSON(&tags)
+	return Serialize(c, &tags)
 }
 
 // GetTag
@@ -66,7 +68,7 @@ func GetTag(c *fiber.Ctx) error {
 	if result.Error != nil {
 		return result.Error
 	}
-	return c.JSON(&tag)
+	return Serialize(c, &tag)
 }
 
 // CreateTag
@@ -99,12 +101,26 @@ func CreateTag(c *fiber.Ctx) error {
 		if strings.HasPrefix(body.Name, "@") {
 			return common.BadRequest("只有管理员才能创建 @ 开头的 tag")
 		}
+		if strings.HasPrefix(tag.Name, "*") {
+			return common.BadRequest("只有管理员才能创建 * 开头的 tag")
+		}
 	}
+
+	sensitiveResp, err := sensitive.CheckSensitive(sensitive.ParamsForCheck{
+		Content:  body.Name,
+		Id:       time.Now().UnixNano(),
+		TypeName: sensitive.TypeTag,
+	})
+	if err != nil {
+		return err
+	}
+	tag.IsSensitive = !sensitiveResp.Pass
 
 	// bind and create tag
 	body.Name = strings.TrimSpace(body.Name)
 	tag.Name = body.Name
 	result := DB.Where("name = ?", body.Name).FirstOrCreate(&tag)
+
 	if result.RowsAffected == 0 {
 		c.Status(200)
 	} else {
@@ -149,6 +165,17 @@ func ModifyTag(c *fiber.Ctx) error {
 	DB.Find(&tag, id)
 	tag.Name = body.Name
 	tag.Temperature = body.Temperature
+
+	sensitiveResp, err := sensitive.CheckSensitive(sensitive.ParamsForCheck{
+		Content:  body.Name,
+		Id:       time.Now().UnixNano(),
+		TypeName: sensitive.TypeTag,
+	})
+	if err != nil {
+		return err
+	}
+	tag.IsSensitive = !sensitiveResp.Pass
+
 	DB.Save(&tag)
 
 	// log
