@@ -145,11 +145,21 @@ func (tags Tags) Preprocess(c *fiber.Ctx) error {
 	tagIDs := make([]int, len(tags))
 	IdTagMapping := make(map[int]*Tag)
 	for i, tag := range tags {
-		if tags[i].IsActualSensitive == nil || *tags[i].IsActualSensitive {
+		if tags[i].Sensitive() {
 			tags[i].Name = ""
 		}
 		tagIDs[i] = tag.ID
 		IdTagMapping[tag.ID] = tags[i]
 	}
 	return nil
+}
+
+func (tag *Tag) Sensitive() bool {
+	if tag == nil {
+		return false
+	}
+	if tag.IsActualSensitive != nil {
+		return *tag.IsActualSensitive
+	}
+	return tag.IsSensitive
 }

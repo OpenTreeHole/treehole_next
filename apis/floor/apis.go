@@ -2,12 +2,11 @@ package floor
 
 import (
 	"fmt"
+	"github.com/opentreehole/go-common"
+	"github.com/rs/zerolog/log"
 	"slices"
 	"time"
 	"treehole_next/utils/sensitive"
-
-	"github.com/opentreehole/go-common"
-	"github.com/rs/zerolog/log"
 
 	. "treehole_next/models"
 	. "treehole_next/utils"
@@ -336,6 +335,15 @@ func ModifyFloor(c *fiber.Ctx) error {
 			} else {
 				return common.Forbidden()
 			}
+			floor.Modified += 1
+			err = floor.Backup(tx, user.ID, reason)
+			if err != nil {
+				return err
+			}
+			floor.Content = *body.Content
+
+			// sensitive check
+
 			sensitiveResp, err := sensitive.CheckSensitive(sensitive.ParamsForCheck{
 				Content:  *body.Content,
 				Id:       time.Now().UnixNano(),
@@ -346,15 +354,6 @@ func ModifyFloor(c *fiber.Ctx) error {
 			}
 
 			floor.IsSensitive = !sensitiveResp.Pass
-			floor.Modified += 1
-			err = floor.Backup(tx, user.ID, reason)
-			if err != nil {
-				return err
-			}
-			floor.Content = *body.Content
-
-			// sensitive check
-
 			// update floor.mention after update floor.content
 			err = tx.Where("floor_id = ?", floorID).Delete(&FloorMention{}).Error
 			if err != nil {
@@ -745,6 +744,8 @@ func RestoreFloor(c *fiber.Ctx) error {
 	}
 	floor.Deleted = false
 	floor.Content = floorHistory.Content
+	floor.IsSensitive = floorHistory.IsSensitive
+	floor.IsActualSensitive = floorHistory.IsActualSensitive
 	DB.Save(&floor)
 
 	go FloorIndex(FloorModel{

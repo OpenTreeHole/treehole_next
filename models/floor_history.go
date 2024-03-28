@@ -11,10 +11,10 @@ type FloorHistory struct {
 	Reason    string    `json:"reason"`
 	FloorID   int       `json:"floor_id"`
 	// auto sensitive check
-	IsSensitive bool `json:"is_sensitive" gorm:"index:idx_floor_history_actual_sensitive_updated_at,priority:1"`
+	IsSensitive bool `json:"is_sensitive"`
 
 	// manual sensitive check
-	IsActualSensitive *bool `json:"is_actual_sensitive" gorm:"index:idx_floor_history_actual_sensitive_updated_at,priority:2"`
+	IsActualSensitive *bool `json:"is_actual_sensitive"`
 	// The one who modified the floor
 	UserID int `json:"user_id"`
 }

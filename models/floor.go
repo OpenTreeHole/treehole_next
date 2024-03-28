@@ -122,7 +122,7 @@ func (floors Floors) Preprocess(c *fiber.Ctx) error {
 	floorIDs := make([]int, len(floors))
 	IDFloorMapping := make(map[int]*Floor)
 	for i, floor := range floors {
-		if floors[i].IsActualSensitive == nil || *floors[i].IsActualSensitive {
+		if floor.Sensitive() {
 			floors[i].Content = ""
 		}
 		floors[i].IsMe = userID == floor.UserID
