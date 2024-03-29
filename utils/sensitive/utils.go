@@ -49,7 +49,7 @@ func checkValidUrl(input string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	if slices.Contains(config.Config.ValidImageUrl, url.Hostname()) {
+	if !slices.Contains(config.Config.ValidImageUrl, url.Hostname()) {
 		return false, nil
 	}
 	return true, nil
