@@ -38,7 +38,7 @@ func detect(markdownText string) []string {
 }
 
 func checkType(params ParamsForCheck) bool {
-	return !slices.Contains(checkTypes, params.TypeName)
+	return slices.Contains(checkTypes, params.TypeName)
 }
 
 func hasTextUrl(content string) bool {
