@@ -38,7 +38,7 @@ var Config struct {
 
 	YiDunBusinessIdText  string   `env:"YI_DUN_BUSINESS_ID_TEXT" envDefault:""`
 	YiDunBusinessIdImage string   `env:"YI_DUN_BUSINESS_ID_IMAGE" envDefault:""`
-	YiDunSecretId        string   `env:"YI_DUN_SECRET_KEY" envDefault:""`
+	YiDunSecretId        string   `env:"YI_DUN_SECRET_ID" envDefault:""`
 	YiDunSecretKey       string   `env:"YI_DUN_SECRET_KEY" envDefault:""`
 	ValidImageUrl        []string `env:"VALID_IMAGE_URL"`
 }
