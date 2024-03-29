@@ -131,7 +131,7 @@ func CreateTag(c *fiber.Ctx) error {
 
 // ModifyTag
 //
-// @Summary Modify A Tag
+// @Summary Modify A Tag, admin only
 // @Tags Tag
 // @Produce application/json
 // @Router /tags/{id} [put]
@@ -163,7 +163,7 @@ func ModifyTag(c *fiber.Ctx) error {
 	// modify tag
 	var tag Tag
 	DB.Find(&tag, id)
-	tag.Name = body.Name
+	tag.Name = strings.TrimSpace(body.Name)
 	tag.Temperature = body.Temperature
 
 	sensitiveResp, err := sensitive.CheckSensitive(sensitive.ParamsForCheck{

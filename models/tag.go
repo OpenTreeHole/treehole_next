@@ -57,6 +57,9 @@ func (tag *Tag) AfterCreate(_ *gorm.DB) (err error) {
 
 func FindOrCreateTags(tx *gorm.DB, user *User, names []string) (Tags, error) {
 	tags := make(Tags, 0)
+	for i, name := range names {
+		names[i] = strings.TrimSpace(name)
+	}
 	err := tx.Where("name in ?", names).Find(&tags).Error
 	if err != nil {
 		return nil, err
