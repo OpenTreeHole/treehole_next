@@ -9,10 +9,10 @@ import (
 )
 
 var imageRegex = regexp.MustCompile(
-	`!\[.*?\]\(([^" )]*)`,
+	`!\[.*?]\(([^" )]*)`,
 )
 var deleteImageRegex = regexp.MustCompile(
-	`!\[(.*?)\]\(([^" ]*)( ".*")?\)`,
+	`!\[(.*?)]\(([^" ]*)( ".*")?\)`,
 )
 
 // findImagesInMarkdown 从Markdown文本中查找所有图片链接
@@ -38,10 +38,7 @@ func detect(markdownText string) []string {
 }
 
 func checkType(params ParamsForCheck) bool {
-	if params.TypeName != TypeTag && params.TypeName != TypeHole && params.TypeName != TypeFloor {
-		return true
-	}
-	return false
+	return !slices.Contains(checkTypes, params.TypeName)
 }
 
 func hasTextUrl(content string) bool {

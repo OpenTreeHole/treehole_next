@@ -20,6 +20,8 @@ const (
 	TypeImage = "Image"
 )
 
+var checkTypes = []string{TypeHole, TypeFloor, TypeTag, TypeImage}
+
 type ParamsForCheck struct {
 	Content  string
 	Id       int64
