@@ -3,16 +3,20 @@ package sensitive
 import (
 	"golang.org/x/exp/slices"
 	"mvdan.cc/xurls/v2"
-	url2 "net/url"
+	imageUrl "net/url"
 	"regexp"
 	"treehole_next/config"
 )
 
+var imageRegex = regexp.MustCompile(
+	`!\[.*?\]\(([^" )]*)`,
+)
+var deleteImageRegex = regexp.MustCompile(
+	`!\[(.*?)\]\(([^" ]*)( ".*")?\)`,
+)
+
 // findImagesInMarkdown 从Markdown文本中查找所有图片链接
 func findImagesInMarkdown(markdown string) []string {
-	imageRegex := regexp.MustCompile(
-		`!\[.*?\]\(([^" )]*)`,
-	)
 
 	matches := imageRegex.FindAllStringSubmatch(markdown, -1)
 	images := make([]string, 0, len(matches))
@@ -50,7 +54,7 @@ func hasTextUrl(content string) bool {
 }
 
 func checkValidUrl(input string) (bool, error) {
-	url, err := url2.Parse(input)
+	url, err := imageUrl.Parse(input)
 	if err != nil {
 		return false, err
 	}
@@ -61,11 +65,9 @@ func checkValidUrl(input string) (bool, error) {
 }
 
 func deleteImagesInMarkdown(markdown string) string {
-	imageRegex := regexp.MustCompile(
-		`!\[(.*?)\]\(([^" ]*)( ".*")?\)`,
-	)
+
 	return imageRegex.ReplaceAllStringFunc(markdown, func(s string) string {
-		submatches := imageRegex.FindStringSubmatch(s)
+		submatches := deleteImageRegex.FindStringSubmatch(s)
 		altText := submatches[1]
 		if len(submatches) > 3 && submatches[3] != "" {
 			// If there is a title, return it along with the alt text
