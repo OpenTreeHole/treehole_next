@@ -122,6 +122,7 @@ func (floors Floors) Preprocess(c *fiber.Ctx) error {
 	floorIDs := make([]int, len(floors))
 	IDFloorMapping := make(map[int]*Floor)
 	for i, floor := range floors {
+		// set floors content to empty if sensitive
 		if floor.Sensitive() {
 			floors[i].Content = ""
 		}
@@ -175,22 +176,23 @@ func (floor *Floor) SetDefaults() {
 		floor.FoldFrontend = []string{}
 	}
 
-	if !floor.Deleted &&
-		floor.IsSensitive == true {
-		var alterContent string
-		if floor.IsActualSensitive == nil {
-			alterContent = "该内容被猫猫吃掉了"
-		} else if *floor.IsActualSensitive == true {
-			alterContent = "该内容因违反社区公约被删除"
-		} else {
-			alterContent = ""
-		}
-
-		if alterContent != "" {
-			floor.Content = alterContent
-			floor.FoldFrontend = []string{alterContent}
-		}
-	}
+	// 直接清空内容而不是替换
+	//if !floor.Deleted &&
+	//	floor.IsSensitive == true {
+	//	var alterContent string
+	//	if floor.IsActualSensitive == nil {
+	//		alterContent = "该内容被猫猫吃掉了"
+	//	} else if *floor.IsActualSensitive == true {
+	//		alterContent = "该内容因违反社区公约被删除"
+	//	} else {
+	//		alterContent = ""
+	//	}
+	//
+	//	if alterContent != "" {
+	//		floor.Content = alterContent
+	//		floor.FoldFrontend = []string{alterContent}
+	//	}
+	//}
 }
 
 /******************************
