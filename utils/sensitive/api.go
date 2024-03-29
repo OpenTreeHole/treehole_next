@@ -89,7 +89,7 @@ func CheckSensitiveText(params ParamsForCheck) (resp *ResponseForCheck, err erro
 	if err != nil {
 		// 处理错误并打印日志
 		utils.RequestLog(fmt.Sprintf("sync request error:%+v", err.Error()), params.TypeName, params.Id, false)
-		resp = nil
+		return &ResponseForCheck{Pass: false}, nil
 	}
 
 	resp = &ResponseForCheck{}
@@ -136,9 +136,11 @@ func checkSensitiveImage(params ParamsForCheck) (resp *ResponseForCheck, err err
 	if err != nil {
 		// 处理错误并打印日志
 		utils.RequestLog(fmt.Sprintf("sync request error:%+v", err.Error()), params.TypeName, params.Id, false)
-		resp = nil
+		// TODO: 通知管理员
+		return &ResponseForCheck{Pass: false}, nil
 	}
 
+	resp = &ResponseForCheck{}
 	if response.GetCode() == 200 {
 		if len(*response.Result) == 0 {
 			return nil, fmt.Errorf("sensitive image check returns empty response")
