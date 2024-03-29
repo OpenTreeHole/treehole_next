@@ -5,36 +5,30 @@ import (
 	"mvdan.cc/xurls/v2"
 	imageUrl "net/url"
 	"regexp"
+	"strings"
 	"treehole_next/config"
 )
 
 var imageRegex = regexp.MustCompile(
-	`!\[.*?]\(([^" )]*)`,
-)
-var deleteImageRegex = regexp.MustCompile(
-	`!\[(.*?)]\(([^" ]*)( ".*")?\)`,
+	`!\[(.*?)]\(([^" )]*?)\s*(".*?")?\)`,
 )
 
-// findImagesInMarkdown 从Markdown文本中查找所有图片链接
-func findImagesInMarkdown(markdown string) []string {
+// findImagesInMarkdown 从Markdown文本中查找所有图片链接，并且返回清除链接之后的文本
+func findImagesInMarkdownContent(content string) (imageUrls []string, clearContent string) {
 
-	matches := imageRegex.FindAllStringSubmatch(markdown, -1)
-	images := make([]string, 0, len(matches))
-	for _, match := range matches {
-		images = append(images, match[1])
-	}
-	return images
-}
-
-func detect(markdownText string) []string {
-
-	var ret []string
-	images := findImagesInMarkdown(markdownText)
-	for _, image := range images {
-		ret = append(ret, image)
-	}
-
-	return ret
+	clearContent = imageRegex.ReplaceAllStringFunc(content, func(s string) string {
+		submatch := imageRegex.FindStringSubmatch(s)
+		altText := submatch[1]
+		imageUrls = append(imageUrls, submatch[2])
+		if len(submatch) > 3 && submatch[3] != "" {
+			// If there is a title, return it along with the alt text
+			title := strings.Trim(submatch[3], "\"")
+			return altText + " " + title
+		}
+		// If there is no title, return the alt text
+		return altText
+	})
+	return
 }
 
 func checkType(params ParamsForCheck) bool {
@@ -59,18 +53,4 @@ func checkValidUrl(input string) (bool, error) {
 		return false, nil
 	}
 	return true, nil
-}
-
-func deleteImagesInMarkdown(markdown string) string {
-
-	return imageRegex.ReplaceAllStringFunc(markdown, func(s string) string {
-		submatches := deleteImageRegex.FindStringSubmatch(s)
-		altText := submatches[1]
-		if len(submatches) > 3 && submatches[3] != "" {
-			// If there is a title, return it along with the alt text
-			return altText + " " + submatches[3][2:len(submatches[3])-1]
-		}
-		// If there is no title, return the alt text
-		return altText
-	})
 }

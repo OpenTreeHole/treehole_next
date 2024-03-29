@@ -34,7 +34,7 @@ type ResponseForCheck struct {
 }
 
 func CheckSensitive(params ParamsForCheck) (resp *ResponseForCheck, err error) {
-	images := detect(params.Content)
+	images, clearContent := findImagesInMarkdownContent(params.Content)
 	if len(images) != 0 {
 		for _, img := range images {
 			pass, err := checkValidUrl(img)
@@ -62,13 +62,13 @@ func CheckSensitive(params ParamsForCheck) (resp *ResponseForCheck, err error) {
 		}
 	}
 
-	params.Content = deleteImagesInMarkdown(params.Content)
-	if hasTextUrl(params.Content) {
+	if hasTextUrl(clearContent) {
 		return &ResponseForCheck{
 			Pass:   false,
 			Labels: nil,
 		}, nil
 	}
+	params.Content = clearContent
 
 	return CheckSensitiveText(params)
 }
