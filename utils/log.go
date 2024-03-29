@@ -25,3 +25,10 @@ func MyLog(model string, action string, objectID, userID int, role Role, msg ...
 		Str("role", string(role)).
 		Msg(message)
 }
+
+func RequestLog(msg string, TypeName string, Id int64, ans bool) {
+	log.Info().Str("TypeName", TypeName).
+		Int64("Id", Id).
+		Bool("CheckAnswer", ans).
+		Msg(msg)
+}

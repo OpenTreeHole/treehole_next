@@ -234,7 +234,11 @@ func (holes Holes) Preprocess(c *fiber.Ctx) error {
 
 	// only admin can see hole is hidden
 	if !user.IsAdmin {
-		for _, hole := range holes {
+		for i, hole := range holes {
+			err = holes[i].Floors.Preprocess(c)
+			if err != nil {
+				return err
+			}
 			hole.Hidden = false
 		}
 	}
@@ -317,10 +321,6 @@ func (hole *Hole) Create(tx *gorm.DB, user *User, tagNames []string) (err error)
 	}
 
 	var firstFloor = hole.Floors[0]
-	err = firstFloor.SensitiveCheck(tx, hole)
-	if err != nil {
-		return err
-	}
 
 	// Find floor.Mentions, in different sql session
 	firstFloor.Mention, err = LoadFloorMentions(tx, firstFloor.Content)

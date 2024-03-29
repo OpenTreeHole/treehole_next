@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"slices"
 	"strconv"
+	"time"
+	"treehole_next/utils/sensitive"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/opentreehole/go-common"
@@ -248,8 +250,8 @@ func CreateHole(c *fiber.Ctx) error {
 		return err
 	}
 
-	if len([]rune(body.Content)) > 15000 {
-		return common.BadRequest("文本限制 15000 字")
+	if len([]rune(body.Content)) > 10000 {
+		return common.BadRequest("文本限制 10000 字")
 	}
 
 	divisionID, err := c.ParamsInt("id")
@@ -275,12 +277,22 @@ func CreateHole(c *fiber.Ctx) error {
 		body.SpecialTag = user.DefaultSpecialTag
 	}
 
+	sensitiveResp, err := sensitive.CheckSensitive(sensitive.ParamsForCheck{
+		Content:  body.Content,
+		Id:       time.Now().UnixNano(),
+		TypeName: sensitive.TypeFloor,
+	})
+	if err != nil {
+		return err
+	}
+
 	hole := Hole{
 		Floors: Floors{{
-			UserID:     user.ID,
-			Content:    body.Content,
-			SpecialTag: body.SpecialTag,
-			IsMe:       true,
+			UserID:      user.ID,
+			Content:     body.Content,
+			SpecialTag:  body.SpecialTag,
+			IsMe:        true,
+			IsSensitive: !sensitiveResp.Pass,
 		}},
 		UserID:     user.ID,
 		DivisionID: divisionID,
@@ -310,8 +322,8 @@ func CreateHoleOld(c *fiber.Ctx) error {
 		return err
 	}
 
-	if len([]rune(body.Content)) > 15000 {
-		return common.BadRequest("文本限制 15000 字")
+	if len([]rune(body.Content)) > 10000 {
+		return common.BadRequest("文本限制 10000 字")
 	}
 
 	// get user from auth
@@ -332,13 +344,23 @@ func CreateHoleOld(c *fiber.Ctx) error {
 		body.SpecialTag = user.DefaultSpecialTag
 	}
 
+	sensitiveResp, err := sensitive.CheckSensitive(sensitive.ParamsForCheck{
+		Content:  body.Content,
+		Id:       time.Now().UnixNano(),
+		TypeName: sensitive.TypeFloor,
+	})
+	if err != nil {
+		return err
+	}
+
 	// create hole
 	hole := Hole{
 		Floors: Floors{{
-			UserID:     user.ID,
-			Content:    body.Content,
-			SpecialTag: body.SpecialTag,
-			IsMe:       true,
+			UserID:      user.ID,
+			Content:     body.Content,
+			SpecialTag:  body.SpecialTag,
+			IsMe:        true,
+			IsSensitive: !sensitiveResp.Pass,
 		}},
 		UserID:     user.ID,
 		DivisionID: body.DivisionID,

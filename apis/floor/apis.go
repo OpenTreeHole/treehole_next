@@ -2,11 +2,11 @@ package floor
 
 import (
 	"fmt"
-	"slices"
-	"time"
-
 	"github.com/opentreehole/go-common"
 	"github.com/rs/zerolog/log"
+	"slices"
+	"time"
+	"treehole_next/utils/sensitive"
 
 	. "treehole_next/models"
 	. "treehole_next/utils"
@@ -139,8 +139,8 @@ func CreateFloor(c *fiber.Ctx) error {
 		return err
 	}
 
-	if len([]rune(body.Content)) > 15000 {
-		return common.BadRequest("文本限制 15000 字")
+	if len([]rune(body.Content)) > 10000 {
+		return common.BadRequest("文本限制 10000 字")
 	}
 
 	holeID, err := c.ParamsInt("id")
@@ -211,8 +211,8 @@ func CreateFloorOld(c *fiber.Ctx) error {
 		return err
 	}
 
-	if len([]rune(body.Content)) > 15000 {
-		return common.BadRequest("文本限制 15000 字")
+	if len([]rune(body.Content)) > 10000 {
+		return common.BadRequest("文本限制 10000 字")
 	}
 
 	// get hole to check DivisionID and Locked
@@ -286,8 +286,8 @@ func ModifyFloor(c *fiber.Ctx) error {
 		return common.BadRequest("无效请求")
 	}
 
-	if body.Content != nil && len([]rune(*body.Content)) > 15000 {
-		return common.BadRequest("文本限制 15000 字")
+	if body.Content != nil && len([]rune(*body.Content)) > 10000 {
+		return common.BadRequest("文本限制 10000 字")
 	}
 
 	// parse floor_id
@@ -343,11 +343,17 @@ func ModifyFloor(c *fiber.Ctx) error {
 			floor.Content = *body.Content
 
 			// sensitive check
-			err = floor.SensitiveCheck(tx, &hole)
+
+			sensitiveResp, err := sensitive.CheckSensitive(sensitive.ParamsForCheck{
+				Content:  *body.Content,
+				Id:       time.Now().UnixNano(),
+				TypeName: sensitive.TypeFloor,
+			})
 			if err != nil {
 				return err
 			}
 
+			floor.IsSensitive = !sensitiveResp.Pass
 			// update floor.mention after update floor.content
 			err = tx.Where("floor_id = ?", floorID).Delete(&FloorMention{}).Error
 			if err != nil {
@@ -738,6 +744,8 @@ func RestoreFloor(c *fiber.Ctx) error {
 	}
 	floor.Deleted = false
 	floor.Content = floorHistory.Content
+	floor.IsSensitive = floorHistory.IsSensitive
+	floor.IsActualSensitive = floorHistory.IsActualSensitive
 	DB.Save(&floor)
 
 	go FloorIndex(FloorModel{

@@ -11,7 +11,6 @@ require (
 	github.com/goccy/go-json v0.10.2
 	github.com/gofiber/fiber/v2 v2.52.1
 	github.com/hetiansu5/urlquery v1.2.7
-	github.com/importcjj/sensitive v0.0.0-20200106142752-42d1c505be7b
 	github.com/opentreehole/go-common v0.1.1
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/redis/go-redis/v9 v9.3.1
@@ -19,11 +18,13 @@ require (
 	github.com/stretchr/testify v1.8.4
 	github.com/swaggo/fiber-swagger v1.3.0
 	github.com/swaggo/swag v1.16.2
+	github.com/yidun/yidun-golang-sdk v1.0.5
 	golang.org/x/exp v0.0.0-20240103183307-be819d1f06fc
 	gorm.io/driver/mysql v1.5.2
 	gorm.io/driver/sqlite v1.5.4
 	gorm.io/gorm v1.25.5
 	gorm.io/plugin/dbresolver v1.5.0
+	mvdan.cc/xurls/v2 v2.5.0
 )
 
 require (
@@ -65,6 +66,7 @@ require (
 	github.com/prometheus/procfs v0.11.1 // indirect
 	github.com/rivo/uniseg v0.4.4 // indirect
 	github.com/swaggo/files v1.0.1 // indirect
+	github.com/tjfoc/gmsm v1.4.1 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasthttp v1.51.0 // indirect
 	github.com/valyala/tcplisten v1.0.0 // indirect
