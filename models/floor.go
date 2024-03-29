@@ -25,8 +25,8 @@ type Floor struct {
 
 	/// base info
 
-	// content of the floor, no more than 10000
-	Content string `json:"content" gorm:"not null;size:10000"`
+	// content of the floor, no more than 15000, should be sensitive checked, no more than 10000 in frontend
+	Content string `json:"content" gorm:"not null;size:15000"`
 
 	// a random username
 	Anonyname string `json:"anonyname" gorm:"not null;size:32"`
