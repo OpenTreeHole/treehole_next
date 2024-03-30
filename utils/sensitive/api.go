@@ -2,6 +2,7 @@ package sensitive
 
 import (
 	"fmt"
+	"github.com/opentreehole/go-common"
 	"github.com/yidun/yidun-golang-sdk/yidun/service/antispam/image/v5"
 	"github.com/yidun/yidun-golang-sdk/yidun/service/antispam/image/v5/check"
 	"strconv"
@@ -42,10 +43,7 @@ func CheckSensitive(params ParamsForCheck) (resp *ResponseForCheck, err error) {
 				return nil, err
 			}
 			if !pass {
-				return &ResponseForCheck{
-					Pass:   false,
-					Labels: nil,
-				}, nil
+				return nil, common.BadRequest("不允许使用外部图片链接")
 			}
 
 			ret, err := checkSensitiveImage(ParamsForCheck{
