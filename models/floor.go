@@ -123,9 +123,6 @@ func (floors Floors) Preprocess(c *fiber.Ctx) error {
 	IDFloorMapping := make(map[int]*Floor)
 	for i, floor := range floors {
 		// set floors content to empty if sensitive
-		if floor.Sensitive() {
-			floors[i].Content = ""
-		}
 		floors[i].IsMe = userID == floor.UserID
 		floorIDs[i] = floor.ID
 		IDFloorMapping[floor.ID] = floors[i]
@@ -154,19 +151,31 @@ func (floors Floors) Preprocess(c *fiber.Ctx) error {
 
 	// set some default values
 	for _, floor := range floors {
-		floor.SetDefaults()
+		floor.SetDefaults(c)
 	}
 	return nil
 }
 
-func (floor *Floor) SetDefaults() {
+func (floor *Floor) SetDefaults(c *fiber.Ctx) {
 	floor.FloorID = floor.ID
+	user, err := GetUser(c)
+	if err != nil {
+		return
+	}
+
 	floor.Anonyname = utils.GetFuzzName(floor.Anonyname)
+	if floor.Sensitive() && floor.UserID != user.ID && !user.IsAdmin {
+		floor.Content = ""
+		floor.Anonyname = ""
+	} else if floor.Sensitive() && !user.IsAdmin {
+		floor.Content = "该内容被猫猫吃掉了"
+	}
+
 	if floor.Mention == nil {
 		floor.Mention = Floors{}
 	} else if len(floor.Mention) > 0 {
 		for _, mentionFloor := range floor.Mention {
-			mentionFloor.SetDefaults()
+			mentionFloor.SetDefaults(c)
 		}
 	}
 
@@ -199,7 +208,7 @@ func (floor *Floor) SetDefaults() {
 Create
 *******************************/
 
-func (floor *Floor) Create(tx *gorm.DB, hole *Hole) (err error) {
+func (floor *Floor) Create(tx *gorm.DB, hole *Hole, c *fiber.Ctx) (err error) {
 	// sensitive check
 	sensitiveCheckResp, err := sensitive.CheckSensitive(sensitive.ParamsForCheck{
 		Content:  floor.Content,
@@ -247,7 +256,7 @@ func (floor *Floor) Create(tx *gorm.DB, hole *Hole) (err error) {
 		return err
 	}
 
-	floor.SetDefaults()
+	floor.SetDefaults(c)
 
 	// Send Notification
 	var messages Notifications

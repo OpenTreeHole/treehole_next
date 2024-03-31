@@ -137,7 +137,7 @@ func loadTags(holes Holes) (err error) {
 	return nil
 }
 
-func loadFloors(holes Holes) error {
+func loadFloors(holes Holes, c *fiber.Ctx) error {
 	if len(holes) == 0 {
 		return nil
 	}
@@ -184,7 +184,7 @@ func loadFloors(holes Holes) error {
 		return hole.ID == floors[0].HoleID
 	})
 	for _, floor := range floors {
-		floor.SetDefaults()
+		floor.SetDefaults(c)
 		if floor.HoleID != holes[index].ID {
 			holes[index].Floors = floors[left:right]
 			left = right
@@ -197,7 +197,7 @@ func loadFloors(holes Holes) error {
 	holes[index].Floors = floors[left:right]
 
 	for _, hole := range holes {
-		hole.SetHoleFloor()
+		hole.SetHoleFloor(c)
 	}
 
 	return nil
@@ -221,7 +221,7 @@ func (holes Holes) Preprocess(c *fiber.Ctx) error {
 	}
 
 	if len(notInCache) > 0 {
-		err := UpdateHoleCache(notInCache)
+		err := UpdateHoleCache(notInCache, c)
 		if err != nil {
 			return err
 		}
@@ -246,8 +246,8 @@ func (holes Holes) Preprocess(c *fiber.Ctx) error {
 	return nil
 }
 
-func UpdateHoleCache(holes Holes) error {
-	err := loadFloors(holes)
+func UpdateHoleCache(holes Holes, c *fiber.Ctx) error {
+	err := loadFloors(holes, c)
 	if err != nil {
 		return err
 	}
@@ -298,7 +298,7 @@ func (holes Holes) MakeQuerySet(offset common.CustomTime, size int, order string
 	create and modify hole methods
  ************************/
 
-func (hole *Hole) SetHoleFloor() {
+func (hole *Hole) SetHoleFloor(c *fiber.Ctx) {
 	holeFloorSize := len(hole.Floors)
 	if holeFloorSize == 0 {
 		return
@@ -311,9 +311,17 @@ func (hole *Hole) SetHoleFloor() {
 	} else {
 		hole.HoleFloor.Floors = hole.Floors[0 : holeFloorSize-1]
 	}
+	for _, floor := range hole.HoleFloor.Floors {
+		floor.SetDefaults(c)
+	}
+	hole.HoleFloor.FirstFloor.SetDefaults(c)
+	if hole.HoleFloor.FirstFloor.Content == "" {
+		hole.Hidden = true
+	}
+	hole.HoleFloor.LastFloor.SetDefaults(c)
 }
 
-func (hole *Hole) Create(tx *gorm.DB, user *User, tagNames []string) (err error) {
+func (hole *Hole) Create(tx *gorm.DB, user *User, tagNames []string, c *fiber.Ctx) (err error) {
 	// Create hole.Tags, in different sql session
 	hole.Tags, err = FindOrCreateTags(tx, user, tagNames)
 	if err != nil {
@@ -360,10 +368,10 @@ func (hole *Hole) Create(tx *gorm.DB, user *User, tagNames []string) (err error)
 	}
 
 	// set hole.HoleFloor
-	hole.SetHoleFloor()
+	hole.SetHoleFloor(c)
 
 	// half preprocess hole.Floor
-	firstFloor.SetDefaults()
+	firstFloor.SetDefaults(c)
 
 	// index
 	if !firstFloor.Sensitive() {
