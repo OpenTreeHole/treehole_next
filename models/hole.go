@@ -137,7 +137,7 @@ func loadTags(holes Holes) (err error) {
 	return nil
 }
 
-func loadFloors(holes Holes, c *fiber.Ctx) error {
+func loadFloors(holes Holes) error {
 	if len(holes) == 0 {
 		return nil
 	}
@@ -184,7 +184,6 @@ func loadFloors(holes Holes, c *fiber.Ctx) error {
 		return hole.ID == floors[0].HoleID
 	})
 	for _, floor := range floors {
-		floor.SetDefaults(c)
 		if floor.HoleID != holes[index].ID {
 			holes[index].Floors = floors[left:right]
 			left = right
@@ -197,7 +196,7 @@ func loadFloors(holes Holes, c *fiber.Ctx) error {
 	holes[index].Floors = floors[left:right]
 
 	for _, hole := range holes {
-		hole.SetHoleFloor(c)
+		hole.SetHoleFloor()
 	}
 
 	return nil
@@ -221,49 +220,60 @@ func (holes Holes) Preprocess(c *fiber.Ctx) error {
 	}
 
 	if len(notInCache) > 0 {
-		err := UpdateHoleCache(notInCache, c)
+		err := UpdateHoleCache(notInCache)
 		if err != nil {
 			return err
 		}
 	}
 
-	user, err := GetUser(c)
+	// preprocess floors after load from hole cache
+	floors := make(Floors, 0)
+	for _, hole := range holes {
+		hole.SetHoleFloor()
+		floors = append(floors, hole.Floors...)
+	}
+	err := floors.Preprocess(c)
 	if err != nil {
 		return err
 	}
 
-	// only admin can see hole is hidden
-	if !user.IsAdmin {
-		for i, hole := range holes {
-			err = holes[i].Floors.Preprocess(c)
-			if err != nil {
-				return err
-			}
-			hole.Hidden = false
-		}
-	}
+	//user, err := GetUser(c)
+	//if err != nil {
+	//	return err
+	//}
+	//
+	//// only admin can see hole is hidden
+	//if !user.IsAdmin {
+	//	for i, hole := range holes {
+	//		err = holes[i].Floors.Preprocess(c)
+	//		if err != nil {
+	//			return err
+	//		}
+	//		hole.Hidden = false
+	//	}
+	//}
 
 	return nil
 }
 
-func UpdateHoleCache(holes Holes, c *fiber.Ctx) error {
-	err := loadFloors(holes, c)
+func UpdateHoleCache(holes Holes) (err error) {
+	err = loadFloors(holes)
 	if err != nil {
-		return err
+		return
 	}
 
 	err = loadTags(holes)
 	if err != nil {
-		return err
+		return
 	}
 
 	for _, hole := range holes {
 		err = utils.SetCache(hole.CacheName(), hole, HoleCacheExpire)
 		if err != nil {
-			return err
+			return
 		}
 	}
-	return nil
+	return
 }
 
 func MakeQuerySet(c *fiber.Ctx) (*gorm.DB, error) {
@@ -298,27 +308,37 @@ func (holes Holes) MakeQuerySet(offset common.CustomTime, size int, order string
 	create and modify hole methods
  ************************/
 
-func (hole *Hole) SetHoleFloor(c *fiber.Ctx) {
-	holeFloorSize := len(hole.Floors)
-	if holeFloorSize == 0 {
-		return
+// SetHoleFloor godoc
+// set hole.HoleFloor from hole.Floors or hole.HoleFloor.Floors
+// if Floors is not empty, set HoleFloor.Floors from Floors, in case loading from database
+// if Floors is empty, set HoleFloor.Floors from HoleFloor.Floors, in case loading from cache
+func (hole *Hole) SetHoleFloor() {
+	if len(hole.Floors) != 0 {
+		holeFloorSize := len(hole.Floors)
+
+		hole.HoleFloor.FirstFloor = hole.Floors[0]
+		hole.HoleFloor.LastFloor = hole.Floors[holeFloorSize-1]
+		if holeFloorSize <= config.Config.HoleFloorSize {
+			hole.HoleFloor.Floors = hole.Floors
+		} else {
+			hole.HoleFloor.Floors = hole.Floors[0 : holeFloorSize-1]
+		}
+	} else if len(hole.HoleFloor.Floors) != 0 {
+		holeFloorSize := len(hole.Floors)
+
+		hole.HoleFloor.FirstFloor = hole.HoleFloor.Floors[0]
+		hole.HoleFloor.LastFloor = hole.HoleFloor.Floors[holeFloorSize-1]
+		hole.Floors = hole.HoleFloor.Floors
 	}
 
-	hole.HoleFloor.FirstFloor = hole.Floors[0]
-	hole.HoleFloor.LastFloor = hole.Floors[holeFloorSize-1]
-	if holeFloorSize <= config.Config.HoleFloorSize {
-		hole.HoleFloor.Floors = hole.Floors
-	} else {
-		hole.HoleFloor.Floors = hole.Floors[0 : holeFloorSize-1]
-	}
-	for _, floor := range hole.HoleFloor.Floors {
-		floor.SetDefaults(c)
-	}
-	hole.HoleFloor.FirstFloor.SetDefaults(c)
-	if hole.HoleFloor.FirstFloor.Content == "" {
-		hole.Hidden = true
-	}
-	hole.HoleFloor.LastFloor.SetDefaults(c)
+	//for _, floor := range hole.HoleFloor.Floors {
+	//	floor.SetDefaults(c)
+	//}
+	//hole.HoleFloor.FirstFloor.SetDefaults(c)
+	//if hole.HoleFloor.FirstFloor.Content == "" {
+	//	hole.Hidden = true
+	//}
+	//hole.HoleFloor.LastFloor.SetDefaults(c)
 }
 
 func (hole *Hole) Create(tx *gorm.DB, user *User, tagNames []string, c *fiber.Ctx) (err error) {
@@ -368,10 +388,13 @@ func (hole *Hole) Create(tx *gorm.DB, user *User, tagNames []string, c *fiber.Ct
 	}
 
 	// set hole.HoleFloor
-	hole.SetHoleFloor(c)
+	hole.SetHoleFloor()
 
 	// half preprocess hole.Floor
-	firstFloor.SetDefaults(c)
+	err = firstFloor.SetDefaults(c)
+	if err != nil {
+		return err
+	}
 
 	// index
 	if !firstFloor.Sensitive() {

@@ -112,31 +112,28 @@ func (floor *Floor) Preprocess(c *fiber.Ctx) error {
 	return Floors{floor}.Preprocess(c)
 }
 
-func (floors Floors) Preprocess(c *fiber.Ctx) error {
+func (floors Floors) loadFloorLikes(c *fiber.Ctx) (err error) {
 	userID, err := common.GetUserID(c)
 	if err != nil {
-		return err
+		return
 	}
 
-	// get floors' like
 	floorIDs := make([]int, len(floors))
 	IDFloorMapping := make(map[int]*Floor)
 	for i, floor := range floors {
-		// set floors content to empty if sensitive
-		floors[i].IsMe = userID == floor.UserID
 		floorIDs[i] = floor.ID
 		IDFloorMapping[floor.ID] = floors[i]
 	}
 
 	var floorLikes []FloorLike
-	result := DB.
-		Clauses(dbresolver.Write).
+	err = DB.Clauses(dbresolver.Write).
 		Where("floor_id IN (?)", floorIDs).
 		Where("user_id = ?", userID).
-		Find(&floorLikes)
-	if result.Error != nil {
-		return err
+		Find(&floorLikes).Error
+	if err != nil {
+		return
 	}
+
 	for _, floorLike := range floorLikes {
 		if floor, ok := IDFloorMapping[floorLike.FloorID]; ok {
 			floor.Liked = floorLike.LikeData
@@ -148,15 +145,37 @@ func (floors Floors) Preprocess(c *fiber.Ctx) error {
 			}
 		}
 	}
+	return
+}
+
+func (floors Floors) Preprocess(c *fiber.Ctx) (err error) {
+	userID, err := common.GetUserID(c)
+	if err != nil {
+		return
+	}
+
+	// get floors' like
+	err = floors.loadFloorLikes(c)
+	if err != nil {
+		return
+	}
+
+	// set floors IsMe
+	for _, floor := range floors {
+		floor.IsMe = userID == floor.UserID
+	}
 
 	// set some default values
 	for _, floor := range floors {
-		floor.SetDefaults(c)
+		err = floor.SetDefaults(c)
+		if err != nil {
+			return
+		}
 	}
-	return nil
+	return
 }
 
-func (floor *Floor) SetDefaults(c *fiber.Ctx) {
+func (floor *Floor) SetDefaults(c *fiber.Ctx) (err error) {
 	floor.FloorID = floor.ID
 	user, err := GetUser(c)
 	if err != nil {
@@ -164,18 +183,23 @@ func (floor *Floor) SetDefaults(c *fiber.Ctx) {
 	}
 
 	floor.Anonyname = utils.GetFuzzName(floor.Anonyname)
-	if floor.Sensitive() && floor.UserID != user.ID && !user.IsAdmin {
-		floor.Content = ""
-		floor.Anonyname = ""
-	} else if floor.Sensitive() && !user.IsAdmin {
-		floor.Content = "该内容被猫猫吃掉了"
+	if !user.IsAdmin && floor.Sensitive() {
+		if floor.UserID == user.ID {
+			floor.Content = "该内容被猫猫吃掉了"
+		} else {
+			floor.Content = ""
+			floor.Anonyname = ""
+		}
 	}
 
 	if floor.Mention == nil {
 		floor.Mention = Floors{}
 	} else if len(floor.Mention) > 0 {
 		for _, mentionFloor := range floor.Mention {
-			mentionFloor.SetDefaults(c)
+			err = mentionFloor.SetDefaults(c)
+			if err != nil {
+				return
+			}
 		}
 	}
 
@@ -202,6 +226,7 @@ func (floor *Floor) SetDefaults(c *fiber.Ctx) {
 	//		floor.FoldFrontend = []string{alterContent}
 	//	}
 	//}
+	return
 }
 
 /******************************
@@ -256,7 +281,10 @@ func (floor *Floor) Create(tx *gorm.DB, hole *Hole, c *fiber.Ctx) (err error) {
 		return err
 	}
 
-	floor.SetDefaults(c)
+	err = floor.SetDefaults(c)
+	if err != nil {
+		return err
+	}
 
 	// Send Notification
 	var messages Notifications

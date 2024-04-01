@@ -534,7 +534,7 @@ func ModifyHole(c *fiber.Ctx) error {
 
 	// update cache
 	if changed {
-		err = UpdateHoleCache(Holes{&hole}, c)
+		err = UpdateHoleCache(Holes{&hole})
 		if err != nil {
 			return err
 		}
@@ -589,7 +589,7 @@ func HideHole(c *fiber.Ctx) error {
 	}
 
 	updateHoles := Holes{&hole}
-	err = UpdateHoleCache(updateHoles, c)
+	err = UpdateHoleCache(updateHoles)
 	if err != nil {
 		return err
 	}
