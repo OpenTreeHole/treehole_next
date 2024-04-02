@@ -125,7 +125,10 @@ func loadTags(holes Holes) (err error) {
 
 	tagMap := make(map[int]*Tag)
 	for _, tag := range tags {
-		tagMap[tag.ID] = tag
+		// remove sensitive tags
+		if !tag.Sensitive() {
+			tagMap[tag.ID] = tag
+		}
 	}
 
 	for _, hole := range holes {
@@ -231,6 +234,11 @@ func (holes Holes) Preprocess(c *fiber.Ctx) error {
 	for _, hole := range holes {
 		hole.SetHoleFloor()
 		floors = append(floors, hole.Floors...)
+
+		// hide hole if first floor is sensitive
+		if hole.HoleFloor.FirstFloor.Sensitive() {
+			hole.Hidden = true
+		}
 	}
 	err := floors.Preprocess(c)
 	if err != nil {
