@@ -183,12 +183,16 @@ func (floor *Floor) SetDefaults(c *fiber.Ctx) (err error) {
 	}
 
 	floor.Anonyname = utils.GetFuzzName(floor.Anonyname)
-	if !user.IsAdmin && floor.Sensitive() {
-		if floor.UserID == user.ID {
-			floor.Content = "该内容被猫猫吃掉了"
+	if floor.Sensitive() {
+		if !user.IsAdmin {
+			if floor.UserID == user.ID {
+				floor.Content = "该内容被猫猫吃掉了"
+			} else {
+				floor.Content = ""
+				floor.Anonyname = ""
+			}
 		} else {
-			floor.Content = ""
-			floor.Anonyname = ""
+			floor.SpecialTag = "sensitive"
 		}
 	}
 
