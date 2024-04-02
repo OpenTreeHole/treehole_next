@@ -128,14 +128,14 @@ func loadTags(holes Holes) (err error) {
 		// remove sensitive tags
 		if !tag.Sensitive() {
 			tagMap[tag.ID] = tag
-		} else {
-			delete(tagMap, tag.ID)
 		}
 	}
 
 	for _, hole := range holes {
 		for _, tagID := range mapping[hole.ID] {
-			hole.Tags = append(hole.Tags, tagMap[tagID])
+			if tagMap[tagID] != nil {
+				hole.Tags = append(hole.Tags, tagMap[tagID])
+			}
 		}
 	}
 
