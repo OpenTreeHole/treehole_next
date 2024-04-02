@@ -2,6 +2,7 @@ package models
 
 import (
 	"fmt"
+	"golang.org/x/exp/maps"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -118,7 +119,7 @@ func loadTags(holes Holes) (err error) {
 	}
 
 	var tags Tags
-	err = DB.Where("id in ?", utils.Keys(tagIDs)).Find(&tags).Error
+	err = DB.Where("id in ?", maps.Keys(tagIDs)).Find(&tags).Error
 	if err != nil {
 		return err
 	}

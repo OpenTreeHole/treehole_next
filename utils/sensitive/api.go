@@ -6,6 +6,7 @@ import (
 	"github.com/yidun/yidun-golang-sdk/yidun/service/antispam/image/v5"
 	"github.com/yidun/yidun-golang-sdk/yidun/service/antispam/image/v5/check"
 	"strconv"
+	"strings"
 	"time"
 	"treehole_next/config"
 	"treehole_next/utils"
@@ -66,7 +67,13 @@ func CheckSensitive(params ParamsForCheck) (resp *ResponseForCheck, err error) {
 			Labels: nil,
 		}, nil
 	}
-	params.Content = clearContent
+	params.Content = strings.TrimSpace(clearContent)
+	if params.Content == "" {
+		return &ResponseForCheck{
+			Pass:   true,
+			Labels: nil,
+		}, nil
+	}
 
 	return CheckSensitiveText(params)
 }
