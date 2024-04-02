@@ -128,6 +128,8 @@ func loadTags(holes Holes) (err error) {
 		// remove sensitive tags
 		if !tag.Sensitive() {
 			tagMap[tag.ID] = tag
+		} else {
+			delete(tagMap, tag.ID)
 		}
 	}
 
