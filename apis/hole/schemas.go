@@ -79,7 +79,7 @@ func (body ModifyModel) CheckPermission(user *models.User, hole *models.Hole) er
 	if body.Unhidden != nil && !user.IsAdmin {
 		return common.BadRequest("非管理员禁止取消隐藏")
 	}
-	if body.Tags != nil && !(user.IsAdmin || user.ID == hole.UserID) {
+	if body.Tags != nil && !(user.IsAdmin) {
 		return common.Forbidden()
 	}
 	if body.Tags != nil && len(body.Tags) == 0 {

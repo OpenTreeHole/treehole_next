@@ -187,7 +187,7 @@ func CreateFloor(c *fiber.Ctx) error {
 		SpecialTag: body.SpecialTag,
 		IsMe:       true,
 	}
-	err = floor.Create(DB, &hole)
+	err = floor.Create(DB, &hole, c)
 	if err != nil {
 		return err
 	}
@@ -252,7 +252,7 @@ func CreateFloorOld(c *fiber.Ctx) error {
 		SpecialTag: body.SpecialTag,
 		IsMe:       true,
 	}
-	err = floor.Create(DB, &hole)
+	err = floor.Create(DB, &hole, c)
 	if err != nil {
 		return err
 	}

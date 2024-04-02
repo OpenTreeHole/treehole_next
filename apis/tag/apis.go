@@ -126,7 +126,7 @@ func CreateTag(c *fiber.Ctx) error {
 	} else {
 		c.Status(201)
 	}
-	return c.JSON(&tag)
+	return Serialize(c, &tag)
 }
 
 // ModifyTag
@@ -184,7 +184,7 @@ func ModifyTag(c *fiber.Ctx) error {
 		return err
 	}
 	MyLog("Tag", "Modify", tag.ID, userID, RoleAdmin)
-	return c.JSON(&tag)
+	return Serialize(c, &tag)
 }
 
 // DeleteTag
@@ -271,5 +271,5 @@ func DeleteTag(c *fiber.Ctx) error {
 		return err
 	}
 	MyLog("Tag", "Delete", id, userID, RoleAdmin)
-	return c.JSON(&newTag)
+	return Serialize(c, &newTag)
 }

@@ -34,10 +34,16 @@ func (report *Report) GetID() int {
 
 type Reports []*Report
 
-func (report *Report) Preprocess(_ *fiber.Ctx) error {
-	report.Floor.SetDefaults()
+func (report *Report) Preprocess(c *fiber.Ctx) (err error) {
+	err = report.Floor.SetDefaults(c)
+	if err != nil {
+		return err
+	}
 	for i := range report.Floor.Mention {
-		report.Floor.Mention[i].SetDefaults()
+		err = report.Floor.Mention[i].SetDefaults(c)
+		if err != nil {
+			return err
+		}
 	}
 	report.HoleID = report.Floor.HoleID
 	return nil

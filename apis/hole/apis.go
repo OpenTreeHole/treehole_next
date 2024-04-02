@@ -297,7 +297,7 @@ func CreateHole(c *fiber.Ctx) error {
 		UserID:     user.ID,
 		DivisionID: divisionID,
 	}
-	err = hole.Create(DB, user, body.ToName())
+	err = hole.Create(DB, user, body.ToName(), c)
 	if err != nil {
 		return err
 	}
@@ -365,11 +365,15 @@ func CreateHoleOld(c *fiber.Ctx) error {
 		UserID:     user.ID,
 		DivisionID: body.DivisionID,
 	}
-	err = hole.Create(DB, user, body.ToName())
+	err = hole.Create(DB, user, body.ToName(), c)
 	if err != nil {
 		return err
 	}
 
+	err = hole.Preprocess(c)
+	if err != nil {
+		return err
+	}
 	return c.Status(201).JSON(&CreateOldResponse{
 		Data:    hole,
 		Message: "发表成功",
