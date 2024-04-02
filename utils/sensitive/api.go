@@ -67,7 +67,7 @@ func CheckSensitive(params ParamsForCheck) (resp *ResponseForCheck, err error) {
 			Labels: nil,
 		}, nil
 	}
-	params.Content = strings.TrimSpace(clearContent)
+	params.Content = strings.TrimSpace(removeIDReprInContent(clearContent))
 	if params.Content == "" {
 		return &ResponseForCheck{
 			Pass:   true,

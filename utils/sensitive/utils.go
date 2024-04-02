@@ -54,3 +54,13 @@ func checkValidUrl(input string) (bool, error) {
 	}
 	return true, nil
 }
+
+var reHole = regexp.MustCompile(`[^#]#(\d+)`)
+var reFloor = regexp.MustCompile(`##(\d+)`)
+
+func removeIDReprInContent(content string) string {
+	content = " " + content
+	content = reHole.ReplaceAllString(content, "")
+	content = reFloor.ReplaceAllString(content, "")
+	return strings.TrimSpace(content)
+}
