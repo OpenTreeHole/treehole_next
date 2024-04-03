@@ -146,6 +146,7 @@ func SearchOld(keyword string, size, offset int) (Floors, error) {
 	result := DB.
 		Where("content like ?", "%"+keyword+"%").
 		Where("hole_id in (?)", DB.Table("hole").Select("id").Where("hidden = false")).
+		Where("(is_sensitive = 0 AND is_actual_sensitive IS NULL) OR is_actual_sensitive = 0").
 		Offset(offset).Limit(size).Order("id desc").
 		Preload("Mention").Find(&floors)
 	return floors, result.Error

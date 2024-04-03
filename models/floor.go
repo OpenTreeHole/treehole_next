@@ -112,6 +112,34 @@ func (floor *Floor) Preprocess(c *fiber.Ctx) error {
 	return Floors{floor}.Preprocess(c)
 }
 
+func MakeFloorQuerySet(c *fiber.Ctx) (*gorm.DB, error) {
+	user, err := GetUser(c)
+	if err != nil {
+		return nil, err
+	}
+	if user.IsAdmin {
+		return DB, nil
+	} else {
+		userID, err := common.GetUserID(c)
+		if err != nil {
+			return nil, err
+		}
+		return DB.Where("(is_sensitive = 0 AND is_actual_sensitive IS NULL) OR is_actual_sensitive = 0 OR user_id = ?", userID), nil
+	}
+}
+
+func (floors Floors) MakeQuerySet(holeID *int, offset, size int, c *fiber.Ctx) (*gorm.DB, error) {
+	querySet, err := MakeFloorQuerySet(c)
+	if err != nil {
+		return nil, err
+	}
+	if holeID != nil {
+		querySet = querySet.Where("hole_id = ?", holeID)
+	}
+
+	return querySet.Offset(offset).Limit(size), nil
+}
+
 func (floors Floors) loadFloorLikes(c *fiber.Ctx) (err error) {
 	userID, err := common.GetUserID(c)
 	if err != nil {

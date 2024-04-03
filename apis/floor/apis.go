@@ -41,9 +41,12 @@ func ListFloorsInAHole(c *fiber.Ctx) error {
 
 	// get floors
 	var floors Floors
-	result := DB.Limit(query.Size).Order(query.OrderBy+" "+query.Sort).
-		// use ranking field to locate faster
-		Where("hole_id = ? and ranking >= ?", holeID, query.Offset).
+	// use ranking field to locate faster
+	querySet, err := floors.MakeQuerySet(&holeID, query.Offset, query.Size, c)
+	if err != nil {
+		return err
+	}
+	result := querySet.Order(query.OrderBy + " " + query.Sort).
 		Preload("Mention").
 		Find(&floors)
 	if result.Error != nil {
@@ -74,20 +77,26 @@ func ListFloorsOld(c *fiber.Ctx) error {
 		return SearchFloorsOld(c, &query)
 	}
 
+	// get floors
+	var floors Floors
+
 	var querySet *gorm.DB
 	if query.Size == 0 && query.Offset == 0 {
-		querySet = DB
+		querySet, err = floors.MakeQuerySet(&query.HoleID, 0, 0, c)
+		if err != nil {
+			return err
+		}
 	} else {
 		if query.Size == 0 {
 			query.Size = 30
 		}
-		querySet = DB.Limit(query.Size).Where("ranking >= ?", query.Offset)
+		querySet, err = floors.MakeQuerySet(&query.HoleID, query.Offset, query.Size, c)
+		if err != nil {
+			return err
+		}
 	}
 
-	// get floors
-	floors := Floors{}
 	result := querySet.
-		Where("hole_id = ?", query.HoleID).
 		Preload("Mention").
 		Find(&floors)
 	if result.Error != nil {
@@ -115,7 +124,12 @@ func GetFloor(c *fiber.Ctx) error {
 
 	// get floor
 	var floor Floor
-	result := DB.Preload("Mention").First(&floor, floorID)
+	querySet, err := MakeFloorQuerySet(c)
+	if err != nil {
+		return err
+	}
+	result := querySet.Preload("Mention").
+		First(&floor, floorID)
 	if result.Error != nil {
 		return result.Error
 	}
@@ -150,7 +164,11 @@ func CreateFloor(c *fiber.Ctx) error {
 
 	// get hole to check DivisionID and Locked
 	var hole Hole
-	err = DB.Take(&hole, holeID).Error
+	querySet, err := MakeHoleQuerySet(c)
+	if err != nil {
+		return err
+	}
+	err = querySet.Take(&hole, holeID).Error
 	if err != nil {
 		return err
 	}
@@ -217,7 +235,11 @@ func CreateFloorOld(c *fiber.Ctx) error {
 
 	// get hole to check DivisionID and Locked
 	var hole Hole
-	err = DB.Take(&hole, body.HoleID).Error
+	querySet, err := MakeHoleQuerySet(c)
+	if err != nil {
+		return err
+	}
+	err = querySet.Take(&hole, body.HoleID).Error
 	if err != nil {
 		return err
 	}
@@ -636,11 +658,14 @@ func ListReplyFloors(c *fiber.Ctx) error {
 
 	// get floors
 	var floors Floors
-	result := DB.
-		Limit(query.Size).
-		Offset(query.Offset).
+	querySet, err := floors.MakeQuerySet(nil, query.Offset, query.Size, c)
+	if err != nil {
+		return err
+	}
+	result := querySet.
+		Where("ranking <> ?", 0).
 		Order(query.OrderBy+" "+query.Sort).
-		Where("user_id = ? and ranking <> 0", userID).
+		Where("user_id = ?", userID).
 		Preload("Mention").
 		Find(&floors)
 	if result.Error != nil {

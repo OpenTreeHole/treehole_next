@@ -287,7 +287,7 @@ func UpdateHoleCache(holes Holes) (err error) {
 	return
 }
 
-func MakeQuerySet(c *fiber.Ctx) (*gorm.DB, error) {
+func MakeHoleQuerySet(c *fiber.Ctx) (*gorm.DB, error) {
 	user, err := GetUser(c)
 	if err != nil {
 		return nil, err
@@ -295,15 +295,22 @@ func MakeQuerySet(c *fiber.Ctx) (*gorm.DB, error) {
 	if user.IsAdmin {
 		return DB, err
 	} else {
-		return DB.Where("hidden = ?", false), err
+		userID, err := common.GetUserID(c)
+		if err != nil {
+			return nil, err
+		}
+		return DB.Joins("JOIN floor ON hole.id = floor.hole_id").
+			Where("floor.ranking = 0 AND "+
+				"((floor.is_sensitive = 0 AND floor.is_actual_sensitive IS NULL) OR floor.is_actual_sensitive = 0 OR floor.user_id = ?)", userID), err
 	}
 }
 
 func (holes Holes) MakeQuerySet(offset common.CustomTime, size int, order string, c *fiber.Ctx) (*gorm.DB, error) {
-	querySet, err := MakeQuerySet(c)
+	querySet, err := MakeHoleQuerySet(c)
 	if err != nil {
 		return nil, err
 	}
+	querySet.Where("hidden = ?", false)
 	if order == "time_created" || order == "created_at" {
 		return querySet.
 			Where("created_at < ?", offset.Time).
