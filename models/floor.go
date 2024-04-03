@@ -183,7 +183,10 @@ func (floor *Floor) SetDefaults(c *fiber.Ctx) (err error) {
 	}
 
 	floor.Anonyname = utils.GetFuzzName(floor.Anonyname)
-	if floor.Sensitive() {
+	if floor.Deleted {
+		floor.Content = "该内容因违反社区公约被删除"
+		floor.Anonyname = ""
+	} else if floor.Sensitive() {
 		if !user.IsAdmin {
 			if floor.UserID == user.ID {
 				floor.Content = "该内容被猫猫吃掉了"
