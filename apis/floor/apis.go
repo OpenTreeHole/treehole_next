@@ -42,7 +42,7 @@ func ListFloorsInAHole(c *fiber.Ctx) error {
 	// get floors
 	var floors Floors
 	// use ranking field to locate faster
-	querySet, err := floors.MakeQuerySet(&holeID, query.Offset, query.Size, c)
+	querySet, err := floors.MakeQuerySet(&holeID, &query.Offset, &query.Size, c)
 	if err != nil {
 		return err
 	}
@@ -82,7 +82,7 @@ func ListFloorsOld(c *fiber.Ctx) error {
 
 	var querySet *gorm.DB
 	if query.Size == 0 && query.Offset == 0 {
-		querySet, err = floors.MakeQuerySet(&query.HoleID, 0, 0, c)
+		querySet, err = floors.MakeQuerySet(&query.HoleID, nil, nil, c)
 		if err != nil {
 			return err
 		}
@@ -90,7 +90,7 @@ func ListFloorsOld(c *fiber.Ctx) error {
 		if query.Size == 0 {
 			query.Size = 30
 		}
-		querySet, err = floors.MakeQuerySet(&query.HoleID, query.Offset, query.Size, c)
+		querySet, err = floors.MakeQuerySet(&query.HoleID, &query.Offset, &query.Size, c)
 		if err != nil {
 			return err
 		}
@@ -658,7 +658,7 @@ func ListReplyFloors(c *fiber.Ctx) error {
 
 	// get floors
 	var floors Floors
-	querySet, err := floors.MakeQuerySet(nil, query.Offset, query.Size, c)
+	querySet, err := floors.MakeQuerySet(nil, &query.Offset, &query.Size, c)
 	if err != nil {
 		return err
 	}

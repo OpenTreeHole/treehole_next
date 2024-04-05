@@ -128,7 +128,7 @@ func MakeFloorQuerySet(c *fiber.Ctx) (*gorm.DB, error) {
 	}
 }
 
-func (floors Floors) MakeQuerySet(holeID *int, offset, size int, c *fiber.Ctx) (*gorm.DB, error) {
+func (floors Floors) MakeQuerySet(holeID *int, offset, size *int, c *fiber.Ctx) (*gorm.DB, error) {
 	querySet, err := MakeFloorQuerySet(c)
 	if err != nil {
 		return nil, err
@@ -137,7 +137,13 @@ func (floors Floors) MakeQuerySet(holeID *int, offset, size int, c *fiber.Ctx) (
 		querySet = querySet.Where("hole_id = ?", holeID)
 	}
 
-	return querySet.Offset(offset).Limit(size), nil
+	if offset != nil {
+		querySet = querySet.Offset(*offset)
+	}
+	if size != nil {
+		querySet = querySet.Limit(*size)
+	}
+	return querySet, nil
 }
 
 func (floors Floors) loadFloorLikes(c *fiber.Ctx) (err error) {
