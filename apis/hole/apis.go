@@ -222,9 +222,11 @@ func ListHolesOld(c *fiber.Ctx) error {
 func GetHole(c *fiber.Ctx) error {
 	id, _ := c.ParamsInt("id")
 
+	querySet, err := MakeHoleQuerySet(c)
+
 	// get hole
 	var hole Hole
-	err := DB.Take(&hole, id).Error
+	err = querySet.Take(&hole, id).Error
 	if err != nil {
 		return err
 	}
