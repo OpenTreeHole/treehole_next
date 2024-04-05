@@ -49,7 +49,7 @@ func ListHolesByDivision(c *fiber.Ctx) error {
 		return err
 	}
 	if id != 0 {
-		querySet = querySet.Where("division_id = ?", id)
+		querySet = querySet.Where("hole.division_id = ?", id)
 	}
 	querySet.Find(&holes)
 
@@ -121,7 +121,7 @@ func ListHolesByMe(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	querySet = querySet.Where("user_id = ?", userID)
+	querySet = querySet.Where("hole.user_id = ?", userID)
 	querySet.Find(&holes)
 
 	return Serialize(c, &holes)
@@ -152,7 +152,7 @@ func ListGoodHoles(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	querySet = querySet.Where("good = 1")
+	querySet = querySet.Where("hole.good = 1")
 	err = querySet.Find(&holes).Error
 	if err != nil {
 		return err
@@ -194,7 +194,7 @@ func ListHolesOld(c *fiber.Ctx) error {
 		}
 	} else if query.DivisionID != 0 {
 		querySet.
-			Where("division_id = ?", query.DivisionID).
+			Where("hole.division_id = ?", query.DivisionID).
 			Find(&holes)
 	} else {
 		querySet.Find(&holes)

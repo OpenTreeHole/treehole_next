@@ -310,15 +310,15 @@ func (holes Holes) MakeQuerySet(offset common.CustomTime, size int, order string
 	if err != nil {
 		return nil, err
 	}
-	querySet.Where("hidden = ?", false)
+	querySet.Where("hole.hidden = ?", false)
 	if order == "time_created" || order == "created_at" {
 		return querySet.
-			Where("created_at < ?", offset.Time).
-			Order("created_at desc").Limit(size), nil
+			Where("hole.created_at < ?", offset.Time).
+			Order("hole.created_at desc").Limit(size), nil
 	} else {
 		return querySet.
-			Where("updated_at < ?", offset.Time).
-			Order("updated_at desc").Limit(size), nil
+			Where("hole.updated_at < ?", offset.Time).
+			Order("hole.updated_at desc").Limit(size), nil
 	}
 }
 
