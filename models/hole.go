@@ -170,7 +170,7 @@ reply_to, modified, ranking, dislike, storey, is_sensitive, is_actual_sensitive,
     WHERE hole_id IN ? and ((is_sensitive = 0 AND is_actual_sensitive IS NULL) OR is_actual_sensitive = 0)
 ) AS ranked_floors
 WHERE row_num = 1
-) f order by hole_id, ranking`, holeIDs, config.Config.HoleFloorSize, holeIDs).Scan(&floors).Error
+) f order by hole_id, id`, holeIDs, config.Config.HoleFloorSize, holeIDs).Scan(&floors).Error
 	//err := DB.
 	//	Raw(
 	//		// using file sort
