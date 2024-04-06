@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/gofiber/fiber/v2"
 	"strconv"
 	"time"
 
@@ -61,9 +62,9 @@ type FloorModel struct {
 	Content   string    `json:"content"`
 }
 
-func Search(keyword string, size, offset int, accurate bool) (Floors, error) {
+func Search(c *fiber.Ctx, keyword string, size, offset int, accurate bool) (Floors, error) {
 	if ES == nil {
-		return SearchOld(keyword, size, offset)
+		return SearchOld(c, keyword, size, offset)
 	}
 
 	var query types.Query
@@ -133,7 +134,11 @@ func Search(keyword string, size, offset int, accurate bool) (Floors, error) {
 	}
 	log.Info().Ints("floor_ids", floorIDs).Msg("search response")
 
-	err = DB.Preload("Mention").Find(&floors, floorIDs).Error
+	querySet, err := MakeFloorQuerySet(c)
+	if err != nil {
+		return nil, err
+	}
+	err = querySet.Find(&floors, floorIDs).Error
 	if err != nil {
 		return nil, err
 	}
@@ -141,14 +146,16 @@ func Search(keyword string, size, offset int, accurate bool) (Floors, error) {
 	return utils.OrderInGivenOrder(floors, floorIDs), nil
 }
 
-func SearchOld(keyword string, size, offset int) (Floors, error) {
+func SearchOld(c *fiber.Ctx, keyword string, size, offset int) (Floors, error) {
 	floors := Floors{}
-	result := DB.
+	querySet, err := floors.MakeQuerySet(nil, &offset, &size, c)
+	if err != nil {
+		return nil, err
+	}
+	result := querySet.
 		Where("content like ?", "%"+keyword+"%").
 		Where("hole_id in (?)", DB.Table("hole").Select("id").Where("hidden = false")).
-		Where("(is_sensitive = 0 AND is_actual_sensitive IS NULL) OR is_actual_sensitive = 0").
-		Offset(offset).Limit(size).Order("id desc").
-		Preload("Mention").Find(&floors)
+		Order("id desc").Find(&floors)
 	return floors, result.Error
 }
 

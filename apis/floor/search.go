@@ -32,7 +32,7 @@ func SearchFloors(c *fiber.Ctx) error {
 		return err
 	}
 
-	floors, err := Search(query.Search, query.Size, query.Offset, query.Accurate)
+	floors, err := Search(c, query.Search, query.Size, query.Offset, query.Accurate)
 	if err != nil {
 		return err
 	}
@@ -74,7 +74,7 @@ func SearchFloorsOld(c *fiber.Ctx, query *ListOldModel) error {
 		return common.Forbidden("树洞流量激增，搜索功能暂缓开放")
 	}
 
-	floors, err := Search(query.Search, query.Size, query.Offset, false)
+	floors, err := Search(c, query.Search, query.Size, query.Offset, false)
 	if err != nil {
 		return err
 	}

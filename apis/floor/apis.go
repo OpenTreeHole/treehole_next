@@ -47,7 +47,6 @@ func ListFloorsInAHole(c *fiber.Ctx) error {
 		return err
 	}
 	result := querySet.Order(query.OrderBy + " " + query.Sort).
-		Preload("Mention").
 		Find(&floors)
 	if result.Error != nil {
 		return result.Error
@@ -97,7 +96,6 @@ func ListFloorsOld(c *fiber.Ctx) error {
 	}
 
 	result := querySet.
-		Preload("Mention").
 		Find(&floors)
 	if result.Error != nil {
 		return result.Error
@@ -128,7 +126,7 @@ func GetFloor(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	result := querySet.Preload("Mention").
+	result := querySet.
 		First(&floor, floorID)
 	if result.Error != nil {
 		return result.Error
@@ -663,10 +661,8 @@ func ListReplyFloors(c *fiber.Ctx) error {
 		return err
 	}
 	result := querySet.
-		Where("ranking <> ?", 0).
 		Order(query.OrderBy+" "+query.Sort).
-		Where("user_id = ?", userID).
-		Preload("Mention").
+		Where("user_id = ? and ranking <> ?", userID, 0).
 		Find(&floors)
 	if result.Error != nil {
 		return result.Error
