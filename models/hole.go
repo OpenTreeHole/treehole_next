@@ -154,7 +154,7 @@ func loadFloors(holes Holes) error {
 	var floors Floors
 	err := DB.Raw(`select * from (
 SELECT id, content, anonyname, created_at, updated_at, deleted, fold, hole_id, user_id, special_tag, 
-reply_to, modified, ranking, dislike, storey, is_sensitive, is_actual_sensitive, `+"`like`, `path`, `locked`"+`FROM (
+reply_to, modified, ranking, dislike, is_sensitive, is_actual_sensitive, `+"`like`"+`FROM (
     SELECT *,
            ROW_NUMBER() OVER (PARTITION BY hole_id ORDER BY id) AS row_num
     FROM floor
@@ -163,7 +163,7 @@ reply_to, modified, ranking, dislike, storey, is_sensitive, is_actual_sensitive,
 WHERE row_num <= ?
 Union
 SELECT id, content, anonyname, created_at, updated_at, deleted, fold, hole_id, user_id, special_tag, 
-reply_to, modified, ranking, dislike, storey, is_sensitive, is_actual_sensitive, `+"`like`, `path`, `locked`"+`FROM (
+reply_to, modified, ranking, dislike, is_sensitive, is_actual_sensitive, `+"`like`"+`FROM (
     SELECT *,
            ROW_NUMBER() OVER (PARTITION BY hole_id ORDER BY id desc) AS row_num
     FROM floor
