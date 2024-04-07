@@ -152,40 +152,40 @@ func loadFloors(holes Holes) error {
 	// load all floors with holeIDs and ranking < HoleFloorSize or the last floor
 	// sorted by hole_id asc first and ranking asc second
 	var floors Floors
-	err := DB.Raw(`select * from (
-SELECT id, content, anonyname, created_at, updated_at, deleted, fold, hole_id, user_id, special_tag, 
-reply_to, modified, ranking, dislike, is_sensitive, is_actual_sensitive, `+"`like`"+`FROM (
-    SELECT *,
-           ROW_NUMBER() OVER (PARTITION BY hole_id ORDER BY id) AS row_num
-    FROM floor
-    WHERE hole_id IN ? and ((is_sensitive = 0 AND is_actual_sensitive IS NULL) OR is_actual_sensitive = 0)
-) AS ranked_floors
-WHERE row_num <= ?
-Union
-SELECT id, content, anonyname, created_at, updated_at, deleted, fold, hole_id, user_id, special_tag, 
-reply_to, modified, ranking, dislike, is_sensitive, is_actual_sensitive, `+"`like`"+`FROM (
-    SELECT *,
-           ROW_NUMBER() OVER (PARTITION BY hole_id ORDER BY id desc) AS row_num
-    FROM floor
-    WHERE hole_id IN ? and ((is_sensitive = 0 AND is_actual_sensitive IS NULL) OR is_actual_sensitive = 0)
-) AS ranked_floors
-WHERE row_num = 1
-) f order by hole_id, id`, holeIDs, config.Config.HoleFloorSize, holeIDs).Scan(&floors).Error
-	//err := DB.
-	//	Raw(
-	//		// using file sort
-	//		`SELECT * FROM (? UNION ?) f ORDER BY hole_id, ranking`,
-	//		// use index(idx_hole_ranking), type range, use MRR
-	//		DB.Model(&Floor{}).Where("hole_id in ? and ranking < ?", holeIDs, config.Config.HoleFloorSize),
-	//
-	//		// UNION, remove duplications
-	//		// use index(idx_hole_ranking), type eq_ref
-	//		DB.Model(&Floor{}).Where(
-	//			"(hole_id, ranking) in (?)",
-	//			// use index(PRIMARY), type range
-	//			DB.Model(&Hole{}).Select("id", "reply").Where("id in ?", holeIDs),
-	//		),
-	//	).Scan(&floors).Error
+	//err := DB.Raw(`select * from (
+	//SELECT id, content, anonyname, created_at, updated_at, deleted, fold, hole_id, user_id, special_tag,
+	//reply_to, modified, ranking, dislike, is_sensitive, is_actual_sensitive, `+"`like`"+`FROM (
+	//   SELECT *,
+	//          ROW_NUMBER() OVER (PARTITION BY hole_id ORDER BY id) AS row_num
+	//   FROM floor
+	//   WHERE hole_id IN ? and ((is_sensitive = 0 AND is_actual_sensitive IS NULL) OR is_actual_sensitive = 0)
+	//) AS ranked_floors
+	//WHERE row_num <= ?
+	//Union
+	//SELECT id, content, anonyname, created_at, updated_at, deleted, fold, hole_id, user_id, special_tag,
+	//reply_to, modified, ranking, dislike, is_sensitive, is_actual_sensitive, `+"`like`"+`FROM (
+	//   SELECT *,
+	//          ROW_NUMBER() OVER (PARTITION BY hole_id ORDER BY id desc) AS row_num
+	//   FROM floor
+	//   WHERE hole_id IN ? and ((is_sensitive = 0 AND is_actual_sensitive IS NULL) OR is_actual_sensitive = 0)
+	//) AS ranked_floors
+	//WHERE row_num = 1
+	//) f order by hole_id, id`, holeIDs, config.Config.HoleFloorSize, holeIDs).Scan(&floors).Error
+	err := DB.
+		Raw(
+			// using file sort
+			`SELECT * FROM (? UNION ?) f ORDER BY hole_id, ranking`,
+			// use index(idx_hole_ranking), type range, use MRR
+			DB.Model(&Floor{}).Where("hole_id in ? and ranking < ?", holeIDs, config.Config.HoleFloorSize),
+
+			// UNION, remove duplications
+			// use index(idx_hole_ranking), type eq_ref
+			DB.Model(&Floor{}).Where(
+				"(hole_id, ranking) in (?)",
+				// use index(PRIMARY), type range
+				DB.Model(&Hole{}).Select("id", "reply").Where("id in ?", holeIDs),
+			),
+		).Scan(&floors).Error
 	if err != nil {
 		return err
 	}
@@ -312,15 +312,16 @@ func MakeHoleQuerySet(c *fiber.Ctx) (*gorm.DB, error) {
 		return nil, err
 	}
 	if user.IsAdmin {
-		return DB, err
+		return DB, nil
 	} else {
-		userID, err := common.GetUserID(c)
-		if err != nil {
-			return nil, err
-		}
-		return DB.Joins("JOIN floor ON hole.id = floor.hole_id").
-			Where("floor.ranking = 0 AND "+
-				"((floor.is_sensitive = 0 AND floor.is_actual_sensitive IS NULL) OR floor.is_actual_sensitive = 0 OR floor.user_id = ?)", userID), err
+		return DB.Where("hidden = ?", false), nil
+		//userID, err := common.GetUserID(c)
+		//if err != nil {
+		//	return nil, err
+		//}
+		//return DB.Joins("JOIN floor ON hole.id = floor.hole_id").
+		//	Where("floor.ranking = 0 AND "+
+		//		"((floor.is_sensitive = 0 AND floor.is_actual_sensitive IS NULL) OR floor.is_actual_sensitive = 0 OR floor.user_id = ?)", userID), err
 	}
 }
 
@@ -329,7 +330,7 @@ func (holes Holes) MakeQuerySet(offset common.CustomTime, size int, order string
 	if err != nil {
 		return nil, err
 	}
-	querySet.Where("hole.hidden = ?", false)
+	//querySet.Where("hole.hidden = ?", false)
 	if order == "time_created" || order == "created_at" {
 		return querySet.
 			Where("hole.created_at < ?", offset.Time).

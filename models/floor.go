@@ -112,21 +112,22 @@ func (floor *Floor) Preprocess(c *fiber.Ctx) error {
 	return Floors{floor}.Preprocess(c)
 }
 
-func MakeFloorQuerySet(c *fiber.Ctx) (*gorm.DB, error) {
-	user, err := GetUser(c)
-	if err != nil {
-		return nil, err
-	}
-	if user.IsAdmin {
-		return DB.Preload("Mention"), nil
-	} else {
-		userID, err := common.GetUserID(c)
-		if err != nil {
-			return nil, err
-		}
-		return DB.Where("(is_sensitive = 0 AND is_actual_sensitive IS NULL) OR is_actual_sensitive = 0 OR user_id = ?", userID).
-			Preload("Mention", "(is_sensitive = 0 AND is_actual_sensitive IS NULL) OR is_actual_sensitive = 0 OR user_id = ?", userID), nil
-	}
+func MakeFloorQuerySet(_ *fiber.Ctx) (*gorm.DB, error) {
+	return DB.Preload("Mention"), nil
+	//user, err := GetUser(c)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//if user.IsAdmin {
+	//	return DB.Preload("Mention"), nil
+	//} else {
+	//	userID, err := common.GetUserID(c)
+	//	if err != nil {
+	//		return nil, err
+	//	}
+	//	return DB.Where("(is_sensitive = 0 AND is_actual_sensitive IS NULL) OR is_actual_sensitive = 0 OR user_id = ?", userID).
+	//		Preload("Mention", "(is_sensitive = 0 AND is_actual_sensitive IS NULL) OR is_actual_sensitive = 0 OR user_id = ?", userID), nil
+	//}
 }
 
 func (floors Floors) MakeQuerySet(holeID *int, offset, size *int, c *fiber.Ctx) (*gorm.DB, error) {
@@ -279,12 +280,15 @@ func (floor *Floor) Create(tx *gorm.DB, hole *Hole, c *fiber.Ctx) (err error) {
 		Id:       time.Now().UnixNano(),
 		TypeName: sensitive.TypeFloor,
 	})
+	if err != nil {
+		return
+	}
 	floor.IsSensitive = !sensitiveCheckResp.Pass
 
 	// load floor mention, in another session
 	floor.Mention, err = LoadFloorMentions(DB, floor.Content)
 	if err != nil {
-		return err
+		return
 	}
 
 	err = tx.Clauses(dbresolver.Write).Transaction(func(tx *gorm.DB) error {
