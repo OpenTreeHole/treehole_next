@@ -118,13 +118,14 @@ func MakeFloorQuerySet(c *fiber.Ctx) (*gorm.DB, error) {
 		return nil, err
 	}
 	if user.IsAdmin {
-		return DB, nil
+		return DB.Preload("Mention"), nil
 	} else {
 		userID, err := common.GetUserID(c)
 		if err != nil {
 			return nil, err
 		}
-		return DB.Where("(is_sensitive = 0 AND is_actual_sensitive IS NULL) OR is_actual_sensitive = 0 OR user_id = ?", userID), nil
+		return DB.Where("(is_sensitive = 0 AND is_actual_sensitive IS NULL) OR is_actual_sensitive = 0 OR user_id = ?", userID).
+			Preload("Mention", "(is_sensitive = 0 AND is_actual_sensitive IS NULL) OR is_actual_sensitive = 0 OR user_id = ?", userID), nil
 	}
 }
 

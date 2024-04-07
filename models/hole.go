@@ -152,21 +152,40 @@ func loadFloors(holes Holes) error {
 	// load all floors with holeIDs and ranking < HoleFloorSize or the last floor
 	// sorted by hole_id asc first and ranking asc second
 	var floors Floors
-	err := DB.
-		Raw(
-			// using file sort
-			`SELECT * FROM (? UNION ?) f ORDER BY hole_id, ranking`,
-			// use index(idx_hole_ranking), type range, use MRR
-			DB.Model(&Floor{}).Where("hole_id in ? and ranking < ?", holeIDs, config.Config.HoleFloorSize),
-
-			// UNION, remove duplications
-			// use index(idx_hole_ranking), type eq_ref
-			DB.Model(&Floor{}).Where(
-				"(hole_id, ranking) in (?)",
-				// use index(PRIMARY), type range
-				DB.Model(&Hole{}).Select("id", "reply").Where("id in ?", holeIDs),
-			),
-		).Scan(&floors).Error
+	err := DB.Raw(`select * from (
+SELECT id, content, anonyname, created_at, updated_at, deleted, fold, hole_id, user_id, special_tag, 
+reply_to, modified, ranking, dislike, is_sensitive, is_actual_sensitive, `+"`like`"+`FROM (
+    SELECT *,
+           ROW_NUMBER() OVER (PARTITION BY hole_id ORDER BY id) AS row_num
+    FROM floor
+    WHERE hole_id IN ? and ((is_sensitive = 0 AND is_actual_sensitive IS NULL) OR is_actual_sensitive = 0)
+) AS ranked_floors
+WHERE row_num <= ?
+Union
+SELECT id, content, anonyname, created_at, updated_at, deleted, fold, hole_id, user_id, special_tag, 
+reply_to, modified, ranking, dislike, is_sensitive, is_actual_sensitive, `+"`like`"+`FROM (
+    SELECT *,
+           ROW_NUMBER() OVER (PARTITION BY hole_id ORDER BY id desc) AS row_num
+    FROM floor
+    WHERE hole_id IN ? and ((is_sensitive = 0 AND is_actual_sensitive IS NULL) OR is_actual_sensitive = 0)
+) AS ranked_floors
+WHERE row_num = 1
+) f order by hole_id, id`, holeIDs, config.Config.HoleFloorSize, holeIDs).Scan(&floors).Error
+	//err := DB.
+	//	Raw(
+	//		// using file sort
+	//		`SELECT * FROM (? UNION ?) f ORDER BY hole_id, ranking`,
+	//		// use index(idx_hole_ranking), type range, use MRR
+	//		DB.Model(&Floor{}).Where("hole_id in ? and ranking < ?", holeIDs, config.Config.HoleFloorSize),
+	//
+	//		// UNION, remove duplications
+	//		// use index(idx_hole_ranking), type eq_ref
+	//		DB.Model(&Floor{}).Where(
+	//			"(hole_id, ranking) in (?)",
+	//			// use index(PRIMARY), type range
+	//			DB.Model(&Hole{}).Select("id", "reply").Where("id in ?", holeIDs),
+	//		),
+	//	).Scan(&floors).Error
 	if err != nil {
 		return err
 	}
