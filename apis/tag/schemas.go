@@ -1,7 +1,7 @@
 package tag
 
 type CreateModel struct {
-	Name string `json:"name,omitempty" validate:"max=32"` // Admin only
+	Name string `json:"name,omitempty" validate:"max=10"` // Admin only
 }
 
 type ModifyModel struct {
