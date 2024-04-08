@@ -374,6 +374,7 @@ func ModifyFloor(c *fiber.Ctx) error {
 			}
 
 			floor.IsSensitive = !sensitiveResp.Pass
+			floor.SensitiveDetail = sensitiveResp.Detail
 			// update floor.mention after update floor.content
 			err = tx.Where("floor_id = ?", floorID).Delete(&FloorMention{}).Error
 			if err != nil {

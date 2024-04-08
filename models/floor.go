@@ -61,6 +61,8 @@ type Floor struct {
 	// manual sensitive check
 	IsActualSensitive *bool `json:"is_actual_sensitive" gorm:"index:idx_floor_actual_sensitive_updated_at,priority:2"`
 
+	SensitiveDetail string `json:"sensitive_detail,omitempty"`
+
 	/// association info, should add foreign key
 
 	// the user who wrote it
@@ -231,6 +233,9 @@ func (floor *Floor) SetDefaults(c *fiber.Ctx) (err error) {
 			floor.SpecialTag = "sensitive"
 		}
 	}
+	if !user.IsAdmin {
+		floor.SensitiveDetail = ""
+	}
 
 	if floor.Mention == nil {
 		floor.Mention = Floors{}
@@ -284,6 +289,7 @@ func (floor *Floor) Create(tx *gorm.DB, hole *Hole, c *fiber.Ctx) (err error) {
 		return
 	}
 	floor.IsSensitive = !sensitiveCheckResp.Pass
+	floor.SensitiveDetail = sensitiveCheckResp.Detail
 
 	// load floor mention, in another session
 	floor.Mention, err = LoadFloorMentions(DB, floor.Content)
