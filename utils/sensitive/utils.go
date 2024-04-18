@@ -19,14 +19,15 @@ func findImagesInMarkdownContent(content string) (imageUrls []string, clearConte
 	clearContent = imageRegex.ReplaceAllStringFunc(content, func(s string) string {
 		submatch := imageRegex.FindStringSubmatch(s)
 		altText := submatch[1]
+		imageLink := convertImageURLForModeration(submatch[2])
 		imageUrls = append(imageUrls, submatch[2])
 		if len(submatch) > 3 && submatch[3] != "" {
 			// If there is a title, return it along with the alt text
 			title := strings.Trim(submatch[3], "\"")
-			return altText + " " + title
+			return altText + imageLink + title
 		}
 		// If there is no title, return the alt text
-		return altText
+		return altText + imageLink
 	})
 	return
 }
@@ -44,10 +45,25 @@ func hasTextUrl(content string) bool {
 	return true
 }
 
+func convertImageURLForModeration(imageLink string) string {
+	url, err := imageUrl.Parse(imageLink)
+	if err != nil {
+		return ""
+	}
+	if url.Scheme == "" && url.Host == "" {
+		return imageLink
+	}
+	return " "
+}
+
 func checkValidUrl(input string) (bool, error) {
 	url, err := imageUrl.Parse(input)
 	if err != nil {
 		return false, err
+	}
+	// if the url is a sticker, skip check
+	if url.Scheme == "" && url.Host == "" {
+		return true, nil
 	}
 	if !slices.Contains(config.Config.ValidImageUrl, url.Hostname()) {
 		return false, nil
