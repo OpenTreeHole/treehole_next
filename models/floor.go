@@ -223,6 +223,8 @@ func (floor *Floor) SetDefaults(c *fiber.Ctx) (err error) {
 		if !user.IsAdmin {
 			if floor.UserID == user.ID {
 				floor.Content = "该内容被猫猫吃掉了"
+				floor.FoldFrontend = []string{floor.Content}
+				floor.Fold = floor.Content
 			} else {
 				floor.Content = ""
 				floor.Anonyname = ""
