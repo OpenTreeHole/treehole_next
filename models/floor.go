@@ -224,7 +224,11 @@ func (floor *Floor) SetDefaults(c *fiber.Ctx) (err error) {
 	if !floor.Deleted && floor.Sensitive() {
 		if !user.IsAdmin {
 			if floor.UserID == user.ID {
-				floor.Content = "该内容被猫猫吃掉了"
+				if floor.IsActualSensitive != nil && *floor.IsActualSensitive {
+					floor.Content = "该内容因违反社区规范被删除"
+				} else {
+					floor.Content = "该内容在审核中"
+				}
 				floor.FoldFrontend = []string{floor.Content}
 				floor.Fold = floor.Content
 			} else {
@@ -263,7 +267,7 @@ func (floor *Floor) SetDefaults(c *fiber.Ctx) (err error) {
 	//	if floor.IsActualSensitive == nil {
 	//		alterContent = "该内容被猫猫吃掉了"
 	//	} else if *floor.IsActualSensitive == true {
-	//		alterContent = "该内容因违反社区公约被删除"
+	//		alterContent = "该内容因违反社区规范被删除"
 	//	} else {
 	//		alterContent = ""
 	//	}
