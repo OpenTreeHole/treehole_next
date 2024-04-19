@@ -222,22 +222,17 @@ func (floor *Floor) SetDefaults(c *fiber.Ctx) (err error) {
 
 	floor.Anonyname = utils.GetFuzzName(floor.Anonyname)
 	if !floor.Deleted && floor.Sensitive() {
-		if !user.IsAdmin {
-			if floor.UserID == user.ID {
-				if floor.IsActualSensitive != nil && *floor.IsActualSensitive {
-					floor.Content = "该内容因违反社区规范被删除"
-				} else {
-					floor.Content = "该内容在审核中"
-				}
-				floor.FoldFrontend = []string{floor.Content}
-				floor.Fold = floor.Content
-			} else {
-				floor.Content = ""
-				floor.Anonyname = ""
-			}
-		} else {
+		if user.IsAdmin {
 			floor.SpecialTag = "sensitive"
 		}
+
+		if floor.IsActualSensitive != nil && *floor.IsActualSensitive {
+			floor.Content = "该内容因违反社区规范被删除"
+		} else {
+			floor.Content = "该内容正在审核中"
+		}
+		floor.FoldFrontend = []string{floor.Content}
+		floor.Fold = floor.Content
 	}
 	if !user.IsAdmin {
 		floor.SensitiveDetail = ""
