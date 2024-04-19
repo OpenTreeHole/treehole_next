@@ -16,9 +16,10 @@ type AdminLog struct {
 type AdminLogType string
 
 const (
-	AdminLogTypeHole     AdminLogType = "edit_hole"
-	AdminLogTypeDivision AdminLogType = "edit_division"
-	AdminLogTypeMessage  AdminLogType = "send_message"
+	AdminLogTypeHole            AdminLogType = "edit_hole"
+	AdminLogTypeDivision        AdminLogType = "edit_division"
+	AdminLogTypeMessage         AdminLogType = "send_message"
+	AdminLogTypeChangeSensitive AdminLogType = "change_sensitive"
 )
 
 // CreateAdminLog

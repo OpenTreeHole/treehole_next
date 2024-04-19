@@ -942,6 +942,7 @@ func ModifyFloorSensitive(c *fiber.Ctx) (err error) {
 		// modify actual_sensitive
 		floor.IsActualSensitive = &body.IsActualSensitive
 		MyLog("Floor", "Modify", floorID, user.ID, RoleAdmin, "actual_sensitive to: ", fmt.Sprintf("%v", body.IsActualSensitive))
+		CreateAdminLog(tx, AdminLogTypeChangeSensitive, user.ID, body)
 
 		// save actual_sensitive only
 		return tx.Model(&floor).Select("IsActualSensitive").UpdateColumns(&floor).Error

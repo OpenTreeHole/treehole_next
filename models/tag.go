@@ -26,15 +26,15 @@ type Tag struct {
 	Name        string `json:"name" gorm:"not null;unique;size:32"`
 	Temperature int    `json:"temperature" gorm:"not null;default:0"`
 
-	IsZZMG bool `json:"is_zzmg" gorm:"not null;default:false"`
+	IsZZMG bool `json:"-" gorm:"not null;default:false"`
 
 	/// association info, should add foreign key
 	Holes Holes `json:"-" gorm:"many2many:hole_tags;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	// auto sensitive check
-	IsSensitive bool `json:"is_sensitive" gorm:"index:idx_tag_actual_sensitive,priority:1"`
+	IsSensitive bool `json:"-" gorm:"index:idx_tag_actual_sensitive,priority:1"`
 
 	// manual sensitive check
-	IsActualSensitive *bool `json:"is_actual_sensitive" gorm:"index:idx_tag_actual_sensitive,priority:2"`
+	IsActualSensitive *bool `json:"-" gorm:"index:idx_tag_actual_sensitive,priority:2"`
 	/// generated field
 	TagID int `json:"tag_id" gorm:"-:all"`
 }
@@ -144,7 +144,7 @@ func (tag *Tag) Preprocess(c *fiber.Ctx) error {
 	return Tags{tag}.Preprocess(c)
 }
 
-func (tags Tags) Preprocess(c *fiber.Ctx) error {
+func (tags Tags) Preprocess(_ *fiber.Ctx) error {
 	tagIDs := make([]int, len(tags))
 	IdTagMapping := make(map[int]*Tag)
 	for i, tag := range tags {

@@ -225,6 +225,8 @@ func (floor *Floor) SetDefaults(c *fiber.Ctx) (err error) {
 		if !user.IsAdmin {
 			if floor.UserID == user.ID {
 				floor.Content = "该内容被猫猫吃掉了"
+				floor.FoldFrontend = []string{floor.Content}
+				floor.Fold = floor.Content
 			} else {
 				floor.Content = ""
 				floor.Anonyname = ""
@@ -335,16 +337,18 @@ func (floor *Floor) Create(tx *gorm.DB, hole *Hole, c *fiber.Ctx) (err error) {
 		return err
 	}
 
-	// Send Notification
-	var messages Notifications
-	messages = messages.Merge(floor.SendReply(tx))
-	messages = messages.Merge(floor.SendMention(tx))
-	messages = messages.Merge(floor.SendSubscription(tx))
+	if !floor.Sensitive() {
+		// Send Notification
+		var messages Notifications
+		messages = messages.Merge(floor.SendReply(tx))
+		messages = messages.Merge(floor.SendMention(tx))
+		messages = messages.Merge(floor.SendSubscription(tx))
 
-	err = messages.Send()
-	if err != nil {
-		log.Err(err).Str("model", "Notification").Msg("SendNotification failed")
-		// return err // only for test
+		err = messages.Send()
+		if err != nil {
+			log.Err(err).Str("model", "Notification").Msg("SendNotification failed")
+			// return err // only for test
+		}
 	}
 
 	if !hole.Hidden && !floor.Sensitive() {

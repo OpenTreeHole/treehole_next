@@ -258,9 +258,9 @@ func (holes Holes) Preprocess(c *fiber.Ctx) error {
 		floors = append(floors, hole.Floors...)
 
 		// hide hole if first floor is sensitive
-		if hole.HoleFloor.FirstFloor.Sensitive() {
-			hole.Hidden = true
-		}
+		//if hole.HoleFloor.FirstFloor.Sensitive() {
+		//	hole.Hidden = true
+		//}
 	}
 	err := floors.Preprocess(c)
 	if err != nil {

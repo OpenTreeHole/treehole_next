@@ -2,7 +2,6 @@ package sensitive
 
 import (
 	"fmt"
-	"github.com/opentreehole/go-common"
 	"github.com/yidun/yidun-golang-sdk/yidun/service/antispam/image/v5"
 	"github.com/yidun/yidun-golang-sdk/yidun/service/antispam/image/v5/check"
 	"strconv"
@@ -37,17 +36,12 @@ type ResponseForCheck struct {
 }
 
 func CheckSensitive(params ParamsForCheck) (resp *ResponseForCheck, err error) {
-	images, clearContent := findImagesInMarkdownContent(params.Content)
+	images, clearContent, err := findImagesInMarkdownContent(params.Content)
+	if err != nil {
+		return nil, err
+	}
 	if len(images) != 0 {
 		for _, img := range images {
-			pass, err := checkValidUrl(img)
-			if err != nil {
-				return nil, err
-			}
-			if !pass {
-				return nil, common.BadRequest("不允许使用外部图片链接")
-			}
-
 			ret, err := checkSensitiveImage(ParamsForCheck{
 				Content:  img,
 				Id:       time.Now().UnixNano(),
