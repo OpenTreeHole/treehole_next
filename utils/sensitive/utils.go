@@ -1,9 +1,10 @@
 package sensitive
 
 import (
+	"errors"
 	"golang.org/x/exp/slices"
 	"mvdan.cc/xurls/v2"
-	imageUrl "net/url"
+	"net/url"
 	"regexp"
 	"strings"
 	"treehole_next/config"
@@ -13,21 +14,61 @@ var imageRegex = regexp.MustCompile(
 	`!\[(.*?)]\(([^" )]*?)\s*(".*?")?\)`,
 )
 
-// findImagesInMarkdown 从Markdown文本中查找所有图片链接，并且返回清除链接之后的文本
-func findImagesInMarkdownContent(content string) (imageUrls []string, clearContent string) {
+var (
+	ErrUrlParsing        = errors.New("error parsing url")
+	ErrInvalidImageHost  = errors.New("不允许使用外部图片链接")
+	ErrImageLinkTextOnly = errors.New("image link only contains text")
+)
 
+// findImagesInMarkdown 从Markdown文本中查找所有图片链接，检查图片链接是否合法，并且返回清除链接之后的文本
+func findImagesInMarkdownContent(content string) (imageUrls []string, clearContent string, err error) {
+	err = nil
 	clearContent = imageRegex.ReplaceAllStringFunc(content, func(s string) string {
+		if err != nil {
+			return ""
+		}
 		submatch := imageRegex.FindStringSubmatch(s)
 		altText := submatch[1]
-		imageLink := convertImageURLForModeration(submatch[2])
-		imageUrls = append(imageUrls, submatch[2])
-		if len(submatch) > 3 && submatch[3] != "" {
-			// If there is a title, return it along with the alt text
-			title := strings.Trim(submatch[3], "\"")
-			return altText + imageLink + title
+
+		var imageUrl string
+		if len(submatch) > 2 && submatch[2] != "" {
+			imageUrl = submatch[2]
+			innerErr := checkValidUrl(imageUrl)
+			if innerErr != nil {
+				if errors.Is(innerErr, ErrInvalidImageHost) {
+					err = innerErr
+					return ""
+				}
+				// if the url is not valid, treat as text only
+			} else {
+				// append only valid image url
+				imageUrls = append(imageUrls, imageUrl)
+				imageUrl = ""
+			}
 		}
-		// If there is no title, return the alt text
-		return altText + imageLink
+
+		var title string
+		if len(submatch) > 3 && submatch[3] != "" {
+			title = strings.Trim(submatch[3], "\"")
+		}
+
+		var ret strings.Builder
+		if altText != "" {
+			ret.WriteString(altText)
+		}
+		if imageUrl != "" {
+			if ret.String() != "" {
+				ret.WriteString(" ")
+			}
+			ret.WriteString(imageUrl)
+		}
+		if title != "" {
+			if ret.String() != "" {
+				ret.WriteString(" ")
+			}
+			ret.WriteString(title)
+		}
+		return ret.String()
 	})
 	return
 }
@@ -45,30 +86,19 @@ func hasTextUrl(content string) bool {
 	return true
 }
 
-func convertImageURLForModeration(imageLink string) string {
-	url, err := imageUrl.Parse(imageLink)
+func checkValidUrl(input string) error {
+	imageUrl, err := url.Parse(input)
 	if err != nil {
-		return ""
+		return ErrUrlParsing
 	}
-	if url.Scheme == "" && url.Host == "" {
-		return imageLink
+	// if the url is text only, skip check
+	if imageUrl.Scheme == "" && imageUrl.Host == "" {
+		return ErrImageLinkTextOnly
 	}
-	return " "
-}
-
-func checkValidUrl(input string) (bool, error) {
-	url, err := imageUrl.Parse(input)
-	if err != nil {
-		return false, err
+	if !slices.Contains(config.Config.ValidImageUrl, imageUrl.Hostname()) {
+		return ErrInvalidImageHost
 	}
-	// if the url is a sticker, skip check
-	if url.Scheme == "" && url.Host == "" {
-		return true, nil
-	}
-	if !slices.Contains(config.Config.ValidImageUrl, url.Hostname()) {
-		return false, nil
-	}
-	return true, nil
+	return nil
 }
 
 var reHole = regexp.MustCompile(`[^#]#(\d+)`)
