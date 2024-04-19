@@ -944,6 +944,17 @@ func ModifyFloorSensitive(c *fiber.Ctx) (err error) {
 		MyLog("Floor", "Modify", floorID, user.ID, RoleAdmin, "actual_sensitive to: ", fmt.Sprintf("%v", body.IsActualSensitive))
 		CreateAdminLog(tx, AdminLogTypeChangeSensitive, user.ID, body)
 
+		//reason := "该内容因违反社区规范被删除"
+		//err = floor.Backup(tx, user.ID, reason)
+		//if err != nil {
+		//	return err
+		//}
+		//
+		//floor.Deleted = true
+		//floor.Content = generateDeleteReason(reason, user.ID == floor.UserID)
+		//MyLog("Floor", "Delete", floorID, user.ID, RoleOperator, "reason: ", reason)
+		//return tx.Save(&floor).Error
+
 		// save actual_sensitive only
 		return tx.Model(&floor).Select("IsActualSensitive").UpdateColumns(&floor).Error
 	})
