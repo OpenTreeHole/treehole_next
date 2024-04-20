@@ -61,6 +61,9 @@ type Floor struct {
 	// manual sensitive check
 	IsActualSensitive *bool `json:"is_actual_sensitive" gorm:"index:idx_floor_actual_sensitive_updated_at,priority:2"`
 
+	// auto sensitive check detail
+	SensitiveDetail string `json:"sensitive_detail,omitempty"`
+
 	/// association info, should add foreign key
 
 	// the user who wrote it
@@ -220,18 +223,20 @@ func (floor *Floor) SetDefaults(c *fiber.Ctx) (err error) {
 
 	floor.Anonyname = utils.GetFuzzName(floor.Anonyname)
 	if !floor.Deleted && floor.Sensitive() {
-		if !user.IsAdmin {
-			if floor.UserID == user.ID {
-				floor.Content = "该内容被猫猫吃掉了"
-				floor.FoldFrontend = []string{floor.Content}
-				floor.Fold = floor.Content
-			} else {
-				floor.Content = ""
-				floor.Anonyname = ""
-			}
-		} else {
+		if user.IsAdmin {
 			floor.SpecialTag = "sensitive"
 		}
+
+		if floor.IsActualSensitive != nil && *floor.IsActualSensitive {
+			floor.Content = "该内容因违反社区规范被删除"
+		} else {
+			floor.Content = "该内容正在审核中"
+		}
+		floor.FoldFrontend = []string{floor.Content}
+		floor.Fold = floor.Content
+	}
+	if !user.IsAdmin {
+		floor.SensitiveDetail = ""
 	}
 
 	if floor.Mention == nil {
@@ -258,7 +263,7 @@ func (floor *Floor) SetDefaults(c *fiber.Ctx) (err error) {
 	//	if floor.IsActualSensitive == nil {
 	//		alterContent = "该内容被猫猫吃掉了"
 	//	} else if *floor.IsActualSensitive == true {
-	//		alterContent = "该内容因违反社区公约被删除"
+	//		alterContent = "该内容因违反社区规范被删除"
 	//	} else {
 	//		alterContent = ""
 	//	}
@@ -286,6 +291,7 @@ func (floor *Floor) Create(tx *gorm.DB, hole *Hole, c *fiber.Ctx) (err error) {
 		return
 	}
 	floor.IsSensitive = !sensitiveCheckResp.Pass
+	floor.SensitiveDetail = sensitiveCheckResp.Detail
 
 	// load floor mention, in another session
 	floor.Mention, err = LoadFloorMentions(DB, floor.Content)
@@ -398,6 +404,7 @@ func (floor *Floor) Backup(tx *gorm.DB, userID int, reason string) error {
 		UserID:            userID,
 		IsSensitive:       floor.IsSensitive,
 		IsActualSensitive: floor.IsActualSensitive,
+		SensitiveDetail:   floor.SensitiveDetail,
 	}
 	return tx.Create(&history).Error
 }

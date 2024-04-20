@@ -32,6 +32,7 @@ type ParamsForCheck struct {
 type ResponseForCheck struct {
 	Pass   bool
 	Labels []int
+	Detail string
 }
 
 func CheckSensitive(params ParamsForCheck) (resp *ResponseForCheck, err error) {
@@ -59,6 +60,7 @@ func CheckSensitive(params ParamsForCheck) (resp *ResponseForCheck, err error) {
 		return &ResponseForCheck{
 			Pass:   false,
 			Labels: nil,
+			Detail: "不允许使用外部链接",
 		}, nil
 	}
 	params.Content = strings.TrimSpace(removeIDReprInContent(clearContent))
@@ -66,6 +68,7 @@ func CheckSensitive(params ParamsForCheck) (resp *ResponseForCheck, err error) {
 		return &ResponseForCheck{
 			Pass:   true,
 			Labels: nil,
+			Detail: "",
 		}, nil
 	}
 
@@ -102,9 +105,31 @@ func CheckSensitiveText(params ParamsForCheck) (resp *ResponseForCheck, err erro
 
 		utils.RequestLog("Sensitive text check response code is 200", params.TypeName, params.Id, false)
 		resp.Pass = false
+		var str string
 		for _, label := range response.Result.Antispam.Labels {
 			resp.Labels = append(resp.Labels, *label.Label)
+			// response != nil && response.Result != nil && response.Result.Antispam != nil &&
+			//if response.Result.Antispam.SecondLabel != nil && response.Result.Antispam.ThirdLabel != nil {
+			//	str := *response.Result.Antispam.SecondLabel + " " + *response.Result.Antispam.ThirdLabel
+			//}
+			if label.SubLabels != nil {
+				for _, subLabel := range label.SubLabels {
+					if subLabel.Details != nil && subLabel.Details.HitInfos != nil {
+						for _, hitInfo := range subLabel.Details.HitInfos {
+							if str == "" {
+								str = *hitInfo.Value
+								continue
+							}
+							str += "\n" + *hitInfo.Value
+						}
+					}
+				}
+			}
 		}
+		if str == "" {
+			str = "文本"
+		}
+		resp.Detail = str
 		return
 	}
 
@@ -156,6 +181,39 @@ func checkSensitiveImage(params ParamsForCheck) (resp *ResponseForCheck, err err
 		for _, label := range *((*response.Result)[0].Antispam.Labels) {
 			resp.Labels = append(resp.Labels, *label.Label)
 		}
+		var str string
+		for _, result := range *response.Result {
+			if result.Ocr != nil {
+				if result.Ocr.Details != nil {
+					for _, detail := range *result.Ocr.Details {
+						if str == "" {
+							str = *detail.Content
+							continue
+						}
+						str += "\n" + *detail.Content
+					}
+				}
+			}
+			if result.Face != nil {
+				if result.Face.Details != nil {
+					for _, detail := range *result.Face.Details {
+						if detail.FaceContents != nil {
+							for _, faceContent := range *detail.FaceContents {
+								if str == "" {
+									str = *faceContent.Name
+									continue
+								}
+								str += "\n" + *faceContent.Name
+							}
+						}
+					}
+				}
+			}
+		}
+		if str == "" {
+			str = "图片"
+		}
+		resp.Detail = str
 		return
 	}
 

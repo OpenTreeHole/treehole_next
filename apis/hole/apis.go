@@ -290,11 +290,12 @@ func CreateHole(c *fiber.Ctx) error {
 
 	hole := Hole{
 		Floors: Floors{{
-			UserID:      user.ID,
-			Content:     body.Content,
-			SpecialTag:  body.SpecialTag,
-			IsMe:        true,
-			IsSensitive: !sensitiveResp.Pass,
+			UserID:          user.ID,
+			Content:         body.Content,
+			SpecialTag:      body.SpecialTag,
+			IsMe:            true,
+			IsSensitive:     !sensitiveResp.Pass,
+			SensitiveDetail: sensitiveResp.Detail,
 		}},
 		UserID:     user.ID,
 		DivisionID: divisionID,
@@ -358,11 +359,12 @@ func CreateHoleOld(c *fiber.Ctx) error {
 	// create hole
 	hole := Hole{
 		Floors: Floors{{
-			UserID:      user.ID,
-			Content:     body.Content,
-			SpecialTag:  body.SpecialTag,
-			IsMe:        true,
-			IsSensitive: !sensitiveResp.Pass,
+			UserID:          user.ID,
+			Content:         body.Content,
+			SpecialTag:      body.SpecialTag,
+			IsMe:            true,
+			IsSensitive:     !sensitiveResp.Pass,
+			SensitiveDetail: sensitiveResp.Detail,
 		}},
 		UserID:     user.ID,
 		DivisionID: body.DivisionID,

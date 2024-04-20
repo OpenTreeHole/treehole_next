@@ -374,6 +374,8 @@ func ModifyFloor(c *fiber.Ctx) error {
 			}
 
 			floor.IsSensitive = !sensitiveResp.Pass
+			floor.IsActualSensitive = nil
+			floor.SensitiveDetail = sensitiveResp.Detail
 			// update floor.mention after update floor.content
 			err = tx.Where("floor_id = ?", floorID).Delete(&FloorMention{}).Error
 			if err != nil {
@@ -394,7 +396,7 @@ func ModifyFloor(c *fiber.Ctx) error {
 			}
 
 			err = tx.Model(&floor).
-				Select([]string{"Content", "Modified", "IsSensitive", "IsActualSensitive"}).
+				Select([]string{"Content", "Modified", "IsSensitive", "IsActualSensitive", "SensitiveDetail"}).
 				Updates(&floor).Error
 			if err != nil {
 				return err
@@ -767,6 +769,7 @@ func RestoreFloor(c *fiber.Ctx) error {
 	floor.Content = floorHistory.Content
 	floor.IsSensitive = floorHistory.IsSensitive
 	floor.IsActualSensitive = floorHistory.IsActualSensitive
+	floor.SensitiveDetail = floorHistory.SensitiveDetail
 	DB.Save(&floor)
 
 	go FloorIndex(FloorModel{
@@ -942,6 +945,17 @@ func ModifyFloorSensitive(c *fiber.Ctx) (err error) {
 		floor.IsActualSensitive = &body.IsActualSensitive
 		MyLog("Floor", "Modify", floorID, user.ID, RoleAdmin, "actual_sensitive to: ", fmt.Sprintf("%v", body.IsActualSensitive))
 		CreateAdminLog(tx, AdminLogTypeChangeSensitive, user.ID, body)
+
+		//reason := "该内容因违反社区规范被删除"
+		//err = floor.Backup(tx, user.ID, reason)
+		//if err != nil {
+		//	return err
+		//}
+		//
+		//floor.Deleted = true
+		//floor.Content = generateDeleteReason(reason, user.ID == floor.UserID)
+		//MyLog("Floor", "Delete", floorID, user.ID, RoleOperator, "reason: ", reason)
+		//return tx.Save(&floor).Error
 
 		// save actual_sensitive only
 		return tx.Model(&floor).Select("IsActualSensitive").UpdateColumns(&floor).Error
