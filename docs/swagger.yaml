@@ -224,6 +224,8 @@ definitions:
         type: boolean
       modified:
         type: integer
+      sensitive_detail:
+        type: string
       time_created:
         type: string
       time_updated:
@@ -339,7 +341,7 @@ definitions:
         type: integer
       deleted:
         type: boolean
-      id:
+      favorite_group_id:
         type: integer
       name:
         default: 默认
@@ -357,7 +359,8 @@ definitions:
         description: a random username
         type: string
       content:
-        description: content of the floor, no more than 10000
+        description: content of the floor, no more than 15000, should be sensitive
+          checked, no more than 10000 in frontend
         type: string
       deleted:
         description: whether the floor is deleted
@@ -414,6 +417,9 @@ definitions:
       reply_to:
         description: floor_id that it replies to, for dialog mode, in the same hole
         type: integer
+      sensitive_detail:
+        description: auto sensitive check detail
+        type: string
       special_tag:
         description: additional info, like "树洞管理团队"
         type: string
@@ -431,7 +437,15 @@ definitions:
       id:
         description: / base info
         type: integer
+      is_actual_sensitive:
+        description: manual sensitive check
+        type: boolean
+      is_sensitive:
+        description: auto sensitive check
+        type: boolean
       reason:
+        type: string
+      sensitive_detail:
         type: string
       time_created:
         type: string
@@ -624,8 +638,6 @@ definitions:
       id:
         description: / saved fields
         type: integer
-      is_zzmg:
-        type: boolean
       name:
         description: / base info
         type: string
@@ -769,7 +781,7 @@ definitions:
     properties:
       name:
         description: Admin only
-        maxLength: 32
+        maxLength: 10
         type: string
     type: object
   tag.DeleteModel:
@@ -784,7 +796,7 @@ definitions:
     properties:
       name:
         description: Admin only
-        maxLength: 32
+        maxLength: 10
         type: string
       temperature:
         description: Admin only
@@ -1990,7 +2002,7 @@ paths:
           description: Not Found
           schema:
             $ref: '#/definitions/models.MessageModel'
-      summary: Modify A Tag
+      summary: Modify A Tag, admin only
       tags:
       - Tag
   /tags/{tag_name}/holes:

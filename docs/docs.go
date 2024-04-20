@@ -1753,7 +1753,7 @@ const docTemplate = `{
                 "tags": [
                     "Tag"
                 ],
-                "summary": "Modify A Tag",
+                "summary": "Modify A Tag, admin only",
                 "parameters": [
                     {
                         "type": "integer",
@@ -2865,6 +2865,9 @@ const docTemplate = `{
                 "modified": {
                     "type": "integer"
                 },
+                "sensitive_detail": {
+                    "type": "string"
+                },
                 "time_created": {
                     "type": "string"
                 },
@@ -3029,7 +3032,7 @@ const docTemplate = `{
                 "deleted": {
                     "type": "boolean"
                 },
-                "id": {
+                "favorite_group_id": {
                     "type": "integer"
                 },
                 "name": {
@@ -3055,7 +3058,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "content": {
-                    "description": "content of the floor, no more than 10000",
+                    "description": "content of the floor, no more than 15000, should be sensitive checked, no more than 10000 in frontend",
                     "type": "string"
                 },
                 "deleted": {
@@ -3132,6 +3135,10 @@ const docTemplate = `{
                     "description": "floor_id that it replies to, for dialog mode, in the same hole",
                     "type": "integer"
                 },
+                "sensitive_detail": {
+                    "description": "auto sensitive check detail",
+                    "type": "string"
+                },
                 "special_tag": {
                     "description": "additional info, like \"树洞管理团队\"",
                     "type": "string"
@@ -3157,7 +3164,18 @@ const docTemplate = `{
                     "description": "/ base info",
                     "type": "integer"
                 },
+                "is_actual_sensitive": {
+                    "description": "manual sensitive check",
+                    "type": "boolean"
+                },
+                "is_sensitive": {
+                    "description": "auto sensitive check",
+                    "type": "boolean"
+                },
                 "reason": {
+                    "type": "string"
+                },
+                "sensitive_detail": {
                     "type": "string"
                 },
                 "time_created": {
@@ -3435,9 +3453,6 @@ const docTemplate = `{
                     "description": "/ saved fields",
                     "type": "integer"
                 },
-                "is_zzmg": {
-                    "type": "boolean"
-                },
                 "name": {
                     "description": "/ base info",
                     "type": "string"
@@ -3643,7 +3658,7 @@ const docTemplate = `{
                 "name": {
                     "description": "Admin only",
                     "type": "string",
-                    "maxLength": 32
+                    "maxLength": 10
                 }
             }
         },
@@ -3662,7 +3677,7 @@ const docTemplate = `{
                 "name": {
                     "description": "Admin only",
                     "type": "string",
-                    "maxLength": 32
+                    "maxLength": 10
                 },
                 "temperature": {
                     "description": "Admin only",
