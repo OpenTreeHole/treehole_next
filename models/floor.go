@@ -61,6 +61,7 @@ type Floor struct {
 	// manual sensitive check
 	IsActualSensitive *bool `json:"is_actual_sensitive" gorm:"index:idx_floor_actual_sensitive_updated_at,priority:2"`
 
+	// auto sensitive check detail
 	SensitiveDetail string `json:"sensitive_detail,omitempty"`
 
 	/// association info, should add foreign key
@@ -403,6 +404,7 @@ func (floor *Floor) Backup(tx *gorm.DB, userID int, reason string) error {
 		UserID:            userID,
 		IsSensitive:       floor.IsSensitive,
 		IsActualSensitive: floor.IsActualSensitive,
+		SensitiveDetail:   floor.SensitiveDetail,
 	}
 	return tx.Create(&history).Error
 }

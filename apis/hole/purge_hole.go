@@ -2,11 +2,10 @@ package hole
 
 import (
 	"context"
-	"time"
-
 	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+	"time"
 
 	"treehole_next/config"
 	. "treehole_next/models"
@@ -54,10 +53,13 @@ func purgeHole() (err error) {
 		var floorHistorySlice = make([]FloorHistory, 0, len(floors))
 		for i := range floors {
 			floorHistorySlice = append(floorHistorySlice, FloorHistory{
-				Content: floors[i].Content,
-				Reason:  REASON,
-				FloorID: floors[i].ID,
-				UserID:  1,
+				Content:           floors[i].Content,
+				Reason:            REASON,
+				FloorID:           floors[i].ID,
+				UserID:            1,
+				SensitiveDetail:   floors[i].SensitiveDetail,
+				IsActualSensitive: floors[i].IsActualSensitive,
+				IsSensitive:       floors[i].IsSensitive,
 			})
 		}
 		err = tx.Create(&floorHistorySlice).Error

@@ -374,6 +374,7 @@ func ModifyFloor(c *fiber.Ctx) error {
 			}
 
 			floor.IsSensitive = !sensitiveResp.Pass
+			floor.IsActualSensitive = nil
 			floor.SensitiveDetail = sensitiveResp.Detail
 			// update floor.mention after update floor.content
 			err = tx.Where("floor_id = ?", floorID).Delete(&FloorMention{}).Error
@@ -395,7 +396,7 @@ func ModifyFloor(c *fiber.Ctx) error {
 			}
 
 			err = tx.Model(&floor).
-				Select([]string{"Content", "Modified", "IsSensitive", "IsActualSensitive"}).
+				Select([]string{"Content", "Modified", "IsSensitive", "IsActualSensitive", "SensitiveDetail"}).
 				Updates(&floor).Error
 			if err != nil {
 				return err
@@ -768,6 +769,7 @@ func RestoreFloor(c *fiber.Ctx) error {
 	floor.Content = floorHistory.Content
 	floor.IsSensitive = floorHistory.IsSensitive
 	floor.IsActualSensitive = floorHistory.IsActualSensitive
+	floor.SensitiveDetail = floorHistory.SensitiveDetail
 	DB.Save(&floor)
 
 	go FloorIndex(FloorModel{

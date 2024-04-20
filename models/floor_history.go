@@ -15,6 +15,8 @@ type FloorHistory struct {
 
 	// manual sensitive check
 	IsActualSensitive *bool `json:"is_actual_sensitive"`
+
+	SensitiveDetail string `json:"sensitive_detail,omitempty"`
 	// The one who modified the floor
 	UserID int `json:"user_id"`
 }
