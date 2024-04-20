@@ -41,6 +41,7 @@ var Config struct {
 	YiDunSecretId        string   `env:"YI_DUN_SECRET_ID" envDefault:""`
 	YiDunSecretKey       string   `env:"YI_DUN_SECRET_KEY" envDefault:""`
 	ValidImageUrl        []string `env:"VALID_IMAGE_URL"`
+	UrlHostnameWhitelist []string `env:"URL_HOSTNAME_WHITELIST"`
 }
 
 var DynamicConfig struct {
