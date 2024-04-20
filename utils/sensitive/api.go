@@ -56,7 +56,7 @@ func CheckSensitive(params ParamsForCheck) (resp *ResponseForCheck, err error) {
 		}
 	}
 
-	if hasTextUrl(clearContent) {
+	if containsUnsafeURL(clearContent) {
 		return &ResponseForCheck{
 			Pass:   false,
 			Labels: nil,

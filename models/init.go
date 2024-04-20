@@ -152,7 +152,13 @@ func InitDB() {
 		&AdminLog{},
 		&UserFavorite{},
 		&FavoriteGroup{},
+		&UrlHostnameWhitelist{},
 	)
+	if err != nil {
+		log.Fatal().Err(err).Send()
+	}
+
+	err = DB.Model(&UrlHostnameWhitelist{}).Pluck("hostname", &config.Config.UrlHostnameWhitelist).Error
 	if err != nil {
 		log.Fatal().Err(err).Send()
 	}
