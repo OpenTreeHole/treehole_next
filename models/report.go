@@ -3,12 +3,10 @@ package models
 import (
 	"errors"
 	"fmt"
-	"sync/atomic"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/opentreehole/go-common"
-	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
 )
 
@@ -132,7 +130,7 @@ func (report *Report) AfterUpdate(tx *gorm.DB) (err error) {
 	return nil
 }
 
-var adminCounter = new(int32)
+//var adminCounter = new(int32)
 
 func (report *Report) SendModify(_ *gorm.DB) error {
 	// get recipients

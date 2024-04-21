@@ -199,9 +199,9 @@ func DeleteDivision(c *fiber.Ctx) error {
 	}
 
 	// log
-	if err != nil {
-		return err
-	}
+	//if err != nil {
+	//	return err
+	//}
 	MyLog("Division", "Delete", id, user.ID, RoleAdmin, "To: ", strconv.Itoa(body.To))
 
 	err = refreshCache(c)
