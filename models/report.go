@@ -177,11 +177,10 @@ func (report *Report) SendModify(_ *gorm.DB) error {
 		Data:       report,
 		Recipients: userIDs,
 		Description: fmt.Sprintf(
-			"结果：%s，内容：%s",
+			"处理结果：%s\n感谢您为维护社区秩序所做的贡献。",
 			report.Result,
-			report.Floor.Content,
 		),
-		Title: "您的举报被处理了",
+		Title: "您的举报已得到处理",
 		Type:  MessageTypeReportDealt,
 		URL:   fmt.Sprintf("/api/reports/%d", report.ID),
 	}

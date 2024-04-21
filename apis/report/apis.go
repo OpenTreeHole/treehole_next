@@ -252,11 +252,11 @@ func BanReporter(c *fiber.Ctx) error {
 		Data:       report,
 		Recipients: []int{report.UserID},
 		Description: fmt.Sprintf(
-			"时间：%d天，原因：%s",
+			"您因违反社区公约被禁止举报。时间：%d天，原因：%s\n如有异议，请联系admin@fduhole.com。",
 			days,
 			body.Reason,
 		),
-		Title: "您的举报权限被禁止了",
+		Title: "处罚通知",
 		Type:  MessageTypePermission,
 		URL:   fmt.Sprintf("/api/reports/%d", report.ID),
 	}

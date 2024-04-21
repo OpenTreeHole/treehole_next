@@ -103,12 +103,11 @@ func BanUser(c *fiber.Ctx) error {
 		Data:       floor,
 		Recipients: []int{floor.UserID},
 		Description: fmt.Sprintf(
-			"分区：%d，时间：%d天，原因：%s",
-			hole.DivisionID,
+			"您因为违反社区公约被禁言。时间：%d天，原因：%s\n如有异议，请联系admin@fduhole.com。",
 			days,
 			body.Reason,
 		),
-		Title: "您的权限被禁止了",
+		Title: "处罚通知",
 		Type:  MessageTypePermission,
 		URL:   fmt.Sprintf("/api/floors/%d", floor.ID),
 	}

@@ -504,7 +504,7 @@ func (floor *Floor) SendReply(tx *gorm.DB) Notification {
 		Data:        floor,
 		Recipients:  userIDs,
 		Description: floor.Content,
-		Title:       "您的帖子被回复了",
+		Title:       "您的内容有新回复",
 		Type:        MessageTypeReply,
 		URL:         fmt.Sprintf("/api/floors/%d", floor.ID),
 	}
@@ -529,7 +529,7 @@ func (floor *Floor) SendMention(_ *gorm.DB) Notification {
 		Data:        floor,
 		Recipients:  userIDs,
 		Description: floor.Content,
-		Title:       "您的帖子被引用了",
+		Title:       "您的内容被引用了",
 		Type:        MessageTypeMention,
 		URL:         fmt.Sprintf("/api/floors/%d", floor.ID),
 	}
@@ -546,7 +546,7 @@ func (floor *Floor) SendModify(_ *gorm.DB) error {
 		Data:        floor,
 		Recipients:  userIDs,
 		Description: floor.Content,
-		Title:       "您的帖子被修改了",
+		Title:       "您的内容被管理员修改了",
 		Type:        MessageTypeModify,
 		URL:         fmt.Sprintf("/api/floors/%d", floor.ID),
 	}
