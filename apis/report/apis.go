@@ -95,9 +95,7 @@ func AddReport(c *fiber.Ctx) error {
 
 	user, err := GetUser(c)
 	if err != nil {
-		if err != nil {
-			return err
-		}
+		return err
 	}
 
 	// permission

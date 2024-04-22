@@ -155,6 +155,9 @@ func ListPunishmentsByUserID(c *fiber.Ctx) error {
 	}
 
 	currentUser, err := GetUser(c)
+	if err != nil {
+		return err
+	}
 	if !currentUser.IsAdmin && currentUser.ID != userID {
 		return common.Forbidden()
 	}
