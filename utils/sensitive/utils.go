@@ -77,11 +77,11 @@ func checkType(params ParamsForCheck) bool {
 	return slices.Contains(checkTypes, params.TypeName)
 }
 
-func containsUnsafeURL(content string) bool {
+func containsUnsafeURL(content string) (bool, string) {
 	xurlsRelaxed := xurls.Relaxed()
 	matchedURLs := xurlsRelaxed.FindAllString(content, -1)
 	if len(matchedURLs) == 0 {
-		return false
+		return false, ""
 	}
 
 	for _, matchedURL := range matchedURLs {
@@ -90,16 +90,16 @@ func containsUnsafeURL(content string) bool {
 		}
 		parsedURL, err := url.Parse(matchedURL)
 		if err != nil || parsedURL == nil {
-			return true
+			return true, matchedURL
 		}
 		checked := slices.ContainsFunc(config.Config.UrlHostnameWhitelist, func(s string) bool {
 			return strings.HasSuffix(parsedURL.Host, s)
 		})
 		if !checked {
-			return true
+			return true, parsedURL.Host
 		}
 	}
-	return false
+	return false, ""
 }
 
 func checkValidUrl(input string) error {

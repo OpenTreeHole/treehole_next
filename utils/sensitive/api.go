@@ -56,11 +56,12 @@ func CheckSensitive(params ParamsForCheck) (resp *ResponseForCheck, err error) {
 		}
 	}
 
-	if containsUnsafeURL(clearContent) {
+	contained, reason := containsUnsafeURL(clearContent)
+	if contained {
 		return &ResponseForCheck{
 			Pass:   false,
 			Labels: nil,
-			Detail: "不允许使用外部链接",
+			Detail: "不允许使用外部链接" + reason,
 		}, nil
 	}
 	params.Content = strings.TrimSpace(removeIDReprInContent(clearContent))
@@ -127,7 +128,7 @@ func CheckSensitiveText(params ParamsForCheck) (resp *ResponseForCheck, err erro
 			}
 		}
 		if str == "" {
-			str = "文本"
+			str = "文本敏感，未知原因"
 		}
 		resp.Detail = str
 		return
@@ -211,7 +212,7 @@ func checkSensitiveImage(params ParamsForCheck) (resp *ResponseForCheck, err err
 			}
 		}
 		if str == "" {
-			str = "图片"
+			str = "图片敏感，未知原因"
 		}
 		resp.Detail = str
 		return
