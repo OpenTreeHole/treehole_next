@@ -985,19 +985,20 @@ func ModifyFloorSensitive(c *fiber.Ctx) (err error) {
 		MyLog("Floor", "Modify", floorID, user.ID, RoleAdmin, "actual_sensitive to: ", fmt.Sprintf("%v", body.IsActualSensitive))
 		CreateAdminLog(tx, AdminLogTypeChangeSensitive, user.ID, body)
 
-		//reason := "该内容因违反社区规范被删除"
-		//err = floor.Backup(tx, user.ID, reason)
-		//if err != nil {
-		//	return err
-		//}
-		//
-		//floor.Deleted = true
-		//floor.Content = generateDeleteReason(reason, user.ID == floor.UserID)
-		//MyLog("Floor", "Delete", floorID, user.ID, RoleOperator, "reason: ", reason)
-		//return tx.Save(&floor).Error
+		if !body.IsActualSensitive {
+			// save actual_sensitive only
+			return tx.Model(&floor).Select("IsActualSensitive").UpdateColumns(&floor).Error
+		}
 
-		// save actual_sensitive only
-		return tx.Model(&floor).Select("IsActualSensitive").UpdateColumns(&floor).Error
+		reason := "违反社区规范"
+		err = floor.Backup(tx, user.ID, reason)
+		if err != nil {
+			return err
+		}
+
+		floor.Deleted = true
+		floor.Content = generateDeleteReason(reason, user.ID == floor.UserID)
+		return tx.Save(&floor).Error
 	})
 	if err != nil {
 		return err
@@ -1009,7 +1010,7 @@ func ModifyFloorSensitive(c *fiber.Ctx) (err error) {
 		return err
 	}
 
-	if *floor.IsActualSensitive == false {
+	if floor.IsActualSensitive != nil && *floor.IsActualSensitive == false {
 		go FloorIndex(FloorModel{
 			ID:        floor.ID,
 			UpdatedAt: floor.UpdatedAt,
@@ -1017,6 +1018,13 @@ func ModifyFloorSensitive(c *fiber.Ctx) (err error) {
 		})
 	} else {
 		go FloorDelete(floor.ID)
+
+		MyLog("Floor", "Delete", floorID, user.ID, RoleAdmin, "reason: ", "sensitive")
+
+		err = floor.SendModify(DB)
+		if err != nil {
+			log.Err(err).Str("model", "Notification").Msg("SendModify failed")
+		}
 	}
 
 	return Serialize(c, &floor)

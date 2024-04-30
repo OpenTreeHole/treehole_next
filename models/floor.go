@@ -228,6 +228,7 @@ func (floor *Floor) SetDefaults(c *fiber.Ctx) (err error) {
 		}
 
 		if floor.IsActualSensitive != nil && *floor.IsActualSensitive {
+			// deprecated, deleted already
 			floor.Content = "该内容因违反社区规范被删除"
 			floor.Deleted = true
 		} else {
