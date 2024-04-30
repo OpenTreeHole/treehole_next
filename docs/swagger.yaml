@@ -1331,7 +1331,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: 'false" "{''1'': ''2024-05-01T14:42:31.722026326+08:00''}'
           schema:
             $ref: '#/definitions/floor.BanDivision'
         "403":
@@ -1342,7 +1342,7 @@ paths:
           description: Not Found
           schema:
             $ref: '#/definitions/common.HttpError'
-      summary: Get A User's Silence Status, admin only
+      summary: Get A User's Silence Status According To FloorID, admin only
       tags:
       - Floor
   /floors/search:

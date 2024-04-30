@@ -837,12 +837,12 @@ WHERE f.id IN (
 }
 
 // GetUserSilence
-// @Summary Get A User's Silence Status, admin only
+// @Summary Get A User's Silence Status According To FloorID, admin only
 // @Tags Floor
 // @Produce application/json
 // @Router /floors/{id}/user_silence [get]
 // @Param id path int true "id"
-// @Success 200 {object} BanDivision
+// @Success 200 {object} BanDivision "{'1': '2024-05-01T14:42:31.722026326+08:00'}"
 // @Failure 404 {object} common.HttpError
 // @Failure 403 {object} common.HttpError
 func GetUserSilence(c *fiber.Ctx) error {

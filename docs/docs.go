@@ -894,7 +894,7 @@ const docTemplate = `{
                 "tags": [
                     "Floor"
                 ],
-                "summary": "Get A User's Silence Status, admin only",
+                "summary": "Get A User's Silence Status According To FloorID, admin only",
                 "parameters": [
                     {
                         "type": "integer",
@@ -906,7 +906,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "false\" \"{'1': '2024-05-01T14:42:31.722026326+08:00'}",
                         "schema": {
                             "$ref": "#/definitions/floor.BanDivision"
                         }
