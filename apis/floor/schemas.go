@@ -133,3 +133,5 @@ func (s *SensitiveFloorResponse) FromModel(floor *models.Floor) *SensitiveFloorR
 type ModifySensitiveFloorRequest struct {
 	IsActualSensitive bool `json:"is_actual_sensitive"`
 }
+
+type BanDivision map[int]*time.Time

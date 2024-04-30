@@ -842,9 +842,9 @@ WHERE f.id IN (
 // @Produce application/json
 // @Router /floors/{id}/user_silence [get]
 // @Param id path int true "id"
-// @Success 200 {object} User.BanDivision
-// @Failure 404 {object} common.NotFound
-// @Failure 403 {object} common.Forbidden
+// @Success 200 {object} BanDivision
+// @Failure 404 {object} common.HttpError
+// @Failure 403 {object} common.HttpError
 func GetUserSilence(c *fiber.Ctx) error {
 	floorID, err := c.ParamsInt("id")
 	if err != nil {

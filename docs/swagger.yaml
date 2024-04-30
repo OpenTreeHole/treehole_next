@@ -121,6 +121,10 @@ definitions:
       message:
         type: string
     type: object
+  floor.BanDivision:
+    additionalProperties:
+      type: string
+    type: object
   floor.CreateModel:
     properties:
       content:
@@ -1313,6 +1317,32 @@ paths:
           schema:
             $ref: '#/definitions/models.MessageModel'
       summary: Restore A Floor, admin only
+      tags:
+      - Floor
+  /floors/{id}/user_silence:
+    get:
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/floor.BanDivision'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/common.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.HttpError'
+      summary: Get A User's Silence Status, admin only
       tags:
       - Floor
   /floors/search:
