@@ -997,7 +997,7 @@ func ModifyFloorSensitive(c *fiber.Ctx) (err error) {
 		}
 
 		floor.Deleted = true
-		floor.Content = generateDeleteReason(reason, user.ID == floor.UserID)
+		floor.Content = generateDeleteReason(reason, false)
 		return tx.Save(&floor).Error
 	})
 	if err != nil {
