@@ -199,7 +199,7 @@ func (user *User) LoadUserByID(userID int) error {
 			}
 		}
 
-		// check permission
+		// check latest permission
 		modified := false
 		for divisionID := range user.BanDivision {
 			endTime := user.BanDivision[divisionID]

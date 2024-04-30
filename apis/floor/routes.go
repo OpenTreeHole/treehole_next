@@ -26,6 +26,7 @@ func RegisterRoutes(app fiber.Router) {
 
 	app.Post("/config/search", SearchConfig)
 	app.Get("/floors/:id<int>/punishment", GetPunishmentHistory)
+	app.Get("/floors/:id<int>/user_silence", GetUserSilence)
 
 	app.Get("/floors/_sensitive", ListSensitiveFloors)
 	app.Put("/floors/:id<int>/_sensitive", ModifyFloorSensitive)

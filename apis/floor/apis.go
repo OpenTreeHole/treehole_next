@@ -836,6 +836,45 @@ WHERE f.id IN (
 	return c.JSON(punishments)
 }
 
+// GetUserSilence
+// @Summary Get A User's Silence Status, admin only
+// @Tags Floor
+// @Produce application/json
+// @Router /floors/{id}/user_silence [get]
+// @Param id path int true "id"
+// @Success 200 {object} User.BanDivision
+// @Failure 404 {object} common.NotFound
+// @Failure 403 {object} common.Forbidden
+func GetUserSilence(c *fiber.Ctx) error {
+	floorID, err := c.ParamsInt("id")
+	if err != nil {
+		return err
+	}
+
+	// get user
+	admin, err := GetUser(c)
+	if err != nil {
+		return err
+	}
+
+	// permission, admin only
+	if !admin.IsAdmin {
+		return common.Forbidden()
+	}
+	var floor Floor
+	result := DB.First(&floor, floorID)
+	if result.Error != nil {
+		return result.Error
+	}
+	userID := floor.UserID
+	var user User
+	err = user.LoadUserByID(userID)
+	if err != nil {
+		return err
+	}
+	return c.JSON(user.BanDivision)
+}
+
 // ListSensitiveFloors
 //
 // @Summary List sensitive floors, admin only
