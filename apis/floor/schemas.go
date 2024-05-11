@@ -99,10 +99,11 @@ type SearchConfigModel struct {
 }
 
 type SensitiveFloorRequest struct {
-	Size   int               `json:"size" query:"size" default:"10" validate:"max=10"`
-	Offset common.CustomTime `json:"offset" query:"offset" swaggertype:"string"`
-	Open   bool              `json:"open" query:"open"`
-	All    bool              `json:"all" query:"all"`
+	Size    int               `json:"size" query:"size" default:"10" validate:"max=10"`
+	Offset  common.CustomTime `json:"offset" query:"offset" swaggertype:"string"`
+	OrderBy string            `json:"order_by" query:"order_by" default:"time_created" validate:"oneof=time_created time_updated"`
+	Open    bool              `json:"open" query:"open"`
+	All     bool              `json:"all" query:"all"`
 }
 
 type SensitiveFloorResponse struct {

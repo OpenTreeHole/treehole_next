@@ -174,9 +174,7 @@ func CreateFloor(c *fiber.Ctx) error {
 	// get user from auth
 	user, err := GetUser(c)
 	if err != nil {
-		if err != nil {
-			return err
-		}
+		return err
 	}
 
 	// permission
@@ -921,13 +919,16 @@ func ListSensitiveFloors(c *fiber.Ctx) (err error) {
 		}
 	}
 
-	result := querySet.
-		Where("updated_at < ?", query.Offset.Time).
-		Order("updated_at desc").
+	if query.OrderBy == "time_updated" {
+		querySet = querySet.Where("updated_at < ?", query.Offset.Time).Order("updated_at desc")
+	} else {
+		querySet = querySet.Where("created_at < ?", query.Offset.Time).Order("created_at desc")
+	}
+	err = querySet.
 		Limit(query.Size).
-		Find(&floors)
-	if result.Error != nil {
-		return result.Error
+		Find(&floors).Error
+	if err != nil {
+		return err
 	}
 
 	var responses = make([]SensitiveFloorResponse, len(floors))

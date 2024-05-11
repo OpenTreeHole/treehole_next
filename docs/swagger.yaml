@@ -1085,6 +1085,13 @@ paths:
       - in: query
         name: open
         type: boolean
+      - default: time_created
+        enum:
+        - time_created
+        - time_updated
+        in: query
+        name: order_by
+        type: string
       - default: 10
         in: query
         maximum: 10
@@ -1331,7 +1338,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: 'false" "{''1'': ''2024-05-01T14:42:31.722026326+08:00''}'
+          description: '{''1'': ''2024-05-01T14:42:31.722026326+08:00''}'
           schema:
             $ref: '#/definitions/floor.BanDivision'
         "403":

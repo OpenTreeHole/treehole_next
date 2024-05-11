@@ -439,6 +439,16 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "enum": [
+                            "time_created",
+                            "time_updated"
+                        ],
+                        "type": "string",
+                        "default": "time_created",
+                        "name": "order_by",
+                        "in": "query"
+                    },
+                    {
                         "maximum": 10,
                         "type": "integer",
                         "default": 10,
@@ -906,7 +916,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "false\" \"{'1': '2024-05-01T14:42:31.722026326+08:00'}",
+                        "description": "{'1': '2024-05-01T14:42:31.722026326+08:00'}",
                         "schema": {
                             "$ref": "#/definitions/floor.BanDivision"
                         }
