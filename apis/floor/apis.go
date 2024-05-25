@@ -113,7 +113,7 @@ func ListFloorsOld(c *fiber.Ctx) error {
 // @Param id path int true "id"
 // @Success 200 {object} Floor
 // @Failure 404 {object} MessageModel
-func GetFloor(c *fiber.Ctx) error {
+func GetFloor(c *fiber.Ctx) (err error) {
 	// validate floor id
 	floorID, err := c.ParamsInt("id")
 	if err != nil {
@@ -126,10 +126,16 @@ func GetFloor(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	result := querySet.
-		First(&floor, floorID)
-	if result.Error != nil {
-		return result.Error
+	err = querySet.First(&floor, floorID).Error
+	if err != nil {
+		return err
+	}
+
+	// get hole
+	var hole Hole
+	err = DB.Where("hidden = false").First(&hole, floor.HoleID).Error
+	if err != nil {
+		return err
 	}
 
 	return Serialize(c, &floor)
