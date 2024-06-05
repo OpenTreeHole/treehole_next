@@ -54,7 +54,7 @@ func (division *Division) Preprocess(c *fiber.Ctx) error {
 		division.Holes = Holes{}
 		return nil
 	}
-	var holes Holes
+	holes := make(Holes, 0, 10)
 	DB.Find(&holes, pinned)
 	holes = utils.OrderInGivenOrder(holes, pinned)
 	err := holes.Preprocess(c)
