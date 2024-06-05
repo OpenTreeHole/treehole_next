@@ -55,6 +55,9 @@ func (division *Division) Preprocess(c *fiber.Ctx) error {
 		return nil
 	}
 	DB.Find(&division.Holes, pinned)
+	if len(division.Holes) == 0 {
+		return nil
+	}
 	division.Holes = utils.OrderInGivenOrder(division.Holes, pinned)
 	return division.Holes.Preprocess(c)
 }
