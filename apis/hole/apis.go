@@ -223,6 +223,9 @@ func GetHole(c *fiber.Ctx) error {
 	id, _ := c.ParamsInt("id")
 
 	querySet, err := MakeHoleQuerySet(c)
+	if err != nil {
+		return err
+	}
 
 	// get hole
 	var hole Hole
@@ -544,7 +547,7 @@ func ModifyHole(c *fiber.Ctx) error {
 		}
 	}
 
-	return c.JSON(&hole)
+	return Serialize(c, &hole)
 }
 
 // HideHole
@@ -657,6 +660,9 @@ func DeleteHole(c *fiber.Ctx) error {
 
 	var hole Hole
 	err = DB.Take(&hole, holeID).Error
+	if err != nil {
+		return err
+	}
 
 	if hole.UserID != user.UserID && !user.IsAdmin {
 		return common.Forbidden()
