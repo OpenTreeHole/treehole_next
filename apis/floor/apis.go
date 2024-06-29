@@ -1028,10 +1028,10 @@ func ModifyFloorSensitive(c *fiber.Ctx) (err error) {
 
 		MyLog("Floor", "Delete", floorID, user.ID, RoleAdmin, "reason: ", "sensitive")
 
-		err = floor.SendModify(DB)
-		if err != nil {
-			log.Err(err).Str("model", "Notification").Msg("SendModify failed")
-		}
+		// err = floor.SendModify(DB)
+		// if err != nil {
+		// 	log.Err(err).Str("model", "Notification").Msg("SendModify failed")
+		// }
 	}
 
 	return Serialize(c, &floor)
