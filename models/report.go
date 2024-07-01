@@ -81,30 +81,22 @@ func (report *Report) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		report.UserID = userID
 		err = tx.Create(&report).Error
+
+		report.ReportID = report.ID
+
+		err = tx.Model(report).Association("Floor").Find(&report.Floor)
+		if err != nil {
+			return err
+		}
+
+		err = report.Preprocess(c)
+		if err != nil {
+			return err
+		}
 	} else {
 		existingReport.Reason = existingReport.Reason + "\n" + report.Reason
 		err = tx.Model(&existingReport).Update("reason", existingReport.Reason).Error // update reason and load floor in AfterUpdate hook
 		report.Floor = existingReport.Floor
-	}
-
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (report *Report) AfterCreate(tx *gorm.DB) (err error) {
-	report.ReportID = report.ID
-
-	err = tx.Model(report).Association("Floor").Find(&report.Floor)
-	if err != nil {
-		return err
-	}
-
-	err = report.Preprocess(nil)
-	if err != nil {
-		return err
 	}
 
 	return nil
@@ -122,10 +114,10 @@ func (report *Report) AfterUpdate(tx *gorm.DB) (err error) {
 		return err
 	}
 
-	err = report.Preprocess(nil)
-	if err != nil {
-		return err
-	}
+	//err = report.Preprocess(nil)
+	//if err != nil {
+	//	return err
+	//}
 
 	return nil
 }
