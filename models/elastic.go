@@ -127,7 +127,7 @@ func Search(c *fiber.Ctx, keyword string, size, offset int, accurate bool) (Floo
 
 	floorIDs := make([]int, floorSize)
 	for i, hit := range res.Hits.Hits {
-		floorIDs[i], err = strconv.Atoi(hit.Id_)
+		floorIDs[i], err = strconv.Atoi(*hit.Id_)
 		if err != nil {
 			return nil, common.InternalServerError("error parse floor_id from elasticsearch ID")
 		}
