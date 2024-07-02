@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/yidun/yidun-golang-sdk/yidun/service/antispam/image/v5"
 	"github.com/yidun/yidun-golang-sdk/yidun/service/antispam/image/v5/check"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -42,8 +43,15 @@ func CheckSensitive(params ParamsForCheck) (resp *ResponseForCheck, err error) {
 	}
 	if len(images) != 0 {
 		for _, img := range images {
+			imgUrl, err := url.Parse(img)
+			if err != nil {
+				return nil, err
+			}
+			if config.Config.ExternalImageHost != "" {
+				imgUrl.Host = config.Config.ExternalImageHost
+			}
 			ret, err := checkSensitiveImage(ParamsForCheck{
-				Content:  img,
+				Content:  imgUrl.String(),
 				Id:       time.Now().UnixNano(),
 				TypeName: TypeImage,
 			})
@@ -141,7 +149,7 @@ func CheckSensitiveText(params ParamsForCheck) (resp *ResponseForCheck, err erro
 
 func checkSensitiveImage(params ParamsForCheck) (resp *ResponseForCheck, err error) {
 	// 设置易盾内容安全分配的businessId
-	url := params.Content
+	imgUrl := params.Content
 
 	request := check.NewImageV5CheckRequest(config.Config.YiDunBusinessIdImage)
 
@@ -149,7 +157,7 @@ func checkSensitiveImage(params ParamsForCheck) (resp *ResponseForCheck, err err
 	imageCheckClient := image.NewImageClientWithAccessKey(config.Config.YiDunSecretId, config.Config.YiDunSecretKey)
 
 	imageInst := check.NewImageBeanRequest()
-	imageInst.SetData(url)
+	imageInst.SetData(imgUrl)
 	imageInst.SetName(strconv.FormatInt(params.Id, 10) + "_" + params.TypeName)
 	// 设置图片数据的类型，1：图片URL，2:图片BASE64
 	imageInst.SetType(1)
