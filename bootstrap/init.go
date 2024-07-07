@@ -51,6 +51,6 @@ func startTasks() context.CancelFunc {
 	go hole.UpdateHoleViews(ctx)
 	go hole.PurgeHole(ctx)
 	go message.PurgeMessage()
-	go models.UpdateAdminList(ctx)
+	// go models.UpdateAdminList(ctx)
 	return cancel
 }

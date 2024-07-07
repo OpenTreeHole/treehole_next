@@ -43,6 +43,7 @@ var Config struct {
 	ValidImageUrl        []string `env:"VALID_IMAGE_URL"`
 	UrlHostnameWhitelist []string `env:"URL_HOSTNAME_WHITELIST"`
 	ExternalImageHost    string   `env:"EXTERNAL_IMAGE_HOSTNAME" envDefault:""`
+	NotifiableAdminIds   []int    `env:"NOTIFIABLE_ADMIN_IDS"`
 }
 
 var DynamicConfig struct {

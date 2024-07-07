@@ -206,38 +206,39 @@ func InitAdminList() {
 		return
 	}
 
-	// http request
-	res, err := http.Get(config.Config.AuthUrl + "/users/admin")
+	// // http request
+	// res, err := http.Get(config.Config.AuthUrl + "/users/admin")
 
-	// handle err
-	if err != nil {
-		log.Err(err).Str("model", "get admin").Msg("error sending auth server")
-		return
-	}
+	// // handle err
+	// if err != nil {
+	// 	log.Err(err).Str("model", "get admin").Msg("error sending auth server")
+	// 	return
+	// }
 
-	defer func() {
-		_ = res.Body.Close()
-	}()
+	// defer func() {
+	// 	_ = res.Body.Close()
+	// }()
 
-	if res.StatusCode != 200 {
-		log.Error().Str("model", "get admin").Msg("auth server response failed" + res.Status)
-		return
-	}
+	// if res.StatusCode != 200 {
+	// 	log.Error().Str("model", "get admin").Msg("auth server response failed" + res.Status)
+	// 	return
+	// }
 
-	data, err := io.ReadAll(res.Body)
-	if err != nil {
-		log.Err(err).Str("model", "get admin").Msg("error reading auth server response")
-		return
-	}
+	// data, err := io.ReadAll(res.Body)
+	// if err != nil {
+	// 	log.Err(err).Str("model", "get admin").Msg("error reading auth server response")
+	// 	return
+	// }
 
 	adminList.Lock()
 	defer adminList.Unlock()
 
-	err = json.Unmarshal(data, &adminList.data)
-	if err != nil {
-		log.Err(err).Str("model", "get admin").Msg("error unmarshal auth server response")
-		return
-	}
+	// err = json.Unmarshal(data, &adminList.data)
+	// if err != nil {
+	// 	log.Err(err).Str("model", "get admin").Msg("error unmarshal auth server response")
+	// 	return
+	// }
+	adminList.data = config.Config.NotifiableAdminIds
 
 	// shuffle ids
 	for i := range adminList.data {

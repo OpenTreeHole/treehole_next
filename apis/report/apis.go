@@ -114,6 +114,13 @@ func AddReport(c *fiber.Ctx) error {
 		return err
 	}
 
+	// Send Notification
+	err = report.SendCreate(DB)
+	if err != nil {
+		log.Err(err).Str("model", "Notification").Msg("SendCreate failed: ")
+		// return err // only for test
+	}
+
 	return c.Status(204).JSON(nil)
 }
 

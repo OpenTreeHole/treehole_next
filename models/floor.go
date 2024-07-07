@@ -352,6 +352,8 @@ func (floor *Floor) Create(tx *gorm.DB, hole *Hole, c *fiber.Ctx) (err error) {
 			log.Err(err).Str("model", "Notification").Msg("SendNotification failed")
 			// return err // only for test
 		}
+	} else {
+		floor.SendSensitive(tx)
 	}
 
 	if !hole.Hidden && !floor.Sensitive() {
@@ -561,4 +563,25 @@ func (floor *Floor) SendModify(_ *gorm.DB) error {
 	}
 
 	return nil
+}
+
+func (floor *Floor) SendSensitive(_ *gorm.DB) error {
+	userIDs := adminList.data
+	if len(userIDs) == 0 {
+		return nil
+	}
+
+	// construct message
+	message := Notification{
+		Data:        floor,
+		Recipients:  userIDs,
+		Description: floor.SensitiveDetail,
+		Title:       "您有待审核的内容",
+		Type:        MessageTypeSensitive,
+		URL:         fmt.Sprintf("/api/floors/%d", floor.ID),
+	}
+
+	// send
+	_, err := message.Send()
+	return err
 }

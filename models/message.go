@@ -43,6 +43,7 @@ const (
 	MessageTypeReport      MessageType = "report"
 	MessageTypeReportDealt MessageType = "report_dealt"
 	MessageTypeMail        MessageType = "mail"
+	MessageTypeSensitive   MessageType = "sensitive"
 )
 
 func (messages Messages) Preprocess(c *fiber.Ctx) error {

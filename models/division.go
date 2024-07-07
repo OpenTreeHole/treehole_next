@@ -59,6 +59,9 @@ func (division *Division) Preprocess(c *fiber.Ctx) error {
 		return nil
 	}
 	division.Holes = utils.OrderInGivenOrder(division.Holes, pinned)
+	// division.Holes = division.Holes.RemoveIf(func(hole *Hole) bool {
+	// 	return hole.Hidden
+	// })
 	return division.Holes.Preprocess(c)
 }
 

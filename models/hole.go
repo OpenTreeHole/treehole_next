@@ -458,3 +458,13 @@ func (hole *Hole) AfterFind(_ *gorm.DB) (err error) {
 	hole.HoleID = hole.ID
 	return nil
 }
+
+func (holes Holes) RemoveIf(delCondition func(*Hole) bool) Holes {
+	result := make(Holes, 0, len(holes))
+	for _, v := range holes {
+		if !delCondition(v) {
+			result = append(result, v)
+		}
+	}
+	return result
+}

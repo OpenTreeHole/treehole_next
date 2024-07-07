@@ -3,7 +3,10 @@ package models
 import (
 	"errors"
 	"fmt"
+	"sync/atomic"
 	"time"
+
+	"github.com/rs/zerolog/log"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/opentreehole/go-common"
@@ -122,7 +125,41 @@ func (report *Report) AfterUpdate(tx *gorm.DB) (err error) {
 	return nil
 }
 
-//var adminCounter = new(int32)
+var adminCounter = new(int32)
+
+func (report *Report) SendCreate(_ *gorm.DB) error {
+	// adminList.RLock()
+	// defer adminList.RUnlock()
+	if len(adminList.data) == 0 {
+		return nil
+	}
+
+	// get counter
+	currentCounter := atomic.AddInt32(adminCounter, 1)
+	result := atomic.CompareAndSwapInt32(adminCounter, int32(len(adminList.data)), 0)
+	if result {
+		log.Info().Str("model", "get admin").Msg("adminCounter Reset")
+	}
+	userIDs := []int{adminList.data[currentCounter-1]}
+
+	// construct message
+	message := Notification{
+		Data:       report,
+		Recipients: userIDs,
+		Description: fmt.Sprintf(
+			"理由：%s，内容：%s",
+			report.Reason,
+			report.Floor.Content,
+		),
+		Title: "您有举报需要处理",
+		Type:  MessageTypeReport,
+		URL:   fmt.Sprintf("/api/reports/%d", report.ID),
+	}
+
+	// send
+	_, err := message.Send()
+	return err
+}
 
 func (report *Report) SendModify(_ *gorm.DB) error {
 	// get recipients
