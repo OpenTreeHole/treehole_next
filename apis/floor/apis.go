@@ -996,7 +996,13 @@ func ModifyFloorSensitive(c *fiber.Ctx) (err error) {
 		// modify actual_sensitive
 		floor.IsActualSensitive = &body.IsActualSensitive
 		MyLog("Floor", "Modify", floorID, user.ID, RoleAdmin, "actual_sensitive to: ", fmt.Sprintf("%v", body.IsActualSensitive))
-		CreateAdminLog(tx, AdminLogTypeChangeSensitive, user.ID, body)
+		CreateAdminLog(tx, AdminLogTypeChangeSensitive, user.ID, struct {
+			FloorID int                         `json:"floor_id"`
+			Body    ModifySensitiveFloorRequest `json:"body"`
+		}{
+			FloorID: floorID,
+			Body:    body,
+		})
 
 		if !body.IsActualSensitive {
 			// save actual_sensitive only
