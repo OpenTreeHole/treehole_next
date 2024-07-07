@@ -131,11 +131,17 @@ func GetFloor(c *fiber.Ctx) (err error) {
 		return err
 	}
 
-	// get hole
-	var hole Hole
-	err = DB.Where("hidden = false").First(&hole, floor.HoleID).Error
+	user, err := GetUser(c)
 	if err != nil {
 		return err
+	}
+	if !user.IsAdmin {
+		// get hole
+		var hole Hole
+		err = DB.Where("hidden = false").First(&hole, floor.HoleID).Error
+		if err != nil {
+			return err
+		}
 	}
 
 	return Serialize(c, &floor)
