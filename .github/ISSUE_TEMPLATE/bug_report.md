@@ -1,32 +1,15 @@
 ---
-name: Bug report
-about: Create a report to help us improve
-title: ''
+name: Bug报告
+about: 说明你遇到的Bug。
+title: '[BUG]'
 labels: bug
 assignees: ''
 
 ---
 
-**Describe the bug**
+**描述 Bug**
+简要描述 Bug 是什么。
+如果你认为标题已经说得很清楚了，可以删除这一项。
 
-[//]: # (A clear and concise description of what the bug is.)
-
-**To Reproduce**
-
-[//]: # (Steps to reproduce the behavior:)
-
-**Expected behavior (Optional)**
-
-[//]: # (A clear and concise description of what you expected to happen.)
-
-**Screenshots (Optional)**
-
-[//]: # (If applicable, add screenshots to help explain your problem.)
-
-**Version**
-
-[//]: # (The version of the software you are using.)
-
-**Additional context**
-
-[//]: # (Add any other context about the problem here.)
+**复现步骤**
+复现该 Bug 的步骤：

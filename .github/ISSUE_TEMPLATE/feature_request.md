@@ -1,24 +1,14 @@
 ---
-name: Feature request
-about: Suggest an idea for this project
-title: ''
+name: 请求新功能
+about: 请求后端加入新的功能！
+title: '[Feature Request]'
 labels: feature request
 assignees: ''
 
 ---
 
-**Describe the feature**
+**你的功能需求和某个bug有关吗？**
+`[是/否]`
 
-[//]: # (A clear and concise description of what the feature is.)
-
-**Describe how to implement it**
-
-[//]: # (if possible)
-
-**What does this feature intend to do**
-
-[//]: # (To solve a waht problem, or to meet a what demand)
-
-**Additional context**
-
-[//]: # (Add any other context about the feature request here.)
+**你想要什么样的功能？**
+简要、清晰地描述你请求增加的功能。
