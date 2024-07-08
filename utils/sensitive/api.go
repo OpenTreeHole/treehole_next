@@ -125,11 +125,13 @@ func CheckSensitiveText(params ParamsForCheck) (resp *ResponseForCheck, err erro
 				for _, subLabel := range label.SubLabels {
 					if subLabel.Details != nil && subLabel.Details.HitInfos != nil {
 						for _, hitInfo := range subLabel.Details.HitInfos {
-							if str == "" {
-								str = *hitInfo.Value
-								continue
+							if hitInfo.Value != nil {
+								if str == "" {
+									str = *hitInfo.Value
+									continue
+								}
+								str += "\n" + *hitInfo.Value
 							}
-							str += "\n" + *hitInfo.Value
 						}
 					}
 				}
@@ -192,6 +194,27 @@ func checkSensitiveImage(params ParamsForCheck) (resp *ResponseForCheck, err err
 		}
 		var str string
 		for _, result := range *response.Result {
+			if result.Antispam != nil && result.Antispam.Labels != nil {
+				for _, label := range *result.Antispam.Labels {
+					if label.SubLabels != nil {
+						for _, subLabel := range *label.SubLabels {
+							if subLabel.Details != nil && subLabel.Details.HitInfos != nil {
+								for _, hitInfo := range *subLabel.Details.HitInfos {
+									if hitInfo.Group != nil {
+										str += " " + *hitInfo.Group
+									}
+									if hitInfo.Value != nil {
+										str += " " + *hitInfo.Value
+									}
+									if hitInfo.Word != nil {
+										str += " " + *hitInfo.Word
+									}
+								}
+							}
+						}
+					}
+				}
+			}
 			if result.Ocr != nil {
 				if result.Ocr.Details != nil {
 					for _, detail := range *result.Ocr.Details {
