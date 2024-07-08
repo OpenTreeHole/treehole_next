@@ -139,8 +139,8 @@ func (message Notification) Send() (Message, error) {
 	// save to database first
 	body := Message{
 		Type:        message.Type,
-		Title:       utils.StripContent(message.Title, 32),       //varchar(32)
-		Description: utils.StripContent(message.Description, 64), //varchar(64)
+		Title:       message.Title,
+		Description: message.Description,
 		Data:        message.Data,
 		URL:         message.URL,
 		Recipients:  message.Recipients,
@@ -153,6 +153,10 @@ func (message Notification) Send() (Message, error) {
 	if config.Config.NotificationUrl == "" {
 		return Message{}, nil
 	}
+	message.Title = utils.StripContent(message.Title, 32)             //varchar(32)
+	message.Description = utils.StripContent(message.Description, 64) //varchar(64)
+	body.Title = message.Title
+	body.Description = message.Description
 
 	// construct form
 	form, err := json.Marshal(message)
