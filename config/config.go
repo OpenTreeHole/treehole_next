@@ -40,6 +40,8 @@ var Config struct {
 	YiDunBusinessIdImage string   `env:"YI_DUN_BUSINESS_ID_IMAGE" envDefault:""`
 	YiDunSecretId        string   `env:"YI_DUN_SECRET_ID" envDefault:""`
 	YiDunSecretKey       string   `env:"YI_DUN_SECRET_KEY" envDefault:""`
+	YiDunAccessKeyId     string   `env:"YI_DUN_ACCESS_KEY_ID" envDefault:""`
+	YiDunAccessKeySecret string   `env:"YI_DUN_ACCESS_KEY_SECRET" envDefault:""`
 	ValidImageUrl        []string `env:"VALID_IMAGE_URL"`
 	UrlHostnameWhitelist []string `env:"URL_HOSTNAME_WHITELIST"`
 	ExternalImageHost    string   `env:"EXTERNAL_IMAGE_HOSTNAME" envDefault:""`

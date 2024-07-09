@@ -1,17 +1,22 @@
 package sensitive
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
-	"github.com/yidun/yidun-golang-sdk/yidun/service/antispam/image/v5"
-	"github.com/yidun/yidun-golang-sdk/yidun/service/antispam/image/v5/check"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 	"treehole_next/config"
 	"treehole_next/utils"
 
+	"github.com/yidun/yidun-golang-sdk/yidun/service/antispam/image/v5"
+	"github.com/yidun/yidun-golang-sdk/yidun/service/antispam/image/v5/check"
+	"github.com/yidun/yidun-golang-sdk/yidun/service/antispam/label"
+	"github.com/yidun/yidun-golang-sdk/yidun/service/antispam/label/request"
 	v5 "github.com/yidun/yidun-golang-sdk/yidun/service/antispam/text"
 	"github.com/yidun/yidun-golang-sdk/yidun/service/antispam/text/v5/check/sync/single"
 )
@@ -263,4 +268,93 @@ func checkSensitiveImage(params ParamsForCheck) (resp *ResponseForCheck, err err
 	utils.RequestLog("Sensitive image check http response code is not 200", params.TypeName, params.Id, false)
 	resp.Pass = false
 	return
+}
+
+var sensitiveLabelMap struct {
+	sync.RWMutex
+	data       map[string]string
+	lastLength int
+}
+
+func InitSensitiveLabelMap() {
+	// skip when bench
+	if config.Config.Mode == "bench" || config.Config.AuthUrl == "" {
+		return
+	}
+
+	// 创建一个LabelQueryRequest实例
+	request := request.NewLabelQueryRequest()
+
+	// 实例化Client，入参需要传入易盾内容安全分配的AccessKeyId，AccessKeySecret
+	labelClient := label.NewLabelClientWithAccessKey(config.Config.YiDunAccessKeyId, config.Config.YiDunAccessKeySecret)
+
+	// 传入请求参数
+	//设置返回标签的最大层级
+	request.SetMaxDepth(3)
+	//指定业务类型
+	// request.SetBusinessTypes(&[]string{"1", "2"})
+	//制定业务
+	// request.SetBusinessID("SetBusinessID")
+	// request.SetClientID("YOUR_CLIENT_ID")
+	// request.SetLanguage("en")
+
+	response, err := labelClient.QueryLabel(request)
+	if err != nil {
+		// 	log.Err(err).Str("model", "get admin").Msg("error sending auth server")
+		utils.RequestLog("Sensitive label init error", "label error", -1, false)
+		return
+	}
+
+	if response.GetCode() != 200 {
+		// log.Error().Str("model", "get admin").Msg("auth server response failed" + res.Status)
+		utils.RequestLog("Sensitive label init http response code is not 200", "label error", -1, false)
+		return
+	}
+
+	responseByte, err := json.Marshal(response)
+	if err != nil {
+		utils.RequestLog("Sensitive label Marshal error", "label error", -1, false)
+		return
+	}
+
+	if sensitiveLabelMap.lastLength == len(responseByte) {
+		utils.RequestLog("Sensitive label unchanged", "label unchanged", 1, false)
+		return
+	}
+
+	sensitiveLabelMap.Lock()
+	defer sensitiveLabelMap.Unlock()
+	sensitiveLabelMap.lastLength = len(responseByte)
+	data := response.Data
+
+	for _, label := range data {
+		if label.Label == nil || label.Name == nil {
+			continue
+		}
+		sensitiveLabelMap.data[fmt.Sprintf("%d", *label.Label)] = *label.Name
+		for _, subLabel := range label.SubLabels {
+			if subLabel.Code == nil || subLabel.Name == nil {
+				continue
+			}
+			sensitiveLabelMap.data[*subLabel.Code] = *subLabel.Name
+			for _, subSubLabel := range subLabel.SubLabels {
+				if subSubLabel.Code == nil || subSubLabel.Name == nil {
+					continue
+				}
+				sensitiveLabelMap.data[*subSubLabel.Code] = *subSubLabel.Name
+			}
+		}
+	}
+}
+
+func UpdateAdminList(ctx context.Context) {
+	ticker := time.NewTicker(time.Hour)
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			InitSensitiveLabelMap()
+		}
+	}
 }
