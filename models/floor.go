@@ -572,7 +572,7 @@ func (floor *Floor) SendSensitive(_ *gorm.DB) error {
 	}
 
 	// construct message
-	description := floor.SensitiveDetail
+	description := utils.StripContent(floor.SensitiveDetail, 32)
 	if description == "" {
 		description = "error: sensitive detail is empty!!!"
 	}
