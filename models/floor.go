@@ -572,10 +572,14 @@ func (floor *Floor) SendSensitive(_ *gorm.DB) error {
 	}
 
 	// construct message
+	description := floor.SensitiveDetail
+	if description == "" {
+		description = "error: sensitive detail is empty!!!"
+	}
 	message := Notification{
 		Data:        floor,
 		Recipients:  userIDs,
-		Description: floor.SensitiveDetail,
+		Description: description,
 		Title:       "您有待审核的内容",
 		Type:        MessageTypeSensitive,
 		URL:         fmt.Sprintf("/api/floors/%d", floor.ID),
