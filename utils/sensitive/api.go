@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/yidun/yidun-golang-sdk/yidun/service/antispam/image/v5"
 	"github.com/yidun/yidun-golang-sdk/yidun/service/antispam/image/v5/check"
+	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
@@ -90,7 +91,12 @@ func CheckSensitiveText(params ParamsForCheck) (resp *ResponseForCheck, err erro
 	}
 
 	request := single.NewTextCheckRequest(config.Config.YiDunBusinessIdText)
-	textCheckClient := v5.NewTextClientWithAccessKey(config.Config.YiDunSecretId, config.Config.YiDunSecretKey)
+	var textCheckClient *v5.TextClient
+	if config.Config.ProxyUrl != nil {
+		textCheckClient = v5.NewTextClientWithAccessKeyWithProxy(config.Config.YiDunSecretId, config.Config.YiDunSecretKey, http.ProxyURL(config.Config.ProxyUrl))
+	} else {
+		textCheckClient = v5.NewTextClientWithAccessKey(config.Config.YiDunSecretId, config.Config.YiDunSecretKey)
+	}
 
 	request.SetDataID(strconv.FormatInt(params.Id, 10) + "_" + params.TypeName)
 	request.SetContent(params.Content)
@@ -156,7 +162,12 @@ func checkSensitiveImage(params ParamsForCheck) (resp *ResponseForCheck, err err
 	request := check.NewImageV5CheckRequest(config.Config.YiDunBusinessIdImage)
 
 	// 实例化一个textClient，入参需要传入易盾内容安全分配的secretId，secretKey
-	imageCheckClient := image.NewImageClientWithAccessKey(config.Config.YiDunSecretId, config.Config.YiDunSecretKey)
+	var imageCheckClient *image.ImageClient
+	if config.Config.ProxyUrl != nil {
+		imageCheckClient = image.NewImageClientWithAccessKeyWithProxy(config.Config.YiDunSecretId, config.Config.YiDunSecretKey, http.ProxyURL(config.Config.ProxyUrl))
+	} else {
+		imageCheckClient = image.NewImageClientWithAccessKey(config.Config.YiDunSecretId, config.Config.YiDunSecretKey)
+	}
 
 	imageInst := check.NewImageBeanRequest()
 	imageInst.SetData(imgUrl)

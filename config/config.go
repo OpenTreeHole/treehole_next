@@ -1,11 +1,11 @@
 package config
 
 import (
+	"github.com/caarlos0/env/v9"
+	"net/url"
 	"sync/atomic"
 
 	"github.com/rs/zerolog/log"
-
-	"github.com/caarlos0/env/v9"
 )
 
 var Config struct {
@@ -44,6 +44,7 @@ var Config struct {
 	UrlHostnameWhitelist []string `env:"URL_HOSTNAME_WHITELIST"`
 	ExternalImageHost    string   `env:"EXTERNAL_IMAGE_HOSTNAME" envDefault:""`
 	NotifiableAdminIds   []int    `env:"NOTIFIABLE_ADMIN_IDS"`
+	ProxyUrl             *url.URL `env:"PROXY_URL"`
 }
 
 var DynamicConfig struct {
