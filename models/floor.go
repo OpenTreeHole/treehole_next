@@ -577,7 +577,7 @@ func (floor *Floor) SendSensitive(_ *gorm.DB) error {
 		description = "error: sensitive detail is empty!!!"
 	}
 	message := Notification{
-		Data:        floor,
+		Data:        floor.ID,
 		Recipients:  userIDs,
 		Description: description,
 		Title:       "您有待审核的内容",
