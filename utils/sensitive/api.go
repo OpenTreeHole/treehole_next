@@ -272,7 +272,7 @@ func checkSensitiveImage(params ParamsForCheck) (resp *ResponseForCheck, err err
 
 var sensitiveLabelMap struct {
 	sync.RWMutex
-	data       map[string]string
+	data       map[int]map[string]string
 	lastLength int
 }
 
@@ -331,19 +331,21 @@ func InitSensitiveLabelMap() {
 		if label.Label == nil || label.Name == nil {
 			continue
 		}
-		sensitiveLabelMap.data[fmt.Sprintf("%d", *label.Label)] = *label.Name
+		labelNumber := *label.Label
+		labelMap := make(map[string]string)
 		for _, subLabel := range label.SubLabels {
 			if subLabel.Code == nil || subLabel.Name == nil {
 				continue
 			}
-			sensitiveLabelMap.data[*subLabel.Code] = *subLabel.Name
+			labelMap[*subLabel.Code] = *subLabel.Name
 			for _, subSubLabel := range subLabel.SubLabels {
 				if subSubLabel.Code == nil || subSubLabel.Name == nil {
 					continue
 				}
-				sensitiveLabelMap.data[*subSubLabel.Code] = *subSubLabel.Name
+				labelMap[*subLabel.Code] = *subLabel.Name
 			}
 		}
+		sensitiveLabelMap.data[labelNumber] = labelMap
 	}
 }
 
