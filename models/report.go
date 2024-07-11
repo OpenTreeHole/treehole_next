@@ -101,7 +101,7 @@ func (report *Report) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 		}
 	} else {
 		existingReport.Reason = existingReport.Reason + "\n" + report.Reason
-		err = tx.Model(&existingReport).Updates(map[string]interface{}{
+		err = tx.Model(&existingReport).Updates(map[string]any{
 			"reason": existingReport.Reason,
 			"dealt":  false,
 		}).Error // update reason and load floor in AfterUpdate hook
