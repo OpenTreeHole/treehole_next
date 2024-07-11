@@ -12,6 +12,7 @@ import (
 	"treehole_next/config"
 	"treehole_next/models"
 	"treehole_next/utils"
+	"treehole_next/utils/sensitive"
 
 	"github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v2/middleware/pprof"
@@ -21,6 +22,7 @@ import (
 func Init() (*fiber.App, context.CancelFunc) {
 	config.InitConfig()
 	utils.InitCache()
+	sensitive.InitSensitiveLabelMap()
 	models.Init()
 	models.InitDB()
 	models.InitAdminList()
@@ -52,5 +54,6 @@ func startTasks() context.CancelFunc {
 	go hole.PurgeHole(ctx)
 	go message.PurgeMessage()
 	// go models.UpdateAdminList(ctx)
+	go sensitive.UpdateSensitiveLabelMap(ctx)
 	return cancel
 }
