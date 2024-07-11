@@ -68,6 +68,7 @@ type CreateOldResponse struct {
 type ModifyModel struct {
 	TagCreateModelSlice
 	DivisionID *int  `json:"division_id" validate:"omitempty,min=1"` // Admin and owner only
+	Hidden     *bool `json:"hidden"`                                 // Admin only
 	Unhidden   *bool `json:"unhidden"`                               // admin only
 	Lock       *bool `json:"lock"`                                   // admin only
 }
@@ -75,6 +76,9 @@ type ModifyModel struct {
 func (body ModifyModel) CheckPermission(user *models.User, hole *models.Hole) error {
 	if body.DivisionID != nil && !user.IsAdmin {
 		return common.Forbidden("非管理员禁止修改分区")
+	}
+	if body.Hidden != nil && !user.IsAdmin {
+		return common.Forbidden("非管理员禁止隐藏帖子")
 	}
 	if body.Unhidden != nil && !user.IsAdmin {
 		return common.BadRequest("非管理员禁止取消隐藏")
@@ -92,5 +96,5 @@ func (body ModifyModel) CheckPermission(user *models.User, hole *models.Hole) er
 }
 
 func (body ModifyModel) DoNothing() bool {
-	return body.Unhidden == nil && body.Tags == nil && body.DivisionID == nil && body.Lock == nil
+	return body.Hidden == nil && body.Unhidden == nil && body.Tags == nil && body.DivisionID == nil && body.Lock == nil
 }

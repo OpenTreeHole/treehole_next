@@ -3331,6 +3331,10 @@ const docTemplate = `{
                     "type": "integer",
                     "minimum": 1
                 },
+                "hidden": {
+                    "description": "Admin only",
+                    "type": "boolean"
+                },
                 "lock": {
                     "description": "admin only",
                     "type": "boolean"
