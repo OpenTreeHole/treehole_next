@@ -394,7 +394,7 @@ func InitSensitiveLabelMap() {
 	}
 }
 
-func UpdateAdminList(ctx context.Context) {
+func UpdateSensitiveLabelMap(ctx context.Context) {
 	ticker := time.NewTicker(time.Hour)
 	for {
 		select {

@@ -54,6 +54,6 @@ func startTasks() context.CancelFunc {
 	go hole.PurgeHole(ctx)
 	go message.PurgeMessage()
 	// go models.UpdateAdminList(ctx)
-	go sensitive.UpdateAdminList(ctx)
+	go sensitive.UpdateSensitiveLabelMap(ctx)
 	return cancel
 }
