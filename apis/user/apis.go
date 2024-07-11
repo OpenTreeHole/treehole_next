@@ -10,8 +10,9 @@ import (
 
 func RegisterRoutes(app fiber.Router) {
 	app.Get("/users/me", GetCurrentUser)
-	app.Get("/users/:id", GetUserByID)
-	app.Put("/users/:id", ModifyUser)
+	app.Get("/users/:id<int>", GetUserByID)
+	app.Put("/users/:id<int>", ModifyUser)
+	app.Patch("/users/:id<int>/_modify", ModifyUser)
 }
 
 // GetCurrentUser
@@ -67,6 +68,7 @@ func GetUserByID(c *fiber.Ctx) error {
 // @Tags User
 // @Produce json
 // @Router /users/{user_id} [put]
+// @Router /users/{user_id}/_modify [patch]
 // @Success 200 {object} User
 func ModifyUser(c *fiber.Ctx) error {
 	userID, err := c.ParamsInt("id")

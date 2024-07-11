@@ -7,7 +7,7 @@ import (
 )
 
 func RegisterRoutes(app fiber.Router) {
-	app.Get("/divisions/:id/holes", ListHolesByDivision)
+	app.Get("/divisions/:id<int>/holes", ListHolesByDivision)
 	app.Get("/tags/:name/holes", ListHolesByTag)
 	app.Get("/users/me/holes", ListHolesByMe)
 	app.Get("/holes/:id<int>", GetHole)
@@ -15,8 +15,9 @@ func RegisterRoutes(app fiber.Router) {
 	app.Get("/holes/_good", ListGoodHoles)
 	app.Post("/divisions/:id/holes", utils.MiddlewareHasAnsweredQuestions, CreateHole)
 	app.Post("/holes", utils.MiddlewareHasAnsweredQuestions, CreateHoleOld)
-	app.Patch("/holes/:id", PatchHole)
-	app.Put("/holes/:id", ModifyHole)
-	app.Delete("/holes/:id", HideHole)
-	app.Delete("/holes/:id/_force", DeleteHole)
+	app.Patch("/holes/:id<int>/_modify", ModifyHole)
+	app.Patch("/holes/:id<int>", PatchHole)
+	app.Put("/holes/:id<int>", ModifyHole)
+	app.Delete("/holes/:id<int>", HideHole)
+	app.Delete("/holes/:id<int>/_force", DeleteHole)
 }

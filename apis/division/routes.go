@@ -7,5 +7,6 @@ func RegisterRoutes(app fiber.Router) {
 	app.Get("/divisions", ListDivisions)
 	app.Get("/divisions/:id", GetDivision)
 	app.Put("/divisions/:id", ModifyDivision)
+	app.Patch("/divisions/:id/_modify", ModifyDivision)
 	app.Delete("/divisions/:id", DeleteDivision)
 }

@@ -555,6 +555,7 @@ definitions:
     - report
     - report_dealt
     - mail
+    - sensitive
     type: string
     x-enum-comments:
       MessageTypeModify: including fold and delete
@@ -567,6 +568,7 @@ definitions:
     - MessageTypeReport
     - MessageTypeReportDealt
     - MessageTypeMail
+    - MessageTypeSensitive
   models.Punishment:
     properties:
       created_at:
@@ -1024,6 +1026,34 @@ paths:
       summary: Modify A Division
       tags:
       - Division
+  /divisions/{id}/_modify:
+    patch:
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: json
+        in: body
+        name: json
+        required: true
+        schema:
+          $ref: '#/definitions/division.ModifyModel'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Division'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.MessageModel'
+      summary: Modify A Division
+      tags:
+      - Division
   /floors:
     get:
       deprecated: true
@@ -1191,7 +1221,64 @@ paths:
       summary: Modify A Floor
       tags:
       - Floor
+  /floors/{id}/_modify:
+    patch:
+      description: when both "fold_v2" and "fold" are empty, reset fold; else, "fold_v2"
+        has the priority
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: json
+        in: body
+        name: json
+        required: true
+        schema:
+          $ref: '#/definitions/floor.ModifyModel'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Floor'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.MessageModel'
+      summary: Modify A Floor
+      tags:
+      - Floor
   /floors/{id}/_sensitive:
+    patch:
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: json
+        in: body
+        name: json
+        required: true
+        schema:
+          $ref: '#/definitions/floor.ModifySensitiveFloorRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Floor'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.MessageModel'
+      summary: Modify A Floor's actual_sensitive, admin only
+      tags:
+      - Floor
     put:
       parameters:
       - description: id
@@ -1687,6 +1774,38 @@ paths:
       summary: Delete A Hole
       tags:
       - Hole
+  /holes/{id}/_modify:
+    patch:
+      description: |-
+        Modify a hole, modify tags and set the name mapping
+        Only admin can modify division, tags, hidden, lock
+        `unhidden` take effect only when hole is hidden and set to true
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: json
+        in: body
+        name: json
+        required: true
+        schema:
+          $ref: '#/definitions/hole.ModifyModel'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Hole'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.MessageModel'
+      summary: Modify A Hole
+      tags:
+      - Hole
   /messages:
     get:
       parameters:
@@ -1726,6 +1845,16 @@ paths:
       tags:
       - Message
     put:
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+      summary: Clear Messages Deprecated
+      tags:
+      - Message
+  /messages/_clear:
+    patch:
       produces:
       - application/json
       responses:
@@ -2042,6 +2171,34 @@ paths:
       summary: Modify A Tag, admin only
       tags:
       - Tag
+  /tags/{id}/_modify:
+    patch:
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: json
+        in: body
+        name: json
+        required: true
+        schema:
+          $ref: '#/definitions/tag.ModifyModel'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Tag'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.MessageModel'
+      summary: Modify A Tag, admin only
+      tags:
+      - Tag
   /tags/{tag_name}/holes:
     get:
       parameters:
@@ -2171,6 +2328,31 @@ paths:
       summary: Modify User's Favorite Group
       tags:
       - Favorite
+  /user/favorite_groups/_modify:
+    patch:
+      parameters:
+      - description: json
+        in: body
+        name: json
+        required: true
+        schema:
+          $ref: '#/definitions/favourite.ModifyFavoriteGroupModel'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.FavoriteGroup'
+            type: array
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.HttpError'
+      summary: Modify User's Favorite Group
+      tags:
+      - Favorite
   /user/favorites:
     delete:
       parameters:
@@ -2269,6 +2451,29 @@ paths:
       summary: Modify User's Favorites
       tags:
       - Favorite
+  /user/favorites/_modify:
+    patch:
+      parameters:
+      - description: json
+        in: body
+        name: json
+        required: true
+        schema:
+          $ref: '#/definitions/favourite.ModifyModel'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/favourite.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/favourite.Response'
+      summary: Modify User's Favorites
+      tags:
+      - Favorite
   /user/favorites/move:
     put:
       parameters:
@@ -2327,6 +2532,18 @@ paths:
       tags:
       - user
     put:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.User'
+      summary: modify user profiles
+      tags:
+      - User
+  /users/{user_id}/_modify:
+    patch:
       produces:
       - application/json
       responses:

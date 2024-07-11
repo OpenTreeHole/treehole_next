@@ -125,6 +125,7 @@ func ClearMessages(c *fiber.Ctx) error {
 // @Tags Message
 // @Produce application/json
 // @Router /messages [put]
+// @Router /messages/_clear [patch]
 // @Success 204
 func ClearMessagesDeprecated(c *fiber.Ctx) error {
 	return ClearMessages(c)
