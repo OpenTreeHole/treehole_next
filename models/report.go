@@ -84,6 +84,9 @@ func (report *Report) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		report.UserID = userID
 		err = tx.Create(&report).Error
+		if err != nil {
+			return err
+		}
 
 		report.ReportID = report.ID
 
@@ -98,7 +101,10 @@ func (report *Report) Create(c *fiber.Ctx, db ...*gorm.DB) error {
 		}
 	} else {
 		existingReport.Reason = existingReport.Reason + "\n" + report.Reason
-		err = tx.Model(&existingReport).Update("reason", existingReport.Reason).Error // update reason and load floor in AfterUpdate hook
+		err = tx.Model(&existingReport).Updates(Report{Reason: existingReport.Reason, Dealt: false}).Error // update reason and load floor in AfterUpdate hook
+		if err != nil {
+			return err
+		}
 		report.Floor = existingReport.Floor
 	}
 
