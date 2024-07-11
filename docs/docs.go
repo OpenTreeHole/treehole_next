@@ -337,6 +337,49 @@ const docTemplate = `{
                 }
             }
         },
+        "/divisions/{id}/_modify": {
+            "patch": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Division"
+                ],
+                "summary": "Modify A Division",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "json",
+                        "name": "json",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/division.ModifyModel"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Division"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.MessageModel"
+                        }
+                    }
+                }
+            }
+        },
         "/floors": {
             "get": {
                 "produces": [
@@ -690,8 +733,93 @@ const docTemplate = `{
                 }
             }
         },
+        "/floors/{id}/_modify": {
+            "patch": {
+                "description": "when both \"fold_v2\" and \"fold\" are empty, reset fold; else, \"fold_v2\" has the priority",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Floor"
+                ],
+                "summary": "Modify A Floor",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "json",
+                        "name": "json",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/floor.ModifyModel"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Floor"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.MessageModel"
+                        }
+                    }
+                }
+            }
+        },
         "/floors/{id}/_sensitive": {
             "put": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Floor"
+                ],
+                "summary": "Modify A Floor's actual_sensitive, admin only",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "json",
+                        "name": "json",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/floor.ModifySensitiveFloorRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Floor"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.MessageModel"
+                        }
+                    }
+                }
+            },
+            "patch": {
                 "produces": [
                     "application/json"
                 ],
@@ -1338,6 +1466,50 @@ const docTemplate = `{
                 }
             }
         },
+        "/holes/{id}/_modify": {
+            "patch": {
+                "description": "Modify a hole, modify tags and set the name mapping\nOnly admin can modify division, tags, hidden, lock\n` + "`" + `unhidden` + "`" + ` take effect only when hole is hidden and set to true",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Hole"
+                ],
+                "summary": "Modify A Hole",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "json",
+                        "name": "json",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/hole.ModifyModel"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Hole"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.MessageModel"
+                        }
+                    }
+                }
+            }
+        },
         "/messages": {
             "get": {
                 "produces": [
@@ -1407,6 +1579,22 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/models.Message"
                         }
+                    }
+                }
+            }
+        },
+        "/messages/_clear": {
+            "patch": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Message"
+                ],
+                "summary": "Clear Messages Deprecated",
+                "responses": {
+                    "204": {
+                        "description": "No Content"
                     }
                 }
             }
@@ -1880,6 +2068,49 @@ const docTemplate = `{
                 }
             }
         },
+        "/tags/{id}/_modify": {
+            "patch": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Tag"
+                ],
+                "summary": "Modify A Tag, admin only",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "json",
+                        "name": "json",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/tag.ModifyModel"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Tag"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.MessageModel"
+                        }
+                    }
+                }
+            }
+        },
         "/tags/{tag_name}/holes": {
             "get": {
                 "produces": [
@@ -2078,6 +2309,45 @@ const docTemplate = `{
                 }
             }
         },
+        "/user/favorite_groups/_modify": {
+            "patch": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Favorite"
+                ],
+                "summary": "Modify User's Favorite Group",
+                "parameters": [
+                    {
+                        "description": "json",
+                        "name": "json",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/favourite.ModifyFavoriteGroupModel"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.FavoriteGroup"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.HttpError"
+                        }
+                    }
+                }
+            }
+        },
         "/user/favorites": {
             "get": {
                 "produces": [
@@ -2210,6 +2480,42 @@ const docTemplate = `{
                         "required": true,
                         "schema": {
                             "$ref": "#/definitions/favourite.DeleteModel"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/favourite.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/favourite.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/favorites/_modify": {
+            "patch": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Favorite"
+                ],
+                "summary": "Modify User's Favorites",
+                "parameters": [
+                    {
+                        "description": "json",
+                        "name": "json",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/favourite.ModifyModel"
                         }
                     }
                 ],
@@ -2568,6 +2874,25 @@ const docTemplate = `{
                 }
             },
             "put": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User"
+                ],
+                "summary": "modify user profiles",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.User"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/{user_id}/_modify": {
+            "patch": {
                 "produces": [
                     "application/json"
                 ],
@@ -3384,7 +3709,8 @@ const docTemplate = `{
                 "permission",
                 "report",
                 "report_dealt",
-                "mail"
+                "mail",
+                "sensitive"
             ],
             "x-enum-comments": {
                 "MessageTypeModify": "including fold and delete"
@@ -3397,7 +3723,8 @@ const docTemplate = `{
                 "MessageTypePermission",
                 "MessageTypeReport",
                 "MessageTypeReportDealt",
-                "MessageTypeMail"
+                "MessageTypeMail",
+                "MessageTypeSensitive"
             ]
         },
         "models.Punishment": {

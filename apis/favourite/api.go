@@ -132,6 +132,7 @@ func AddFavorite(c *fiber.Ctx) error {
 // @Tags Favorite
 // @Produce application/json
 // @Router /user/favorites [put]
+// @Router /user/favorites/_modify [patch]
 // @Param json body ModifyModel true "json"
 // @Success 200 {object} Response
 // @Failure 404 {object} Response
@@ -302,6 +303,7 @@ func AddFavoriteGroup(c *fiber.Ctx) error {
 // @Tags Favorite
 // @Produce application/json
 // @Router /user/favorite_groups [put]
+// @Router /user/favorite_groups/_modify [patch]
 // @Param json body ModifyFavoriteGroupModel true "json"
 // @Success 200 {array} models.FavoriteGroup
 // @Failure 404 {object} common.HttpError
