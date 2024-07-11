@@ -125,7 +125,7 @@ func CheckSensitiveText(params ParamsForCheck) (resp *ResponseForCheck, err erro
 
 		utils.RequestLog("Sensitive text check response code is 200", params.TypeName, params.Id, false)
 		resp.Pass = false
-		var str string
+		var sensitiveDetailBuilder strings.Builder
 		sensitiveLabelMap.RLock()
 		defer sensitiveLabelMap.RUnlock()
 		for _, label := range response.Result.Antispam.Labels {
@@ -135,45 +135,47 @@ func CheckSensitiveText(params ParamsForCheck) (resp *ResponseForCheck, err erro
 			resp.Labels = append(resp.Labels, *label.Label)
 			// response != nil && response.Result != nil && response.Result.Antispam != nil &&
 			//if response.Result.Antispam.SecondLabel != nil && response.Result.Antispam.ThirdLabel != nil {
-			//	str := *response.Result.Antispam.SecondLabel + " " + *response.Result.Antispam.ThirdLabel
+			//	sensitiveDetailBuilder := *response.Result.Antispam.SecondLabel + " " + *response.Result.Antispam.ThirdLabel
 			//}
 			labelNumber := *label.Label
 			if sensitiveLabelMap.data[labelNumber] != nil {
-				str += "{" + sensitiveLabelMap.label[labelNumber] + "}"
+				sensitiveDetailBuilder.WriteString("{")
+				sensitiveDetailBuilder.WriteString(sensitiveLabelMap.label[labelNumber])
+				sensitiveDetailBuilder.WriteString("}")
 			}
 
 			if label.SubLabels != nil {
 				for _, subLabel := range label.SubLabels {
 					if sensitiveLabelMap.data[labelNumber] != nil {
 						if subLabel.SubLabel != nil {
-							str += "[" + sensitiveLabelMap.data[labelNumber][*subLabel.SubLabel] + "]"
+							sensitiveDetailBuilder.WriteString("[" + sensitiveLabelMap.data[labelNumber][*subLabel.SubLabel] + "]")
 						}
 						if subLabel.SecondLabel != nil {
-							str += "[" + sensitiveLabelMap.data[labelNumber][*subLabel.SecondLabel] + "]"
+							sensitiveDetailBuilder.WriteString("[" + sensitiveLabelMap.data[labelNumber][*subLabel.SecondLabel] + "]")
 						}
 						if subLabel.ThirdLabel != nil {
-							str += "[" + sensitiveLabelMap.data[labelNumber][*subLabel.ThirdLabel] + "]"
+							sensitiveDetailBuilder.WriteString("[" + sensitiveLabelMap.data[labelNumber][*subLabel.ThirdLabel] + "]")
 						}
 					}
 
 					if subLabel.Details != nil && subLabel.Details.HitInfos != nil {
 						for _, hitInfo := range subLabel.Details.HitInfos {
-							if hitInfo.Value != nil {
-								if str == "" {
-									str = *hitInfo.Value
-									continue
-								}
-								str += "\n" + *hitInfo.Value
+							if hitInfo.Value == nil {
+								continue
 							}
+							if sensitiveDetailBuilder.Len() != 0 {
+								sensitiveDetailBuilder.WriteString("\n")
+							}
+							sensitiveDetailBuilder.WriteString(*hitInfo.Value)
 						}
 					}
 				}
 			}
 		}
-		if str == "" {
-			str = "文本敏感，未知原因"
+		if sensitiveDetailBuilder.Len() == 0 {
+			sensitiveDetailBuilder.WriteString("文本敏感，未知原因")
 		}
-		resp.Detail = str
+		resp.Detail = sensitiveDetailBuilder.String()
 		return
 	}
 
@@ -230,7 +232,7 @@ func checkSensitiveImage(params ParamsForCheck) (resp *ResponseForCheck, err err
 		for _, label := range *((*response.Result)[0].Antispam.Labels) {
 			resp.Labels = append(resp.Labels, *label.Label)
 		}
-		var str string
+		var sensitiveDetailBuilder strings.Builder
 		sensitiveLabelMap.RLock()
 		defer sensitiveLabelMap.RUnlock()
 
@@ -240,33 +242,38 @@ func checkSensitiveImage(params ParamsForCheck) (resp *ResponseForCheck, err err
 
 					labelNumber := *label.Label
 					if sensitiveLabelMap.data[labelNumber] != nil {
-						str += "{" + sensitiveLabelMap.label[labelNumber] + "}"
+						sensitiveDetailBuilder.WriteString("{")
+						sensitiveDetailBuilder.WriteString(sensitiveLabelMap.label[labelNumber])
+						sensitiveDetailBuilder.WriteString("}")
 					}
 
 					if label.SubLabels != nil {
 						for _, subLabel := range *label.SubLabels {
 							if sensitiveLabelMap.data[labelNumber] != nil {
 								if subLabel.SubLabel != nil {
-									str += "[" + sensitiveLabelMap.data[labelNumber][*subLabel.SubLabel] + "]"
+									sensitiveDetailBuilder.WriteString("[" + sensitiveLabelMap.data[labelNumber][*subLabel.SubLabel] + "]")
 								}
 								if subLabel.SecondLabel != nil {
-									str += "[" + sensitiveLabelMap.data[labelNumber][*subLabel.SecondLabel] + "]"
+									sensitiveDetailBuilder.WriteString("[" + sensitiveLabelMap.data[labelNumber][*subLabel.SecondLabel] + "]")
 								}
 								if subLabel.ThirdLabel != nil {
-									str += "[" + sensitiveLabelMap.data[labelNumber][*subLabel.ThirdLabel] + "]"
+									sensitiveDetailBuilder.WriteString("[" + sensitiveLabelMap.data[labelNumber][*subLabel.ThirdLabel] + "]")
 								}
 							}
 
 							if subLabel.Details != nil && subLabel.Details.HitInfos != nil {
 								for _, hitInfo := range *subLabel.Details.HitInfos {
 									if hitInfo.Group != nil {
-										str += " " + *hitInfo.Group
+										sensitiveDetailBuilder.WriteByte(' ')
+										sensitiveDetailBuilder.WriteString(*hitInfo.Group)
 									}
 									if hitInfo.Value != nil {
-										str += " " + *hitInfo.Value
+										sensitiveDetailBuilder.WriteByte(' ')
+										sensitiveDetailBuilder.WriteString(*hitInfo.Value)
 									}
 									if hitInfo.Word != nil {
-										str += " " + *hitInfo.Word
+										sensitiveDetailBuilder.WriteByte(' ')
+										sensitiveDetailBuilder.WriteString(*hitInfo.Word)
 									}
 								}
 							}
@@ -277,11 +284,13 @@ func checkSensitiveImage(params ParamsForCheck) (resp *ResponseForCheck, err err
 			if result.Ocr != nil {
 				if result.Ocr.Details != nil {
 					for _, detail := range *result.Ocr.Details {
-						if str == "" {
-							str = *detail.Content
+						if detail.Content == nil {
 							continue
 						}
-						str += "\n" + *detail.Content
+						if sensitiveDetailBuilder.Len() != 0 {
+							sensitiveDetailBuilder.WriteString("\n")
+						}
+						sensitiveDetailBuilder.WriteString(*detail.Content)
 					}
 				}
 			}
@@ -290,21 +299,23 @@ func checkSensitiveImage(params ParamsForCheck) (resp *ResponseForCheck, err err
 					for _, detail := range *result.Face.Details {
 						if detail.FaceContents != nil {
 							for _, faceContent := range *detail.FaceContents {
-								if str == "" {
-									str = *faceContent.Name
+								if faceContent.Name == nil {
 									continue
 								}
-								str += "\n" + *faceContent.Name
+								if sensitiveDetailBuilder.Len() != 0 {
+									sensitiveDetailBuilder.WriteString("\n")
+								}
+								sensitiveDetailBuilder.WriteString(*faceContent.Name)
 							}
 						}
 					}
 				}
 			}
 		}
-		if str == "" {
-			str = "图片敏感，未知原因"
+		if sensitiveDetailBuilder.Len() == 0 {
+			sensitiveDetailBuilder.WriteString("图片敏感，未知原因")
 		}
-		resp.Detail = str
+		resp.Detail = sensitiveDetailBuilder.String()
 		return
 	}
 
@@ -369,6 +380,8 @@ func InitSensitiveLabelMap() {
 	sensitiveLabelMap.Lock()
 	defer sensitiveLabelMap.Unlock()
 	sensitiveLabelMap.lastLength = len(responseByte)
+	sensitiveLabelMap.label = make(map[int]string)
+	sensitiveLabelMap.data = make(map[int]map[string]string)
 	data := response.Data
 
 	for _, label := range data {
