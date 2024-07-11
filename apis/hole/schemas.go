@@ -37,7 +37,7 @@ func (q *ListOldModel) SetDefaults() {
 }
 
 type TagCreateModelSlice struct {
-	Tags []tag.CreateModel `json:"tags" validate:"omitempty,min=1,max=20,dive"` // All users
+	Tags []tag.CreateModel `json:"tags" validate:"omitempty,min=1,max=10,dive"` // All users
 }
 
 func (tagCreateModelSlice TagCreateModelSlice) ToName() []string {
