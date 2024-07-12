@@ -18,8 +18,8 @@ const (
 
 type BotMessage struct {
 	MessageType BotMessageType `json:"message_type"`
-	GroupID     *int           `json:"group_id"`
-	UserID      *int           `json:"user_id"`
+	GroupID     *int64         `json:"group_id"`
+	UserID      *int64         `json:"user_id"`
 	Message     string         `json:"message"`
 	AutoEscape  bool           `json:"auto_escape default:false"`
 }
@@ -38,7 +38,7 @@ func NotifyQQ(botMessage *BotMessage) {
 		return
 	}
 	// "[CQ:face,id=199]test[CQ:image,file=https://ts1.cn.mm.bing.net/th?id=OIP-C.K5AFHsGlWeLUzKjXGXxdQgHaFj&w=224&h=150&c=8&rs=1&qlt=90&o=6&dpr=1.5&pid=3.1&rm=2]",
-	url := "http://" + *config.Config.QQBotUrl + "/send_msg"
+	url := *config.Config.QQBotUrl + "/send_msg"
 
 	jsonData, err := json.Marshal(botMessage)
 	if err != nil {
