@@ -472,11 +472,21 @@ func (holes Holes) RemoveIf(delCondition func(*Hole) bool) Holes {
 }
 
 func (hole *Hole) HoleHook() {
+	if hole == nil {
+		return
+	}
+	var notifyMessage string
+	if hole.HoleFloor.FirstFloor != nil && !hole.HoleFloor.FirstFloor.Sensitive() {
+		notifyMessage = fmt.Sprintf("#%d\n\n%s", hole.ID, hole.HoleFloor.FirstFloor.Content)
+	} else {
+		notifyMessage = fmt.Sprintf("#%d\n", hole.ID)
+	}
+
 	if hole.DivisionID == 4 {
 		go utils.NotifyQQ(&utils.BotMessage{
 			MessageType: utils.MessageTypePrivate,
 			UserID:      config.Config.QQBotUserID,
-			Message:     fmt.Sprintf("#%d\n%s", hole.ID, hole.HoleFloor.FirstFloor.Content),
+			Message:     notifyMessage,
 		})
 	}
 	for _, tag := range hole.Tags {
@@ -484,7 +494,7 @@ func (hole *Hole) HoleHook() {
 			go utils.NotifyQQ(&utils.BotMessage{
 				MessageType: utils.MessageTypeGroup,
 				GroupID:     config.Config.QQBotGroupID,
-				Message:     fmt.Sprintf("#%d\n%s", hole.ID, hole.HoleFloor.FirstFloor.Content),
+				Message:     notifyMessage,
 			})
 		}
 	}
