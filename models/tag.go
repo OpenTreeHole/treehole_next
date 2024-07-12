@@ -84,18 +84,17 @@ func FindOrCreateTags(tx *gorm.DB, user *User, names []string) (Tags, error) {
 		return tags, nil
 	}
 	for _, tag := range newTags {
-		if strings.HasPrefix(tag.Name, "#") {
-			if !user.IsAdmin {
+		if !user.IsAdmin {
+			if len(tag.Name) > 15 {
+				return nil, common.BadRequest("标签长度不能超过 15 个字符")
+			}
+			if strings.HasPrefix(tag.Name, "#") {
 				return nil, common.BadRequest("只有管理员才能创建 # 开头的 tag")
 			}
-		}
-		if strings.HasPrefix(tag.Name, "@") {
-			if !user.IsAdmin {
+			if strings.HasPrefix(tag.Name, "@") {
 				return nil, common.BadRequest("只有管理员才能创建 @ 开头的 tag")
 			}
-		}
-		if strings.HasPrefix(tag.Name, "*") {
-			if !user.IsAdmin {
+			if strings.HasPrefix(tag.Name, "*") {
 				return nil, common.BadRequest("只有管理员才能创建 * 开头的 tag")
 			}
 		}
