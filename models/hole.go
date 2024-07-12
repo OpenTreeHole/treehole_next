@@ -445,6 +445,8 @@ func (hole *Hole) Create(tx *gorm.DB, user *User, tagNames []string, c *fiber.Ct
 		firstFloor.Content = ""
 	}
 
+	hole.HoleHook()
+
 	// store into cache
 	return utils.SetCache(hole.CacheName(), hole, HoleCacheExpire)
 }
@@ -467,4 +469,23 @@ func (holes Holes) RemoveIf(delCondition func(*Hole) bool) Holes {
 		}
 	}
 	return result
+}
+
+func (hole *Hole) HoleHook() {
+	if hole.DivisionID == 4 {
+		go utils.NotifyQQ(&utils.BotMessage{
+			MessageType: utils.MessageTypePrivate,
+			UserID:      config.Config.QQBotUserID,
+			Message:     fmt.Sprintf("#%d\n%s", hole.ID, hole.HoleFloor.FirstFloor.Content),
+		})
+	}
+	for _, tag := range hole.Tags {
+		if tag != nil && tag.Name == "@物理大神" {
+			go utils.NotifyQQ(&utils.BotMessage{
+				MessageType: utils.MessageTypeGroup,
+				GroupID:     config.Config.QQBotGroupID,
+				Message:     fmt.Sprintf("#%d\n%s", hole.ID, hole.HoleFloor.FirstFloor.Content),
+			})
+		}
+	}
 }

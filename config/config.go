@@ -47,6 +47,9 @@ var Config struct {
 	ExternalImageHost    string   `env:"EXTERNAL_IMAGE_HOSTNAME" envDefault:""`
 	NotifiableAdminIds   []int    `env:"NOTIFIABLE_ADMIN_IDS"`
 	ProxyUrl             *url.URL `env:"PROXY_URL"`
+	QQBotGroupID         *int     `env:"GROUP_ID"`
+	QQBotUserID          *int     `env:"USER_ID"`
+	QQBotUrl             *string  `env:"QQ_BOT_URL"`
 }
 
 var DynamicConfig struct {
