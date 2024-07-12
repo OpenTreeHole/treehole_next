@@ -59,5 +59,7 @@ func NotifyQQ(botMessage *BotMessage) {
 			RequestLog("Error Unmarshaling response", "NotifyQQ", 0, false)
 		}
 		RequestLog(fmt.Sprintf("Error sending request %s", string(response)), "NotifyQQ", 0, false)
+		request, _ := json.Marshal(botMessage)
+		RequestLog(fmt.Sprintf("Request: %s", string(request)), "NotifyQQ", 0, false)
 	}
 }
