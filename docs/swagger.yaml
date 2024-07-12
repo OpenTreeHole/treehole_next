@@ -288,6 +288,9 @@ definitions:
         description: Admin and owner only
         minimum: 1
         type: integer
+      hidden:
+        description: Admin only
+        type: boolean
       lock:
         description: admin only
         type: boolean
