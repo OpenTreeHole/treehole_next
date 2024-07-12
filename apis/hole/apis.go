@@ -450,17 +450,38 @@ func ModifyHole(c *fiber.Ctx) error {
 		}
 
 		// modify hidden
-		if body.Hidden != nil && *body.Hidden && !hole.Hidden {
-			hole.Hidden = true
-			changed = true
+		if body.Hidden != nil {
+			if *body.Hidden && !hole.Hidden {
+				hole.Hidden = true
+				changed = true
 
-			// delete floors from Elasticsearch
-			var floors Floors
-			_ = DB.Where("hole_id = ?", hole.ID).Find(&floors)
-			go BulkDelete(Models2IDSlice(floors))
+				// delete floors from Elasticsearch
+				var floors Floors
+				_ = DB.Where("hole_id = ?", hole.ID).Find(&floors)
+				go BulkDelete(Models2IDSlice(floors))
 
-			// log
-			MyLog("Hole", "Modify", holeID, user.ID, RoleAdmin, "Hidden: ")
+				// log
+				MyLog("Hole", "Modify", holeID, user.ID, RoleAdmin, "Hidden: ")
+			} else if !*body.Hidden && hole.Hidden {
+				hole.Hidden = false
+				changed = true
+
+				// reindex into Elasticsearch
+				var floors Floors
+				_ = DB.Where("hole_id = ?", hole.ID).Find(&floors)
+				var floorModels []FloorModel
+				for _, floor := range floors {
+					floorModels = append(floorModels, FloorModel{
+						ID:        floor.ID,
+						UpdatedAt: floor.UpdatedAt,
+						Content:   floor.Content,
+					})
+				}
+				go BulkInsert(floorModels)
+
+				// log
+				MyLog("Hole", "Modify", holeID, user.ID, RoleAdmin, "Unhidden: ")
+			}
 		} else {
 			if body.Unhidden != nil && *body.Unhidden && hole.Hidden {
 				hole.Hidden = false
