@@ -239,6 +239,9 @@ func checkSensitiveImage(params ParamsForCheck) (resp *ResponseForCheck, err err
 		for _, result := range *response.Result {
 			if result.Antispam != nil && result.Antispam.Labels != nil {
 				for _, label := range *result.Antispam.Labels {
+					if label.Label == nil || label.SubLabels == nil {
+						continue
+					}
 
 					labelNumber := *label.Label
 					if sensitiveLabelMap.data[labelNumber] != nil {
