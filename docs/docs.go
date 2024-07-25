@@ -2881,6 +2881,24 @@ const docTemplate = `{
                     "User"
                 ],
                 "summary": "modify user profiles",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "user id",
+                        "name": "user_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "modify user",
+                        "name": "json",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/user.ModifyModel"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -2900,6 +2918,24 @@ const docTemplate = `{
                     "User"
                 ],
                 "summary": "modify user profiles",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "user id",
+                        "name": "user_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "modify user",
+                        "name": "json",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/user.ModifyModel"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -4045,7 +4081,7 @@ const docTemplate = `{
                 "name": {
                     "description": "Admin only",
                     "type": "string",
-                    "maxLength": 10
+                    "maxLength": 20
                 }
             }
         },
@@ -4064,11 +4100,37 @@ const docTemplate = `{
                 "name": {
                     "description": "Admin only",
                     "type": "string",
-                    "maxLength": 10
+                    "maxLength": 20
                 },
                 "temperature": {
                     "description": "Admin only",
                     "type": "integer"
+                }
+            }
+        },
+        "user.ModifyModel": {
+            "type": "object",
+            "properties": {
+                "config": {
+                    "$ref": "#/definitions/user.UserConfigModel"
+                },
+                "nickname": {
+                    "type": "string",
+                    "minLength": 1
+                }
+            }
+        },
+        "user.UserConfigModel": {
+            "type": "object",
+            "properties": {
+                "notify": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "show_folded": {
+                    "type": "string"
                 }
             }
         }

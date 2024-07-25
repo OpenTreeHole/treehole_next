@@ -790,7 +790,7 @@ definitions:
     properties:
       name:
         description: Admin only
-        maxLength: 10
+        maxLength: 20
         type: string
     type: object
   tag.DeleteModel:
@@ -805,11 +805,28 @@ definitions:
     properties:
       name:
         description: Admin only
-        maxLength: 10
+        maxLength: 20
         type: string
       temperature:
         description: Admin only
         type: integer
+    type: object
+  user.ModifyModel:
+    properties:
+      config:
+        $ref: '#/definitions/user.UserConfigModel'
+      nickname:
+        minLength: 1
+        type: string
+    type: object
+  user.UserConfigModel:
+    properties:
+      notify:
+        items:
+          type: string
+        type: array
+      show_folded:
+        type: string
     type: object
 info:
   contact:
@@ -2535,6 +2552,18 @@ paths:
       tags:
       - user
     put:
+      parameters:
+      - description: user id
+        in: path
+        name: user_id
+        required: true
+        type: integer
+      - description: modify user
+        in: body
+        name: json
+        required: true
+        schema:
+          $ref: '#/definitions/user.ModifyModel'
       produces:
       - application/json
       responses:
@@ -2547,6 +2576,18 @@ paths:
       - User
   /users/{user_id}/_modify:
     patch:
+      parameters:
+      - description: user id
+        in: path
+        name: user_id
+        required: true
+        type: integer
+      - description: modify user
+        in: body
+        name: json
+        required: true
+        schema:
+          $ref: '#/definitions/user.ModifyModel'
       produces:
       - application/json
       responses:

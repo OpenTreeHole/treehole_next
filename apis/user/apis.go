@@ -69,6 +69,8 @@ func GetUserByID(c *fiber.Ctx) error {
 // @Produce json
 // @Router /users/{user_id} [put]
 // @Router /users/{user_id}/_modify [patch]
+// @Param user_id path int true "user id"
+// @Param json body ModifyModel true "modify user"
 // @Success 200 {object} User
 func ModifyUser(c *fiber.Ctx) error {
 	userID, err := c.ParamsInt("id")
@@ -98,10 +100,15 @@ func ModifyUser(c *fiber.Ctx) error {
 	}
 
 	if body.Config != nil {
-		newUser.Config = *body.Config
+		if body.Config.Notify != nil {
+			newUser.Config.Notify = body.Config.Notify
+		}
+		if body.Config.ShowFolded != nil {
+			newUser.Config.ShowFolded = *body.Config.ShowFolded
+		}
 	}
 
-	err = DB.Model(&user).Omit(clause.Associations).Select("Config").Updates(&newUser).Error
+	err = DB.Model(&user).Omit(clause.Associations).Select("Config").UpdateColumns(&newUser).Error
 	if err != nil {
 		return err
 	}

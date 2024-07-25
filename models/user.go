@@ -3,6 +3,7 @@ package models
 import (
 	"errors"
 	"fmt"
+	"golang.org/x/exp/slices"
 	"time"
 
 	"treehole_next/config"
@@ -98,6 +99,8 @@ var defaultUserConfig = UserConfig{
 	Notify:     []string{"mention", "favorite", "report"},
 	ShowFolded: "fold",
 }
+
+var showFoldedOptions = []string{"fold", "hide", "show"}
 
 func (user *User) GetID() int {
 	return user.ID
@@ -209,8 +212,14 @@ func (user *User) LoadUserByID(userID int) error {
 			}
 		}
 
+		// check config
+		if !slices.Contains(showFoldedOptions, user.Config.ShowFolded) {
+			user.Config.ShowFolded = defaultUserConfig.ShowFolded
+			modified = true
+		}
+
 		if modified {
-			err = tx.Select("BanDivision").Save(&user).Error
+			err = tx.Select("BanDivision", "Config").Save(&user).Error
 			if err != nil {
 				return err
 			}
