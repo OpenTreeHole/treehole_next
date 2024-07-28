@@ -167,6 +167,7 @@ func DeleteReport(c *fiber.Ctx) error {
 	DB.Omit("Floor").Save(&report)
 
 	MyLog("Report", "Delete", reportID, userID, RoleAdmin)
+	CreateAdminLog(DB, AdminLogTypeDeleteReport, userID, report)
 
 	// Send Notification
 	err = report.SendModify(DB)

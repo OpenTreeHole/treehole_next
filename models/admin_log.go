@@ -17,8 +17,11 @@ type AdminLogType string
 
 const (
 	AdminLogTypeHole            AdminLogType = "edit_hole"
+	AdminLogTypeHideHole        AdminLogType = "hide_hole"
+	AdminLogTypeTag             AdminLogType = "edit_tag"
 	AdminLogTypeDivision        AdminLogType = "edit_division"
 	AdminLogTypeMessage         AdminLogType = "send_message"
+	AdminLogTypeDeleteReport    AdminLogType = "delete_report"
 	AdminLogTypeChangeSensitive AdminLogType = "change_sensitive"
 )
 

@@ -622,6 +622,7 @@ func HideHole(c *fiber.Ctx) error {
 
 	// log
 	MyLog("Hole", "Hide", holeID, user.ID, RoleAdmin)
+	CreateAdminLog(DB, AdminLogTypeHideHole, user.ID, hole)
 
 	// find hole and update cache
 
