@@ -218,6 +218,11 @@ func (user *User) LoadUserByID(userID int) error {
 			modified = true
 		}
 
+		if user.Config.Notify == nil {
+			user.Config.Notify = defaultUserConfig.Notify
+			modified = true
+		}
+
 		if modified {
 			err = tx.Select("BanDivision", "Config").Save(&user).Error
 			if err != nil {
