@@ -13,6 +13,8 @@ func RegisterRoutes(app fiber.Router) {
 	app.Get("/users/:id<int>", GetUserByID)
 	app.Put("/users/:id<int>", ModifyUser)
 	app.Patch("/users/:id<int>/_modify", ModifyUser)
+	app.Put("/users/me", ModifyCurrentUser)
+	app.Patch("/users/me/_modify", ModifyCurrentUser)
 }
 
 // GetCurrentUser
@@ -99,6 +101,51 @@ func ModifyUser(c *fiber.Ctx) error {
 		return err
 	}
 
+	err = modifyUser(c, &newUser, body)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(&user)
+}
+
+// ModifyCurrentUser
+//
+// @Summary modify current user profiles
+// @Tags User
+// @Produce json
+// @Router /users/me [put]
+// @Router /users/me/_modify [patch]
+// @Param user_id path int true "user id"
+// @Param json body ModifyModel true "modify user"
+// @Success 200 {object} User
+func ModifyCurrentUser(c *fiber.Ctx) error {
+	user, err := GetUser(c)
+	if err != nil {
+		return err
+	}
+
+	var body ModifyModel
+	err = common.ValidateBody(c, &body)
+	if err != nil {
+		return err
+	}
+
+	err = modifyUser(c, user, body)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(&user)
+}
+
+func modifyUser(_ *fiber.Ctx, user *User, body ModifyModel) error {
+	var newUser User
+	err := DB.Select("config").First(&newUser, user.ID).Error
+	if err != nil {
+		return err
+	}
+
 	if body.Config != nil {
 		if body.Config.Notify != nil {
 			newUser.Config.Notify = body.Config.Notify
@@ -114,5 +161,5 @@ func ModifyUser(c *fiber.Ctx) error {
 	}
 
 	user.Config = newUser.Config
-	return c.JSON(&user)
+	return nil
 }

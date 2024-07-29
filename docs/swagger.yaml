@@ -2611,6 +2611,43 @@ paths:
       summary: get current user
       tags:
       - user
+    put:
+      parameters:
+      - description: modify user
+        in: body
+        name: json
+        required: true
+        schema:
+          $ref: '#/definitions/user.ModifyModel'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.User'
+      summary: modify current user profiles
+      tags:
+      - User
+  /users/me/_modify:
+    patch:
+      parameters:
+      - description: modify user
+        in: body
+        name: json
+        required: true
+        schema:
+          $ref: '#/definitions/user.ModifyModel'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.User'
+      summary: modify current user profiles
+      tags:
+      - User
   /users/me/floors:
     get:
       parameters:
