@@ -565,7 +565,13 @@ func ModifyHole(c *fiber.Ctx) error {
 			}
 
 			if user.IsAdmin {
-				CreateAdminLog(tx, AdminLogTypeHole, user.ID, body)
+				CreateAdminLog(tx, AdminLogTypeHole, user.ID, struct {
+					HoleID int         `json:"floor_id"`
+					Body   ModifyModel `json:"body"`
+				}{
+					HoleID: holeID,
+					Body:   body,
+				})
 			}
 		}
 		return nil
@@ -622,6 +628,7 @@ func HideHole(c *fiber.Ctx) error {
 
 	// log
 	MyLog("Hole", "Hide", holeID, user.ID, RoleAdmin)
+	CreateAdminLog(DB, AdminLogTypeHideHole, user.ID, hole)
 
 	// find hole and update cache
 
