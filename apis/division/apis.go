@@ -1,6 +1,8 @@
 package division
 
 import (
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	"strconv"
 
 	"github.com/opentreehole/go-common"
@@ -9,7 +11,6 @@ import (
 	. "treehole_next/utils"
 
 	"github.com/gofiber/fiber/v2"
-	"gorm.io/gorm"
 )
 
 // AddDivision
@@ -104,16 +105,17 @@ func GetDivision(c *fiber.Ctx) error {
 // @Router /divisions/{id} [put]
 // @Router /divisions/{id}/_modify [patch]
 // @Param id path int true "id"
-// @Param json body ModifyModel true "json"
+// @Param json body ModifyDivisionModel true "json"
 // @Success 200 {object} models.Division
 // @Failure 404 {object} MessageModel
 func ModifyDivision(c *fiber.Ctx) error {
 	// validate body
-	var body ModifyModel
+	var body ModifyDivisionModel
 	err := common.ValidateBody(c, &body)
 	if err != nil {
 		return err
 	}
+
 	id, err := c.ParamsInt("id")
 	if err != nil {
 		return err
@@ -130,21 +132,47 @@ func ModifyDivision(c *fiber.Ctx) error {
 		return common.Forbidden()
 	}
 
-	division := Division{
-		Name:        body.Name,
-		Description: body.Description,
-		Pinned:      body.Pinned,
+	var division Division
+	err = DB.Transaction(func(tx *gorm.DB) error {
+		err = tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&division, id).Error
+		if err != nil {
+			return err
+		}
+
+		modifyData := make(map[string]any)
+		if body.Name != nil {
+			modifyData["name"] = *body.Name
+		}
+		if body.Description != nil {
+			modifyData["description"] = *body.Description
+		}
+		if body.Pinned != nil {
+			modifyData["pinned"] = body.Pinned
+		}
+
+		if len(modifyData) == 0 {
+			return common.BadRequest("No data to modify.")
+		}
+
+		return tx.Model(&division).Updates(modifyData).Error
+	})
+	if err != nil {
+		return err
 	}
-	division.ID = id
-	result := DB.Model(&division).Updates(division)
-	// nothing updated, means that the record does not exist
-	if result.RowsAffected == 0 {
-		return gorm.ErrRecordNotFound
+
+	var newDivision Division
+	err = DB.First(&newDivision, id).Error
+	if err != nil {
+		return err
 	}
 
 	MyLog("Division", "Modify", division.ID, user.ID, RoleAdmin)
 
-	CreateAdminLog(DB, AdminLogTypeDivision, user.ID, body)
+	CreateAdminLog(DB, AdminLogTypeDivision, user.ID, map[string]any{
+		"division_id": division.ID,
+		"before":      division,
+		"after":       newDivision,
+	})
 
 	// refresh cache. here should not use `go refreshCache`
 	err = refreshCache(c)

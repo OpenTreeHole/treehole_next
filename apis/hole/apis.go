@@ -566,11 +566,18 @@ func ModifyHole(c *fiber.Ctx) error {
 
 			if user.IsAdmin {
 				CreateAdminLog(tx, AdminLogTypeHole, user.ID, struct {
-					HoleID int         `json:"hole_id"`
-					Body   ModifyModel `json:"body"`
+					HoleID int            `json:"hole_id"`
+					Before map[string]any `json:"before"`
+					Modify ModifyModel    `json:"modify"`
 				}{
 					HoleID: holeID,
-					Body:   body,
+					Before: map[string]any{
+						"division_id": hole.DivisionID,
+						"hidden":      hole.Hidden,
+						"locked":      hole.Locked,
+						"tags":        hole.Tags,
+					},
+					Modify: body,
 				})
 			}
 		}
@@ -628,7 +635,13 @@ func HideHole(c *fiber.Ctx) error {
 
 	// log
 	MyLog("Hole", "Hide", holeID, user.ID, RoleAdmin)
-	CreateAdminLog(DB, AdminLogTypeHideHole, user.ID, hole)
+	CreateAdminLog(DB, AdminLogTypeHideHole, user.ID, struct {
+		HoleID int  `json:"hole_id"`
+		Hidden bool `json:"hidden"`
+	}{
+		HoleID: holeID,
+		Hidden: true,
+	})
 
 	// find hole and update cache
 

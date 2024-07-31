@@ -271,7 +271,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/division.ModifyModel"
+                            "$ref": "#/definitions/division.ModifyDivisionModel"
                         }
                     }
                 ],
@@ -353,7 +353,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/division.ModifyModel"
+                            "$ref": "#/definitions/division.ModifyDivisionModel"
                         }
                     }
                 ],
@@ -3058,7 +3058,7 @@
                 }
             }
         },
-        "division.ModifyModel": {
+        "division.ModifyDivisionModel": {
             "type": "object",
             "properties": {
                 "description": {

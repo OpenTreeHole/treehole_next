@@ -41,7 +41,7 @@ definitions:
           ID of the target division that all the deleted division's holes will be moved to
         type: integer
     type: object
-  division.ModifyModel:
+  division.ModifyDivisionModel:
     properties:
       description:
         type: string
@@ -1031,7 +1031,7 @@ paths:
         name: json
         required: true
         schema:
-          $ref: '#/definitions/division.ModifyModel'
+          $ref: '#/definitions/division.ModifyDivisionModel'
       produces:
       - application/json
       responses:
@@ -1059,7 +1059,7 @@ paths:
         name: json
         required: true
         schema:
-          $ref: '#/definitions/division.ModifyModel'
+          $ref: '#/definitions/division.ModifyDivisionModel'
       produces:
       - application/json
       responses:

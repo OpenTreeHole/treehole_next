@@ -11,7 +11,8 @@ type CreateModel struct {
 	Description string `json:"description"`
 }
 
-type ModifyModel struct {
-	CreateModel
-	Pinned []int `json:"pinned"`
+type ModifyDivisionModel struct {
+	Name        *string `json:"name"`
+	Description *string `json:"description"`
+	Pinned      []int   `json:"pinned"`
 }

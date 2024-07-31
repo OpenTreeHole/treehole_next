@@ -278,7 +278,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/division.ModifyModel"
+                            "$ref": "#/definitions/division.ModifyDivisionModel"
                         }
                     }
                 ],
@@ -360,7 +360,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/division.ModifyModel"
+                            "$ref": "#/definitions/division.ModifyDivisionModel"
                         }
                     }
                 ],
@@ -3065,7 +3065,7 @@ const docTemplate = `{
                 }
             }
         },
-        "division.ModifyModel": {
+        "division.ModifyDivisionModel": {
             "type": "object",
             "properties": {
                 "description": {
