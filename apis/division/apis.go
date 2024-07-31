@@ -180,7 +180,7 @@ func ModifyDivision(c *fiber.Ctx) error {
 		return err
 	}
 
-	return Serialize(c, &division)
+	return Serialize(c, &newDivision)
 }
 
 // DeleteDivision
