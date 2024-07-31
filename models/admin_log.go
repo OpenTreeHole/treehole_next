@@ -1,6 +1,7 @@
 package models
 
 import (
+	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
 	"time"
 )
@@ -28,10 +29,13 @@ const (
 // CreateAdminLog
 // save admin edit log for audit purpose
 func CreateAdminLog(tx *gorm.DB, logType AdminLogType, userID int, data any) {
-	log := AdminLog{
+	adminLog := AdminLog{
 		Type:   logType,
 		UserID: userID,
 		Data:   data,
 	}
-	tx.Create(&log) // omit error
+	err := tx.Create(&adminLog).Error // omit error
+	if err != nil {
+		log.Error().Err(err).Msg("failed to create admin log")
+	}
 }
