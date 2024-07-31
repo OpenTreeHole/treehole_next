@@ -188,7 +188,13 @@ func ModifyTag(c *fiber.Ctx) error {
 		return err
 	}
 	MyLog("Tag", "Modify", tag.ID, userID, RoleAdmin)
-	CreateAdminLog(DB, AdminLogTypeTag, userID, body)
+	CreateAdminLog(DB, AdminLogTypeTag, userID, struct {
+		TagID int         `json:"tag_id"`
+		Body  ModifyModel `json:"body"`
+	}{
+		TagID: tag.ID,
+		Body:  body,
+	})
 
 	return Serialize(c, &tag)
 }

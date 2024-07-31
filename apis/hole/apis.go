@@ -566,7 +566,7 @@ func ModifyHole(c *fiber.Ctx) error {
 
 			if user.IsAdmin {
 				CreateAdminLog(tx, AdminLogTypeHole, user.ID, struct {
-					HoleID int         `json:"floor_id"`
+					HoleID int         `json:"hole_id"`
 					Body   ModifyModel `json:"body"`
 				}{
 					HoleID: holeID,
