@@ -96,7 +96,7 @@ func ModifyUser(c *fiber.Ctx) error {
 	}
 
 	var newUser User
-	err = DB.Select("config").First(&newUser, userID).Error
+	err = DB.First(&newUser, userID).Error
 	if err != nil {
 		return err
 	}
@@ -106,7 +106,7 @@ func ModifyUser(c *fiber.Ctx) error {
 		return err
 	}
 
-	return c.JSON(&user)
+	return c.JSON(&newUser)
 }
 
 // ModifyCurrentUser
