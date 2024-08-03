@@ -71,7 +71,7 @@ func SearchConfig(c *fiber.Ctx) error {
 
 func SearchFloorsOld(c *fiber.Ctx, query *ListOldModel) error {
 	if DynamicConfig.OpenSearch.Load() == false {
-		return common.Forbidden("树洞流量激增，搜索功能暂缓开放")
+		return common.Forbidden("茶楼流量激增，搜索功能暂缓开放")
 	}
 
 	floors, err := Search(c, query.Search, query.Size, query.Offset, false)
