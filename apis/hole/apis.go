@@ -396,7 +396,7 @@ func CreateHoleOld(c *fiber.Ctx) error {
 // @Tags Hole
 // @Produce application/json
 // @Router /holes/{id} [put]
-// @Router /holes/{id}/_modify [patch]
+// @Router /holes/{id}/_webvpn [patch]
 // @Param id path int true "id"
 // @Param json body ModifyModel true "json"
 // @Success 200 {object} Hole

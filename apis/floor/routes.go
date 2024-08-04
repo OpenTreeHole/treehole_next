@@ -16,7 +16,7 @@ func RegisterRoutes(app fiber.Router) {
 	app.Post("/holes/:id<int>/floors", utils.MiddlewareHasAnsweredQuestions, CreateFloor)
 	app.Post("/floors", utils.MiddlewareHasAnsweredQuestions, CreateFloorOld)
 	app.Put("/floors/:id<int>", ModifyFloor)
-	app.Patch("/floors/:id<int>/_modify", ModifyFloor)
+	app.Patch("/floors/:id<int>/_webvpn", ModifyFloor)
 	app.Post("/floors/:id<int>/like/:like<int>", ModifyFloorLike)
 	app.Delete("/floors/:id<int>", DeleteFloor)
 
@@ -31,5 +31,5 @@ func RegisterRoutes(app fiber.Router) {
 
 	app.Get("/floors/_sensitive", ListSensitiveFloors)
 	app.Put("/floors/:id<int>/_sensitive", ModifyFloorSensitive)
-	app.Patch("/floors/:id<int>/_sensitive", ModifyFloorSensitive)
+	app.Patch("/floors/:id<int>/_sensitive/_webvpn", ModifyFloorSensitive)
 }
