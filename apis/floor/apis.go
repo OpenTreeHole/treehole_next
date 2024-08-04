@@ -300,7 +300,7 @@ func CreateFloorOld(c *fiber.Ctx) error {
 // @Tags Floor
 // @Produce application/json
 // @Router /floors/{id} [put]
-// @Router /floors/{id}/_modify [patch]
+// @Router /floors/{id}/_webvpn [patch]
 // @Param id path int true "id"
 // @Param json body ModifyModel true "json"
 // @Success 200 {object} Floor
@@ -958,7 +958,7 @@ func ListSensitiveFloors(c *fiber.Ctx) (err error) {
 // @Tags Floor
 // @Produce application/json
 // @Router /floors/{id}/_sensitive [put]
-// @Router /floors/{id}/_sensitive [patch]
+// @Router /floors/{id}/_sensitive/_webvpn [patch]
 // @Param id path int true "id"
 // @Param json body ModifySensitiveFloorRequest true "json"
 // @Success 200 {object} Floor

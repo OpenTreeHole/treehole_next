@@ -15,7 +15,7 @@ func RegisterRoutes(app fiber.Router) {
 	app.Get("/holes/_good", ListGoodHoles)
 	app.Post("/divisions/:id/holes", utils.MiddlewareHasAnsweredQuestions, CreateHole)
 	app.Post("/holes", utils.MiddlewareHasAnsweredQuestions, CreateHoleOld)
-	app.Patch("/holes/:id<int>/_modify", ModifyHole)
+	app.Patch("/holes/:id<int>/_webvpn", ModifyHole)
 	app.Patch("/holes/:id<int>", PatchHole)
 	app.Put("/holes/:id<int>", ModifyHole)
 	app.Delete("/holes/:id<int>", HideHole)

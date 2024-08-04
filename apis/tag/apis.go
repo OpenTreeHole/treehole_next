@@ -138,7 +138,7 @@ func CreateTag(c *fiber.Ctx) error {
 // @Tags Tag
 // @Produce application/json
 // @Router /tags/{id} [put]
-// @Router /tags/{id}/_modify [patch]
+// @Router /tags/{id}/_webvpn [patch]
 // @Param id path int true "id"
 // @Param json body ModifyModel true "json"
 // @Success 200 {object} Tag

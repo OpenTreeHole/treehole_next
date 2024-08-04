@@ -733,50 +733,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/floors/{id}/_modify": {
-            "patch": {
-                "description": "when both \"fold_v2\" and \"fold\" are empty, reset fold; else, \"fold_v2\" has the priority",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Floor"
-                ],
-                "summary": "Modify A Floor",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "id",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "json",
-                        "name": "json",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/floor.ModifyModel"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/models.Floor"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/models.MessageModel"
-                        }
-                    }
-                }
-            }
-        },
         "/floors/{id}/_sensitive": {
             "put": {
                 "produces": [
@@ -818,7 +774,9 @@ const docTemplate = `{
                         }
                     }
                 }
-            },
+            }
+        },
+        "/floors/{id}/_sensitive/_webvpn": {
             "patch": {
                 "produces": [
                     "application/json"
@@ -842,6 +800,50 @@ const docTemplate = `{
                         "required": true,
                         "schema": {
                             "$ref": "#/definitions/floor.ModifySensitiveFloorRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Floor"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.MessageModel"
+                        }
+                    }
+                }
+            }
+        },
+        "/floors/{id}/_webvpn": {
+            "patch": {
+                "description": "when both \"fold_v2\" and \"fold\" are empty, reset fold; else, \"fold_v2\" has the priority",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Floor"
+                ],
+                "summary": "Modify A Floor",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "json",
+                        "name": "json",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/floor.ModifyModel"
                         }
                     }
                 ],
@@ -1466,7 +1468,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/holes/{id}/_modify": {
+        "/holes/{id}/_webvpn": {
             "patch": {
                 "description": "Modify a hole, modify tags and set the name mapping\nOnly admin can modify division, tags, hidden, lock\n` + "`" + `unhidden` + "`" + ` take effect only when hole is hidden and set to true",
                 "produces": [
@@ -1583,7 +1585,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/messages/_clear": {
+        "/messages/_webvpn": {
             "patch": {
                 "produces": [
                     "application/json"
@@ -2068,7 +2070,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/tags/{id}/_modify": {
+        "/tags/{id}/_webvpn": {
             "patch": {
                 "produces": [
                     "application/json"
@@ -2622,7 +2624,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/users/me/_modify": {
+        "/users/me/_webvpn": {
             "patch": {
                 "produces": [
                     "application/json"
@@ -2967,7 +2969,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/users/{user_id}/_modify": {
+        "/users/{user_id}/_webvpn": {
             "patch": {
                 "produces": [
                     "application/json"

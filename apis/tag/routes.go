@@ -7,6 +7,6 @@ func RegisterRoutes(app fiber.Router) {
 	app.Get("/tags/:id<int>", GetTag)
 	app.Post("/tags", CreateTag)
 	app.Put("/tags/:id<int>", ModifyTag)
-	app.Patch("/tags/:id<int>/_modify", ModifyTag)
+	app.Patch("/tags/:id<int>/_webvpn", ModifyTag)
 	app.Delete("/tags/:id<int>", DeleteTag)
 }

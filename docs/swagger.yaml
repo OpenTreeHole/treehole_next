@@ -1241,7 +1241,63 @@ paths:
       summary: Modify A Floor
       tags:
       - Floor
-  /floors/{id}/_modify:
+  /floors/{id}/_sensitive:
+    put:
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: json
+        in: body
+        name: json
+        required: true
+        schema:
+          $ref: '#/definitions/floor.ModifySensitiveFloorRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Floor'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.MessageModel'
+      summary: Modify A Floor's actual_sensitive, admin only
+      tags:
+      - Floor
+  /floors/{id}/_sensitive/_webvpn:
+    patch:
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: json
+        in: body
+        name: json
+        required: true
+        schema:
+          $ref: '#/definitions/floor.ModifySensitiveFloorRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Floor'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.MessageModel'
+      summary: Modify A Floor's actual_sensitive, admin only
+      tags:
+      - Floor
+  /floors/{id}/_webvpn:
     patch:
       description: when both "fold_v2" and "fold" are empty, reset fold; else, "fold_v2"
         has the priority
@@ -1269,61 +1325,6 @@ paths:
           schema:
             $ref: '#/definitions/models.MessageModel'
       summary: Modify A Floor
-      tags:
-      - Floor
-  /floors/{id}/_sensitive:
-    patch:
-      parameters:
-      - description: id
-        in: path
-        name: id
-        required: true
-        type: integer
-      - description: json
-        in: body
-        name: json
-        required: true
-        schema:
-          $ref: '#/definitions/floor.ModifySensitiveFloorRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/models.Floor'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/models.MessageModel'
-      summary: Modify A Floor's actual_sensitive, admin only
-      tags:
-      - Floor
-    put:
-      parameters:
-      - description: id
-        in: path
-        name: id
-        required: true
-        type: integer
-      - description: json
-        in: body
-        name: json
-        required: true
-        schema:
-          $ref: '#/definitions/floor.ModifySensitiveFloorRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/models.Floor'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/models.MessageModel'
-      summary: Modify A Floor's actual_sensitive, admin only
       tags:
       - Floor
   /floors/{id}/history:
@@ -1794,7 +1795,7 @@ paths:
       summary: Delete A Hole
       tags:
       - Hole
-  /holes/{id}/_modify:
+  /holes/{id}/_webvpn:
     patch:
       description: |-
         Modify a hole, modify tags and set the name mapping
@@ -1873,7 +1874,7 @@ paths:
       summary: Clear Messages Deprecated
       tags:
       - Message
-  /messages/_clear:
+  /messages/_webvpn:
     patch:
       produces:
       - application/json
@@ -2191,7 +2192,7 @@ paths:
       summary: Modify A Tag, admin only
       tags:
       - Tag
-  /tags/{id}/_modify:
+  /tags/{id}/_webvpn:
     patch:
       parameters:
       - description: id
@@ -2574,7 +2575,7 @@ paths:
       summary: modify user profiles
       tags:
       - User
-  /users/{user_id}/_modify:
+  /users/{user_id}/_webvpn:
     patch:
       parameters:
       - description: user id
@@ -2629,7 +2630,7 @@ paths:
       summary: modify current user profiles
       tags:
       - User
-  /users/me/_modify:
+  /users/me/_webvpn:
     patch:
       parameters:
       - description: modify user

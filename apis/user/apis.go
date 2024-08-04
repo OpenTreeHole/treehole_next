@@ -12,9 +12,9 @@ func RegisterRoutes(app fiber.Router) {
 	app.Get("/users/me", GetCurrentUser)
 	app.Get("/users/:id<int>", GetUserByID)
 	app.Put("/users/:id<int>", ModifyUser)
-	app.Patch("/users/:id<int>/_modify", ModifyUser)
+	app.Patch("/users/:id<int>/_webvpn", ModifyUser)
 	app.Put("/users/me", ModifyCurrentUser)
-	app.Patch("/users/me/_modify", ModifyCurrentUser)
+	app.Patch("/users/me/_webvpn", ModifyCurrentUser)
 }
 
 // GetCurrentUser
@@ -70,7 +70,7 @@ func GetUserByID(c *fiber.Ctx) error {
 // @Tags User
 // @Produce json
 // @Router /users/{user_id} [put]
-// @Router /users/{user_id}/_modify [patch]
+// @Router /users/{user_id}/_webvpn [patch]
 // @Param user_id path int true "user id"
 // @Param json body ModifyModel true "modify user"
 // @Success 200 {object} User
@@ -115,7 +115,7 @@ func ModifyUser(c *fiber.Ctx) error {
 // @Tags User
 // @Produce json
 // @Router /users/me [put]
-// @Router /users/me/_modify [patch]
+// @Router /users/me/_webvpn [patch]
 // @Param user_id path int true "user id"
 // @Param json body ModifyModel true "modify user"
 // @Success 200 {object} User
