@@ -1,6 +1,7 @@
 package division
 
 import (
+	"github.com/goccy/go-json"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"strconv"
@@ -147,7 +148,8 @@ func ModifyDivision(c *fiber.Ctx) error {
 			modifyData["description"] = *body.Description
 		}
 		if body.Pinned != nil {
-			modifyData["pinned"] = body.Pinned
+			data, _ := json.Marshal(body.Pinned)
+			modifyData["pinned"] = string(data)
 		}
 
 		if len(modifyData) == 0 {
