@@ -11,7 +11,7 @@ require (
 	github.com/goccy/go-json v0.10.3
 	github.com/gofiber/fiber/v2 v2.52.5
 	github.com/hetiansu5/urlquery v1.2.7
-	github.com/opentreehole/go-common v0.1.4
+	github.com/opentreehole/go-common v0.1.6
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/redis/go-redis/v9 v9.6.1
 	github.com/rs/zerolog v1.33.0

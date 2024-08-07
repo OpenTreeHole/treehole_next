@@ -152,6 +152,8 @@ github.com/mattn/go-sqlite3 v1.14.22/go.mod h1:Uh1q+B4BYcTPb+yiD3kU8Ct7aC0hY9fxU
 github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e/go.mod h1:zD1mROLANZcx1PVRCS0qkT7pwLkGfwJo4zjcN/Tysno=
 github.com/opentreehole/go-common v0.1.4 h1:j+rrXR1z3FJeboE5fQKcI7waLw6Ag+Tk5c1JVjNV4ZY=
 github.com/opentreehole/go-common v0.1.4/go.mod h1:0Ob6KqJUg+/he80cC3OdSokx4U35f2kgdGk73rrjWFo=
+github.com/opentreehole/go-common v0.1.6 h1:EFoh1HUSTMZePhq7ibhHzlJ1v2TlWxB76To2JFhQPRs=
+github.com/opentreehole/go-common v0.1.6/go.mod h1:0Ob6KqJUg+/he80cC3OdSokx4U35f2kgdGk73rrjWFo=
 github.com/otiai10/copy v1.7.0/go.mod h1:rmRl6QPdJj6EiUqXQ/4Nn2lLXoNQjFCQbbNrxgc/t3U=
 github.com/otiai10/curr v0.0.0-20150429015615-9b4961190c95/go.mod h1:9qAhocn7zKJG+0mI8eUu6xqkFDYS2kb2saOteoSB3cE=
 github.com/otiai10/curr v1.0.0/go.mod h1:LskTG5wDwr8Rs+nNQ+1LlxRjAtTZZjtJW4rMXl6j4vs=
