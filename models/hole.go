@@ -442,7 +442,8 @@ func (hole *Hole) Create(tx *gorm.DB, user *User, tagNames []string, c *fiber.Ct
 			Content:   firstFloor.Content,
 		})
 	} else {
-		firstFloor.Content = ""
+		firstFloor.SendSensitive(tx)
+		// firstFloor.Content = ""
 	}
 
 	hole.HoleHook()

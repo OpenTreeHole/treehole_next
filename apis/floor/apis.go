@@ -422,6 +422,9 @@ func ModifyFloor(c *fiber.Ctx) error {
 				})
 			} else {
 				go FloorDelete(floorID)
+				if floor.IsSensitive {
+					floor.SendSensitive(tx)
+				}
 			}
 		}
 
