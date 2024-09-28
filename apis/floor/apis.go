@@ -713,10 +713,24 @@ func GetFloorHistory(c *fiber.Ctx) error {
 		return common.Forbidden()
 	}
 
+	var floor Floor
 	var histories []FloorHistory
-	result := DB.Where("floor_id = ?", floorID).Find(&histories)
-	if result.Error != nil {
-		return result.Error
+
+	err = DB.Transaction(func(tx *gorm.DB) (err error) {
+		err = tx.First(&floor, floorID).Error
+		if err != nil {
+			return
+		}
+		err = tx.Where("floor_id = ?", floorID).Find(&histories).Error
+		return
+	})
+	if err != nil {
+		return err
+	}
+	for _, history := range histories {
+		if floor.UserID == history.UserID {
+			history.UserID = 1
+		}
 	}
 	return c.JSON(&histories)
 }
