@@ -727,9 +727,9 @@ func GetFloorHistory(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	for _, history := range histories {
-		if floor.UserID == history.UserID {
-			history.UserID = 1
+	for i := range histories {
+		if floor.UserID == histories[i].UserID {
+			histories[i].UserID = 1
 		}
 	}
 	return c.JSON(&histories)
