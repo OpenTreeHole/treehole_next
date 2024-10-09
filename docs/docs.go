@@ -11,7 +11,7 @@ const docTemplate = `{
         "title": "{{.Title}}",
         "contact": {
             "name": "Maintainer Ke Chen",
-            "email": "dev@fduhole.com"
+            "email": "dev@danta.tech"
         },
         "license": {
             "name": "Apache 2.0",
@@ -1659,6 +1659,36 @@ const docTemplate = `{
                         "required": true,
                         "schema": {
                             "$ref": "#/definitions/penalty.PostBody"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/models.User"
+                        }
+                    }
+                }
+            }
+        },
+        "/penalty/{floor_id}/_forever": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Penalty"
+                ],
+                "summary": "Ban publisher of a floor forever",
+                "parameters": [
+                    {
+                        "description": "json",
+                        "name": "json",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/penalty.ForeverPostBody"
                         }
                     }
                 ],
@@ -4020,6 +4050,15 @@ const docTemplate = `{
                 },
                 "show_folded": {
                     "description": "对折叠内容的处理\nfold 折叠, hide 隐藏, show 展示",
+                    "type": "string"
+                }
+            }
+        },
+        "penalty.ForeverPostBody": {
+            "type": "object",
+            "properties": {
+                "reason": {
+                    "description": "optional",
                     "type": "string"
                 }
             }

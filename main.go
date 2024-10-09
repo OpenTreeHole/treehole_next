@@ -15,7 +15,7 @@ import (
 //	@description	An Anonymous BBS \n Note: PUT methods are used to PARTLY update, and we don't use PATCH method.
 
 //	@contact.name	Maintainer Ke Chen
-//	@contact.email	dev@fduhole.com
+//	@contact.email	dev@danta.tech
 
 //	@license.name	Apache 2.0
 //	@license.url	https://www.apache.org/licenses/LICENSE-2.0.html

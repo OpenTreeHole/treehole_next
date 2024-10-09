@@ -709,6 +709,12 @@ definitions:
           fold 折叠, hide 隐藏, show 展示
         type: string
     type: object
+  penalty.ForeverPostBody:
+    properties:
+      reason:
+        description: optional
+        type: string
+    type: object
   penalty.PostBody:
     properties:
       days:
@@ -830,7 +836,7 @@ definitions:
     type: object
 info:
   contact:
-    email: dev@fduhole.com
+    email: dev@danta.tech
     name: Maintainer Ke Chen
   description: 'An Anonymous BBS \n Note: PUT methods are used to PARTLY update, and
     we don''t use PATCH method.'
@@ -1927,6 +1933,25 @@ paths:
           schema:
             $ref: '#/definitions/models.User'
       summary: Ban publisher of a floor
+      tags:
+      - Penalty
+  /penalty/{floor_id}/_forever:
+    post:
+      parameters:
+      - description: json
+        in: body
+        name: json
+        required: true
+        schema:
+          $ref: '#/definitions/penalty.ForeverPostBody'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.User'
+      summary: Ban publisher of a floor forever
       tags:
       - Penalty
   /reports:

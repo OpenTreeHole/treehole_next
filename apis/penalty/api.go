@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"github.com/opentreehole/go-common"
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 
 	. "treehole_next/models"
 
@@ -17,6 +19,10 @@ type PostBody struct {
 	Days         *int   `json:"days" validate:"omitempty,min=1"`      // high priority
 	Divisions    []int  `json:"divisions" validate:"omitempty,min=1"` // high priority
 	Reason       string `json:"reason"`                               // optional
+}
+
+type ForeverPostBody struct {
+	Reason string `json:"reason"` // optional
 }
 
 // BanUser
@@ -103,7 +109,123 @@ func BanUser(c *fiber.Ctx) error {
 		Data:       floor,
 		Recipients: []int{floor.UserID},
 		Description: fmt.Sprintf(
-			"您因为违反社区公约被禁言。时间：%d天，原因：%s\n如有异议，请联系admin@fduhole.com。",
+			"您因为违反社区公约被禁言。时间：%d天，原因：%s\n如有异议，请联系admin@danta.tech。",
+			days,
+			body.Reason,
+		),
+		Title: "处罚通知",
+		Type:  MessageTypePermission,
+		URL:   fmt.Sprintf("/api/floors/%d", floor.ID),
+	}
+
+	// send
+	_, err = message.Send()
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(user)
+}
+
+// BanUserForever
+//
+// @Summary Ban publisher of a floor forever
+// @Tags Penalty
+// @Produce json
+// @Router /penalty/{floor_id}/_forever [post]
+// @Param json body ForeverPostBody true "json"
+// @Success 201 {object} User
+func BanUserForever(c *fiber.Ctx) error {
+	// validate body
+	var body ForeverPostBody
+	err := common.ValidateBody(c, &body)
+	if err != nil {
+		return err
+	}
+
+	floorID, err := c.ParamsInt("id")
+	if err != nil {
+		return err
+	}
+
+	// get user
+	user, err := GetUser(c)
+	if err != nil {
+		return err
+	}
+
+	// permission
+	if !user.IsAdmin {
+		return common.Forbidden()
+	}
+
+	var floor Floor
+	err = DB.Take(&floor, floorID).Error
+	if err != nil {
+		return err
+	}
+
+	// var hole Hole
+	// err = DB.Take(&hole, floor.HoleID).Error
+	// if err != nil {
+	// 	return err
+	// }
+
+	days := 3650
+	duration := time.Duration(days) * 24 * time.Hour
+
+	var punishments Punishments
+	var punishment *Punishment
+	divisionIDs := []int{1, 2, 3, 5}
+	madeBy := user.ID
+	err = DB.Transaction(func(tx *gorm.DB) (err error) {
+		err = tx.Clauses(clause.Locking{Strength: "UPDATE"}).Take(&user, floor.UserID).Error
+		if err != nil {
+			return err
+		}
+
+		for _, divisionID := range divisionIDs {
+			punishment = &Punishment{
+				UserID:     floor.UserID,
+				MadeBy:     madeBy,
+				FloorID:    &floor.ID,
+				DivisionID: divisionID,
+				Duration:   &duration,
+				Day:        days,
+				Reason:     body.Reason,
+				StartTime:  time.Now(),
+				EndTime:    time.Now().Add(duration),
+			}
+
+			if user.BanDivision[divisionID] == nil {
+				user.BanDivision[divisionID] = &punishment.EndTime
+			} else {
+				user.BanDivision[divisionID].Add(*punishment.Duration)
+			}
+
+			punishments = append(punishments, punishment)
+		}
+		user.OffenceCount += len(divisionIDs)
+
+		err = tx.Create(&punishments).Error
+		if err != nil {
+			return err
+		}
+
+		err = tx.Select("BanDivision", "OffenceCount").Save(&user).Error
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	// construct message for user
+	message := Notification{
+		Data:       floor,
+		Recipients: []int{floor.UserID},
+		Description: fmt.Sprintf(
+			"您因为违反社区公约被禁言。时间：%d天，原因：%s\n如有异议，请联系admin@danta.tech。",
 			days,
 			body.Reason,
 		),
@@ -187,6 +309,7 @@ func listPunishmentsByUserID(userID int) ([]Punishment, error) {
 
 func RegisterRoutes(app fiber.Router) {
 	app.Post("/penalty/:id", BanUser)
+	app.Post("/penalty/:id/_forever", BanUserForever)
 	app.Get("/users/me/punishments", ListMyPunishments)
 	app.Get("/users/:id/punishments", ListPunishmentsByUserID)
 }

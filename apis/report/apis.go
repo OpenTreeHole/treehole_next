@@ -2,11 +2,12 @@ package report
 
 import (
 	"fmt"
-	"github.com/opentreehole/go-common"
-	"github.com/rs/zerolog/log"
 	"time"
 	. "treehole_next/models"
 	. "treehole_next/utils"
+
+	"github.com/opentreehole/go-common"
+	"github.com/rs/zerolog/log"
 
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
@@ -251,7 +252,7 @@ func BanReporter(c *fiber.Ctx) error {
 		Data:       report,
 		Recipients: []int{report.UserID},
 		Description: fmt.Sprintf(
-			"您因违反社区公约被禁止举报。时间：%d天，原因：%s\n如有异议，请联系admin@fduhole.com。",
+			"您因违反社区公约被禁止举报。时间：%d天，原因：%s\n如有异议，请联系admin@danta.tech。",
 			days,
 			body.Reason,
 		),
