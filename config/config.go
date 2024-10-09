@@ -36,20 +36,21 @@ var Config struct {
 	HolePurgeDays      int      `env:"HOLE_PURGE_DAYS" envDefault:"30"`
 	OpenSensitiveCheck bool     `env:"OPEN_SENSITIVE_CHECK" envDefault:"true"`
 
-	YiDunBusinessIdText  string   `env:"YI_DUN_BUSINESS_ID_TEXT" envDefault:""`
-	YiDunBusinessIdImage string   `env:"YI_DUN_BUSINESS_ID_IMAGE" envDefault:""`
-	YiDunSecretId        string   `env:"YI_DUN_SECRET_ID" envDefault:""`
-	YiDunSecretKey       string   `env:"YI_DUN_SECRET_KEY" envDefault:""`
-	YiDunAccessKeyId     string   `env:"YI_DUN_ACCESS_KEY_ID" envDefault:""`
-	YiDunAccessKeySecret string   `env:"YI_DUN_ACCESS_KEY_SECRET" envDefault:""`
-	ValidImageUrl        []string `env:"VALID_IMAGE_URL"`
-	UrlHostnameWhitelist []string `env:"URL_HOSTNAME_WHITELIST"`
-	ExternalImageHost    string   `env:"EXTERNAL_IMAGE_HOSTNAME" envDefault:""`
-	NotifiableAdminIds   []int    `env:"NOTIFIABLE_ADMIN_IDS"`
-	ProxyUrl             *url.URL `env:"PROXY_URL"`
-	QQBotGroupID         *int64   `env:"GROUP_ID"`
-	QQBotUserID          *int64   `env:"USER_ID"`
-	QQBotUrl             *string  `env:"QQ_BOT_URL"`
+	YiDunBusinessIdText          string   `env:"YI_DUN_BUSINESS_ID_TEXT" envDefault:""`
+	YiDunBusinessIdImage         string   `env:"YI_DUN_BUSINESS_ID_IMAGE" envDefault:""`
+	YiDunSecretId                string   `env:"YI_DUN_SECRET_ID" envDefault:""`
+	YiDunSecretKey               string   `env:"YI_DUN_SECRET_KEY" envDefault:""`
+	YiDunAccessKeyId             string   `env:"YI_DUN_ACCESS_KEY_ID" envDefault:""`
+	YiDunAccessKeySecret         string   `env:"YI_DUN_ACCESS_KEY_SECRET" envDefault:""`
+	ValidImageUrl                []string `env:"VALID_IMAGE_URL"`
+	UrlHostnameWhitelist         []string `env:"URL_HOSTNAME_WHITELIST"`
+	ExternalImageHost            string   `env:"EXTERNAL_IMAGE_HOSTNAME" envDefault:""`
+	NotifiableAdminIds           []int    `env:"NOTIFIABLE_ADMIN_IDS"`
+	ExcludeBanForeverDivisionIds []int    `env:"EXCLUDE_BAN_FOREVER_DIVISION_IDS"`
+	ProxyUrl                     *url.URL `env:"PROXY_URL"`
+	QQBotGroupID                 *int64   `env:"GROUP_ID"`
+	QQBotUserID                  *int64   `env:"USER_ID"`
+	QQBotUrl                     *string  `env:"QQ_BOT_URL"`
 }
 
 var DynamicConfig struct {

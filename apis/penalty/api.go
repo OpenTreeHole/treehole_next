@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"time"
 
+	"treehole_next/config"
+	. "treehole_next/models"
+	"treehole_next/utils"
+
 	"github.com/opentreehole/go-common"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
-
-	. "treehole_next/models"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -176,13 +178,22 @@ func BanUserForever(c *fiber.Ctx) error {
 
 	var punishments Punishments
 	var punishment *Punishment
-	divisionIDs := []int{1, 2, 3, 5}
+	var divisionIDs []int
 	madeBy := user.ID
 	err = DB.Transaction(func(tx *gorm.DB) (err error) {
 		err = tx.Clauses(clause.Locking{Strength: "UPDATE"}).Take(&user, floor.UserID).Error
 		if err != nil {
 			return err
 		}
+
+		err = tx.Clauses(clause.Locking{Strength: "UPDATE"}).Model(&Division{}).Select("id").Scan(&divisionIDs).Error
+		if err != nil {
+			return err
+		}
+
+		ExcludeBanForeverDivisionIds := config.Config.ExcludeBanForeverDivisionIds
+
+		divisionIDs = utils.Difference(divisionIDs, ExcludeBanForeverDivisionIds)
 
 		for _, divisionID := range divisionIDs {
 			punishment = &Punishment{
