@@ -199,7 +199,7 @@ func BanUserForever(c *fiber.Ctx) error {
 			punishment = &Punishment{
 				UserID:     floor.UserID,
 				MadeBy:     madeBy,
-				FloorID:    &floor.ID,
+				FloorID:    nil,
 				DivisionID: divisionID,
 				Duration:   &duration,
 				Day:        days,
