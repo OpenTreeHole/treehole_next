@@ -95,9 +95,12 @@ func ModifyUser(c *fiber.Ctx) error {
 		return err
 	}
 
-	// has_answered_questions will be invalid when user changes other user's profile
+	// cannot get field "has_answered_questions" when admin changes other user's config
 	if user.ID != userID {
-		err = DB.First(&user, userID).Error
+		user = &User{
+			ID: userID,
+		}
+		err = DB.Take(user).Error
 		if err != nil {
 			return err
 		}
