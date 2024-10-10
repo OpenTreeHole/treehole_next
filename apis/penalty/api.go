@@ -44,10 +44,12 @@ func BanUser(c *fiber.Ctx) error {
 		return err
 	}
 
+	log.Info().Msgf("ban user: %v", body)
 	floorID, err := c.ParamsInt("id")
 	if err != nil {
 		return err
 	}
+	log.Info().Msgf("ban user: %v", floorID)
 
 	// get user
 	user, err := GetUser(c)
