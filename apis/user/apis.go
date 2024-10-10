@@ -95,6 +95,14 @@ func ModifyUser(c *fiber.Ctx) error {
 		return err
 	}
 
+	// has_answered_questions will be invalid when user changes other user's profile
+	if user.ID != userID {
+		err = DB.First(&user, userID).Error
+		if err != nil {
+			return err
+		}
+	}
+
 	err = modifyUser(c, user, body)
 	if err != nil {
 		return err
