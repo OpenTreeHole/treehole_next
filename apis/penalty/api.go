@@ -10,7 +10,6 @@ import (
 	"treehole_next/utils"
 
 	"github.com/opentreehole/go-common"
-	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
@@ -44,12 +43,10 @@ func BanUser(c *fiber.Ctx) error {
 		return err
 	}
 
-	log.Info().Msgf("ban user: %v", body)
 	floorID, err := c.ParamsInt("id")
 	if err != nil {
 		return err
 	}
-	log.Info().Msgf("ban user: %v", floorID)
 
 	// get user
 	user, err := GetUser(c)
@@ -147,7 +144,6 @@ func BanUserForever(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	log.Info().Msgf("ban user forever: %v", body)
 
 	floorID, err := c.ParamsInt("id")
 	if err != nil {
@@ -164,8 +160,6 @@ func BanUserForever(c *fiber.Ctx) error {
 	if !user.IsAdmin {
 		return common.Forbidden()
 	}
-
-	log.Info().Msgf("ban user forever: %d", floorID)
 
 	var floor Floor
 	err = DB.Take(&floor, floorID).Error
@@ -186,14 +180,14 @@ func BanUserForever(c *fiber.Ctx) error {
 	var punishment *Punishment
 	var divisionIDs []int
 	madeBy := user.ID
+	user = &User{
+		ID: floor.UserID,
+	}
 	err = DB.Transaction(func(tx *gorm.DB) (err error) {
-		log.Info().Msgf("ban user forever: %d", floor.UserID)
-		err = tx.Clauses(clause.Locking{Strength: "UPDATE"}).Take(&user, floor.UserID).Error
+		err = tx.Clauses(clause.Locking{Strength: "UPDATE"}).Take(&user).Error
 		if err != nil {
 			return err
 		}
-
-		log.Info().Msgf("ban user forever: %v", user)
 
 		err = tx.Clauses(clause.Locking{Strength: "UPDATE"}).Model(&Division{}).Select("ID").Scan(&divisionIDs).Error
 		if err != nil {
@@ -203,7 +197,6 @@ func BanUserForever(c *fiber.Ctx) error {
 		ExcludeBanForeverDivisionIds := config.Config.ExcludeBanForeverDivisionIds
 
 		divisionIDs = utils.Difference(divisionIDs, ExcludeBanForeverDivisionIds)
-		log.Info().Msgf("ban user forever: %v", divisionIDs)
 
 		for _, divisionID := range divisionIDs {
 			punishment = &Punishment{
@@ -227,7 +220,6 @@ func BanUserForever(c *fiber.Ctx) error {
 			punishments = append(punishments, punishment)
 		}
 		user.OffenceCount += len(divisionIDs)
-		log.Info().Msgf("ban user forever: %v", punishments)
 
 		err = tx.Create(&punishments).Error
 		if err != nil {
@@ -244,7 +236,6 @@ func BanUserForever(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	log.Info().Msgf("ban user forever: %v", user)
 
 	// construct message for user
 	message := Notification{
@@ -259,7 +250,6 @@ func BanUserForever(c *fiber.Ctx) error {
 		Type:  MessageTypePermission,
 		URL:   fmt.Sprintf("/api/floors/%d", floor.ID),
 	}
-	log.Info().Msgf("ban user forever: %v", message)
 
 	// send
 	_, err = message.Send()
