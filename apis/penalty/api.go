@@ -230,6 +230,9 @@ func BanUserForever(c *fiber.Ctx) error {
 
 		return nil
 	})
+	if err != nil {
+		return err
+	}
 
 	// construct message for user
 	message := Notification{
