@@ -193,7 +193,9 @@ func BanUserForever(c *fiber.Ctx) error {
 			return err
 		}
 
-		err = tx.Clauses(clause.Locking{Strength: "UPDATE"}).Model(&Division{}).Select("id").Scan(&divisionIDs).Error
+		log.Info().Msgf("ban user forever: %v", user)
+
+		err = tx.Clauses(clause.Locking{Strength: "UPDATE"}).Model(&Division{}).Select("ID").Scan(&divisionIDs).Error
 		if err != nil {
 			return err
 		}
