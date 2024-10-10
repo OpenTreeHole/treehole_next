@@ -95,18 +95,12 @@ func ModifyUser(c *fiber.Ctx) error {
 		return err
 	}
 
-	var newUser User
-	err = DB.First(&newUser, userID).Error
+	err = modifyUser(c, user, body)
 	if err != nil {
 		return err
 	}
 
-	err = modifyUser(c, &newUser, body)
-	if err != nil {
-		return err
-	}
-
-	return c.JSON(&newUser)
+	return c.JSON(user)
 }
 
 // ModifyCurrentUser
