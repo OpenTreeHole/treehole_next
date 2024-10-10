@@ -322,8 +322,8 @@ func listPunishmentsByUserID(userID int) ([]Punishment, error) {
 }
 
 func RegisterRoutes(app fiber.Router) {
-	app.Post("/penalty/:id", BanUser)
-	app.Post("/penalty/:id/_forever", BanUserForever)
+	app.Post("/penalty/:id<int>/_forever", BanUserForever)
+	app.Post("/penalty/:id<int>", BanUser)
 	app.Get("/users/me/punishments", ListMyPunishments)
 	app.Get("/users/:id/punishments", ListPunishmentsByUserID)
 }
