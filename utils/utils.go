@@ -60,6 +60,24 @@ func Intersect[T comparable](x []T, y []T) []T {
 	return result
 }
 
+// Difference returns the elements in a that aren't in b
+func Difference[T comparable](a, b []T) []T {
+	m := make(map[T]bool)
+	var result []T
+
+	for _, item := range b {
+		m[item] = true
+	}
+
+	for _, item := range a {
+		if _, ok := m[item]; !ok {
+			result = append(result, item)
+		}
+	}
+
+	return result
+}
+
 func StripContent(content string, contentMaxSize int) string {
 	return string([]rune(content)[:Min(len([]rune(content)), contentMaxSize)])
 }
