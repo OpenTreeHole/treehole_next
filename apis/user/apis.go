@@ -95,18 +95,23 @@ func ModifyUser(c *fiber.Ctx) error {
 		return err
 	}
 
-	var newUser User
-	err = DB.First(&newUser, userID).Error
+	// cannot get field "has_answered_questions" when admin changes other user's config
+	if user.ID != userID {
+		user = &User{
+			ID: userID,
+		}
+		err = DB.Take(user).Error
+		if err != nil {
+			return err
+		}
+	}
+
+	err = modifyUser(c, user, body)
 	if err != nil {
 		return err
 	}
 
-	err = modifyUser(c, &newUser, body)
-	if err != nil {
-		return err
-	}
-
-	return c.JSON(&newUser)
+	return c.JSON(user)
 }
 
 // ModifyCurrentUser
