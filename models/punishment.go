@@ -79,7 +79,7 @@ func (punishment *Punishment) Create() (*User, error) {
 		if user.BanDivision[punishment.DivisionID] == nil {
 			user.BanDivision[punishment.DivisionID] = &punishment.EndTime
 		} else {
-			user.BanDivision[punishment.DivisionID].Add(*punishment.Duration)
+			*user.BanDivision[punishment.DivisionID] = user.BanDivision[punishment.DivisionID].Add(*punishment.Duration)
 		}
 		user.OffenceCount += 1
 
