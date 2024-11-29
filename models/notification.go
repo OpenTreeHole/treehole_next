@@ -8,6 +8,8 @@ import (
 	"io"
 	"math/rand"
 	"net/http"
+	"regexp"
+	"strings"
 	"sync"
 	"time"
 
@@ -124,6 +126,18 @@ func (message *Notification) checkConfig() {
 	message.Recipients = newRecipient
 }
 
+func cleanNotificationDescription(content string) string {
+	newContent = strings.ReplaceAll(content, "\n", "")
+	newContent = regexp.MustCompile(`#{1,2}\d+`).ReplaceAllString(newContent, "")
+	newContent = regexp.MustCompile(`\${1,2}.*?\${1,2}`).ReplaceAllString(newContent, "[公式]")
+	newContent = regexp.MustCompile(`!\[\]\(dx_\S+\)`).ReplaceAllString(newContent, "[表情]")
+	newContent = regexp.MustCompile(`!\[.*?\]\(.*?\)`).ReplaceAllString(newContent, "[图片]")
+	if newContent == "" {
+		return content
+	}
+	return newContent
+}
+
 func (message Notification) Send() (Message, error) {
 	// only for test
 	// message["recipients"] = []int{1}
@@ -154,7 +168,7 @@ func (message Notification) Send() (Message, error) {
 		return Message{}, nil
 	}
 	message.Title = utils.StripContent(message.Title, 32)             //varchar(32)
-	message.Description = utils.StripContent(message.Description, 64) //varchar(64)
+	message.Description = utils.StripContent(cleanNotificationDescription(message.Description), 64) //varchar(64)
 	body.Title = message.Title
 	body.Description = message.Description
 
