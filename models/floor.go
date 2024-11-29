@@ -3,6 +3,7 @@ package models
 import (
 	"fmt"
 	"time"
+	"regexp"
 	"treehole_next/utils/sensitive"
 
 	"github.com/opentreehole/go-common"
@@ -461,6 +462,14 @@ func (floor *Floor) ModifyLike(tx *gorm.DB, userID int, likeOption int8) (err er
 Send Notifications
 ******************/
 
+func cleanNotificationDescription(content string) string {
+    // Remove floor id pattern at the start of the string
+    if re := regexp.MustCompile(`^##\d+\n`); re.MatchString(content) {
+        return re.ReplaceAllString(content, "")
+    }
+    return content
+}
+
 func (floor *Floor) SendSubscription(tx *gorm.DB) Notification {
 	// get recipients
 	var tmpIDs []int
@@ -481,7 +490,7 @@ func (floor *Floor) SendSubscription(tx *gorm.DB) Notification {
 	message := Notification{
 		Data:        floor,
 		Recipients:  userIDs,
-		Description: floor.Content,
+		Description: cleanNotificationDescription(floor.Content),
 		Title:       "您关注的帖子有新回复",
 		Type:        MessageTypeFavorite,
 		URL:         fmt.Sprintf("/api/floors/%d", floor.ID),
@@ -508,7 +517,7 @@ func (floor *Floor) SendReply(tx *gorm.DB) Notification {
 	message := Notification{
 		Data:        floor,
 		Recipients:  userIDs,
-		Description: floor.Content,
+		Description: cleanNotificationDescription(floor.Content),
 		Title:       "您的内容有新回复",
 		Type:        MessageTypeReply,
 		URL:         fmt.Sprintf("/api/floors/%d", floor.ID),
@@ -533,7 +542,7 @@ func (floor *Floor) SendMention(_ *gorm.DB) Notification {
 	message := Notification{
 		Data:        floor,
 		Recipients:  userIDs,
-		Description: floor.Content,
+		Description: cleanNotificationDescription(floor.Content),
 		Title:       "您的内容被引用了",
 		Type:        MessageTypeMention,
 		URL:         fmt.Sprintf("/api/floors/%d", floor.ID),
@@ -550,7 +559,7 @@ func (floor *Floor) SendModify(_ *gorm.DB) error {
 	message := Notification{
 		Data:        floor,
 		Recipients:  userIDs,
-		Description: floor.Content,
+		Description: cleanNotificationDescription(floor.Content),
 		Title:       "您的内容被管理员修改了",
 		Type:        MessageTypeModify,
 		URL:         fmt.Sprintf("/api/floors/%d", floor.ID),
