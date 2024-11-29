@@ -127,10 +127,10 @@ func (message *Notification) checkConfig() {
 }
 
 var (
-    reHole    = regexp.MustCompile(`(?s)#{1,2}\d+`)
+    reHole    = regexp.MustCompile(`#{1,2}\d+`)
     reFormula = regexp.MustCompile(`(?s)\${1,2}.*?\${1,2}`)
-    reSticker = regexp.MustCompile(`(?s)!\[\]\(dx_\S+\)`)
-    reImage   = regexp.MustCompile(`(?s)!\[.*?\]\(.*?\)`)
+    reSticker = regexp.MustCompile(`!\[\]\(dx_\S+\)`)
+    reImage   = regexp.MustCompile(`!\[.*?\]\(.*?\)`)
 )
 
 func cleanNotificationDescription(content string) string {
