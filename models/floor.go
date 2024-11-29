@@ -463,11 +463,15 @@ Send Notifications
 ******************/
 
 func cleanNotificationDescription(content string) string {
-    // Remove floor id pattern at the start of the string
-    if re := regexp.MustCompile(`^##\d+\n`); re.MatchString(content) {
-        return re.ReplaceAllString(content, "")
-    }
-    return content
+	// Remove "##<number>\n" prefix
+	content = regexp.MustCompile(`^##\d+\n`).ReplaceAllString(content, "")
+
+	// Replace formulas, stickers, and images
+	content = regexp.MustCompile(`\${1,2}.*?\${1,2}`).ReplaceAllString(content, "[公式]")
+	content = regexp.MustCompile(`!\[\]\(dx_\S+\)`).ReplaceAllString(content, "[表情]")
+	content = regexp.MustCompile(`!\[.*?\]\(.*?\)`).ReplaceAllString(content, "[图片]")
+	
+	return content
 }
 
 func (floor *Floor) SendSubscription(tx *gorm.DB) Notification {
