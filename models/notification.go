@@ -126,16 +126,23 @@ func (message *Notification) checkConfig() {
 	message.Recipients = newRecipient
 }
 
+var (
+    reHole    = regexp.MustCompile(`#{1,2}\d+`)
+    reFormula = regexp.MustCompile(`\${1,2}.*?\${1,2}`)
+    reSticker = regexp.MustCompile(`!\[\]\(dx_\S+\)`)
+    reImage   = regexp.MustCompile(`!\[.*?\]\(.*?\)`)
+)
+
 func cleanNotificationDescription(content string) string {
-	newContent = strings.ReplaceAll(content, "\n", "")
-	newContent = regexp.MustCompile(`#{1,2}\d+`).ReplaceAllString(newContent, "")
-	newContent = regexp.MustCompile(`\${1,2}.*?\${1,2}`).ReplaceAllString(newContent, "[公式]")
-	newContent = regexp.MustCompile(`!\[\]\(dx_\S+\)`).ReplaceAllString(newContent, "[表情]")
-	newContent = regexp.MustCompile(`!\[.*?\]\(.*?\)`).ReplaceAllString(newContent, "[图片]")
-	if newContent == "" {
-		return content
-	}
-	return newContent
+    newContent := strings.ReplaceAll(content, "\n", "")
+    newContent = reHole.ReplaceAllString(newContent, "")
+    newContent = reFormula.ReplaceAllString(newContent, "[公式]")
+    newContent = reSticker.ReplaceAllString(newContent, "[表情]")
+    newContent = reImage.ReplaceAllString(newContent, "[图片]")
+    if newContent == "" {
+        return content
+    }
+    return newContent
 }
 
 func (message Notification) Send() (Message, error) {
