@@ -126,25 +126,6 @@ func (message *Notification) checkConfig() {
 	message.Recipients = newRecipient
 }
 
-var (
-    reHole    = regexp.MustCompile(`#{1,2}\d+`)
-    reFormula = regexp.MustCompile(`(?s)\${1,2}.*?\${1,2}`)
-    reSticker = regexp.MustCompile(`!\[\]\(dx_\S+\)`)
-    reImage   = regexp.MustCompile(`!\[.*?\]\(.*?\)`)
-)
-
-func cleanNotificationDescription(content string) string {
-    newContent := strings.ReplaceAll(content, "\n", "")
-    newContent = reHole.ReplaceAllString(newContent, "")
-    newContent = reFormula.ReplaceAllString(newContent, "[公式]")
-    newContent = reSticker.ReplaceAllString(newContent, "[表情]")
-    newContent = reImage.ReplaceAllString(newContent, "[图片]")
-    if newContent == "" {
-        return content
-    }
-    return newContent
-}
-
 func (message Notification) Send() (Message, error) {
 	// only for test
 	// message["recipients"] = []int{1}
@@ -282,4 +263,23 @@ func UpdateAdminList(ctx context.Context) {
 			InitAdminList()
 		}
 	}
+}
+
+var (
+    reHole    = regexp.MustCompile(`#{1,2}\d+`)
+    reFormula = regexp.MustCompile(`(?s)\${1,2}.*?\${1,2}`)
+    reSticker = regexp.MustCompile(`!\[\]\(dx_\S+\)`)
+    reImage   = regexp.MustCompile(`!\[.*?\]\(.*?\)`)
+)
+
+func cleanNotificationDescription(content string) string {
+    newContent := strings.ReplaceAll(content, "\n", "")
+    newContent = reHole.ReplaceAllString(newContent, "")
+    newContent = reFormula.ReplaceAllString(newContent, "[公式]")
+    newContent = reSticker.ReplaceAllString(newContent, "[表情]")
+    newContent = reImage.ReplaceAllString(newContent, "[图片]")
+    if newContent == "" {
+        return content
+    }
+    return newContent
 }
