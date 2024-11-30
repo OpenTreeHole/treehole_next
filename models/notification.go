@@ -8,6 +8,8 @@ import (
 	"io"
 	"math/rand"
 	"net/http"
+	"regexp"
+	"strings"
 	"sync"
 	"time"
 
@@ -154,7 +156,7 @@ func (message Notification) Send() (Message, error) {
 		return Message{}, nil
 	}
 	message.Title = utils.StripContent(message.Title, 32)             //varchar(32)
-	message.Description = utils.StripContent(message.Description, 64) //varchar(64)
+	message.Description = utils.StripContent(cleanNotificationDescription(message.Description), 64) //varchar(64)
 	body.Title = message.Title
 	body.Description = message.Description
 
@@ -261,4 +263,23 @@ func UpdateAdminList(ctx context.Context) {
 			InitAdminList()
 		}
 	}
+}
+
+var (
+	reHole    = regexp.MustCompile(`#{1,2}\d+`)
+	reFormula = regexp.MustCompile(`(?s)\${1,2}.*?\${1,2}`)
+	reSticker = regexp.MustCompile(`!\[\]\(dx_\S+\)`)
+	reImage   = regexp.MustCompile(`!\[.*?\]\(.*?\)`)
+)
+
+func cleanNotificationDescription(content string) string {
+	newContent := reHole.ReplaceAllString(content, "")
+	newContent = reFormula.ReplaceAllString(newContent, "[公式]")
+    	newContent = reSticker.ReplaceAllString(newContent, "[表情]")
+    	newContent = reImage.ReplaceAllString(newContent, "[图片]")
+	newContent = strings.ReplaceAll(newContent, "\n", "")
+	if newContent == "" {
+		return content
+	}
+	return newContent
 }
