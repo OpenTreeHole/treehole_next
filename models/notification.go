@@ -268,7 +268,7 @@ func UpdateAdminList(ctx context.Context) {
 var (
 	reMention    = regexp.MustCompile(`#{1,2}\d+`)
 	reFormula = regexp.MustCompile(`(?s)\${1,2}.*?\${1,2}`)
-	reSticker = regexp.MustCompile(`!\[\]\(dx_\S+\)`)
+	reSticker = regexp.MustCompile(`!\[\]\(dx_\S+?\)`)
 	reImage   = regexp.MustCompile(`!\[.*?\]\(.*?\)`)
 )
 
