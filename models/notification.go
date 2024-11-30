@@ -266,20 +266,20 @@ func UpdateAdminList(ctx context.Context) {
 }
 
 var (
-    reHole    = regexp.MustCompile(`#{1,2}\d+`)
-    reFormula = regexp.MustCompile(`(?s)\${1,2}.*?\${1,2}`)
-    reSticker = regexp.MustCompile(`!\[\]\(dx_\S+\)`)
-    reImage   = regexp.MustCompile(`!\[.*?\]\(.*?\)`)
+	reHole    = regexp.MustCompile(`#{1,2}\d+`)
+	reFormula = regexp.MustCompile(`(?s)\${1,2}.*?\${1,2}`)
+	reSticker = regexp.MustCompile(`!\[\]\(dx_\S+\)`)
+	reImage   = regexp.MustCompile(`!\[.*?\]\(.*?\)`)
 )
 
 func cleanNotificationDescription(content string) string {
-    newContent := strings.ReplaceAll(content, "\n", "")
-    newContent = reHole.ReplaceAllString(newContent, "")
-    newContent = reFormula.ReplaceAllString(newContent, "[公式]")
-    newContent = reSticker.ReplaceAllString(newContent, "[表情]")
-    newContent = reImage.ReplaceAllString(newContent, "[图片]")
-    if newContent == "" {
-        return content
-    }
-    return newContent
+	newContent := reHole.ReplaceAllString(content, "")
+	newContent = reFormula.ReplaceAllString(newContent, "[公式]")
+    	newContent = reSticker.ReplaceAllString(newContent, "[表情]")
+    	newContent = reImage.ReplaceAllString(newContent, "[图片]")
+	newContent = strings.ReplaceAll(newContent, "\n", "")
+	if newContent == "" {
+		return content
+	}
+	return newContent
 }
