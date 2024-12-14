@@ -1,11 +1,14 @@
 package models
 
 import (
-	"github.com/gofiber/fiber/v2"
+	"fmt"
 	"strings"
 	"sync"
 	"time"
+	"treehole_next/config"
 	"treehole_next/utils/sensitive"
+
+	"github.com/gofiber/fiber/v2"
 
 	"github.com/opentreehole/go-common"
 	"github.com/rs/zerolog/log"
@@ -65,15 +68,20 @@ func FindOrCreateTags(tx *gorm.DB, user *User, names []string) (Tags, error) {
 		return nil, err
 	}
 
-	existTagName := make([]string, 0)
+	existTagNames := make([]string, 0)
 	for _, tag := range tags {
-		existTagName = append(existTagName, tag.Name)
+		existTagNames = append(existTagNames, tag.Name)
+		if slices.ContainsFunc(config.Config.AdminOnlyTagIds, func(i int) bool {
+			return i == tag.ID
+		}) {
+			return nil, common.Forbidden(fmt.Sprintf("标签 %s 为管理员专用标签", tag.Name))
+		}
 	}
 
 	newTags := make(Tags, 0)
 	for _, name := range names {
 		name = strings.TrimSpace(name)
-		if !slices.ContainsFunc(existTagName, func(s string) bool {
+		if !slices.ContainsFunc(existTagNames, func(s string) bool {
 			return strings.EqualFold(s, name)
 		}) {
 			newTags = append(newTags, &Tag{Name: name})

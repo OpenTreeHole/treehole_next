@@ -51,6 +51,7 @@ var Config struct {
 	QQBotGroupID                 *int64   `env:"GROUP_ID"`
 	QQBotUserID                  *int64   `env:"USER_ID"`
 	QQBotUrl                     *string  `env:"QQ_BOT_URL"`
+	AdminOnlyTagIds              []int    `env:"ADMIN_ONLY_TAG_IDS"`
 }
 
 var DynamicConfig struct {
