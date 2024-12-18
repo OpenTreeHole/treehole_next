@@ -71,10 +71,12 @@ func FindOrCreateTags(tx *gorm.DB, user *User, names []string) (Tags, error) {
 	existTagNames := make([]string, 0)
 	for _, tag := range tags {
 		existTagNames = append(existTagNames, tag.Name)
-		if slices.ContainsFunc(config.Config.AdminOnlyTagIds, func(i int) bool {
-			return i == tag.ID
-		}) {
-			return nil, common.Forbidden(fmt.Sprintf("标签 %s 为管理员专用标签", tag.Name))
+		if !user.IsAdmin {
+			if slices.ContainsFunc(config.Config.AdminOnlyTagIds, func(i int) bool {
+				return i == tag.ID
+			}) {
+				return nil, common.Forbidden(fmt.Sprintf("标签 %s 为管理员专用标签", tag.Name))
+			}
 		}
 	}
 
