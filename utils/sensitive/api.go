@@ -1,9 +1,12 @@
 package sensitive
 
 import (
+	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -42,6 +45,8 @@ type ResponseForCheck struct {
 	Detail string
 }
 
+var httpClient = &http.Client{}
+
 func CheckSensitive(params ParamsForCheck) (resp *ResponseForCheck, err error) {
 	images, clearContent, err := findImagesInMarkdownContent(params.Content)
 	if err != nil {
@@ -49,15 +54,12 @@ func CheckSensitive(params ParamsForCheck) (resp *ResponseForCheck, err error) {
 	}
 	if len(images) != 0 {
 		for _, img := range images {
-			imgUrl, err := url.Parse(img)
+			base64Img, err := getImageBase64FromURL(img)
 			if err != nil {
 				return nil, err
 			}
-			if config.Config.ExternalImageHost != "" {
-				imgUrl.Host = config.Config.ExternalImageHost
-			}
 			ret, err := checkSensitiveImage(ParamsForCheck{
-				Content:  imgUrl.String(),
+				Content:  base64Img,
 				Id:       time.Now().UnixNano(),
 				TypeName: TypeImage,
 			})
@@ -186,7 +188,7 @@ func CheckSensitiveText(params ParamsForCheck) (resp *ResponseForCheck, err erro
 
 func checkSensitiveImage(params ParamsForCheck) (resp *ResponseForCheck, err error) {
 	// 设置易盾内容安全分配的businessId
-	imgUrl := params.Content
+	imgBase64 := params.Content
 
 	request := check.NewImageV5CheckRequest(config.Config.YiDunBusinessIdImage)
 
@@ -199,10 +201,13 @@ func checkSensitiveImage(params ParamsForCheck) (resp *ResponseForCheck, err err
 	}
 
 	imageInst := check.NewImageBeanRequest()
-	imageInst.SetData(imgUrl)
+
 	imageInst.SetName(strconv.FormatInt(params.Id, 10) + "_" + params.TypeName)
 	// 设置图片数据的类型，1：图片URL，2:图片BASE64
-	imageInst.SetType(1)
+	// imageInst.SetData(imgUrl)
+	// imageInst.SetType(1)
+	imageInst.SetData(imgBase64)
+	imageInst.SetType(2)
 
 	imageBeans := []check.ImageBeanRequest{*imageInst}
 	request.SetImages(imageBeans)
@@ -420,4 +425,50 @@ func UpdateSensitiveLabelMap(ctx context.Context) {
 			InitSensitiveLabelMap()
 		}
 	}
+}
+
+func getImageBase64FromURL(imgurl string) (string, error) {
+	imgUrl, err := url.Parse(imgurl)
+	if err != nil {
+		return "", err
+	}
+	if config.Config.ExternalImageHost != "" {
+		imgUrl.Host = config.Config.ExternalImageHost
+		imgUrl.Scheme = "http"
+	}
+
+	req, err := http.NewRequest(
+		"GET",
+		imgurl,
+		nil,
+	)
+	if err != nil {
+		fmt.Printf("Failed to create request: %v in getImageBase64FromURL\n", err)
+		return "", err
+	}
+
+	req.Header.Add("X-Consumer-Username", "0")
+
+	res, err := httpClient.Do(req)
+	if err != nil {
+		fmt.Printf("Failed to execute request: %v in getImageBase64FromURL\n", err)
+		return "", err
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusOK {
+		fmt.Printf("Request failed with status code: %d and message: %s in getImageBase64FromURL\n", res.StatusCode, res.Status)
+		return "", fmt.Errorf("Request failed with status code: %d", res.StatusCode)
+	}
+
+	// 读取响应体到内存
+	var buffer bytes.Buffer
+	_, err = io.Copy(&buffer, res.Body)
+	if err != nil {
+		fmt.Printf("Failed to read response body: %v in getImageBase64FromURL\n", err)
+		return "", err
+	}
+
+	// 将图片数据转为 Base64
+	return base64.StdEncoding.EncodeToString(buffer.Bytes()), nil
 }
