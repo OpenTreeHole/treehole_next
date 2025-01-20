@@ -1,13 +1,12 @@
 package favourite
 
 import (
+	"github.com/gofiber/fiber/v2"
 	"github.com/opentreehole/go-common"
 	"gorm.io/gorm"
 	"gorm.io/plugin/dbresolver"
-	"treehole_next/utils"
-
-	"github.com/gofiber/fiber/v2"
 	. "treehole_next/models"
+	"treehole_next/utils"
 )
 
 // ListFavorites
@@ -132,7 +131,7 @@ func AddFavorite(c *fiber.Ctx) error {
 // @Tags Favorite
 // @Produce application/json
 // @Router /user/favorites [put]
-// @Router /user/favorites/_modify [patch]
+// @Router /user/favorites/_webvpn [patch]
 // @Param json body ModifyModel true "json"
 // @Success 200 {object} Response
 // @Failure 404 {object} Response
@@ -303,7 +302,7 @@ func AddFavoriteGroup(c *fiber.Ctx) error {
 // @Tags Favorite
 // @Produce application/json
 // @Router /user/favorite_groups [put]
-// @Router /user/favorite_groups/_modify [patch]
+// @Router /user/favorite_groups/_webvpn [patch]
 // @Param json body ModifyFavoriteGroupModel true "json"
 // @Success 200 {array} models.FavoriteGroup
 // @Failure 404 {object} common.HttpError

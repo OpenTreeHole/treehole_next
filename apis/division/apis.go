@@ -104,7 +104,7 @@ func GetDivision(c *fiber.Ctx) error {
 // @Tags Division
 // @Produce json
 // @Router /divisions/{id} [put]
-// @Router /divisions/{id}/_modify [patch]
+// @Router /divisions/{id}/_webvpn [patch]
 // @Param id path int true "id"
 // @Param json body ModifyDivisionModel true "json"
 // @Success 200 {object} models.Division

@@ -1052,7 +1052,7 @@ paths:
       summary: Modify A Division
       tags:
       - Division
-  /divisions/{id}/_modify:
+  /divisions/{id}/_webvpn:
     patch:
       parameters:
       - description: id
@@ -2374,7 +2374,7 @@ paths:
       summary: Modify User's Favorite Group
       tags:
       - Favorite
-  /user/favorite_groups/_modify:
+  /user/favorite_groups/_webvpn:
     patch:
       parameters:
       - description: json
@@ -2497,7 +2497,7 @@ paths:
       summary: Modify User's Favorites
       tags:
       - Favorite
-  /user/favorites/_modify:
+  /user/favorites/_webvpn:
     patch:
       parameters:
       - description: json

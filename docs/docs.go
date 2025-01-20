@@ -337,7 +337,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/divisions/{id}/_modify": {
+        "/divisions/{id}/_webvpn": {
             "patch": {
                 "produces": [
                     "application/json"
@@ -2341,7 +2341,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/user/favorite_groups/_modify": {
+        "/user/favorite_groups/_webvpn": {
             "patch": {
                 "produces": [
                     "application/json"
@@ -2531,7 +2531,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/user/favorites/_modify": {
+        "/user/favorites/_webvpn": {
             "patch": {
                 "produces": [
                     "application/json"
