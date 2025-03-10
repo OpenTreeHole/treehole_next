@@ -4,7 +4,6 @@ import (
 	"errors"
 	"time"
 
-	"github.com/opentreehole/go-common"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"gorm.io/plugin/dbresolver"
@@ -21,6 +20,8 @@ type Punishment struct {
 
 	// time when this punishment creates
 	CreatedAt time.Time `json:"created_at"`
+
+	UpdatedAt time.Time `json:"updated_at"`
 
 	// time when this punishment revoked
 	DeletedAt gorm.DeletedAt `json:"-"`
@@ -66,26 +67,55 @@ func (punishment *Punishment) Create() (*User, error) {
 			return err
 		}
 
-		var floorPunishment Punishment
-		err = tx.Where("user_id = ? and floor_id = ?", user.ID, punishment.FloorID).Take(&floorPunishment).Error
+		var previousPunishment Punishment
+		err = tx.Where("user_id = ? and floor_id = ?", user.ID, punishment.FloorID).Take(&previousPunishment).Error
 		if err == nil {
-			return common.Forbidden("该用户已被禁言")
+			// return common.Forbidden("该用户已被禁言")
+
+			// same as before, do nothing
+			if previousPunishment.Duration == punishment.Duration && previousPunishment.Day == punishment.Day {
+				return nil
+			}
+
+			// different duration, revoke previous punishment
+			diffDuration := time.Duration(punishment.Day-previousPunishment.Day) * 24 * time.Hour
+
+			previousPunishment.Duration = punishment.Duration
+			previousPunishment.Day = punishment.Day
+			previousPunishment.EndTime = previousPunishment.StartTime.Add(*punishment.Duration)
+			previousPunishment.Reason = punishment.Reason
+			previousPunishment.MadeBy = punishment.MadeBy
+			// conflict with previous punishment if not equal
+			// ignore it as it's rare
+			previousPunishment.DivisionID = punishment.DivisionID
+
+			if user.BanDivision[punishment.DivisionID] == nil {
+				user.BanDivision[punishment.DivisionID] = &previousPunishment.EndTime
+			} else {
+				*user.BanDivision[punishment.DivisionID] = user.BanDivision[punishment.DivisionID].Add(diffDuration)
+			}
+
+			err = tx.Updates(&previousPunishment).Error
+			if err != nil {
+				return err
+			}
 		} else if !errors.Is(err, gorm.ErrRecordNotFound) {
 			return err
-		}
-
-		punishment.StartTime = time.Now()
-		punishment.EndTime = punishment.StartTime.Add(*punishment.Duration)
-		if user.BanDivision[punishment.DivisionID] == nil {
-			user.BanDivision[punishment.DivisionID] = &punishment.EndTime
 		} else {
-			*user.BanDivision[punishment.DivisionID] = user.BanDivision[punishment.DivisionID].Add(*punishment.Duration)
-		}
-		user.OffenceCount += 1
+			user.OffenceCount += 1
+			punishment.StartTime = time.Now()
+			punishment.EndTime = punishment.StartTime.Add(*punishment.Duration)
 
-		err = tx.Create(&punishment).Error
-		if err != nil {
-			return err
+			if user.BanDivision[punishment.DivisionID] == nil {
+				user.BanDivision[punishment.DivisionID] = &punishment.EndTime
+			} else {
+				*user.BanDivision[punishment.DivisionID] = user.BanDivision[punishment.DivisionID].Add(*punishment.Duration)
+			}
+
+			err = tx.Create(&punishment).Error
+			if err != nil {
+				return err
+			}
 		}
 
 		err = tx.Select("BanDivision", "OffenceCount").Save(&user).Error
