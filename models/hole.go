@@ -21,7 +21,7 @@ type Hole struct {
 	ID        int            `json:"id" gorm:"primaryKey"`
 	CreatedAt time.Time      `json:"time_created" gorm:"not null;index:idx_hole_div_cre,priority:2,sort:desc"`
 	UpdatedAt time.Time      `json:"time_updated" gorm:"not null;index:idx_hole_div_upd,priority:2,sort:desc"`
-	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
+	DeletedAt gorm.DeletedAt `json:"time_deleted,omitempty" gorm:"index"`
 
 	/// base info
 
