@@ -312,7 +312,7 @@ func MakeHoleQuerySet(c *fiber.Ctx) (*gorm.DB, error) {
 		return nil, err
 	}
 	if user.IsAdmin {
-		return DB, nil
+		return DB.Unscoped(), nil
 	} else {
 		return DB.Where("hidden = ?", false), nil
 		//userID, err := common.GetUserID(c)

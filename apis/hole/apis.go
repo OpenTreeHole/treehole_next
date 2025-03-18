@@ -723,7 +723,10 @@ func DeleteHole(c *fiber.Ctx) error {
 		return common.Forbidden()
 	}
 
-	result := DB.Where("hole_id = ? ", holeID).Delete(&hole)
+	result := DB.Delete(&hole)
+	if result.Error != nil {
+		return result.Error
+	}
 	if result.RowsAffected == 0 {
 		return gorm.ErrRecordNotFound
 	}
