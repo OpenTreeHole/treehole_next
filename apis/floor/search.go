@@ -9,11 +9,19 @@ import (
 	. "treehole_next/utils"
 )
 
+// SearchQuery is the query struct for searching floors
 type SearchQuery struct {
-	Search   string `json:"search" query:"search" validate:"required"`
-	Size     int    `json:"size" query:"size" validate:"min=0" default:"10"`
-	Offset   int    `json:"offset" query:"offset" validate:"min=0" default:"0"`
-	Accurate bool   `json:"accurate" query:"accurate" default:"false"`
+	Search    string  `json:"search" query:"search" validate:"required"`
+	Size      int     `json:"size" query:"size" validate:"min=0" default:"10"`
+	Offset    int     `json:"offset" query:"offset" validate:"min=0" default:"0"`
+
+	// Accurate is used to determine whether to use accurate search
+	Accurate  bool    `json:"accurate" query:"accurate" default:"false"`
+
+	// StartTime and EndTime are used to filter floors by time
+	// Both are Unix timestamps, and are optional
+	StartTime *int64  `json:"start_time" query:"start_time"`
+	EndTime   *int64  `json:"end_time" query:"end_time"`
 }
 
 // SearchFloors
@@ -32,7 +40,7 @@ func SearchFloors(c *fiber.Ctx) error {
 		return err
 	}
 
-	floors, err := Search(c, query.Search, query.Size, query.Offset, query.Accurate)
+	floors, err := Search(c, query.Search, query.Size, query.Offset, query.Accurate, query.StartTime, query.EndTime)
 	if err != nil {
 		return err
 	}
@@ -70,11 +78,11 @@ func SearchConfig(c *fiber.Ctx) error {
 }
 
 func SearchFloorsOld(c *fiber.Ctx, query *ListOldModel) error {
-	if DynamicConfig.OpenSearch.Load() == false {
+	if !DynamicConfig.OpenSearch.Load() {
 		return common.Forbidden("茶楼流量激增，搜索功能暂缓开放")
 	}
 
-	floors, err := Search(c, query.Search, query.Size, query.Offset, false)
+	floors, err := Search(c, query.Search, query.Size, query.Offset, false, nil, nil)
 	if err != nil {
 		return err
 	}

@@ -62,30 +62,92 @@ type FloorModel struct {
 	Content   string    `json:"content"`
 }
 
-func Search(c *fiber.Ctx, keyword string, size, offset int, accurate bool) (Floors, error) {
+// Search searches floors by keyword.
+//
+// Parameters:
+// - c: Fiber context
+// - keyword: The keyword to search for
+// - size: The number of results to return
+// - offset: The starting point of the results
+// - accurate: Whether to use accurate search
+// - startTime and endTime: Filter floors by time (If not specified, set to nil)
+//
+// Returns:
+// - Floors: A list of floors matching the search criteria
+// - error: An error if the search fails
+func Search(c *fiber.Ctx, keyword string, size, offset int, accurate bool, startTime *int64, endTime *int64) (Floors, error) {
 	if ES == nil {
-		return SearchOld(c, keyword, size, offset)
+		return SearchOld(c, keyword, size, offset, startTime, endTime)
 	}
 
-	var query types.Query
+	// our query design:
+	// {
+	// 	"query": {
+	// 		"bool": {
+	// 			"must": {
+	// 				"dis_max": {
+	// 					"queries": [{
+	// 						 "multi_match": {}
+	// 					 },
+	// 					 { 
+	// 						 "multi_match": {}
+	// 					 }]
+	// 				}
+	// 			}
+	// 			"filter": {
+	// 				//Term filter
+	// 			}           
+	// 		}
+	// 	}
+	// }
+
+	var filterQueries []types.Query
+	var disMaxQueries []types.Query
+
 	if accurate {
-		query = types.Query{
-			DisMax: &types.DisMaxQuery{
-				Queries: []types.Query{
-					{MatchPhrase: map[string]types.MatchPhraseQuery{"content": {Query: keyword}}},
-					{MatchPhrase: map[string]types.MatchPhraseQuery{"content.ik_smart": {Query: keyword}}},
-				},
-			},
+		disMaxQueries = []types.Query{
+			{MatchPhrase: map[string]types.MatchPhraseQuery{"content": {Query: keyword}}},
+			{MatchPhrase: map[string]types.MatchPhraseQuery{"content.ik_smart": {Query: keyword}}},
 		}
 	} else {
-		query = types.Query{
-			DisMax: &types.DisMaxQuery{
-				Queries: []types.Query{
-					{Match: map[string]types.MatchQuery{"content": {Query: keyword}}},
-					{Match: map[string]types.MatchQuery{"content.ik_smart": {Query: keyword}}},
-				},
+		disMaxQueries = []types.Query{
+			{Match: map[string]types.MatchQuery{"content": {Query: keyword}}},
+			{Match: map[string]types.MatchQuery{"content.ik_smart": {Query: keyword}}},
+		}
+	}
+
+	if startTime != nil || endTime != nil {
+		dateRangeQuery := types.DateRangeQuery{}
+		if startTime != nil {
+			start := time.Unix(*startTime, 0).Format(time.RFC3339)
+			dateRangeQuery.Gte = &start
+		}
+		if endTime != nil {
+			end := time.Unix(*endTime, 0).Format(time.RFC3339)
+			dateRangeQuery.Lte = &end
+		}
+		timeRangeQuery := types.Query{
+			Range: map[string]types.RangeQuery{
+				"updated_at": dateRangeQuery,
 			},
 		}
+		filterQueries = append(filterQueries, timeRangeQuery)
+	}
+
+	query := types.Query{
+		DisMax: &types.DisMaxQuery{
+			Queries: disMaxQueries,
+		},
+		Bool: &types.BoolQuery{
+			Must: []types.Query{
+				{
+					DisMax: &types.DisMaxQuery{
+						Queries: disMaxQueries,
+					},
+				},
+			},
+			Filter: filterQueries,
+		},
 	}
 
 	res, err := ES.Search().
@@ -104,7 +166,6 @@ func Search(c *fiber.Ctx, keyword string, size, offset int, accurate bool) (Floo
 			}).
 		Do(context.Background())
 
-	//res, err := req.Do(context.Background(), ES)
 	if err != nil {
 		var errorMsg = fmt.Sprintf("error searching floors: %e", err)
 		var elasticsearchError *types.ElasticsearchError
@@ -146,12 +207,24 @@ func Search(c *fiber.Ctx, keyword string, size, offset int, accurate bool) (Floo
 	return utils.OrderInGivenOrder(floors, floorIDs), nil
 }
 
-func SearchOld(c *fiber.Ctx, keyword string, size, offset int) (Floors, error) {
+// SearchOld searches floors by keyword by Database.
+// It is used when ElasticSearch is not available. (Not recommended)
+func SearchOld(c *fiber.Ctx, keyword string, size, offset int, startTimeUnix *int64, endTimeUnix *int64) (Floors, error) {
 	floors := Floors{}
-	querySet, err := floors.MakeQuerySet(nil, &offset, &size, c)
+	var startTime, endTime *time.Time
+	if startTimeUnix != nil {
+		start := time.Unix(*startTimeUnix, 0)
+		startTime = &start
+	}
+	if endTimeUnix != nil {
+		end := time.Unix(*endTimeUnix, 0)
+		endTime = &end
+	}
+	querySet, err := floors.MakeQuerySetWithTimeRange(nil, &offset, &size, startTime, endTime, c)
 	if err != nil {
 		return nil, err
 	}
+
 	result := querySet.
 		Where("content like ?", "%"+keyword+"%").
 		Where("hole_id in (?)", DB.Table("hole").Select("id").Where("hidden = false")).

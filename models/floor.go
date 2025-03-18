@@ -133,6 +133,14 @@ func MakeFloorQuerySet(_ *fiber.Ctx) (*gorm.DB, error) {
 	//}
 }
 
+// MakeQuerySetWithTimeRange creates a query set for the Floors model.
+// It takes the following parameters:
+// - holeID: the ID of the hole to filter by.
+// - offset:the offset for pagination.
+// - size: the size for pagination.
+// - c: context of the request.
+//
+// It returns a pointer to a gorm.DB instance representing the query set and an error if any occurred during the creation of the query set.
 func (floors Floors) MakeQuerySet(holeID *int, offset, size *int, c *fiber.Ctx) (*gorm.DB, error) {
 	querySet, err := MakeFloorQuerySet(c)
 	if err != nil {
@@ -147,6 +155,31 @@ func (floors Floors) MakeQuerySet(holeID *int, offset, size *int, c *fiber.Ctx) 
 	}
 	if size != nil {
 		querySet = querySet.Limit(*size)
+	}
+	return querySet, nil
+}
+
+// MakeQuerySetWithTimeRange creates a query set for the Floors model with an optional time range filter.
+// It takes the following parameters:
+// - holeID: the ID of the hole to filter by.
+// - offset:the offset for pagination.
+// - size: the size for pagination.
+// - startTime: a pointer to a time.Time representing the start time for the time range filter.
+// - endTime: a pointer to a time.Time representing the end time for the time range filter.
+// - c: context of the request.
+//
+// It returns a pointer to a gorm.DB instance representing the query set and an error if any occurred during the creation of the query set.
+func (floors Floors) MakeQuerySetWithTimeRange(holeID *int, offset, size *int, startTime, endTime *time.Time, c *fiber.Ctx) (*gorm.DB, error) {
+	querySet, err := floors.MakeQuerySet(holeID, offset, size, c)
+	if err != nil {
+		return nil, err
+	}
+
+	if startTime != nil {
+		querySet = querySet.Where("created_at >= ?", startTime)
+	}
+	if endTime != nil {
+		querySet = querySet.Where("created_at <= ?", endTime)
 	}
 	return querySet, nil
 }
