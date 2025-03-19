@@ -7,6 +7,8 @@ import (
 )
 
 func RegisterRoutes(app fiber.Router) {
+	// order: match first route
+	app.Get("/divisions/1/holes", ListHomePage)
 	app.Get("/divisions/:id<int>/holes", ListHolesByDivision)
 	app.Get("/tags/:name/holes", ListHolesByTag)
 	app.Get("/users/me/holes", ListHolesByMe)
@@ -20,4 +22,5 @@ func RegisterRoutes(app fiber.Router) {
 	app.Put("/holes/:id<int>", ModifyHole)
 	app.Delete("/holes/:id<int>", HideHole)
 	app.Delete("/holes/:id<int>/_force", DeleteHole)
+	app.Get("/holes/_homepage", ListHomePage)
 }
