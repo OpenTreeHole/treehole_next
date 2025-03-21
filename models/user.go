@@ -3,8 +3,9 @@ package models
 import (
 	"errors"
 	"fmt"
-	"golang.org/x/exp/slices"
 	"time"
+
+	"golang.org/x/exp/slices"
 
 	"treehole_next/config"
 
@@ -130,7 +131,9 @@ func init() {
 	minTime = time.Unix(0, 0)
 }
 
-func GetUser(c *fiber.Ctx) (*User, error) {
+// GetCurrLoginUser get current login user
+// In dev or test mode, return a default admin user
+func GetCurrLoginUser(c *fiber.Ctx) (*User, error) {
 	user := &User{
 		BanDivision: make(map[int]*time.Time),
 	}

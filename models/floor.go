@@ -249,7 +249,7 @@ func (floors Floors) Preprocess(c *fiber.Ctx) (err error) {
 
 func (floor *Floor) SetDefaults(c *fiber.Ctx) (err error) {
 	floor.FloorID = floor.ID
-	user, err := GetUser(c)
+	user, err := GetCurrLoginUser(c)
 	if err != nil {
 		return
 	}

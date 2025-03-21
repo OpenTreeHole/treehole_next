@@ -90,7 +90,7 @@ func CreateTag(c *fiber.Ctx) error {
 	}
 
 	// check tag prefix
-	user, err := GetUser(c)
+	user, err := GetCurrLoginUser(c)
 	if err != nil {
 		return err
 	}
@@ -145,7 +145,7 @@ func CreateTag(c *fiber.Ctx) error {
 // @Failure 404 {object} MessageModel
 func ModifyTag(c *fiber.Ctx) error {
 	// admin
-	user, err := GetUser(c)
+	user, err := GetCurrLoginUser(c)
 	if err != nil {
 		return err
 	}
@@ -212,7 +212,7 @@ func ModifyTag(c *fiber.Ctx) error {
 // @Failure 404 {object} MessageModel
 func DeleteTag(c *fiber.Ctx) error {
 	// admin
-	user, err := GetUser(c)
+	user, err := GetCurrLoginUser(c)
 	if err != nil {
 		return err
 	}

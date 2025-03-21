@@ -1,10 +1,11 @@
 package division
 
 import (
+	"strconv"
+
 	"github.com/goccy/go-json"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
-	"strconv"
 
 	"github.com/opentreehole/go-common"
 
@@ -33,7 +34,7 @@ func AddDivision(c *fiber.Ctx) error {
 	}
 
 	// get user
-	user, err := GetUser(c)
+	user, err := GetCurrLoginUser(c)
 	if err != nil {
 		return err
 	}
@@ -123,7 +124,7 @@ func ModifyDivision(c *fiber.Ctx) error {
 	}
 
 	// get user
-	user, err := GetUser(c)
+	user, err := GetCurrLoginUser(c)
 	if err != nil {
 		return err
 	}
@@ -209,7 +210,7 @@ func DeleteDivision(c *fiber.Ctx) error {
 	}
 
 	// get user
-	user, err := GetUser(c)
+	user, err := GetCurrLoginUser(c)
 	if err != nil {
 		return err
 	}

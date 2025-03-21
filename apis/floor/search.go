@@ -11,17 +11,17 @@ import (
 
 // SearchQuery is the query struct for searching floors
 type SearchQuery struct {
-	Search    string  `json:"search" query:"search" validate:"required"`
-	Size      int     `json:"size" query:"size" validate:"min=0" default:"10"`
-	Offset    int     `json:"offset" query:"offset" validate:"min=0" default:"0"`
+	Search string `json:"search" query:"search" validate:"required"`
+	Size   int    `json:"size" query:"size" validate:"min=0" default:"10"`
+	Offset int    `json:"offset" query:"offset" validate:"min=0" default:"0"`
 
 	// Accurate is used to determine whether to use accurate search
-	Accurate  bool    `json:"accurate" query:"accurate" default:"false"`
+	Accurate bool `json:"accurate" query:"accurate" default:"false"`
 
 	// StartTime and EndTime are used to filter floors by time
 	// Both are Unix timestamps, and are optional
-	StartTime *int64  `json:"start_time" query:"start_time"`
-	EndTime   *int64  `json:"end_time" query:"end_time"`
+	StartTime *int64 `json:"start_time" query:"start_time"`
+	EndTime   *int64 `json:"end_time" query:"end_time"`
 }
 
 // SearchFloors
@@ -62,7 +62,7 @@ func SearchConfig(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	user, err := GetUser(c)
+	user, err := GetCurrLoginUser(c)
 	if err != nil {
 		return err
 	}
