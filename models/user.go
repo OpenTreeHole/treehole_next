@@ -195,11 +195,9 @@ func (user *User) LoadUserByID(userID int) error {
 			}
 		}
 
-		if user.FavoriteGroupCount == 0 {
-			err = CreateDefaultFavoriteGroup(tx, userID)
-			if err != nil {
-				return err
-			}
+		err = CheckDefaultFavoriteGroup(tx, userID)
+		if err != nil {
+			return err
 		}
 
 		// check latest permission

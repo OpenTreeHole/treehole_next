@@ -149,14 +149,21 @@ func ModifyFavorite(c *fiber.Ctx) error {
 		return err
 	}
 
-	// modify favorite
-	err = ModifyUserFavorite(DB, userID, body.HoleIDs, body.FavoriteGroupID)
-	if err != nil {
-		return err
-	}
+	var data []int
+	err = DB.Transaction(func(tx *gorm.DB) error {
+		// modify favorite
+		err = ModifyUserFavorite(tx, userID, body.HoleIDs, body.FavoriteGroupID)
+		if err != nil {
+			return err
+		}
 
-	// create response
-	data, err := UserGetFavoriteData(DB, userID)
+		// create response
+		data, err = UserGetFavoriteData(tx, userID)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
 	if err != nil {
 		return err
 	}
@@ -190,14 +197,21 @@ func DeleteFavorite(c *fiber.Ctx) error {
 		return err
 	}
 
-	// delete favorite
-	err = DeleteUserFavorite(DB, userID, body.HoleID, body.FavoriteGroupID)
-	if err != nil {
-		return err
-	}
+	var data []int
+	err = DB.Transaction(func(tx *gorm.DB) error {
+		// delete favorite
+		err = DeleteUserFavorite(tx, userID, body.HoleID, body.FavoriteGroupID)
+		if err != nil {
+			return err
+		}
 
-	// create response
-	data, err := UserGetFavoriteData(DB, userID)
+		// create response
+		data, err = UserGetFavoriteData(tx, userID)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
 	if err != nil {
 		return err
 	}
@@ -229,33 +243,31 @@ func ListFavoriteGroups(c *fiber.Ctx) error {
 		return err
 	}
 
-	if query.Plain {
-		// get favoriteGroups
-		data, err := UserGetFavoriteGroups(DB, userID)
-		if err != nil {
-			return err
-		}
-		return c.JSON(Map{"data": data})
-	} else {
-		// get order
-		var order string
-		switch query.Order {
-		case "id":
-			order = "id desc"
-		case "time_created":
-			order = "created_at desc, id desc"
-		case "time_updated":
-			order = "updated_at desc, id desc"
-		}
-
-		// get favoriteGroups
-		var data FavoriteGroups
-		err = DB.Where("user_id = ? AND deleted = false", userID).Order(order).Find(&data).Error
-		if err != nil {
-			return err
-		}
-		return c.JSON(&data)
+	// get order
+	var orderBy string
+	if !query.Plain {
+		orderBy = map[string]string{
+			"id":           "favorite_group_id desc",
+			"time_created": "created_at desc, favorite_group_id desc",
+			"time_updated": "updated_at desc, favorite_group_id desc",
+		}[query.Order]
 	}
+
+	var order *string = nil
+	if orderBy != "" {
+		order = &orderBy
+	}
+
+	// get favoriteGroups
+	var data FavoriteGroups
+	err = DB.Transaction(func(tx *gorm.DB) error {
+		data, err = UserGetFavoriteGroups(DB, userID, order)
+		return err
+	})
+	if err != nil {
+		return err
+	}
+	return c.JSON(&data)
 }
 
 // AddFavoriteGroup
@@ -281,14 +293,21 @@ func AddFavoriteGroup(c *fiber.Ctx) error {
 		return err
 	}
 
-	// add favorite group
-	err = AddUserFavoriteGroup(DB, userID, body.Name)
-	if err != nil {
-		return err
-	}
+	var data FavoriteGroups
+	err = DB.Transaction(func(tx *gorm.DB) error {
+		// add favorite group
+		err = AddUserFavoriteGroup(tx, userID, body.Name)
+		if err != nil {
+			return err
+		}
 
-	// create response
-	data, err := UserGetFavoriteGroups(DB, userID)
+		// create response
+		data, err = UserGetFavoriteGroups(tx, userID, nil)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
 	if err != nil {
 		return err
 	}
@@ -320,14 +339,23 @@ func ModifyFavoriteGroup(c *fiber.Ctx) error {
 		return err
 	}
 
-	// modify favorite group
-	err = ModifyUserFavoriteGroup(DB, userID, *body.FavoriteGroupID, body.Name)
-	if err != nil {
-		return err
-	}
+	var data FavoriteGroups
 
-	// create response
-	data, err := UserGetFavoriteGroups(DB, userID)
+	err = DB.Transaction(func(tx *gorm.DB) error {
+
+		// modify favorite group
+		err = ModifyUserFavoriteGroup(tx, userID, *body.FavoriteGroupID, body.Name)
+		if err != nil {
+			return err
+		}
+
+		// create response
+		data, err = UserGetFavoriteGroups(tx, userID, nil)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
 	if err != nil {
 		return err
 	}
@@ -341,7 +369,7 @@ func ModifyFavoriteGroup(c *fiber.Ctx) error {
 // @Tags Favorite
 // @Produce application/json
 // @Router /user/favorite_groups [delete]
-// @Param json body DeleteModel true "json"
+// @Param json body DeleteFavoriteGroupModel true "json"
 // @Success 204
 // @Failure 404 {object} common.HttpError
 func DeleteFavoriteGroup(c *fiber.Ctx) error {
@@ -390,14 +418,21 @@ func MoveFavorite(c *fiber.Ctx) error {
 		return err
 	}
 
-	// move favorite
-	err = MoveUserFavorite(DB, userID, body.HoleIDs, *body.FromFavoriteGroupID, *body.ToFavoriteGroupID)
-	if err != nil {
-		return err
-	}
+	var data []int
+	err = DB.Transaction(func(tx *gorm.DB) error {
+		// move favorite
+		err = MoveUserFavorite(tx, userID, body.HoleIDs, *body.FromFavoriteGroupID, *body.ToFavoriteGroupID)
+		if err != nil {
+			return err
+		}
 
-	// create response
-	data, err := UserGetFavoriteData(DB, userID)
+		// create response
+		data, err = UserGetFavoriteData(tx, userID)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
 	if err != nil {
 		return err
 	}

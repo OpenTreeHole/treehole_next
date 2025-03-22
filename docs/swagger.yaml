@@ -68,6 +68,13 @@ definitions:
       hole_id:
         type: integer
     type: object
+  favourite.DeleteFavoriteGroupModel:
+    properties:
+      favorite_group_id:
+        type: integer
+    required:
+    - favorite_group_id
+    type: object
   favourite.DeleteModel:
     properties:
       favorite_group_id:
@@ -234,6 +241,14 @@ definitions:
         type: string
       time_updated:
         type: string
+    type: object
+  gorm.DeletedAt:
+    properties:
+      time:
+        type: string
+      valid:
+        description: Valid is true if Time is not NULL
+        type: boolean
     type: object
   hole.CreateModel:
     properties:
@@ -510,6 +525,8 @@ definitions:
         type: array
       time_created:
         type: string
+      time_deleted:
+        $ref: '#/definitions/gorm.DeletedAt'
       time_updated:
         type: string
       view:
@@ -609,6 +626,8 @@ definitions:
         description: |-
           start from end_time of previous punishment (punishment accumulation of different floors)
           if no previous punishment or previous punishment end time less than time.Now() (synced), set start time time.Now()
+        type: string
+      updated_at:
         type: string
       user_id:
         description: user punished
@@ -2289,7 +2308,7 @@ paths:
         name: json
         required: true
         schema:
-          $ref: '#/definitions/favourite.DeleteModel'
+          $ref: '#/definitions/favourite.DeleteFavoriteGroupModel'
       produces:
       - application/json
       responses:

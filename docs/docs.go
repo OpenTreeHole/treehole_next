@@ -2324,7 +2324,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/favourite.DeleteModel"
+                            "$ref": "#/definitions/favourite.DeleteFavoriteGroupModel"
                         }
                     }
                 ],
@@ -3138,6 +3138,17 @@ const docTemplate = `{
                 }
             }
         },
+        "favourite.DeleteFavoriteGroupModel": {
+            "type": "object",
+            "required": [
+                "favorite_group_id"
+            ],
+            "properties": {
+                "favorite_group_id": {
+                    "type": "integer"
+                }
+            }
+        },
         "favourite.DeleteModel": {
             "type": "object",
             "properties": {
@@ -3380,6 +3391,18 @@ const docTemplate = `{
                 },
                 "time_updated": {
                     "type": "string"
+                }
+            }
+        },
+        "gorm.DeletedAt": {
+            "type": "object",
+            "properties": {
+                "time": {
+                    "type": "string"
+                },
+                "valid": {
+                    "description": "Valid is true if Time is not NULL",
+                    "type": "boolean"
                 }
             }
         },
@@ -3773,6 +3796,9 @@ const docTemplate = `{
                 "time_created": {
                     "type": "string"
                 },
+                "time_deleted": {
+                    "$ref": "#/definitions/gorm.DeletedAt"
+                },
                 "time_updated": {
                     "type": "string"
                 },
@@ -3910,6 +3936,9 @@ const docTemplate = `{
                 },
                 "start_time": {
                     "description": "start from end_time of previous punishment (punishment accumulation of different floors)\nif no previous punishment or previous punishment end time less than time.Now() (synced), set start time time.Now()",
+                    "type": "string"
+                },
+                "updated_at": {
                     "type": "string"
                 },
                 "user_id": {
