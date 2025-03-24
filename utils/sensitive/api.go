@@ -221,7 +221,17 @@ func checkSensitiveImage(params ParamsForCheck) (resp *ResponseForCheck, err err
 	}
 
 	resp = &ResponseForCheck{}
-	if response.GetCode() == 200 {
+	if response.GetCode() != 200 {
+		utils.RequestLog("Sensitive image check http response code is not 200", params.TypeName, params.Id, false)
+		utils.RequestLog(
+			fmt.Sprintf("Sensitive image check http response error: %d Msg: %s", response.GetCode(), response.GetMsg()),
+			params.TypeName,
+			params.Id,
+			false,
+		)
+		resp.Pass = false
+		return
+	} else {
 		if len(*response.Result) == 0 {
 			return nil, fmt.Errorf("sensitive image check returns empty response")
 		}
@@ -326,10 +336,6 @@ func checkSensitiveImage(params ParamsForCheck) (resp *ResponseForCheck, err err
 		resp.Detail = sensitiveDetailBuilder.String()
 		return
 	}
-
-	utils.RequestLog("Sensitive image check http response code is not 200", params.TypeName, params.Id, false)
-	resp.Pass = false
-	return
 }
 
 var sensitiveLabelMap struct {
