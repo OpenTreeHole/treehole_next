@@ -93,7 +93,7 @@ func Search(c *fiber.Ctx, keyword string, size, offset int, accurate bool, start
 	// 						 "multi_match": {}
 	// 					 }]
 	// 				}
-	// 			}
+	// 			},
 	// 			"filter": {
 	// 				//Term filter
 	// 			}           
@@ -119,11 +119,11 @@ func Search(c *fiber.Ctx, keyword string, size, offset int, accurate bool, start
 	if startTime != nil || endTime != nil {
 		dateRangeQuery := types.DateRangeQuery{}
 		if startTime != nil {
-			start := time.Unix(*startTime, 0).Format(time.RFC3339)
+			start := time.Unix(*startTime, 0).UTC().Format(time.RFC3339)
 			dateRangeQuery.Gte = &start
 		}
 		if endTime != nil {
-			end := time.Unix(*endTime, 0).Format(time.RFC3339)
+			end := time.Unix(*endTime, 0).UTC().Format(time.RFC3339)
 			dateRangeQuery.Lte = &end
 		}
 		timeRangeQuery := types.Query{
@@ -135,9 +135,6 @@ func Search(c *fiber.Ctx, keyword string, size, offset int, accurate bool, start
 	}
 
 	query := types.Query{
-		DisMax: &types.DisMaxQuery{
-			Queries: disMaxQueries,
-		},
 		Bool: &types.BoolQuery{
 			Must: []types.Query{
 				{
