@@ -230,6 +230,7 @@ func checkSensitiveImage(params ParamsForCheck) (resp *ResponseForCheck, err err
 			false,
 		)
 		resp.Pass = false
+		resp.Detail = response.GetMsg()
 		return
 	} else {
 		if len(*response.Result) == 0 {
