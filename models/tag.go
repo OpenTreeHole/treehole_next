@@ -40,6 +40,8 @@ type Tag struct {
 	IsActualSensitive *bool `json:"-" gorm:"index:idx_tag_actual_sensitive,priority:2"`
 	/// generated field
 	TagID int `json:"tag_id" gorm:"-:all"`
+
+	Nsfw bool `json:"nsfw" gorm:"not null;default:false;index"`
 }
 
 type Tags []*Tag
@@ -50,6 +52,13 @@ func (tag *Tag) GetID() int {
 
 func (tag *Tag) AfterFind(_ *gorm.DB) (err error) {
 	tag.TagID = tag.ID
+	return nil
+}
+
+func (tag *Tag) BeforeCreate(_ *gorm.DB) (err error) {
+	if len(tag.Name) > 0 && tag.Name[0] == '*' {
+		tag.Nsfw = true
+	}
 	return nil
 }
 
