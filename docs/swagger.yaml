@@ -1489,9 +1489,13 @@ paths:
     get:
       parameters:
       - default: false
+        description: Accurate is used to determine whether to use accurate search
         in: query
         name: accurate
         type: boolean
+      - in: query
+        name: end_time
+        type: integer
       - default: 0
         in: query
         minimum: 0
@@ -1505,6 +1509,12 @@ paths:
         in: query
         minimum: 0
         name: size
+        type: integer
+      - description: |-
+          StartTime and EndTime are used to filter floors by time
+          Both are Unix timestamps, and are optional
+        in: query
+        name: start_time
         type: integer
       produces:
       - application/json
@@ -1521,9 +1531,13 @@ paths:
     post:
       parameters:
       - default: false
+        description: Accurate is used to determine whether to use accurate search
         in: query
         name: accurate
         type: boolean
+      - in: query
+        name: end_time
+        type: integer
       - default: 0
         in: query
         minimum: 0
@@ -1537,6 +1551,12 @@ paths:
         in: query
         minimum: 0
         name: size
+        type: integer
+      - description: |-
+          StartTime and EndTime are used to filter floors by time
+          Both are Unix timestamps, and are optional
+        in: query
+        name: start_time
         type: integer
       produces:
       - application/json
