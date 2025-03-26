@@ -133,7 +133,7 @@ func MakeFloorQuerySet(_ *fiber.Ctx) (*gorm.DB, error) {
 	//}
 }
 
-// MakeQuerySetWithTimeRange creates a query set for the Floors model.
+// MakeQuerySet creates a query set for the Floors model.
 // It takes the following parameters:
 // - holeID: the ID of the hole to filter by.
 // - offset:the offset for pagination.
