@@ -2,8 +2,9 @@ package models
 
 import (
 	"fmt"
-	"golang.org/x/exp/maps"
 	"time"
+
+	"golang.org/x/exp/maps"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/opentreehole/go-common"
@@ -307,7 +308,7 @@ func UpdateHoleCache(holes Holes) (err error) {
 }
 
 func MakeHoleQuerySet(c *fiber.Ctx) (*gorm.DB, error) {
-	user, err := GetUser(c)
+	user, err := GetCurrLoginUser(c)
 	if err != nil {
 		return nil, err
 	}

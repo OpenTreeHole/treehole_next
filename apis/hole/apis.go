@@ -265,7 +265,7 @@ func CreateHole(c *fiber.Ctx) error {
 	}
 
 	// get user from auth
-	user, err := GetUser(c)
+	user, err := GetCurrLoginUser(c)
 	if err != nil {
 		return err
 	}
@@ -333,7 +333,7 @@ func CreateHoleOld(c *fiber.Ctx) error {
 	}
 
 	// get user from auth
-	user, err := GetUser(c)
+	user, err := GetCurrLoginUser(c)
 	if err != nil {
 		return err
 	}
@@ -418,7 +418,7 @@ func ModifyHole(c *fiber.Ctx) error {
 	}
 
 	// get user
-	user, err := GetUser(c)
+	user, err := GetCurrLoginUser(c)
 	if err != nil {
 		return err
 	}
@@ -616,7 +616,7 @@ func HideHole(c *fiber.Ctx) error {
 	}
 
 	// get user
-	user, err := GetUser(c)
+	user, err := GetCurrLoginUser(c)
 	if err != nil {
 		return err
 	}
@@ -702,7 +702,7 @@ func DeleteHole(c *fiber.Ctx) error {
 		return err
 	}
 
-	user, err := GetUser(c)
+	user, err := GetCurrLoginUser(c)
 	if err != nil {
 		return err
 	}

@@ -531,7 +531,13 @@ const docTemplate = `{
                     {
                         "type": "boolean",
                         "default": false,
+                        "description": "Accurate is used to determine whether to use accurate search",
                         "name": "accurate",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "name": "end_time",
                         "in": "query"
                     },
                     {
@@ -552,6 +558,12 @@ const docTemplate = `{
                         "type": "integer",
                         "default": 10,
                         "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "StartTime and EndTime are used to filter floors by time\nBoth are Unix timestamps, and are optional",
+                        "name": "start_time",
                         "in": "query"
                     }
                 ],
@@ -579,7 +591,13 @@ const docTemplate = `{
                     {
                         "type": "boolean",
                         "default": false,
+                        "description": "Accurate is used to determine whether to use accurate search",
                         "name": "accurate",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "name": "end_time",
                         "in": "query"
                     },
                     {
@@ -600,6 +618,12 @@ const docTemplate = `{
                         "type": "integer",
                         "default": 10,
                         "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "StartTime and EndTime are used to filter floors by time\nBoth are Unix timestamps, and are optional",
+                        "name": "start_time",
                         "in": "query"
                     }
                 ],

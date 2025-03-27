@@ -2,11 +2,12 @@ package floor
 
 import (
 	"fmt"
-	"github.com/opentreehole/go-common"
-	"github.com/rs/zerolog/log"
 	"slices"
 	"time"
 	"treehole_next/utils/sensitive"
+
+	"github.com/opentreehole/go-common"
+	"github.com/rs/zerolog/log"
 
 	. "treehole_next/models"
 	. "treehole_next/utils"
@@ -131,7 +132,7 @@ func GetFloor(c *fiber.Ctx) (err error) {
 		return err
 	}
 
-	user, err := GetUser(c)
+	user, err := GetCurrLoginUser(c)
 	if err != nil {
 		return err
 	}
@@ -184,7 +185,7 @@ func CreateFloor(c *fiber.Ctx) error {
 	}
 
 	// get user from auth
-	user, err := GetUser(c)
+	user, err := GetCurrLoginUser(c)
 	if err != nil {
 		return err
 	}
@@ -253,7 +254,7 @@ func CreateFloorOld(c *fiber.Ctx) error {
 	}
 
 	// get user
-	user, err := GetUser(c)
+	user, err := GetCurrLoginUser(c)
 	if err != nil {
 		return err
 	}
@@ -328,7 +329,7 @@ func ModifyFloor(c *fiber.Ctx) error {
 	}
 
 	// get user
-	user, err := GetUser(c)
+	user, err := GetCurrLoginUser(c)
 	if err != nil {
 		return err
 	}
@@ -598,7 +599,7 @@ func DeleteFloor(c *fiber.Ctx) error {
 	}
 
 	// get user
-	user, err := GetUser(c)
+	user, err := GetCurrLoginUser(c)
 	if err != nil {
 		return err
 	}
@@ -703,7 +704,7 @@ func GetFloorHistory(c *fiber.Ctx) error {
 	}
 
 	// get user
-	user, err := GetUser(c)
+	user, err := GetCurrLoginUser(c)
 	if err != nil {
 		return err
 	}
@@ -765,7 +766,7 @@ func RestoreFloor(c *fiber.Ctx) error {
 	}
 
 	// get user
-	user, err := GetUser(c)
+	user, err := GetCurrLoginUser(c)
 	if err != nil {
 		return err
 	}
@@ -827,7 +828,7 @@ func GetPunishmentHistory(c *fiber.Ctx) error {
 	}
 
 	// get user
-	user, err := GetUser(c)
+	user, err := GetCurrLoginUser(c)
 	if err != nil {
 		return err
 	}
@@ -880,7 +881,7 @@ func GetUserSilence(c *fiber.Ctx) error {
 	}
 
 	// get user
-	admin, err := GetUser(c)
+	admin, err := GetCurrLoginUser(c)
 	if err != nil {
 		return err
 	}
@@ -926,7 +927,7 @@ func ListSensitiveFloors(c *fiber.Ctx) (err error) {
 	}
 
 	// get user
-	user, err := GetUser(c)
+	user, err := GetCurrLoginUser(c)
 	if err != nil {
 		return err
 	}
@@ -995,7 +996,7 @@ func ModifyFloorSensitive(c *fiber.Ctx) (err error) {
 	}
 
 	// get user
-	user, err := GetUser(c)
+	user, err := GetCurrLoginUser(c)
 	if err != nil {
 		return err
 	}

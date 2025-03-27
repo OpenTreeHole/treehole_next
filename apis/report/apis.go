@@ -94,7 +94,7 @@ func AddReport(c *fiber.Ctx) error {
 		return err
 	}
 
-	user, err := GetUser(c)
+	user, err := GetCurrLoginUser(c)
 	if err != nil {
 		return err
 	}
@@ -207,7 +207,7 @@ func BanReporter(c *fiber.Ctx) error {
 	}
 
 	// get user
-	user, err := GetUser(c)
+	user, err := GetCurrLoginUser(c)
 	if err != nil {
 		return err
 	}

@@ -11,6 +11,8 @@ To be done
 
 ### build and run
 
+Before building, you should have go (>=1.22) installed on your machine. If not, please visit [golang.org](https://golang.org) to download the latest version.
+
 ```shell
 git clone https://github.com/OpenTreeHole/treehole_next.git
 cd treehole_next
@@ -24,6 +26,8 @@ go build -tags "release" -ldflags "-s -w" -o treehole.exe
 # run
 ./treehole.exe
 ```
+
+Note: You should check [config file](config/config.go) to see if required environment variables are set.
 
 ### test
 

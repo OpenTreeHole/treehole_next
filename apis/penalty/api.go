@@ -49,7 +49,7 @@ func BanUser(c *fiber.Ctx) error {
 	}
 
 	// get user
-	user, err := GetUser(c)
+	user, err := GetCurrLoginUser(c)
 	if err != nil {
 		return err
 	}
@@ -151,7 +151,7 @@ func BanUserForever(c *fiber.Ctx) error {
 	}
 
 	// get user
-	user, err := GetUser(c)
+	user, err := GetCurrLoginUser(c)
 	if err != nil {
 		return err
 	}
@@ -293,7 +293,7 @@ func ListPunishmentsByUserID(c *fiber.Ctx) error {
 		return err
 	}
 
-	currentUser, err := GetUser(c)
+	currentUser, err := GetCurrLoginUser(c)
 	if err != nil {
 		return err
 	}
