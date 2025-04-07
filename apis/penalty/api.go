@@ -33,6 +33,7 @@ type ForeverPostBody struct {
 // @Tags Penalty
 // @Produce json
 // @Router /penalty/{floor_id} [post]
+// @Param floor_id path int true "floor id"
 // @Param json body PostBody true "json"
 // @Success 201 {object} User
 func BanUser(c *fiber.Ctx) error {
@@ -135,6 +136,7 @@ func BanUser(c *fiber.Ctx) error {
 // @Tags Penalty
 // @Produce json
 // @Router /penalty/{floor_id}/_forever [post]
+// @Param floor_id path int true "floor id"
 // @Param json body ForeverPostBody true "json"
 // @Success 201 {object} User
 func BanUserForever(c *fiber.Ctx) error {

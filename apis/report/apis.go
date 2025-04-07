@@ -191,6 +191,7 @@ type banBody struct {
 // @Tags Report
 // @Produce json
 // @Router /reports/ban/{id} [post]
+// @Param id path int true "id"
 // @Param json body banBody true "json"
 // @Success 201 {object} User
 func BanReporter(c *fiber.Ctx) error {
