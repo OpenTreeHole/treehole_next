@@ -104,8 +104,8 @@ func FindOrCreateTags(tx *gorm.DB, user *User, names []string) (Tags, error) {
 	}
 	for _, tag := range newTags {
 		if !user.IsAdmin {
-			if len(tag.Name) > 15 {
-				return nil, common.BadRequest("标签长度不能超过 15 个字符")
+			if len(tag.Name) > 15 && len([]rune(tag.Name)) > 10 {
+				return nil, common.BadRequest("标签长度不能超过 10 个字符")
 			}
 			if strings.HasPrefix(tag.Name, "#") {
 				return nil, common.BadRequest("只有管理员才能创建 # 开头的 tag")
