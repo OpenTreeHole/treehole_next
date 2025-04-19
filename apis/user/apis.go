@@ -39,6 +39,7 @@ func GetCurrentUser(c *fiber.Ctx) error {
 // @Tags user
 // @Produce json
 // @Router /users/{user_id} [get]
+// @Param user_id path int true "user id"
 // @Success 200 {object} User
 func GetUserByID(c *fiber.Ctx) error {
 	userID, err := c.ParamsInt("id")

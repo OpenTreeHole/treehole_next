@@ -669,6 +669,8 @@ definitions:
       name:
         description: / base info
         type: string
+      nsfw:
+        type: boolean
       tag_id:
         description: / generated field
         type: integer
@@ -1958,6 +1960,11 @@ paths:
   /penalty/{floor_id}:
     post:
       parameters:
+      - description: floor id
+        in: path
+        name: floor_id
+        required: true
+        type: integer
       - description: json
         in: body
         name: json
@@ -1977,6 +1984,11 @@ paths:
   /penalty/{floor_id}/_forever:
     post:
       parameters:
+      - description: floor id
+        in: path
+        name: floor_id
+        required: true
+        type: integer
       - description: json
         in: body
         name: json
@@ -2121,6 +2133,11 @@ paths:
   /reports/ban/{id}:
     post:
       parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: integer
       - description: json
         in: body
         name: json
@@ -2606,6 +2623,12 @@ paths:
       - Penalty
   /users/{user_id}:
     get:
+      parameters:
+      - description: user id
+        in: path
+        name: user_id
+        required: true
+        type: integer
       produces:
       - application/json
       responses:

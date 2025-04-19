@@ -1677,6 +1677,13 @@ const docTemplate = `{
                 "summary": "Ban publisher of a floor",
                 "parameters": [
                     {
+                        "type": "integer",
+                        "description": "floor id",
+                        "name": "floor_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
                         "description": "json",
                         "name": "json",
                         "in": "body",
@@ -1706,6 +1713,13 @@ const docTemplate = `{
                 ],
                 "summary": "Ban publisher of a floor forever",
                 "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "floor id",
+                        "name": "floor_id",
+                        "in": "path",
+                        "required": true
+                    },
                     {
                         "description": "json",
                         "name": "json",
@@ -1846,6 +1860,13 @@ const docTemplate = `{
                 ],
                 "summary": "Ban reporter of a report",
                 "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
                     {
                         "description": "json",
                         "name": "json",
@@ -2978,6 +2999,15 @@ const docTemplate = `{
                     "user"
                 ],
                 "summary": "get user by id, owner or admin",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "user id",
+                        "name": "user_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -4022,6 +4052,9 @@ const docTemplate = `{
                 "name": {
                     "description": "/ base info",
                     "type": "string"
+                },
+                "nsfw": {
+                    "type": "boolean"
                 },
                 "tag_id": {
                     "description": "/ generated field",
