@@ -1098,8 +1098,7 @@ const docTemplate = `{
                 "tags": [
                     "Hole"
                 ],
-                "summary": "Old API for Listing Holes",
-                "deprecated": true,
+                "summary": "API for Listing Holes",
                 "parameters": [
                     {
                         "type": "string",

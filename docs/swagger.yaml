@@ -1574,7 +1574,6 @@ paths:
       - Search
   /holes:
     get:
-      deprecated: true
       parameters:
       - in: query
         name: created_end
@@ -1614,7 +1613,7 @@ paths:
             items:
               $ref: '#/definitions/models.Hole'
             type: array
-      summary: Old API for Listing Holes
+      summary: API for Listing Holes
       tags:
       - Hole
     post:

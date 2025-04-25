@@ -161,16 +161,15 @@ func ListGoodHoles(c *fiber.Ctx) error {
 	return Serialize(c, &holes)
 }
 
-// ListHolesOld
+// ListHoles
 //
-// @Summary Old API for Listing Holes
-// @Deprecated
+// @Summary API for Listing Holes
 // @Tags Hole
 // @Produce json
 // @Router /holes [get]
 // @Param object query ListOldModel false "query"
 // @Success 200 {array} Hole
-func ListHolesOld(c *fiber.Ctx) error {
+func ListHoles(c *fiber.Ctx) error {
 	var query ListOldModel
 	err := common.ValidateQuery(c, &query)
 	if err != nil {
