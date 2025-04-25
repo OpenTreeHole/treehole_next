@@ -178,64 +178,76 @@ func ListHolesOld(c *fiber.Ctx) error {
 	}
 
 	var holes Holes
-	querySet, err := holes.MakeQuerySet(query.Offset, query.Size, query.Order, c)
+	err = DB.Transaction(func(tx *gorm.DB) error {
+		querySet, err := holes.MakeQuerySet(query.Offset, query.Size, query.Order, c)
+		if err != nil {
+			return err
+		}
+
+		if query.CreatedStart != nil {
+			querySet = querySet.Where("hole.created_at >= ?", query.CreatedStart.Time)
+		}
+
+		if query.CreatedEnd != nil {
+			querySet = querySet.Where("hole.created_at <= ?", query.CreatedEnd.Time)
+		}
+
+		if query.DivisionID != 0 {
+			querySet = querySet.Where("hole.division_id = ?", query.DivisionID)
+		}
+
+		if len(query.Tags) != 0 {
+			var tags []Tag
+			err = DB.Where("name IN ?", query.Tags).Find(&tags).Error
+			if err != nil {
+				return err
+			}
+
+			if len(tags) != len(query.Tags) {
+				return common.BadRequest("部分标签不存在")
+			}
+
+			tagIDs := make([]int, len(tags))
+			for i, tag := range tags {
+				tagIDs[i] = tag.ID
+			}
+
+			var holeIDs []int
+			err = DB.Table("hole_tags").
+				Select("hole_id").
+				Where("tag_id IN ?", tagIDs).
+				Group("hole_id").
+				Having("COUNT(DISTINCT tag_id) = ?", len(tagIDs)).
+				Pluck("hole_id", &holeIDs).Error
+			if err != nil {
+				return err
+			}
+
+			querySet = querySet.Where("hole.id IN ?", holeIDs)
+			err = querySet.Find(&holes).Error
+			if err != nil {
+				return err
+			}
+		} else if query.Tag != "" {
+			var tag Tag
+			err = DB.Where("name = ?", query.Tag).Find(&tag).Error
+			if err != nil {
+				return err
+			}
+			err = querySet.Model(&tag).Order("updated_at desc").Association("Holes").Find(&holes)
+			if err != nil {
+				return err
+			}
+		} else {
+			err = querySet.Find(&holes).Error
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	})
 	if err != nil {
 		return err
-	}
-
-	if query.CreatedStart != nil {
-		querySet = querySet.Where("hole.created_at >= ?", query.CreatedStart.Time)
-	}
-	
-	if query.CreatedEnd != nil {
-		querySet = querySet.Where("hole.created_at <= ?", query.CreatedEnd.Time)
-	}
-
-	if query.DivisionID != 0 {
-		querySet = querySet.Where("hole.division_id = ?", query.DivisionID)
-	}
-
-	if len(query.Tags) != 0 {
-		var tags []Tag
-		err = DB.Where("name IN ?", query.Tags).Find(&tags).Error
-		if err != nil {
-			return err
-		}
-
-		if len(tags) != len(query.Tags) {
-			return common.BadRequest("部分标签不存在")
-		}
-
-		tagIDs := make([]int, len(tags))
-		for i, tag := range tags {
-			tagIDs[i] = tag.ID
-		}
-
-		var holeIDs []int
-		err = DB.Table("hole_tags").
-			Select("hole_id").
-			Where("tag_id IN ?", tagIDs).
-			Group("hole_id").
-			Having("COUNT(DISTINCT tag_id) = ?", len(tagIDs)).
-			Pluck("hole_id", &holeIDs).Error
-		if err != nil {
-			return err
-		}
-
-		querySet = querySet.Where("hole.id IN ?", holeIDs)
-		querySet.Find(&holes)
-	} else if query.Tag != "" {
-		var tag Tag
-		err = DB.Where("name = ?", query.Tag).Find(&tag).Error
-		if err != nil {
-			return err
-		}
-		err = querySet.Model(&tag).Order("updated_at desc").Association("Holes").Find(&holes)
-		if err != nil {
-			return err
-		}
-	} else {
-		querySet.Find(&holes)
 	}
 
 	// only for danxi v1.3.10 old api
