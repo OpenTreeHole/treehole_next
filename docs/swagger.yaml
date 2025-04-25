@@ -669,6 +669,8 @@ definitions:
       name:
         description: / base info
         type: string
+      nsfw:
+        type: boolean
       tag_id:
         description: / generated field
         type: integer
@@ -1575,6 +1577,12 @@ paths:
       deprecated: true
       parameters:
       - in: query
+        name: created_end
+        type: string
+      - in: query
+        name: created_start
+        type: string
+      - in: query
         name: division_id
         type: integer
       - default: 10
@@ -1591,6 +1599,12 @@ paths:
       - in: query
         name: tag
         type: string
+      - collectionFormat: csv
+        in: query
+        items:
+          type: string
+        name: tags
+        type: array
       produces:
       - application/json
       responses:
