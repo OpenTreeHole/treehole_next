@@ -1102,6 +1102,16 @@ const docTemplate = `{
                 "deprecated": true,
                 "parameters": [
                     {
+                        "type": "string",
+                        "name": "created_end",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "name": "created_start",
+                        "in": "query"
+                    },
+                    {
                         "type": "integer",
                         "name": "division_id",
                         "in": "query"
@@ -1126,6 +1136,15 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "name": "tag",
+                        "in": "query"
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "name": "tags",
                         "in": "query"
                     }
                 ],
@@ -4022,6 +4041,9 @@ const docTemplate = `{
                 "name": {
                     "description": "/ base info",
                     "type": "string"
+                },
+                "nsfw": {
+                    "type": "boolean"
                 },
                 "tag_id": {
                     "description": "/ generated field",
