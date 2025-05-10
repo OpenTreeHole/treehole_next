@@ -23,8 +23,10 @@ func (q *QueryTime) SetDefaults() {
 }
 
 type ListOldModel struct {
-	Offset       common.CustomTime  `json:"start_time" query:"start_time" swaggertype:"string"`
-	Size         int                `json:"length" query:"length" default:"10" validate:"max=10" `
+	Offset0      common.CustomTime  `json:"start_time" query:"start_time" swaggertype:"string"`
+	Offset       common.CustomTime  `json:"offset" query:"offset" swaggertype:"string"`
+	Size0        int                `json:"length" query:"length" default:"10" validate:"max=10"`
+	Size         int                `json:"size" query:"size" default:"10" validate:"max=10" `
 	Tag          string             `json:"tag" query:"tag"`
 	Tags         []string           `json:"tags" query:"tags"`
 	DivisionID   int                `json:"division_id" query:"division_id"`

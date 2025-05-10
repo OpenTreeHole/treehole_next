@@ -175,6 +175,12 @@ func ListHoles(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
+	if query.Size == 0 {
+		query.Size = query.Size0
+	}
+	if query.Offset.IsZero() {
+		query.Offset = query.Offset0
+	}
 
 	var holes Holes
 	err = DB.Transaction(func(tx *gorm.DB) error {

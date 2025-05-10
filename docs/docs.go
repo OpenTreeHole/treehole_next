@@ -1124,7 +1124,19 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
                         "name": "order",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 10,
+                        "type": "integer",
+                        "default": 10,
+                        "name": "size",
                         "in": "query"
                     },
                     {
