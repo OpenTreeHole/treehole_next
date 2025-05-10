@@ -36,8 +36,15 @@ type ListOldModel struct {
 }
 
 func (q *ListOldModel) SetDefaults() {
+	if q.Size == 0 {
+		q.Size = q.Size0
+	}
 	if q.Offset.IsZero() {
-		q.Offset = common.CustomTime{Time: time.Now()}
+		if q.Offset0.IsZero() {
+			q.Offset = common.CustomTime{Time: time.Now()}
+		} else {
+			q.Offset = q.Offset0
+		}
 	}
 	if q.CreatedStart == nil {
 		q.CreatedStart = &common.CustomTime{Time: time.Time{}} // 默认值为零时间
