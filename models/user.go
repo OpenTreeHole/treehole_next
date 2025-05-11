@@ -13,6 +13,7 @@ import (
 	"github.com/opentreehole/go-common"
 	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type User struct {
@@ -181,9 +182,15 @@ func GetCurrLoginUser(c *fiber.Ctx) (*User, error) {
 	return user, err
 }
 
+// LoadUserByID load user from database.
+// if user not found, create a new user with default config.
+// This method starts a transaction and would add a lock on the user row, as soon as it starts to read.
 func (user *User) LoadUserByID(userID int) error {
 	return DB.Transaction(func(tx *gorm.DB) error {
-		err := tx.Take(&user, userID).Error
+		// Lock it for update (SELECT ... FOR UPDATE),
+		// see [MySQL Official Manual](https://dev.mysql.com/doc/refman/8.4/en/innodb-locking-reads.html)
+		// We do the query on userID, which is the primary key, so the lock should be on the row.
+		err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Take(&user, userID).Error
 		if err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				// insert user if not found
