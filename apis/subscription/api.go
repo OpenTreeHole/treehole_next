@@ -118,18 +118,18 @@ func DeleteSubscription(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
+	var data []int
 
-	// delete subscriptions
-	err = DB.Delete(UserSubscription{UserID: userID, HoleID: body.HoleID}).Error
-	if err != nil {
-		return err
-	}
+	err = DB.Clauses(dbresolver.Write).Transaction(func(tx *gorm.DB) error {
+		// 删除订阅并更新计数
+		if err := RemoveUserSubscription(tx, userID, body.HoleID); err != nil {
+			return err
+		}
 
-	// create response
-	data, err := UserGetSubscriptionData(DB, userID)
-	if err != nil {
+		var err error
+		data, err = UserGetSubscriptionData(tx, userID)
 		return err
-	}
+	})
 
 	return c.JSON(&Response{
 		Message: "删除成功",
