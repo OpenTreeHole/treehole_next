@@ -51,11 +51,13 @@ func init() {
 			}
 			return nowTags
 		}
-		holes = append(holes, &Hole{
-			ID:         i + 1,
-			UserID:     1,
-			DivisionID: rand.Intn(DIVISION_MAX) + 1,
-			Tags:       generateTag(),
+		holes = append(holes, &Hole{ 
+			BaseHole: BaseHole{
+				ID:         i + 1,
+				UserID:     1,
+				DivisionID: rand.Intn(DIVISION_MAX) + 1,
+				Tags:       generateTag(),
+			},
 		})
 	}
 
