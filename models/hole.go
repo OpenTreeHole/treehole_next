@@ -17,11 +17,11 @@ import (
 	"treehole_next/utils"
 )
 
-type Hole = HoleV1
+type Hole = HoleV2
 
 type BaseHole struct {
 	/// saved fields
-	ID        int            `json:"id" gorm:"primaryKey;"`
+	ID        int            `json:"id" gorm:"primaryKey"`
 	CreatedAt time.Time      `json:"time_created" gorm:"not null;index:idx_hole_div_cre,priority:2,sort:desc"`
 	UpdatedAt time.Time      `json:"time_updated" gorm:"not null;index:idx_hole_div_upd,priority:2,sort:desc"`
 	DeletedAt gorm.DeletedAt `json:"time_deleted,omitempty" gorm:"index"`
