@@ -24,6 +24,44 @@ type BotMessage struct {
 	AutoEscape  bool           `json:"auto_escape default:false"`
 }
 
+type FeishuMessage struct {
+	MsgType string `json:"msg_type"`
+	Content string `json:"message"`
+}
+
+func NotifyFeishu(feishuMessage *FeishuMessage) {
+	if feishuMessage == nil || feishuMessage.MsgType == "" {
+		return
+	}
+	if config.Config.FeishuBotUrl == nil {
+		return
+	}
+	url := *config.Config.FeishuBotUrl
+
+	jsonData, err := json.Marshal(feishuMessage)
+	if err != nil {
+		RequestLog("Error marshaling JSON", "NotifyFeishu", 0, false)
+		return
+	}
+
+	RequestLog(fmt.Sprintf("Request: %s", string(jsonData)), "NotifyFeishu", 0, false)
+
+	resp, err := http.Post(url, "application/json", bytes.NewBuffer(jsonData))
+	if err != nil {
+		RequestLog("Error creating request", "NotifyFeishu", 0, false)
+		return
+	}
+
+	defer resp.Body.Close()
+	if resp.StatusCode != 200 {
+		response, err := io.ReadAll(resp.Body)
+		if err != nil {
+			RequestLog("Error Unmarshaling response", "NotifyFeishu", 0, false)
+		}
+		RequestLog(fmt.Sprintf("Error sending request %s", string(response)), "NotifyFeishu", 0, false)
+	}
+}
+
 func NotifyQQ(botMessage *BotMessage) {
 	if botMessage == nil {
 		return

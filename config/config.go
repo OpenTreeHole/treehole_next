@@ -48,9 +48,11 @@ var Config struct {
 	NotifiableAdminIds           []int    `env:"NOTIFIABLE_ADMIN_IDS"`
 	ExcludeBanForeverDivisionIds []int    `env:"EXCLUDE_BAN_FOREVER_DIVISION_IDS"`
 	ProxyUrl                     *url.URL `env:"PROXY_URL"`
-	QQBotGroupID                 *int64   `env:"GROUP_ID"`
+	QQBotPhysicsGroupID          *int64   `env:"PHYSICS_GROUP_ID"`
+	QQBotCodingGroupID           *int64   `env:"CODING_GROUP_ID"`
 	QQBotUserID                  *int64   `env:"USER_ID"`
 	QQBotUrl                     *string  `env:"QQ_BOT_URL"`
+	FeishuBotUrl                 *string  `env:"FEISHU_BOT_URL"`
 	AdminOnlyTagIds              []int    `env:"ADMIN_ONLY_TAG_IDS"`
 }
 

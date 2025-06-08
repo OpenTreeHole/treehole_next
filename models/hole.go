@@ -490,14 +490,26 @@ func (hole *Hole) HoleHook() {
 			UserID:      config.Config.QQBotUserID,
 			Message:     notifyMessage,
 		})
+		go utils.NotifyFeishu(&utils.FeishuMessage{
+			MsgType: "text",
+			Content: notifyMessage,
+		})
 	}
+
+	tagToGroup := map[string]*int64{
+		"@物理大神": config.Config.QQBotPhysicsGroupID,
+		"@码上辅导": config.Config.QQBotCodingGroupID,
+	}
+
 	for _, tag := range hole.Tags {
-		if tag != nil && tag.Name == "@物理大神" {
-			go utils.NotifyQQ(&utils.BotMessage{
-				MessageType: utils.MessageTypeGroup,
-				GroupID:     config.Config.QQBotGroupID,
-				Message:     notifyMessage,
-			})
+		if tag != nil {
+			if groupID, ok := tagToGroup[tag.Name]; ok {
+				go utils.NotifyQQ(&utils.BotMessage{
+					MessageType: utils.MessageTypeGroup,
+					GroupID:     groupID,
+					Message:     notifyMessage,
+				})
+			}
 		}
 	}
 }

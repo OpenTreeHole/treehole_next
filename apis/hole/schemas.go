@@ -23,16 +23,34 @@ func (q *QueryTime) SetDefaults() {
 }
 
 type ListOldModel struct {
-	Offset     common.CustomTime `json:"start_time" query:"start_time" swaggertype:"string"`
-	Size       int               `json:"length" query:"length" default:"10" validate:"max=10" `
-	Tag        string            `json:"tag" query:"tag"`
-	DivisionID int               `json:"division_id" query:"division_id"`
-	Order      string            `json:"order" query:"order"`
+	Offset0      common.CustomTime  `json:"start_time" query:"start_time" swaggertype:"string"`
+	Offset       common.CustomTime  `json:"offset" query:"offset" swaggertype:"string"`
+	Size0        int                `json:"length" query:"length" default:"10" validate:"max=10"`
+	Size         int                `json:"size" query:"size" default:"10" validate:"max=10" `
+	Tag          string             `json:"tag" query:"tag"`
+	Tags         []string           `json:"tags" query:"tags"`
+	DivisionID   int                `json:"division_id" query:"division_id"`
+	Order        string             `json:"order" query:"order"`
+	CreatedStart *common.CustomTime `json:"created_start" query:"created_start" swaggertype:"string"`
+	CreatedEnd   *common.CustomTime `json:"created_end" query:"created_end" swaggertype:"string"`
 }
 
 func (q *ListOldModel) SetDefaults() {
+	if q.Size == 0 {
+		q.Size = q.Size0
+	}
 	if q.Offset.IsZero() {
-		q.Offset = common.CustomTime{Time: time.Now()}
+		if q.Offset0.IsZero() {
+			q.Offset = common.CustomTime{Time: time.Now()}
+		} else {
+			q.Offset = q.Offset0
+		}
+	}
+	if q.CreatedStart == nil {
+		q.CreatedStart = &common.CustomTime{Time: time.Time{}} // 默认值为零时间
+	}
+	if q.CreatedEnd == nil {
+		q.CreatedEnd = &common.CustomTime{Time: time.Now()}
 	}
 }
 

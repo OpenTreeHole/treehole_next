@@ -669,6 +669,8 @@ definitions:
       name:
         description: / base info
         type: string
+      nsfw:
+        type: boolean
       tag_id:
         description: / generated field
         type: integer
@@ -1572,8 +1574,13 @@ paths:
       - Search
   /holes:
     get:
-      deprecated: true
       parameters:
+      - in: query
+        name: created_end
+        type: string
+      - in: query
+        name: created_start
+        type: string
       - in: query
         name: division_id
         type: integer
@@ -1583,14 +1590,28 @@ paths:
         name: length
         type: integer
       - in: query
+        name: offset
+        type: string
+      - in: query
         name: order
         type: string
+      - default: 10
+        in: query
+        maximum: 10
+        name: size
+        type: integer
       - in: query
         name: start_time
         type: string
       - in: query
         name: tag
         type: string
+      - collectionFormat: csv
+        in: query
+        items:
+          type: string
+        name: tags
+        type: array
       produces:
       - application/json
       responses:
@@ -1600,7 +1621,7 @@ paths:
             items:
               $ref: '#/definitions/models.Hole'
             type: array
-      summary: Old API for Listing Holes
+      summary: API for Listing Holes
       tags:
       - Hole
     post:
