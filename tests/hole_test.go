@@ -129,3 +129,14 @@ func TestDeleteHole(t *testing.T) {
 	DB.Where("id = ?", 10).Find(&hole)
 	assert.Equal(t, true, hole.Hidden)
 }
+
+func TestHoleStats(t *testing.T) {
+
+	for i := 1; i <= 10; i++ {
+		var hole Hole
+		testAPIModel(t, "get", "/api/holes/"+strconv.Itoa(i), 200, &hole)
+		hole.RecalculateStats()
+		assert.Equal(t, 1, hole.FavoriteCount)
+	}
+
+}

@@ -62,6 +62,9 @@ type Hole struct {
 	// UserSubscriptionHoles
 	UserSubscription Users `json:"-" gorm:"many2many:user_subscription;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 
+	FavoriteCount     int `json:"favorite_count" gorm:"not null;default:0"`
+	SubscriptionCount int `json:"subscription_count" gorm:"not null;default:0"`
+
 	/// generated field
 
 	// 兼容旧版 id
@@ -511,5 +514,26 @@ func (hole *Hole) HoleHook() {
 				})
 			}
 		}
+	}
+}
+
+func (hole *Hole) RecalculateStats() {
+	var favoriteCount int64
+	var subscriptionCount int64
+
+	// Recalculate the stats for the hole
+	DB.Model(&UserFavorite{}).Where("hole_id = ?", hole.ID).Count(&favoriteCount)
+	DB.Model(&UserSubscription{}).Where("hole_id = ?", hole.ID).Count(&subscriptionCount)
+
+	hole.FavoriteCount = int(favoriteCount)
+	hole.SubscriptionCount = int(subscriptionCount)
+
+	// Update the hole in the database
+	DB.Save(hole)
+
+	// Update the cache
+	err := utils.SetCache(hole.CacheName(), hole, HoleCacheExpire)
+	if err != nil {
+		return
 	}
 }
