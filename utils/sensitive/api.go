@@ -112,8 +112,12 @@ func CheckSensitiveText(params ParamsForCheck) (resp *ResponseForCheck, err erro
 	response, err := textCheckClient.SyncCheckText(request)
 	if err != nil {
 		// 处理错误并打印日志
-		utils.RequestLog(fmt.Sprintf("sync request error:%+v", err.Error()), params.TypeName, params.Id, false)
-		return &ResponseForCheck{Pass: false}, nil
+		errMsg := fmt.Sprintf("sync sensitive check error:%+v", err.Error())
+		utils.RequestLog(errMsg, params.TypeName, params.Id, false)
+		return &ResponseForCheck{Pass: false,
+			Labels: nil,
+			Detail: errMsg,
+		}, nil
 	}
 
 	resp = &ResponseForCheck{}
@@ -183,6 +187,7 @@ func CheckSensitiveText(params ParamsForCheck) (resp *ResponseForCheck, err erro
 
 	utils.RequestLog("Sensitive text check http response code is not 200", params.TypeName, params.Id, false)
 	resp.Pass = false
+	resp.Detail = fmt.Sprintf("Sensitive text check http response error: %d Msg: %s", response.GetCode(), response.GetMsg())
 	return
 }
 
