@@ -17,9 +17,11 @@ import (
 	"treehole_next/utils"
 )
 
-type Hole struct {
+type Hole = HoleV1
+
+type BaseHole struct {
 	/// saved fields
-	ID        int            `json:"id" gorm:"primaryKey"`
+	ID        int            `json:"id" gorm:"primaryKey;"`
 	CreatedAt time.Time      `json:"time_created" gorm:"not null;index:idx_hole_div_cre,priority:2,sort:desc"`
 	UpdatedAt time.Time      `json:"time_updated" gorm:"not null;index:idx_hole_div_upd,priority:2,sort:desc"`
 	DeletedAt gorm.DeletedAt `json:"time_deleted,omitempty" gorm:"index"`
@@ -54,7 +56,7 @@ type Hole struct {
 	Tags Tags `json:"tags" gorm:"many2many:hole_tags;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 
 	// 楼层列表
-	Floors Floors `json:"-" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	Floors Floors `json:"-" gorm:"foreignKey:HoleID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 
 	// 匿名映射表
 	Mapping Users `json:"-" gorm:"many2many:anonyname_mapping;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
@@ -66,6 +68,11 @@ type Hole struct {
 
 	// 兼容旧版 id
 	HoleID int `json:"hole_id" gorm:"-:all"`
+}
+
+
+type HoleV1 struct {
+	BaseHole
 
 	// 返回给前端的楼层列表，包括首楼、尾楼和预加载的前 n 个楼层
 	HoleFloor struct {
@@ -73,13 +80,14 @@ type Hole struct {
 		LastFloor  *Floor `json:"last_floor"`  // 尾楼
 		Floors     Floors `json:"prefetch"`    // 预加载的楼层
 	} `json:"floors" gorm:"-:all"`
+
 }
 
-func (hole *Hole) GetID() int {
+func (hole *BaseHole) GetID() int {
 	return hole.ID
 }
 
-func (hole *Hole) CacheName() string {
+func (hole *BaseHole) CacheName() string {
 	return fmt.Sprintf("hole_%d", hole.ID)
 }
 
@@ -97,7 +105,7 @@ func IsHolesExist(tx *gorm.DB, holeID []int) bool {
 
 const HoleCacheExpire = time.Minute * 10
 
-func loadTags(holes Holes) (err error) {
+func (holes Holes)loadTags() error {
 	if len(holes) == 0 {
 		return nil
 	}
@@ -107,7 +115,7 @@ func loadTags(holes Holes) (err error) {
 	}
 
 	var holeTags HoleTags
-	err = DB.Where("hole_id in ?", holeIDs).Find(&holeTags).Error
+	err := DB.Where("hole_id in ?", holeIDs).Find(&holeTags).Error
 	if err != nil {
 		return err
 	}
@@ -144,7 +152,7 @@ func loadTags(holes Holes) (err error) {
 	return nil
 }
 
-func loadFloors(holes Holes) error {
+func (holes Holes) loadFloors() error {
 	if len(holes) == 0 {
 		return nil
 	}
@@ -288,12 +296,12 @@ func (holes Holes) Preprocess(c *fiber.Ctx) error {
 }
 
 func UpdateHoleCache(holes Holes) (err error) {
-	err = loadFloors(holes)
+	err = holes.loadFloors()
 	if err != nil {
 		return
 	}
 
-	err = loadTags(holes)
+	err = holes.loadTags()
 	if err != nil {
 		return
 	}
@@ -351,7 +359,7 @@ func (holes Holes) MakeQuerySet(offset common.CustomTime, size int, order string
 // set hole.HoleFloor from hole.Floors or hole.HoleFloor.Floors
 // if Floors is not empty, set HoleFloor.Floors from Floors, in case loading from database
 // if Floors is empty, set HoleFloor.Floors from HoleFloor.Floors, in case loading from cache
-func (hole *Hole) SetHoleFloor() {
+func (hole *HoleV1) SetHoleFloor() {
 	if len(hole.Floors) != 0 {
 		holeFloorSize := len(hole.Floors)
 
@@ -380,7 +388,7 @@ func (hole *Hole) SetHoleFloor() {
 	//hole.HoleFloor.LastFloor.SetDefaults(c)
 }
 
-func (hole *Hole) Create(tx *gorm.DB, user *User, tagNames []string, c *fiber.Ctx) (err error) {
+func (hole *HoleV1) Create(tx *gorm.DB, user *User, tagNames []string, c *fiber.Ctx) (err error) {
 	// Create hole.Tags, in different sql session
 	hole.Tags, err = FindOrCreateTags(tx, user, tagNames)
 	if err != nil {
@@ -453,12 +461,12 @@ func (hole *Hole) Create(tx *gorm.DB, user *User, tagNames []string, c *fiber.Ct
 	return utils.SetCache(hole.CacheName(), hole, HoleCacheExpire)
 }
 
-func (hole *Hole) AfterCreate(_ *gorm.DB) (err error) {
+func (hole *BaseHole) AfterCreate(_ *gorm.DB) (err error) {
 	hole.HoleID = hole.ID
 	return nil
 }
 
-func (hole *Hole) AfterFind(_ *gorm.DB) (err error) {
+func (hole *BaseHole) AfterFind(_ *gorm.DB) (err error) {
 	hole.HoleID = hole.ID
 	return nil
 }
@@ -473,7 +481,7 @@ func (holes Holes) RemoveIf(delCondition func(*Hole) bool) Holes {
 	return result
 }
 
-func (hole *Hole) HoleHook() {
+func (hole *HoleV1) HoleHook() {
 	if hole == nil {
 		return
 	}
