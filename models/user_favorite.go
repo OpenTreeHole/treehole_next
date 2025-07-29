@@ -173,7 +173,7 @@ func DeleteUserFavorite(tx *gorm.DB, userID int, holeID int, favoriteGroupID int
 
 		// 更新收藏夹计数
 		if err := tx.Model(&FavoriteGroup{}).
-			Where("id = ? AND user_id = ?", favoriteGroupID, userID).
+			Where("favorite_group_id = ? AND user_id = ?", favoriteGroupID, userID).
 			UpdateColumn("count", gorm.Expr("count - ?", 1)).Error; err != nil {
 			return err
 		}
