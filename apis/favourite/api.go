@@ -198,7 +198,7 @@ func DeleteFavorite(c *fiber.Ctx) error {
 	}
 
 	var data []int
-	err = DB.Transaction(func(tx *gorm.DB) error {
+	err = DB.Clauses(dbresolver.Write).Transaction(func(tx *gorm.DB) error {
 		// delete favorite
 		err = DeleteUserFavorite(tx, userID, body.HoleID, body.FavoriteGroupID)
 		if err != nil {
@@ -294,7 +294,7 @@ func AddFavoriteGroup(c *fiber.Ctx) error {
 	}
 
 	var data FavoriteGroups
-	err = DB.Transaction(func(tx *gorm.DB) error {
+	err = DB.Clauses(dbresolver.Write).Transaction(func(tx *gorm.DB) error {
 		// add favorite group
 		err = AddUserFavoriteGroup(tx, userID, body.Name)
 		if err != nil {
