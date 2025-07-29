@@ -38,6 +38,9 @@ type Hole struct {
 	// 锁定帖子，如果锁定则非管理员无法发帖，也无法修改已有发帖
 	Locked bool `json:"locked" gorm:"not null;default:false"`
 
+	// 冻结帖子，如果冻结则发帖不会更新 UpdatedAt
+	Frozen bool `json:"frozen" gorm:"not null;default:false"`
+
 	Good bool `json:"good" gorm:"not null;default:false"`
 
 	NoPurge bool `json:"no_purge" gorm:"not null;default:false"`

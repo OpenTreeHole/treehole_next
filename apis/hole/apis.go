@@ -603,11 +603,19 @@ func ModifyHole(c *fiber.Ctx) error {
 			MyLog("Hole", "Modify", holeID, user.ID, RoleAdmin, "Lock: ")
 		}
 
+		// modify frozen
+		if body.Frozen != nil {
+			changed = true
+			hole.Frozen = *body.Frozen
+
+			MyLog("Hole", "Modify", holeID, user.ID, RoleAdmin, "Frozen: ")
+		}
+
 		// save
 		if changed {
 			err = tx.Model(&hole).
 				Omit(clause.Associations, "UpdatedAt").
-				Select("DivisionID", "Hidden", "Locked").
+				Select("DivisionID", "Hidden", "Locked", "Frozen").
 				Updates(&hole).Error
 			if err != nil {
 				return err
@@ -624,6 +632,7 @@ func ModifyHole(c *fiber.Ctx) error {
 						"division_id": hole.DivisionID,
 						"hidden":      hole.Hidden,
 						"locked":      hole.Locked,
+						"frozen":      hole.Frozen,
 						"tags":        hole.Tags,
 					},
 					Modify: body,

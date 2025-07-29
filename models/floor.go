@@ -357,11 +357,12 @@ func (floor *Floor) Create(tx *gorm.DB, hole *Hole, c *fiber.Ctx) (err error) {
 			return err
 		}
 
-		// update hole reply and update_at
-		return tx.Model(&hole).
-			Omit(clause.Associations).
-			Select("Reply").
-			Updates(&hole).Error
+		// update hole reply, skip UpdatedAt if frozen
+		query := tx.Model(&hole).Omit(clause.Associations).Select("Reply")
+		if hole.Frozen {
+			query = query.Omit("UpdatedAt")
+		}
+		return query.Updates(&hole).Error
 	})
 
 	if err != nil {

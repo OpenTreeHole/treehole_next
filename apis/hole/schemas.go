@@ -89,6 +89,7 @@ type ModifyModel struct {
 	Hidden     *bool `json:"hidden"`                                 // Admin only
 	Unhidden   *bool `json:"unhidden"`                               // admin only
 	Lock       *bool `json:"lock"`                                   // admin only
+	Frozen     *bool `json:"frozen"`                                 // admin only
 }
 
 func (body ModifyModel) CheckPermission(user *models.User, hole *models.Hole) error {
@@ -110,9 +111,12 @@ func (body ModifyModel) CheckPermission(user *models.User, hole *models.Hole) er
 	if body.Lock != nil && !user.IsAdmin {
 		return common.Forbidden("非管理员禁止锁定帖子")
 	}
+	if body.Frozen != nil && !user.IsAdmin {
+		return common.Forbidden("非管理员禁止冻结帖子")
+	}
 	return nil
 }
 
 func (body ModifyModel) DoNothing() bool {
-	return body.Hidden == nil && body.Unhidden == nil && body.Tags == nil && body.DivisionID == nil && body.Lock == nil
+	return body.Hidden == nil && body.Unhidden == nil && body.Tags == nil && body.DivisionID == nil && body.Lock == nil && body.Frozen == nil
 }
