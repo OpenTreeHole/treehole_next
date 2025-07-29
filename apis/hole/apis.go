@@ -19,6 +19,48 @@ import (
 	. "treehole_next/utils"
 )
 
+// ListHomePage
+//
+// @Summary List Holes In Home Page
+// @Tags Hole
+// @Produce json
+// @Router /holes/_homepage [get]
+// @Param object query ShowHomePageModel false "query"
+// @Success 200 {array} Hole
+// @Failure 404 {object} MessageModel
+// @Failure 500 {object} MessageModel
+func ListHomePage(c *fiber.Ctx) (err error) {
+	var query ShowHomePageModel
+	err = common.ValidateQuery(c, &query)
+	if err != nil {
+		return err
+	}
+
+	divisionIDs, err := HomepageDivisionIDs(DB, query.ExcludeDivisionIDs)
+	if err != nil {
+		return err
+	}
+
+	if len(divisionIDs) == 0 {
+		return Serialize(c, &Holes{})
+	}
+
+	// get holes
+	var holes Holes
+	querySet, err := holes.MakeQuerySet(query.Offset, query.Size, query.Order, c)
+	if err != nil {
+		return err
+	}
+
+	querySet = querySet.Where("hole.division_id in (?)", divisionIDs)
+	err = querySet.Find(&holes).Error
+	if err != nil {
+		return err
+	}
+
+	return Serialize(c, &holes)
+}
+
 // ListHolesByDivision
 //
 // @Summary List Holes In A Division
