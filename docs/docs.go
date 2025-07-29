@@ -3534,6 +3534,10 @@ const docTemplate = `{
                     "type": "integer",
                     "minimum": 1
                 },
+                "frozen": {
+                    "description": "admin only",
+                    "type": "boolean"
+                },
                 "hidden": {
                     "description": "Admin only",
                     "type": "boolean"
@@ -3785,6 +3789,9 @@ const docTemplate = `{
                     "description": "所属 division 的 id",
                     "type": "integer"
                 },
+                "favorite_count": {
+                    "type": "integer"
+                },
                 "floors": {
                     "description": "返回给前端的楼层列表，包括首楼、尾楼和预加载的前 n 个楼层",
                     "type": "object",
@@ -3814,6 +3821,10 @@ const docTemplate = `{
                         }
                     }
                 },
+                "frozen": {
+                    "description": "冻结帖子，如果冻结则发帖不会更新 UpdatedAt",
+                    "type": "boolean"
+                },
                 "good": {
                     "type": "boolean"
                 },
@@ -3838,6 +3849,9 @@ const docTemplate = `{
                 },
                 "reply": {
                     "description": "回复量（即该洞下 floor 的数量 - 1）",
+                    "type": "integer"
+                },
+                "subscription_count": {
                     "type": "integer"
                 },
                 "tags": {
