@@ -68,7 +68,7 @@ func TestDeleteDivision(t *testing.T) {
 	id := 3
 	toID := 2
 
-	hole := Hole{DivisionID: id}
+	hole := Hole{BaseHole: BaseHole{DivisionID: id}}
 	DB.Create(&hole)
 	testAPI(t, "delete", "/api/divisions/"+strconv.Itoa(id), 204, Map{"to": toID})
 	testAPI(t, "delete", "/api/divisions/"+strconv.Itoa(id), 204, Map{}) // repeat delete

@@ -341,16 +341,18 @@ func CreateHole(c *fiber.Ctx) error {
 	}
 
 	hole := Hole{
-		Floors: Floors{{
-			UserID:          user.ID,
-			Content:         body.Content,
-			SpecialTag:      body.SpecialTag,
-			IsMe:            true,
-			IsSensitive:     !sensitiveResp.Pass,
-			SensitiveDetail: sensitiveResp.Detail,
-		}},
-		UserID:     user.ID,
-		DivisionID: divisionID,
+		BaseHole: BaseHole{
+			Floors: Floors{{
+				UserID:          user.ID,
+				Content:         body.Content,
+				SpecialTag:      body.SpecialTag,
+				IsMe:            true,
+				IsSensitive:     !sensitiveResp.Pass,
+				SensitiveDetail: sensitiveResp.Detail,
+			}},
+			UserID:     user.ID,
+			DivisionID: divisionID,
+		},
 	}
 	err = hole.Create(DB, user, body.ToName(), c)
 	if err != nil {
@@ -410,16 +412,19 @@ func CreateHoleOld(c *fiber.Ctx) error {
 
 	// create hole
 	hole := Hole{
-		Floors: Floors{{
-			UserID:          user.ID,
-			Content:         body.Content,
-			SpecialTag:      body.SpecialTag,
-			IsMe:            true,
-			IsSensitive:     !sensitiveResp.Pass,
-			SensitiveDetail: sensitiveResp.Detail,
-		}},
-		UserID:     user.ID,
-		DivisionID: body.DivisionID,
+		BaseHole: BaseHole{
+			Floors: Floors{{
+				UserID:          user.ID,
+				Content:         body.Content,
+				SpecialTag:      body.SpecialTag,
+				IsMe:            true,
+				IsSensitive:     !sensitiveResp.Pass,
+				SensitiveDetail: sensitiveResp.Detail,
+			}},
+			UserID:     user.ID,
+			DivisionID: body.DivisionID,
+		},
+		
 	}
 	err = hole.Create(DB, user, body.ToName(), c)
 	if err != nil {
@@ -686,7 +691,7 @@ func HideHole(c *fiber.Ctx) error {
 
 	var hole Hole
 	hole.ID = holeID
-	result := DB.Model(&hole).Select("Hidden").Omit("UpdatedAt").Updates(Hole{Hidden: true})
+	result := DB.Model(&hole).Select("Hidden").Omit("UpdatedAt").Updates(Hole{BaseHole:BaseHole{Hidden: true}})
 	if result.RowsAffected == 0 {
 		return gorm.ErrRecordNotFound
 	}
