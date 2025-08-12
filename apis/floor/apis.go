@@ -1026,7 +1026,29 @@ func ModifyFloorSensitive(c *fiber.Ctx) (err error) {
 
 		if !body.IsActualSensitive {
 			// save actual_sensitive only
-			return tx.Model(&floor).Select("IsActualSensitive").UpdateColumns(&floor).Error
+			err := tx.Model(&floor).Select("IsActualSensitive").UpdateColumns(&floor).Error
+			if err != nil {
+				return err
+			}
+			
+			// update CreatedAt and UpdatedAt to prevent new posts from being buried due to review delays
+			if floor.Ranking == 0 {
+				var hole Hole
+				err = tx.First(&hole, floor.HoleID).Error
+				if err != nil {
+					return err
+				}
+				
+				now := time.Now()
+				hole.CreatedAt = now
+				hole.UpdatedAt = now
+				err = tx.Model(&hole).Select("CreatedAt", "UpdatedAt").UpdateColumns(&hole).Error
+				if err != nil {
+					return err
+				}
+			}
+			
+			return nil
 		}
 
 		reason := "违反社区规范"
