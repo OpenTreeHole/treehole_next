@@ -369,7 +369,7 @@ func (hole *Hole) SetHoleFloor() {
 			hole.HoleFloor.Floors = hole.Floors[0 : holeFloorSize-1]
 		}
 	} else if len(hole.HoleFloor.Floors) != 0 {
-		holeFloorSize := len(hole.Floors)
+		holeFloorSize := len(hole.HoleFloor.Floors)
 
 		hole.HoleFloor.FirstFloor = hole.HoleFloor.Floors[0]
 		hole.HoleFloor.LastFloor = hole.HoleFloor.Floors[holeFloorSize-1]
