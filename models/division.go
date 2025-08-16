@@ -30,6 +30,18 @@ type Division struct {
 
 	/// generated field
 	DivisionID int `json:"division_id" gorm:"-:all"`
+
+	ShowInHomePage bool `json:"show_in_home_page" gorm:"not null;default:true"`
+}
+
+func HomepageDivisionIDs(tx *gorm.DB, excludeDivisionIDs *[]int) (divisionIDs []int, err error) {
+	if excludeDivisionIDs != nil {
+		err = tx.Select("id").Where("show_in_home_page = ? AND id NOT IN ?", true, excludeDivisionIDs).Find(&divisionIDs).Error
+		return
+	}
+
+	err = tx.Select("id").Where("show_in_home_page = ?", true).Find(&divisionIDs).Error
+	return
 }
 
 func (division *Division) GetID() int {
