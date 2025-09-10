@@ -1039,6 +1039,11 @@ func ModifyFloorSensitive(c *fiber.Ctx) (err error) {
 					return err
 				}
 				
+				// ad-hoc logic: if the hole was created before 2024, don't update
+				// ref: https://github.com/OpenTreeHole/treehole_next/issues/192
+				if hole.CreatedAt.Year() <= 2024 {
+					return nil
+				}
 				now := time.Now()
 				hole.CreatedAt = now
 				hole.UpdatedAt = now
