@@ -3939,6 +3939,17 @@ const docTemplate = `{
             "x-enum-comments": {
                 "MessageTypeModify": "including fold and delete"
             },
+            "x-enum-descriptions": [
+                "",
+                "",
+                "",
+                "including fold and delete",
+                "",
+                "",
+                "",
+                "",
+                ""
+            ],
             "x-enum-varnames": [
                 "MessageTypeFavorite",
                 "MessageTypeReply",
