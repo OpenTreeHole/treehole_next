@@ -1243,6 +1243,70 @@ const docTemplate = `{
                 }
             }
         },
+        "/holes/_homepage": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Hole"
+                ],
+                "summary": "List Holes In Home Page",
+                "parameters": [
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "integer"
+                        },
+                        "collectionFormat": "csv",
+                        "description": "default is all",
+                        "name": "exclude_division_ids",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "updated time \u003c offset (default is now)",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "name": "order",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 10,
+                        "type": "integer",
+                        "default": 10,
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Hole"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.MessageModel"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.MessageModel"
+                        }
+                    }
+                }
+            }
+        },
         "/holes/{hole_id}/floors": {
             "get": {
                 "produces": [
@@ -3606,6 +3670,9 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/models.Hole"
                     }
+                },
+                "show_in_home_page": {
+                    "type": "boolean"
                 },
                 "time_created": {
                     "type": "string"

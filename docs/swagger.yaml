@@ -355,6 +355,8 @@ definitions:
         items:
           $ref: '#/definitions/models.Hole'
         type: array
+      show_in_home_page:
+        type: boolean
       time_created:
         type: string
       time_updated:
@@ -1688,6 +1690,48 @@ paths:
               $ref: '#/definitions/models.Hole'
             type: array
       summary: List good holes
+      tags:
+      - Hole
+  /holes/_homepage:
+    get:
+      parameters:
+      - collectionFormat: csv
+        description: default is all
+        in: query
+        items:
+          type: integer
+        name: exclude_division_ids
+        type: array
+      - description: updated time < offset (default is now)
+        in: query
+        name: offset
+        type: string
+      - in: query
+        name: order
+        type: string
+      - default: 10
+        in: query
+        maximum: 10
+        name: size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Hole'
+            type: array
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.MessageModel'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.MessageModel'
+      summary: List Holes In Home Page
       tags:
       - Hole
   /holes/{hole_id}/floors:

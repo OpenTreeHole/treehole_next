@@ -9,6 +9,16 @@ import (
 	"treehole_next/models"
 )
 
+type ShowHomePageModel struct {
+	// default is all
+	ExcludeDivisionIDs *[]int `json:"exclude_division_ids" query:"exclude_division_ids" validate:"omitempty"`
+
+	Size int `json:"size" query:"size" default:"10" validate:"max=10"`
+	// updated time < offset (default is now)
+	Offset common.CustomTime `json:"offset" query:"offset" swaggertype:"string"`
+	Order  string            `json:"order" query:"order"`
+}
+
 type QueryTime struct {
 	Size int `json:"size" query:"size" default:"10" validate:"max=10"`
 	// updated time < offset (default is now)
