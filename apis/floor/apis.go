@@ -40,6 +40,11 @@ func ListFloorsInAHole(c *fiber.Ctx) error {
 		return err
 	}
 
+	// if size and offset both are 0, get all floors
+	if c.Query("size") == "0" && c.Query("offset") == "0" {
+		query.Size = -1 // get all floors
+	}
+
 	// get floors
 	var floors Floors
 	// use ranking field to locate faster

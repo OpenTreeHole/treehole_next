@@ -32,7 +32,7 @@ func initTestDivision() {
 	holes := make(Holes, 10)
 	for i := range holes {
 		holes[i] = &Hole{
-			DivisionID: 1,
+			BaseHole: BaseHole{DivisionID: 1},
 		}
 	}
 	holes[9].DivisionID = 4 // for TestDeleteDivisionDefaultValue
@@ -50,7 +50,7 @@ func initTestHoles() {
 	holes := make(Holes, 10)
 	for i := range holes {
 		holes[i] = &Hole{
-			DivisionID: 6,
+			BaseHole: BaseHole{DivisionID: 6},
 		}
 	}
 	tag := Tag{Name: "114", Temperature: 15}
@@ -72,7 +72,7 @@ func initTestFloors() {
 	holes := make(Holes, 10)
 	for i := range holes {
 		holes[i] = &Hole{
-			DivisionID: 7,
+			BaseHole: BaseHole{DivisionID: 7},
 		}
 	}
 	for i := 1; i <= 50; i++ {
@@ -110,7 +110,9 @@ func initTestTags() {
 	} // int[tag_id][hole_id]
 
 	for i := range holes {
-		holes[i] = &Hole{DivisionID: 8}
+		holes[i] = &Hole{
+			BaseHole: BaseHole{DivisionID: 8},
+		}
 	}
 
 	for i := range tags {
@@ -152,7 +154,7 @@ const (
 )
 
 func initTestReports() {
-	hole := Hole{ID: 1000}
+	hole := Hole{BaseHole: BaseHole{ID: 1000}}
 	floors := make(Floors, 20)
 	for i := range floors {
 		floors[i] = &Floor{
