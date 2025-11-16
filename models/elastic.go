@@ -5,9 +5,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/gofiber/fiber/v2"
 	"strconv"
+	"strings"
 	"time"
+
+	"github.com/gofiber/fiber/v2"
 
 	"github.com/elastic/go-elasticsearch/v8/typedapi/types"
 	"github.com/elastic/go-elasticsearch/v8/typedapi/types/enums/refresh"
@@ -20,6 +22,8 @@ import (
 
 	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/goccy/go-json"
+
+	stdjson "encoding/json"
 )
 
 var ES *elasticsearch.TypedClient
@@ -62,6 +66,35 @@ type FloorModel struct {
 	Content   string    `json:"content"`
 }
 
+const HighlightBegin = "<em>"
+const HighlightEnd = "</em>"
+
+const highlightBeginLen = len(HighlightBegin)
+const highlightEndLen = len(HighlightEnd)
+
+type HighlightedFloor struct {
+	*Floor
+	HighlightedContent string
+}
+
+func (floor HighlightedFloor) MarshalJSON() ([]byte, error) {
+	// workaround: use stdjson to avoid go-json panicking upon flattening structs with recursive fields
+	return stdjson.Marshal(&struct {
+		*Floor
+		HighlightedContent string `json:"highlighted_content"`
+	}{
+		Floor:              floor.Floor,
+		HighlightedContent: floor.HighlightedContent,
+	})
+}
+
+type HighlightedFloors []*HighlightedFloor
+
+func (floors HighlightedFloors) Preprocess(_ *fiber.Ctx) error {
+	// no-op intended (preprocessing done for Floors in Search and SearchOld)
+	return nil
+}
+
 // Search searches floors by keyword.
 //
 // Parameters:
@@ -73,9 +106,9 @@ type FloorModel struct {
 // - startTime and endTime: Filter floors by time (If not specified, set to nil)
 //
 // Returns:
-// - Floors: A list of floors matching the search criteria
+// - HighlightedFloors: A list of floors matching the search criteria, each floor with an extra HighlightedContent field
 // - error: An error if the search fails
-func Search(c *fiber.Ctx, keyword string, size, offset int, accurate bool, startTime *int64, endTime *int64) (Floors, error) {
+func Search(c *fiber.Ctx, keyword string, size, offset int, accurate bool, startTime *int64, endTime *int64) (HighlightedFloors, error) {
 	if ES == nil {
 		return SearchOld(c, keyword, size, offset, startTime, endTime)
 	}
@@ -89,14 +122,14 @@ func Search(c *fiber.Ctx, keyword string, size, offset int, accurate bool, start
 	// 					"queries": [{
 	// 						 "multi_match": {}
 	// 					 },
-	// 					 { 
+	// 					 {
 	// 						 "multi_match": {}
 	// 					 }]
 	// 				}
 	// 			},
 	// 			"filter": {
 	// 				//Term filter
-	// 			}           
+	// 			}
 	// 		}
 	// 	}
 	// }
@@ -147,9 +180,23 @@ func Search(c *fiber.Ctx, keyword string, size, offset int, accurate bool, start
 		},
 	}
 
+	highlight := &types.Highlight{
+		Fields: map[string]types.HighlightField{
+			"content": {
+				NumberOfFragments: &[]int{0}[0],
+			},
+			"content.ik_smart": {
+				NumberOfFragments: &[]int{0}[0],
+			},
+		},
+		PreTags:  []string{HighlightBegin},
+		PostTags: []string{HighlightEnd},
+	}
+
 	res, err := ES.Search().
 		Index(IndexName).From(offset).
 		Size(size).Query(&query).
+		Highlight(highlight).
 		Sort(
 			types.SortOptions{
 				SortOptions: map[string]types.FieldSort{
@@ -178,16 +225,23 @@ func Search(c *fiber.Ctx, keyword string, size, offset int, accurate bool, start
 
 	// get floors
 	floorSize := len(res.Hits.Hits)
-	floors := make(Floors, 0, floorSize)
 	if floorSize == 0 {
-		return floors, nil
+		return HighlightedFloors{}, nil
 	}
+	floors := make(Floors, 0, floorSize)
 
 	floorIDs := make([]int, floorSize)
+	highlightedContents := make(map[int]string)
 	for i, hit := range res.Hits.Hits {
-		floorIDs[i], err = strconv.Atoi(*hit.Id_)
+		id, err := strconv.Atoi(*hit.Id_)
 		if err != nil {
 			return nil, common.InternalServerError("error parse floor_id from elasticsearch ID")
+		}
+		floorIDs[i] = id
+		if hit.Highlight != nil {
+			if fragments, ok := hit.Highlight["content"]; ok {
+				highlightedContents[id] = fragments[0]
+			}
 		}
 	}
 	log.Info().Ints("floor_ids", floorIDs).Msg("search response")
@@ -201,12 +255,27 @@ func Search(c *fiber.Ctx, keyword string, size, offset int, accurate bool, start
 		return nil, err
 	}
 
-	return utils.OrderInGivenOrder(floors, floorIDs), nil
+	floors = utils.OrderInGivenOrder(floors, floorIDs)
+	// preprocess here to reuse Floors#Preprocess
+	err = floors.Preprocess(c)
+	if err != nil {
+		return nil, err
+	}
+
+	highlightedFloors := make(HighlightedFloors, len(floors))
+	for i, floor := range floors {
+		highlightedFloors[i] = &HighlightedFloor{
+			Floor:              floor,
+			HighlightedContent: highlightedContents[floor.ID],
+		}
+	}
+
+	return highlightedFloors, nil
 }
 
 // SearchOld searches floors by keyword by Database.
 // It is used when ElasticSearch is not available. (Not recommended)
-func SearchOld(c *fiber.Ctx, keyword string, size, offset int, startTimeUnix *int64, endTimeUnix *int64) (Floors, error) {
+func SearchOld(c *fiber.Ctx, keyword string, size, offset int, startTimeUnix *int64, endTimeUnix *int64) (HighlightedFloors, error) {
 	floors := Floors{}
 	var startTime, endTime *time.Time
 	if startTimeUnix != nil {
@@ -222,11 +291,66 @@ func SearchOld(c *fiber.Ctx, keyword string, size, offset int, startTimeUnix *in
 		return nil, err
 	}
 
-	result := querySet.
+	err = querySet.
 		Where("content like ?", "%"+keyword+"%").
 		Where("hole_id in (?)", DB.Table("hole").Select("id").Where("hidden = false")).
-		Order("id desc").Find(&floors)
-	return floors, result.Error
+		Order("id desc").Find(&floors).Error
+	if err != nil {
+		return nil, err
+	}
+
+	result, err := PreprocessAndHighlight(c, floors, keyword)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+func PreprocessAndHighlight(c *fiber.Ctx, floors Floors, keyword string) (HighlightedFloors, error) {
+	// preprocess here to reuse Floors#Preprocess
+	err := floors.Preprocess(c)
+	if err != nil {
+		return nil, err
+	}
+
+	highlighted := make(HighlightedFloors, len(floors))
+	keyword = strings.ToLower(keyword)
+
+	offset := highlightBeginLen + len(keyword) + highlightEndLen
+
+	for i, floor := range floors {
+		content := floor.Content
+
+		lower := strings.ToLower(content)
+		highlightedContent := content
+
+		idx := 0
+		for {
+			pos := strings.Index(lower[idx:], keyword)
+			if pos == -1 {
+				break
+			}
+
+			p := idx + pos
+			highlightedContent = highlightedContent[:p] +
+				HighlightBegin +
+				highlightedContent[p:p+len(keyword)] +
+				HighlightEnd +
+				highlightedContent[p+len(keyword):]
+
+			idx = p + offset
+
+			lower = strings.ToLower(highlightedContent)
+		}
+
+		highlighted[i] = &HighlightedFloor{
+			Floor:              floor,
+			HighlightedContent: highlightedContent,
+		}
+	}
+
+	return highlighted, nil
 }
 
 // BulkInsert run in single goroutine only
