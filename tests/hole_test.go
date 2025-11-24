@@ -160,9 +160,14 @@ func TestListSfwHoles(t *testing.T) {
 	
 	err := DB.Create(&holeWithNsfw).Error
 	assert.Nil(t, err)
+	defer DB.Unscoped().Delete(&holeWithNsfw)
 	
 	err = DB.Create(&holeWithoutNsfw).Error
 	assert.Nil(t, err)
+	defer DB.Unscoped().Delete(&holeWithoutNsfw)
+	
+	defer DB.Unscoped().Delete(&nsfwTag)
+	defer DB.Unscoped().Delete(&safeTag)
 	
 	// Get SFW holes
 	var sfwHoles Holes
@@ -179,10 +184,4 @@ func TestListSfwHoles(t *testing.T) {
 			assert.False(t, tag.Nsfw, "SFW holes should not have NSFW tags")
 		}
 	}
-	
-	// Clean up
-	DB.Unscoped().Delete(&holeWithNsfw)
-	DB.Unscoped().Delete(&holeWithoutNsfw)
-	DB.Unscoped().Delete(&nsfwTag)
-	DB.Unscoped().Delete(&safeTag)
 }

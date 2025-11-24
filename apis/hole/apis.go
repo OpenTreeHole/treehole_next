@@ -188,12 +188,12 @@ func ListSfwHoles(c *fiber.Ctx) error {
 	}
 	
 	// Exclude holes that have any NSFW tags
-	// Use a subquery to find holes with NSFW tags
-	querySet = querySet.Where("hole.id NOT IN (?)",
-		DB.Table("hole_tags").
-			Select("hole_tags.hole_id").
-			Joins("JOIN tag ON tag.id = hole_tags.tag_id").
-			Where("tag.nsfw = ?", true))
+	// Use LEFT JOIN to find holes without NSFW tags for better performance
+	querySet = querySet.
+		Joins("LEFT JOIN hole_tags ON hole.id = hole_tags.hole_id AND hole_tags.tag_id IN (?)",
+			DB.Table("tag").Select("id").Where("nsfw = ?", true)).
+		Where("hole_tags.hole_id IS NULL").
+		Group("hole.id")
 	
 	err = querySet.Find(&holes).Error
 	if err != nil {
