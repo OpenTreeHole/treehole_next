@@ -161,6 +161,48 @@ func ListGoodHoles(c *fiber.Ctx) error {
 	return Serialize(c, &holes)
 }
 
+// ListSfwHoles
+//
+// @Summary List safe for work holes
+// @Tags Hole
+// @Produce json
+// @Router /holes/_sfw [get]
+// @Param object query QueryTime false "query"
+// @Success 200 {array} Hole
+func ListSfwHoles(c *fiber.Ctx) error {
+	var query QueryTime
+	err := common.ValidateQuery(c, &query)
+	if err != nil {
+		return err
+	}
+	_, err = common.GetUserID(c)
+	if err != nil {
+		return err
+	}
+
+	// get holes
+	var holes Holes
+	querySet, err := holes.MakeQuerySet(query.Offset, query.Size, query.Order, c)
+	if err != nil {
+		return err
+	}
+	
+	// Exclude holes that have any NSFW tags
+	// Use a subquery to find holes with NSFW tags
+	querySet = querySet.Where("hole.id NOT IN (?)",
+		DB.Table("hole_tags").
+			Select("hole_tags.hole_id").
+			Joins("JOIN tag ON tag.id = hole_tags.tag_id").
+			Where("tag.nsfw = ?", true))
+	
+	err = querySet.Find(&holes).Error
+	if err != nil {
+		return err
+	}
+
+	return Serialize(c, &holes)
+}
+
 // ListHoles
 //
 // @Summary API for Listing Holes

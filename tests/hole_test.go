@@ -140,3 +140,49 @@ func TestHoleStats(t *testing.T) {
 	}
 
 }
+
+func TestListSfwHoles(t *testing.T) {
+	// Create test holes with and without NSFW tags
+	nsfwTag := Tag{Name: "*nsfw_test", Nsfw: true}
+	safeTag := Tag{Name: "safe_test", Nsfw: false}
+	
+	holeWithNsfw := Hole{
+		DivisionID: 1,
+		Tags:       Tags{&nsfwTag},
+		Floors:     Floors{{Content: "test nsfw hole"}},
+	}
+	
+	holeWithoutNsfw := Hole{
+		DivisionID: 1,
+		Tags:       Tags{&safeTag},
+		Floors:     Floors{{Content: "test safe hole"}},
+	}
+	
+	err := DB.Create(&holeWithNsfw).Error
+	assert.Nil(t, err)
+	
+	err = DB.Create(&holeWithoutNsfw).Error
+	assert.Nil(t, err)
+	
+	// Get SFW holes
+	var sfwHoles Holes
+	testAPIModel(t, "get", "/api/holes/_sfw", 200, &sfwHoles)
+	
+	// Verify that holes with NSFW tags are excluded
+	for _, hole := range sfwHoles {
+		var tags Tags
+		err := DB.Model(hole).Association("Tags").Find(&tags)
+		assert.Nil(t, err)
+		
+		// Check that none of the tags are NSFW
+		for _, tag := range tags {
+			assert.False(t, tag.Nsfw, "SFW holes should not have NSFW tags")
+		}
+	}
+	
+	// Clean up
+	DB.Unscoped().Delete(&holeWithNsfw)
+	DB.Unscoped().Delete(&holeWithoutNsfw)
+	DB.Unscoped().Delete(&nsfwTag)
+	DB.Unscoped().Delete(&safeTag)
+}
