@@ -7,4 +7,5 @@
 *.log
 *.out
 *.http
-.DS_Storetreehole_next
+.DS_Store
+treehole_next
