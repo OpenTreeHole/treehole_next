@@ -3822,7 +3822,7 @@ const docTemplate = `{
                     }
                 },
                 "frozen": {
-                    "description": "冻结帖子，如果冻结则发帖不会更新 UpdatedAt",
+                    "description": "冻结状态，仅管理员可见",
                     "type": "boolean"
                 },
                 "good": {
