@@ -278,6 +278,7 @@ func (holes Holes) Preprocess(c *fiber.Ctx) error {
 	}
 
 	// Set FrozenFrontend field for admin users only
+	// If there's an error getting user info, silently skip (safe default: don't show frozen field)
 	user, err := GetCurrLoginUser(c)
 	if err == nil && user.IsAdmin {
 		for _, hole := range holes {
