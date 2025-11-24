@@ -48,7 +48,9 @@ func ListFloorsInAHole(c *fiber.Ctx) error {
 	var floors Floors
 	// use ranking field to locate faster
 	var querySet *gorm.DB
-	// If both size and offset are explicitly set to 0, return all floors
+	// Special case: if both size and offset are explicitly set to 0, return all floors
+	// This matches the behavior of ListFloorsOld for backward compatibility
+	// When validation applies defaults, size=0 becomes size=30, so we check raw query params
 	if rawSize == "0" && rawOffset == "0" {
 		querySet, err = floors.MakeQuerySet(&holeID, nil, nil, c)
 		if err != nil {

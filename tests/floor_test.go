@@ -42,6 +42,7 @@ func TestListFloorsInAHole(t *testing.T) {
 	}
 
 	// size=0 and offset=0 should return all floors
+	// The first test hole has 50 floors (see initTestFloors in tests/init.go)
 	data = Map{"size": 0, "offset": 0}
 	testAPIModelWithQuery(t, "get", "/api/holes/"+strconv.Itoa(hole.ID)+"/floors", 200, &floors, data)
 	assert.EqualValues(t, 50, len(floors))
