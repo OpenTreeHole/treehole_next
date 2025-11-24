@@ -158,6 +158,10 @@ func TestListSfwHoles(t *testing.T) {
 		Floors:     Floors{{Content: "test safe hole"}},
 	}
 	
+	// Set up cleanup in reverse order (tags cleanup last due to LIFO defer execution)
+	defer DB.Unscoped().Delete(&nsfwTag)
+	defer DB.Unscoped().Delete(&safeTag)
+	
 	err := DB.Create(&holeWithNsfw).Error
 	assert.Nil(t, err)
 	defer DB.Unscoped().Delete(&holeWithNsfw)
@@ -165,9 +169,6 @@ func TestListSfwHoles(t *testing.T) {
 	err = DB.Create(&holeWithoutNsfw).Error
 	assert.Nil(t, err)
 	defer DB.Unscoped().Delete(&holeWithoutNsfw)
-	
-	defer DB.Unscoped().Delete(&nsfwTag)
-	defer DB.Unscoped().Delete(&safeTag)
 	
 	// Get SFW holes
 	var sfwHoles Holes
