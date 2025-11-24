@@ -40,6 +40,14 @@ func TestListFloorsInAHole(t *testing.T) {
 	if len(floors) != 0 {
 		assert.EqualValues(t, strings.Repeat("1", offset+1), floors[0].Content)
 	}
+
+	// size=0 and offset=0 should return all floors
+	data = Map{"size": 0, "offset": 0}
+	testAPIModelWithQuery(t, "get", "/api/holes/"+strconv.Itoa(hole.ID)+"/floors", 200, &floors, data)
+	assert.EqualValues(t, 50, len(floors))
+	if len(floors) != 0 {
+		assert.EqualValues(t, "1", floors[0].Content)
+	}
 }
 
 func TestListFloorsOld(t *testing.T) {

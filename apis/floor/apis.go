@@ -34,6 +34,10 @@ func ListFloorsInAHole(c *fiber.Ctx) error {
 		return err
 	}
 
+	// Check raw query parameters before validation applies defaults
+	rawSize := c.Query("size")
+	rawOffset := c.Query("offset")
+
 	var query ListModel
 	err = common.ValidateQuery(c, &query)
 	if err != nil {
@@ -43,9 +47,18 @@ func ListFloorsInAHole(c *fiber.Ctx) error {
 	// get floors
 	var floors Floors
 	// use ranking field to locate faster
-	querySet, err := floors.MakeQuerySet(&holeID, &query.Offset, &query.Size, c)
-	if err != nil {
-		return err
+	var querySet *gorm.DB
+	// If both size and offset are explicitly set to 0, return all floors
+	if rawSize == "0" && rawOffset == "0" {
+		querySet, err = floors.MakeQuerySet(&holeID, nil, nil, c)
+		if err != nil {
+			return err
+		}
+	} else {
+		querySet, err = floors.MakeQuerySet(&holeID, &query.Offset, &query.Size, c)
+		if err != nil {
+			return err
+		}
 	}
 	result := querySet.Order(query.OrderBy + " " + query.Sort).
 		Find(&floors)
