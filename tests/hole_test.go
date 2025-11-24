@@ -161,16 +161,18 @@ func TestListSfwHoles(t *testing.T) {
 	
 	err := DB.Create(&holeWithNsfw).Error
 	assert.Nil(t, err)
-	// Cleanup in reverse order: delete holes before tags due to foreign key references
-	defer DB.Unscoped().Delete(&holeWithNsfw)
 	
 	err = DB.Create(&holeWithoutNsfw).Error
 	assert.Nil(t, err)
-	defer DB.Unscoped().Delete(&holeWithoutNsfw)
 	
-	// These will execute after holes are deleted (LIFO order)
-	defer DB.Unscoped().Delete(&nsfwTag)
-	defer DB.Unscoped().Delete(&safeTag)
+	// Cleanup: delete in order that respects foreign keys
+	// With CASCADE constraints, deleting holes will clean up hole_tags associations
+	defer func() {
+		DB.Unscoped().Delete(&holeWithNsfw)
+		DB.Unscoped().Delete(&holeWithoutNsfw)
+		DB.Unscoped().Delete(&nsfwTag)
+		DB.Unscoped().Delete(&safeTag)
+	}()
 	
 	// Get SFW holes
 	var sfwHoles Holes
