@@ -154,3 +154,21 @@ func DeleteMessage(c *fiber.Ctx) error {
 	}
 	return c.Status(204).JSON(nil)
 }
+
+func DeleteMessageByRelatedFloorID(floorID int) error {
+	result := DB.Exec(`
+		DELETE FROM message_user
+		WHERE related_floor_id = ?`,
+		floorID,
+	)
+	return result.Error
+}
+
+func DeleteMessageByRelatedHoleID(holeID int) error {
+	result := DB.Exec(`
+		DELETE FROM message_user
+		WHERE related_hole_id = ?`,
+		holeID,
+	)
+	return result.Error
+}
