@@ -8,6 +8,7 @@ import (
 
 func RegisterRoutes(app fiber.Router) {
 	app.Get("/divisions/:id<int>/holes", ListHolesByDivision)
+	app.Get("/divisions/:id<int>/holes/_sfw", ListSFWHolesByDivision)
 	app.Get("/tags/:name/holes", ListHolesByTag)
 	app.Get("/users/me/holes", ListHolesByMe)
 	app.Get("/holes/:id<int>", GetHole)

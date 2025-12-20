@@ -56,6 +56,52 @@ func ListHolesByDivision(c *fiber.Ctx) error {
 	return Serialize(c, &holes)
 }
 
+
+// ListSFWHolesByDivision
+//
+// @Summary List SFW Holes In A Division 
+// @Tags Hole
+// @Produce json
+// @Router /divisions/{division_id}/holes/_sfw [get]
+// @Param division_id path int true "division_id"
+// @Param object query QueryTime false "query"
+// @Success 200 {array} Hole
+// @Failure 404 {object} MessageModel
+// @Failure 500 {object} MessageModel
+func ListSFWHolesByDivision(c *fiber.Ctx) error {
+	var query QueryTime
+	err := common.ValidateQuery(c, &query)
+	if err != nil {
+		return err
+	}
+
+	id, err := c.ParamsInt("id")
+	if err != nil {
+		return err
+	}
+
+	// get sfw holes 
+	var holes Holes
+	querySet, err := holes.MakeQuerySet(query.Offset, query.Size, query.Order, c)
+	if err != nil {
+		return err
+	}
+	if id != 0 {
+		querySet = querySet.Where("hole.division_id = ?", id)
+	}
+
+	//exclude all the holes with tag.nsfw = true
+	querySet = querySet.Not("hole.id IN (?)",
+		DB.Table("hole_tags").
+			Joins("JOIN tag ON hole_tags.tag_id = tag.id").
+			Where("tag.nsfw = ?", true).
+			Select("hole_tags.hole_id"))
+
+	querySet.Find(&holes)
+
+	return Serialize(c, &holes)
+}
+
 // ListHolesByTag
 //
 // @Summary List Holes By Tag
