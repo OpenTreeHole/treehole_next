@@ -25,13 +25,14 @@ import (
 )
 
 const (
-	TypeHole  = "Hole"
-	TypeFloor = "Floor"
-	TypeTag   = "Tag"
-	TypeImage = "Image"
+	TypeHole    = "Hole"
+	TypeFloor   = "Floor"
+	TypeTag     = "Tag"
+	TypeImage   = "Image"
+	TypeSummary = "Summary"
 )
 
-var checkTypes = []string{TypeHole, TypeFloor, TypeTag, TypeImage}
+var checkTypes = []string{TypeHole, TypeFloor, TypeTag, TypeImage, TypeSummary}
 
 type ParamsForCheck struct {
 	Content  string
