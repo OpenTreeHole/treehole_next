@@ -2,6 +2,7 @@ package models
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 
 	"golang.org/x/exp/maps"
@@ -72,13 +73,15 @@ type Hole struct {
 
 	// 兼容旧版 id
 	HoleID int `json:"hole_id" gorm:"-:all"`
-
 	// 返回给前端的楼层列表，包括首楼、尾楼和预加载的前 n 个楼层
 	HoleFloor struct {
 		FirstFloor *Floor `json:"first_floor"` // 首楼
 		LastFloor  *Floor `json:"last_floor"`  // 尾楼
 		Floors     Floors `json:"prefetch"`    // 预加载的楼层
 	} `json:"floors" gorm:"-:all"`
+
+	// AI 摘要可用性，仅用于序列化
+	AISummaryAvailable bool `json:"ai_summary_available" gorm:"-"`
 }
 
 func (hole *Hole) GetID() int {
@@ -263,6 +266,31 @@ func (holes Holes) Preprocess(c *fiber.Ctx) error {
 	for _, hole := range holes {
 		hole.SetHoleFloor()
 		floors = append(floors, hole.Floors...)
+
+		// set ai_summary_available
+		var count int64
+		var contentSum int64
+		DB.Model(&Floor{}).Where("hole_id = ?", hole.ID).Count(&count)
+		DB.Model(&Floor{}).Where("hole_id = ?", hole.ID).Select("COALESCE(SUM(LENGTH(content)), 0)").Scan(&contentSum)
+		var discard any
+		hole.AISummaryAvailable = count > 15 || contentSum >= 500 || utils.GetCache("AISummary"+strconv.Itoa(hole.ID), &discard)
+
+		if hole.AISummaryAvailable {
+			var sensitiveCount int64
+			DB.Model(&Floor{}).Where("hole_id = ? AND is_sensitive = ?", hole.ID, true).Count(&sensitiveCount)
+			if sensitiveCount > 0 {
+				hole.AISummaryAvailable = false
+			}
+		}
+
+		if hole.AISummaryAvailable {
+			for _, tag := range hole.Tags {
+				if len(tag.Name) > 0 && tag.Name[0] == '*' {
+					hole.AISummaryAvailable = false
+					break
+				}
+			}
+		}
 
 		// hide hole if first floor is sensitive
 		//if hole.HoleFloor.FirstFloor.Sensitive() {

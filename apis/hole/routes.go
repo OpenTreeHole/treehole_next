@@ -20,4 +20,5 @@ func RegisterRoutes(app fiber.Router) {
 	app.Put("/holes/:id<int>", ModifyHole)
 	app.Delete("/holes/:id<int>", HideHole)
 	app.Delete("/holes/:id<int>/_force", DeleteHole)
+	app.Get("/holes/:id<int>/summary", GenerateSummary)
 }

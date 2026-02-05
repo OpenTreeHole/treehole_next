@@ -1,10 +1,15 @@
 package hole
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 	"slices"
 	"strconv"
 	"time"
+	"treehole_next/config"
 	"treehole_next/utils/sensitive"
 
 	"github.com/gofiber/fiber/v2"
@@ -810,4 +815,182 @@ func DeleteHole(c *fiber.Ctx) error {
 	}
 
 	return c.Status(204).JSON(nil)
+}
+func GenerateSummary(c *fiber.Ctx) error {
+	type Summary struct {
+		Code    int    `json:"code"`
+		Message string `json:"message"`
+		Data    struct {
+			HoleID   int    `json:"hole_id"`
+			Summary  string `json:"summary"`
+			Branches []struct {
+				ID                   int    `json:"id"`
+				Label                string `json:"label"`
+				Content              string `json:"content"`
+				Color                string `json:"color"`
+				RepresentativeFloors []int  `json:"representative_floors"`
+			} `json:"branches"`
+			Interactions []struct {
+				FromFloor       int    `json:"from_floor"`
+				FromUser        string `json:"from_user"`
+				ToFloor         int    `json:"to_floor"`
+				ToUser          string `json:"to_user"`
+				InteractionType string `json:"interaction_type" enums:"reply,support,rebuttal,supplement,question" default:"reply"`
+			} `json:"interactions"`
+			Keywords    []string `json:"keywords"`
+			GeneratedAt string   `json:"generated_at"`
+		} `json:"data"`
+	}
+	id, _ := c.ParamsInt("id")
+	var cachedData Summary
+	if GetCache("AISummary"+strconv.Itoa(id), &cachedData) {
+		switch cachedData.Code {
+		case 1000:
+			return c.Status(200).JSON(cachedData)
+		case 1001:
+			// get new summary
+			resp, err := http.Get(config.Config.AISummaryURL + "/get_summary?code=1000&hole_id=" + strconv.Itoa(id))
+			if err != nil {
+				log.Err(err).Msg("AISummary: get summary from server err")
+				return err
+			}
+			defer resp.Body.Close()
+
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return err
+			}
+			err = json.Unmarshal(body, &cachedData)
+			if err != nil {
+				return err
+			}
+			if len(cachedData.Data.Interactions) > 5 {
+				cachedData.Data.Interactions = cachedData.Data.Interactions[:5]
+			}
+
+			// renew cache
+			if cachedData.Code == 1000 || cachedData.Code == 1001 {
+				sensitiveCheckResp, err := sensitive.CheckSensitive(sensitive.ParamsForCheck{
+					Content:  cachedData.Data.Summary,
+					Id:       time.Now().UnixNano(),
+					TypeName: sensitive.TypeFloor,
+				})
+				if sensitiveCheckResp.Pass {
+					// set default interaction_type
+					for i := range cachedData.Data.Interactions {
+						if cachedData.Data.Interactions[i].InteractionType == "" {
+							cachedData.Data.Interactions[i].InteractionType = "reply"
+						}
+					}
+					err = SetCache("AISummary"+strconv.Itoa(id), cachedData, 24*time.Hour)
+					if err != nil {
+						log.Err(err).Msg("AISummary: set cache err")
+					}
+				}
+
+			} else {
+				err := DeleteCache("AISummary" + strconv.Itoa(id))
+				if err != nil {
+					log.Err(err).Msg("AISummary: delete cache err")
+				}
+			}
+
+			return c.Status(200).JSON(cachedData)
+		default:
+			err := DeleteCache("AISummary" + strconv.Itoa(id))
+			if err != nil {
+				log.Err(err).Msg("AISummary: delete cache err")
+			}
+		}
+	}
+	// if no cache or the data of cache is invalid, generate a new summary
+
+	// get hole
+	holeSet, err := MakeHoleQuerySet(c)
+	if err != nil {
+		return err
+	}
+	var hole Hole
+	err = holeSet.Take(&hole, id).Error
+	if err != nil {
+		return err
+	}
+	err = hole.Preprocess(c)
+	if err != nil {
+		return err
+	}
+
+	if !hole.AISummaryAvailable {
+		return c.Status(200).JSON(fiber.Map{
+			"code":    2002,
+			"message": "unavailable",
+			"data":    fiber.Map{},
+		})
+	}
+
+	// get floors
+	var floors Floors
+	floorSet, err := floors.MakeQuerySet(&id, nil, nil, c)
+	if err != nil {
+		return err
+	}
+
+	err = floorSet.Find(&floors).Error
+	if err != nil {
+		return err
+	}
+
+	content := ""
+	if hole.HoleFloor.FirstFloor != nil {
+		content = hole.HoleFloor.FirstFloor.Content
+	}
+
+	requestBody := map[string]any{
+		"floors":  floors,
+		"content": content,
+		"hole_id": hole.ID,
+	}
+
+	requestJSON, err := json.Marshal(requestBody)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(string(requestJSON))
+
+	resp, err := http.Post(config.Config.AISummaryURL+"/generate_summary?code=1000", "application/json", bytes.NewReader(requestJSON))
+	if err != nil {
+		log.Err(err).Msg("AISummary: generate summary from server err")
+		return err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+	var response struct {
+		Code    int      `json:"code"`
+		Message string   `json:"message"`
+		Data    struct{} `json:"data"`
+	}
+
+	err = json.Unmarshal(body, &response)
+	if err != nil {
+		return err
+	}
+	//create a cache when generate a new summary
+	if response.Code == 1000 || response.Code == 1001 {
+		var cache Summary
+		cache.Code = 1001
+		err := SetCache("AISummary"+strconv.Itoa(id), cache, 24*time.Hour)
+		if err != nil {
+			log.Err(err).Msg("AISummary: set cache err")
+		}
+
+		response.Code = 1002
+		response.Message = "started"
+	}
+	c.Set("Content-Type", resp.Header.Get("Content-Type"))
+	return c.Status(resp.StatusCode).JSON(response)
 }
