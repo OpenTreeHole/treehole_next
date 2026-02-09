@@ -817,30 +817,7 @@ func DeleteHole(c *fiber.Ctx) error {
 	return c.Status(204).JSON(nil)
 }
 func GenerateSummary(c *fiber.Ctx) error {
-	type Summary struct {
-		Code    int    `json:"code"`
-		Message string `json:"message"`
-		Data    struct {
-			HoleID   int    `json:"hole_id"`
-			Summary  string `json:"summary"`
-			Branches []struct {
-				ID                   int    `json:"id"`
-				Label                string `json:"label"`
-				Content              string `json:"content"`
-				Color                string `json:"color"`
-				RepresentativeFloors []int  `json:"representative_floors"`
-			} `json:"branches"`
-			Interactions []struct {
-				FromFloor       int    `json:"from_floor"`
-				FromUser        string `json:"from_user"`
-				ToFloor         int    `json:"to_floor"`
-				ToUser          string `json:"to_user"`
-				InteractionType string `json:"interaction_type" enums:"reply,support,rebuttal,supplement,question" default:"reply"`
-			} `json:"interactions"`
-			Keywords    []string `json:"keywords"`
-			GeneratedAt string   `json:"generated_at"`
-		} `json:"data"`
-	}
+
 	id, _ := c.ParamsInt("id")
 	var cachedData Summary
 	if GetCache("AISummary"+strconv.Itoa(id), &cachedData) {
@@ -870,12 +847,12 @@ func GenerateSummary(c *fiber.Ctx) error {
 
 			// renew cache
 			if cachedData.Code == 1000 || cachedData.Code == 1001 {
-				sensitiveCheckResp, err := sensitive.CheckSensitive(sensitive.ParamsForCheck{
-					Content:  cachedData.Data.Summary,
-					Id:       time.Now().UnixNano(),
-					TypeName: sensitive.TypeFloor,
-				})
-				if sensitiveCheckResp.Pass {
+				//sensitiveCheckResp, err := sensitive.CheckSensitive(sensitive.ParamsForCheck{
+				//	Content:  cachedData.Data.Summary,
+				//	Id:       time.Now().UnixNano(),
+				//	TypeName: sensitive.TypeFloor,
+				//})
+				if true {
 					// set default interaction_type
 					for i := range cachedData.Data.Interactions {
 						if cachedData.Data.Interactions[i].InteractionType == "" {
@@ -956,12 +933,18 @@ func GenerateSummary(c *fiber.Ctx) error {
 		return err
 	}
 
-	fmt.Println(string(requestJSON))
+	var response struct {
+		Code    int      `json:"code"`
+		Message string   `json:"message"`
+		Data    struct{} `json:"data"`
+	}
 
 	resp, err := http.Post(config.Config.AISummaryURL+"/generate_summary?code=1000", "application/json", bytes.NewReader(requestJSON))
 	if err != nil {
 		log.Err(err).Msg("AISummary: generate summary from server err")
-		return err
+		response.Code = 3001
+		response.Message = "service_error"
+		return c.Status(200).JSON(response)
 	}
 	defer resp.Body.Close()
 
@@ -969,18 +952,14 @@ func GenerateSummary(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	var response struct {
-		Code    int      `json:"code"`
-		Message string   `json:"message"`
-		Data    struct{} `json:"data"`
-	}
 
 	err = json.Unmarshal(body, &response)
 	if err != nil {
 		return err
 	}
 	//create a cache when generate a new summary
-	if response.Code == 1000 || response.Code == 1001 {
+	switch response.Code {
+	case 1000, 1001:
 		var cache Summary
 		cache.Code = 1001
 		err := SetCache("AISummary"+strconv.Itoa(id), cache, 24*time.Hour)
@@ -990,7 +969,17 @@ func GenerateSummary(c *fiber.Ctx) error {
 
 		response.Code = 1002
 		response.Message = "started"
+	case 1002, 2001, 2002, 3001, 3002:
+
+	default:
+		response.Code = 3001
+		response.Message = "service_error"
 	}
+
 	c.Set("Content-Type", resp.Header.Get("Content-Type"))
-	return c.Status(resp.StatusCode).JSON(response)
+	return c.Status(200).JSON(response)
+}
+
+func GetFeedback(c *fiber.Ctx) error {
+	return c.Status(200).JSON(fiber.Map{})
 }

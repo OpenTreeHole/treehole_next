@@ -21,4 +21,5 @@ func RegisterRoutes(app fiber.Router) {
 	app.Delete("/holes/:id<int>", HideHole)
 	app.Delete("/holes/:id<int>/_force", DeleteHole)
 	app.Get("/holes/:id<int>/summary", GenerateSummary)
+	app.Post("/holes/:id<int>/summary/feedback", GetFeedback)
 }
