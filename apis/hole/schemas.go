@@ -120,3 +120,29 @@ func (body ModifyModel) CheckPermission(user *models.User, hole *models.Hole) er
 func (body ModifyModel) DoNothing() bool {
 	return body.Hidden == nil && body.Unhidden == nil && body.Tags == nil && body.DivisionID == nil && body.Lock == nil && body.Frozen == nil
 }
+
+type Summary struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+	Data    struct {
+		HoleID   int    `json:"hole_id"`
+		Summary  string `json:"summary"`
+		Branches []struct {
+			ID                   int    `json:"id"`
+			Label                string `json:"label"`
+			Content              string `json:"content"`
+			Color                string `json:"color"`
+			RepresentativeFloors []int  `json:"representative_floors"`
+		} `json:"branches"`
+		Interactions []struct {
+			FromFloor       int    `json:"from_floor"`
+			FromUser        string `json:"from_user"`
+			ToFloor         int    `json:"to_floor"`
+			ToUser          string `json:"to_user"`
+			InteractionType string `json:"interaction_type" enums:"reply,support,rebuttal,supplement,question" default:"reply"`
+			Content         string `json:"content"`
+		} `json:"interactions"`
+		Keywords    []string `json:"keywords"`
+		GeneratedAt string   `json:"generated_at"`
+	} `json:"data"`
+}
