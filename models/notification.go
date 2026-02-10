@@ -34,12 +34,14 @@ type Notifications []Notification
 
 type Notification struct {
 	// Should be same as CrateModel in notification project
-	Title       string      `json:"message"`
-	Description string      `json:"description"`
-	Data        any         `json:"data"`
-	Type        MessageType `json:"code"`
-	URL         string      `json:"url"`
-	Recipients  []int       `json:"recipients"`
+	Title          string      `json:"message"`
+	Description    string      `json:"description"`
+	Data           any         `json:"data"`
+	Type           MessageType `json:"code"`
+	URL            string      `json:"url"`
+	Recipients     []int       `json:"recipients"`
+	RelatedFloorID *int        `json:"related_floor_id,omitempty"`
+	RelatedHoleID  *int        `json:"related_hole_id,omitempty"`
 }
 
 func readRespNotification(body io.ReadCloser) Notification {
@@ -155,7 +157,7 @@ func (message Notification) Send() (Message, error) {
 	if config.Config.NotificationUrl == "" {
 		return Message{}, nil
 	}
-	message.Title = utils.StripContent(message.Title, 32)             //varchar(32)
+	message.Title = utils.StripContent(message.Title, 32)                                           //varchar(32)
 	message.Description = utils.StripContent(cleanNotificationDescription(message.Description), 64) //varchar(64)
 	body.Title = message.Title
 	body.Description = message.Description
@@ -266,7 +268,7 @@ func UpdateAdminList(ctx context.Context) {
 }
 
 var (
-	reMention    = regexp.MustCompile(`#{1,2}\d+`)
+	reMention = regexp.MustCompile(`#{1,2}\d+`)
 	reFormula = regexp.MustCompile(`(?s)\${1,2}.*?\${1,2}`)
 	reSticker = regexp.MustCompile(`!\[\]\(dx_\S+?\)`)
 	reImage   = regexp.MustCompile(`!\[.*?\]\(.*?\)`)
@@ -275,8 +277,8 @@ var (
 func cleanNotificationDescription(content string) string {
 	newContent := reMention.ReplaceAllString(content, "")
 	newContent = reFormula.ReplaceAllString(newContent, "[公式]")
-    	newContent = reSticker.ReplaceAllString(newContent, "[表情]")
-    	newContent = reImage.ReplaceAllString(newContent, "[图片]")
+	newContent = reSticker.ReplaceAllString(newContent, "[表情]")
+	newContent = reImage.ReplaceAllString(newContent, "[图片]")
 	newContent = strings.ReplaceAll(newContent, "\n", "")
 	if newContent == "" {
 		return content

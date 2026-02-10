@@ -256,9 +256,11 @@ func BanReporter(c *fiber.Ctx) error {
 			days,
 			body.Reason,
 		),
-		Title: "处罚通知",
-		Type:  MessageTypePermission,
-		URL:   fmt.Sprintf("/api/reports/%d", report.ID),
+		Title:          "处罚通知",
+		Type:           MessageTypePermission,
+		URL:            fmt.Sprintf("/api/reports/%d", report.ID),
+		RelatedFloorID: &report.FloorID,
+		RelatedHoleID:  &report.HoleID,
 	}
 
 	// send

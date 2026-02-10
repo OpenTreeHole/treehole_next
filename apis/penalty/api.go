@@ -115,9 +115,10 @@ func BanUser(c *fiber.Ctx) error {
 			days,
 			body.Reason,
 		),
-		Title: "处罚通知",
-		Type:  MessageTypePermission,
-		URL:   fmt.Sprintf("/api/floors/%d", floor.ID),
+		Title:          "处罚通知",
+		Type:           MessageTypePermission,
+		URL:            fmt.Sprintf("/api/floors/%d", floor.ID),
+		RelatedFloorID: &floor.ID,
 	}
 
 	// send
@@ -247,9 +248,10 @@ func BanUserForever(c *fiber.Ctx) error {
 			days,
 			body.Reason,
 		),
-		Title: "处罚通知",
-		Type:  MessageTypePermission,
-		URL:   fmt.Sprintf("/api/floors/%d", floor.ID),
+		Title:          "处罚通知",
+		Type:           MessageTypePermission,
+		URL:            fmt.Sprintf("/api/floors/%d", floor.ID),
+		RelatedFloorID: &floor.ID,
 	}
 
 	// send
