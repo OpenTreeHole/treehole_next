@@ -13,7 +13,7 @@ require (
 	github.com/hetiansu5/urlquery v1.2.7
 	github.com/opentreehole/go-common v0.1.7
 	github.com/patrickmn/go-cache v2.1.0+incompatible
-	github.com/redis/go-redis/v9 v9.6.1
+	github.com/redis/go-redis/v9 v9.6.3
 	github.com/rs/zerolog v1.33.0
 	github.com/stretchr/testify v1.9.0
 	github.com/swaggo/fiber-swagger v1.3.0
