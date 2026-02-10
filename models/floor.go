@@ -149,7 +149,6 @@ func (floors Floors) MakeQuerySet(holeID *int, offset, size *int, c *fiber.Ctx) 
 	if holeID != nil {
 		querySet = querySet.Where("hole_id = ?", holeID)
 	}
-
 	if offset != nil {
 		querySet = querySet.Offset(*offset)
 	}

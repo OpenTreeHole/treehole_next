@@ -3,7 +3,7 @@ package models
 import (
 	"os"
 	"time"
-
+	"strings"
 	"github.com/rs/zerolog/log"
 
 	"treehole_next/config"
@@ -22,6 +22,7 @@ var DB *gorm.DB
 var gormConfig = &gorm.Config{
 	NamingStrategy: schema.NamingStrategy{
 		SingularTable: true, // use singular table name, table for `User` would be `user` with this option enabled
+		NameReplacer: strings.NewReplacer("V1", "", "V2", ""),
 	},
 	Logger: logger.New(
 		&log.Logger,
