@@ -916,14 +916,24 @@ func GenerateSummary(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-
 	content := ""
 	if hole.HoleFloor.FirstFloor != nil {
 		content = hole.HoleFloor.FirstFloor.Content
 	}
 
+	summaryFloors := make([]FloorForSummary, len(floors))
+	for i, floor := range floors {
+		summaryFloors[i] = FloorForSummary{
+			ID:        floor.ID,
+			Content:   floor.Content,
+			Anonyname: floor.Anonyname,
+			Ranking:   floor.Ranking,
+			ReplyTo:   floor.ReplyTo,
+		}
+	}
+
 	requestBody := map[string]any{
-		"floors":  floors,
+		"floors":  summaryFloors,
 		"content": content,
 		"hole_id": hole.ID,
 	}
@@ -932,7 +942,6 @@ func GenerateSummary(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-
 	var response struct {
 		Code    int      `json:"code"`
 		Message string   `json:"message"`
