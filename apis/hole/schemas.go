@@ -146,3 +146,14 @@ type Summary struct {
 		GeneratedAt string   `json:"generated_at"`
 	} `json:"data"`
 }
+
+type FloorForSummary struct {
+	ID      int    `json:"id"`
+	Content string `json:"content"`
+	// a random username
+	Anonyname string `json:"anonyname"`
+
+	Ranking int `json:"ranking"`
+
+	ReplyTo int `json:"reply_to"`
+}
