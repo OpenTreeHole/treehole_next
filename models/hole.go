@@ -275,26 +275,39 @@ func (holes Holes) Preprocess(c *fiber.Ctx) error {
 			}
 		}
 		if hole.AISummaryAvailable {
-			floors := DB.Model(&Floor{}).Where("hole_id = ?", hole.ID)
-			var count int64
-			var contentSum int64
-			floors.Count(&count)
-			floors.Select("COALESCE(SUM(LENGTH(content)), 0)").Scan(&contentSum)
-			var discard any
-			hole.AISummaryAvailable = count > 15 || contentSum >= 500 || utils.GetCache("AISummary"+strconv.Itoa(hole.ID), &discard)
-
-			if hole.AISummaryAvailable {
+			err := DB.Transaction(func(tx *gorm.DB) error {
+				query := tx.Model(&Floor{}).Where("hole_id = ?", hole.ID)
+				var count int64
+				var contentSum int64
 				var sensitiveCount int64
-				floors.Where("is_sensitive = ?", true).Count(&sensitiveCount)
-				if sensitiveCount > 0 {
-					hole.AISummaryAvailable = false
-				}
-			}
 
-			// hide hole if first floor is sensitive
-			//if hole.HoleFloor.FirstFloor.Sensitive() {
-			//	hole.Hidden = true
-			//}
+				err := query.Count(&count).Error
+				if err != nil {
+					return err
+				}
+
+				err = query.Select("COALESCE(SUM(LENGTH(content)), 0)").Scan(&contentSum).Error
+				if err != nil {
+					return err
+				}
+
+				var discard any
+				hole.AISummaryAvailable = count > 15 || contentSum >= 500 || utils.GetCache("AISummary"+strconv.Itoa(hole.ID), &discard)
+
+				if hole.AISummaryAvailable {
+					err = query.Where("is_sensitive = ?", true).Count(&sensitiveCount).Error
+					if err != nil {
+						return err
+					}
+					if sensitiveCount > 0 {
+						hole.AISummaryAvailable = false
+					}
+				}
+				return nil
+			})
+			if err != nil {
+				return err
+			}
 		}
 	}
 	err := floors.Preprocess(c)
