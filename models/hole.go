@@ -266,36 +266,36 @@ func (holes Holes) Preprocess(c *fiber.Ctx) error {
 	for _, hole := range holes {
 		hole.SetHoleFloor()
 		floors = append(floors, hole.Floors...)
-
 		// set ai_summary_available
-		var count int64
-		var contentSum int64
-		DB.Model(&Floor{}).Where("hole_id = ?", hole.ID).Count(&count)
-		DB.Model(&Floor{}).Where("hole_id = ?", hole.ID).Select("COALESCE(SUM(LENGTH(content)), 0)").Scan(&contentSum)
-		var discard any
-		hole.AISummaryAvailable = count > 15 || contentSum >= 500 || utils.GetCache("AISummary"+strconv.Itoa(hole.ID), &discard)
-
-		if hole.AISummaryAvailable {
-			var sensitiveCount int64
-			DB.Model(&Floor{}).Where("hole_id = ? AND is_sensitive = ?", hole.ID, true).Count(&sensitiveCount)
-			if sensitiveCount > 0 {
+		hole.AISummaryAvailable = true
+		for _, tag := range hole.Tags {
+			if len(tag.Name) > 0 && tag.Name[0] == '*' {
 				hole.AISummaryAvailable = false
+				break
 			}
 		}
-
 		if hole.AISummaryAvailable {
-			for _, tag := range hole.Tags {
-				if len(tag.Name) > 0 && tag.Name[0] == '*' {
+			floors := DB.Model(&Floor{}).Where("hole_id = ?", hole.ID)
+			var count int64
+			var contentSum int64
+			floors.Count(&count)
+			floors.Select("COALESCE(SUM(LENGTH(content)), 0)").Scan(&contentSum)
+			var discard any
+			hole.AISummaryAvailable = count > 15 || contentSum >= 500 || utils.GetCache("AISummary"+strconv.Itoa(hole.ID), &discard)
+
+			if hole.AISummaryAvailable {
+				var sensitiveCount int64
+				floors.Where("is_sensitive = ?", true).Count(&sensitiveCount)
+				if sensitiveCount > 0 {
 					hole.AISummaryAvailable = false
-					break
 				}
 			}
-		}
 
-		// hide hole if first floor is sensitive
-		//if hole.HoleFloor.FirstFloor.Sensitive() {
-		//	hole.Hidden = true
-		//}
+			// hide hole if first floor is sensitive
+			//if hole.HoleFloor.FirstFloor.Sensitive() {
+			//	hole.Hidden = true
+			//}
+		}
 	}
 	err := floors.Preprocess(c)
 	if err != nil {
