@@ -826,7 +826,7 @@ func GenerateSummary(c *fiber.Ctx) error {
 			return c.Status(200).JSON(cachedData)
 		case 1001:
 			// get new summary
-			resp, err := http.Get(config.Config.AISummaryURL + "/get_summary?code=1000&hole_id=" + strconv.Itoa(id))
+			resp, err := http.Get(config.Config.AISummaryURL + "/get_summary?hole_id=" + strconv.Itoa(id))
 			if err != nil {
 				log.Err(err).Msg("AISummary: get summary from server err")
 				return err
@@ -947,8 +947,7 @@ func GenerateSummary(c *fiber.Ctx) error {
 		Message string   `json:"message"`
 		Data    struct{} `json:"data"`
 	}
-
-	resp, err := http.Post(config.Config.AISummaryURL+"/generate_summary?code=1000", "application/json", bytes.NewReader(requestJSON))
+	resp, err := http.Post(config.Config.AISummaryURL+"/generate_summary", "application/json", bytes.NewReader(requestJSON))
 	if err != nil {
 		log.Err(err).Msg("AISummary: generate summary from server err")
 		response.Code = 3001
@@ -960,6 +959,15 @@ func GenerateSummary(c *fiber.Ctx) error {
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		log.Error().
+			Str("url", config.Config.AISummaryURL+"/generate_summary").
+			Int("status", resp.StatusCode).
+			Bytes("req_body", requestJSON).
+			Bytes("resp_body", body).
+			Msg("AISummary: generate summary server error")
 	}
 
 	err = json.Unmarshal(body, &response)
