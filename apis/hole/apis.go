@@ -947,6 +947,7 @@ func GenerateSummary(c *fiber.Ctx) error {
 		Message string   `json:"message"`
 		Data    struct{} `json:"data"`
 	}
+	log.Info().Str("url", config.Config.AISummaryURL+"/generate_summary")
 	resp, err := http.Post(config.Config.AISummaryURL+"/generate_summary", "application/json", bytes.NewReader(requestJSON))
 	if err != nil {
 		log.Err(err).Msg("AISummary: generate summary from server err")
@@ -968,6 +969,9 @@ func GenerateSummary(c *fiber.Ctx) error {
 			Bytes("req_body", requestJSON).
 			Bytes("resp_body", body).
 			Msg("AISummary: generate summary server error")
+		response.Code = 3001
+		response.Message = "service_error"
+		return c.Status(200).JSON(response)
 	}
 
 	err = json.Unmarshal(body, &response)
