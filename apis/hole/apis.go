@@ -976,7 +976,15 @@ func GenerateSummary(c *fiber.Ctx) error {
 
 	err = json.Unmarshal(body, &response)
 	if err != nil {
-		return err
+		log.Error().
+			Str("url", config.Config.AISummaryURL+"/generate_summary").
+			Int("status", resp.StatusCode).
+			Bytes("req_body", requestJSON).
+			Bytes("resp_body", body).
+			Msg("AISummary: generate summary server error")
+		response.Code = 3001
+		response.Message = "service_error"
+		return c.Status(200).JSON(response)
 	}
 	//create a cache when generate a new summary
 	switch response.Code {
