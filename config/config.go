@@ -1,9 +1,10 @@
 package config
 
 import (
-	"github.com/caarlos0/env/v9"
 	"net/url"
 	"sync/atomic"
+
+	"github.com/caarlos0/env/v9"
 
 	"github.com/rs/zerolog/log"
 )
@@ -54,6 +55,7 @@ var Config struct {
 	QQBotUrl                     *string  `env:"QQ_BOT_URL"`
 	FeishuBotUrl                 *string  `env:"FEISHU_BOT_URL"`
 	AdminOnlyTagIds              []int    `env:"ADMIN_ONLY_TAG_IDS"`
+	AISummaryURL                 string   `env:"AI_SUMMARY_URL" envDefault:"http://127.0.0.1:4523/m1/7787529-7534191-default/internal"`
 }
 
 var DynamicConfig struct {

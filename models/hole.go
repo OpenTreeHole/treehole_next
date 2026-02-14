@@ -2,6 +2,7 @@ package models
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 
 	"golang.org/x/exp/maps"
@@ -82,6 +83,9 @@ type Hole struct {
 		LastFloor  *Floor `json:"last_floor"`  // 尾楼
 		Floors     Floors `json:"prefetch"`    // 预加载的楼层
 	} `json:"floors" gorm:"-:all"`
+
+	// AI 摘要可用性，仅用于序列化
+	AISummaryAvailable bool `json:"ai_summary_available" gorm:"-"`
 }
 
 func (hole *Hole) GetID() int {
@@ -266,11 +270,49 @@ func (holes Holes) Preprocess(c *fiber.Ctx) error {
 	for _, hole := range holes {
 		hole.SetHoleFloor()
 		floors = append(floors, hole.Floors...)
+		// set ai_summary_available
+		hole.AISummaryAvailable = true
+		for _, tag := range hole.Tags {
+			if len(tag.Name) > 0 && tag.Name[0] == '*' {
+				hole.AISummaryAvailable = false
+				break
+			}
+		}
+		if hole.AISummaryAvailable {
+			err := DB.Transaction(func(tx *gorm.DB) error {
+				query := tx.Model(&Floor{}).Where("hole_id = ?", hole.ID)
+				var count int64
+				var contentSum int64
+				var sensitiveCount int64
 
-		// hide hole if first floor is sensitive
-		//if hole.HoleFloor.FirstFloor.Sensitive() {
-		//	hole.Hidden = true
-		//}
+				err := query.Count(&count).Error
+				if err != nil {
+					return err
+				}
+
+				err = query.Select("COALESCE(SUM(LENGTH(content)), 0)").Scan(&contentSum).Error
+				if err != nil {
+					return err
+				}
+
+				var discard any
+				hole.AISummaryAvailable = count > 15 || contentSum >= 500 || utils.GetCache("AISummary"+strconv.Itoa(hole.ID), &discard)
+
+				if hole.AISummaryAvailable {
+					err = query.Where("is_sensitive = ?", true).Count(&sensitiveCount).Error
+					if err != nil {
+						return err
+					}
+					if sensitiveCount > 0 {
+						hole.AISummaryAvailable = false
+					}
+				}
+				return nil
+			})
+			if err != nil {
+				return err
+			}
+		}
 	}
 	err := floors.Preprocess(c)
 	if err != nil {
