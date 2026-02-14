@@ -355,6 +355,8 @@ definitions:
         items:
           $ref: '#/definitions/models.Hole'
         type: array
+      show_in_home_page:
+        type: boolean
       time_created:
         type: string
       time_updated:
@@ -482,6 +484,9 @@ definitions:
     type: object
   models.Hole:
     properties:
+      ai_summary_available:
+        description: AI 摘要可用性，仅用于序列化
+        type: boolean
       division_id:
         description: 所属 division 的 id
         type: integer
@@ -505,7 +510,9 @@ definitions:
             type: array
         type: object
       frozen:
-        description: 冻结状态，仅管理员可见
+        description: |-
+          冻结状态，仅管理员可见 true
+          FrozenFrontend *bool `json:"frozen,omitempty" gorm:"-:all"`
         type: boolean
       good:
         type: boolean
@@ -1016,6 +1023,46 @@ paths:
           schema:
             $ref: '#/definitions/models.Hole'
       summary: Create A Hole
+      tags:
+      - Hole
+  /divisions/{division_id}/holes/_sfw:
+    get:
+      parameters:
+      - description: division_id
+        in: path
+        name: division_id
+        required: true
+        type: integer
+      - description: updated time < offset (default is now)
+        in: query
+        name: offset
+        type: string
+      - in: query
+        name: order
+        type: string
+      - default: 10
+        in: query
+        maximum: 10
+        name: size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Hole'
+            type: array
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.MessageModel'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.MessageModel'
+      summary: List SFW Holes In A Division
       tags:
       - Hole
   /divisions/{id}:
@@ -1690,6 +1737,62 @@ paths:
       summary: List good holes
       tags:
       - Hole
+  /holes/_homepage:
+    get:
+      parameters:
+      - collectionFormat: csv
+        description: default is all
+        in: query
+        items:
+          type: integer
+        name: exclude_division_ids
+        type: array
+      - default: 10
+        in: query
+        maximum: 10
+        name: length
+        type: integer
+      - in: query
+        name: offset
+        type: string
+      - in: query
+        name: order
+        type: string
+      - default: 10
+        in: query
+        maximum: 10
+        name: size
+        type: integer
+      - description: updated time < offset (default is now)
+        in: query
+        name: start_time
+        type: string
+      - collectionFormat: csv
+        in: query
+        items:
+          type: string
+        name: tags
+        type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Hole'
+            type: array
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.MessageModel'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.MessageModel'
+      summary: List Holes In Home Page
+      tags:
+      - Hole
   /holes/{hole_id}/floors:
     get:
       parameters:
@@ -1699,7 +1802,6 @@ paths:
         required: true
         type: integer
       - default: 0
-        description: offset of object array
         in: query
         minimum: 0
         name: offset
@@ -1713,9 +1815,7 @@ paths:
         name: order_by
         type: string
       - default: 30
-        description: length of object array
         in: query
-        maximum: 50
         minimum: 0
         name: size
         type: integer
@@ -2758,7 +2858,6 @@ paths:
     get:
       parameters:
       - default: 0
-        description: offset of object array
         in: query
         minimum: 0
         name: offset
@@ -2772,9 +2871,7 @@ paths:
         name: order_by
         type: string
       - default: 30
-        description: length of object array
         in: query
-        maximum: 50
         minimum: 0
         name: size
         type: integer
