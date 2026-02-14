@@ -370,40 +370,36 @@ func UpdateHoleCache(holes Holes) (err error) {
 	return
 }
 
-func MakeHoleQuerySet(c *fiber.Ctx) (*gorm.DB, error) {
+// MakeHoleQuerySet 构建树洞查询集。若传入 tx 则基于该 DB，否则使用全局 DB。
+func MakeHoleQuerySet(c *fiber.Ctx, tx ...*gorm.DB) (*gorm.DB, error) {
+	db := DB
+	if len(tx) > 0 && tx[0] != nil {
+		db = tx[0]
+	}
 	user, err := GetCurrLoginUser(c)
 	if err != nil {
 		return nil, err
 	}
 	if user.IsAdmin {
-		return DB.Unscoped(), nil
-	} else {
-		return DB.Where("hidden = ?", false), nil
-		//userID, err := common.GetUserID(c)
-		//if err != nil {
-		//	return nil, err
-		//}
-		//return DB.Joins("JOIN floor ON hole.id = floor.hole_id").
-		//	Where("floor.ranking = 0 AND "+
-		//		"((floor.is_sensitive = 0 AND floor.is_actual_sensitive IS NULL) OR floor.is_actual_sensitive = 0 OR floor.user_id = ?)", userID), err
+		return db.Unscoped(), nil
 	}
+	return db.Where("hidden = ?", false), nil
 }
 
-func (holes Holes) MakeQuerySet(offset common.CustomTime, size int, order string, c *fiber.Ctx) (*gorm.DB, error) {
-	querySet, err := MakeHoleQuerySet(c)
+// MakeQuerySet 构建带分页与排序的树洞查询集。若传入 tx 则基于该 DB，否则使用全局 DB。
+func (holes Holes) MakeQuerySet(offset common.CustomTime, size int, order string, c *fiber.Ctx, tx ...*gorm.DB) (*gorm.DB, error) {
+	querySet, err := MakeHoleQuerySet(c, tx...)
 	if err != nil {
 		return nil, err
 	}
-	//querySet.Where("hole.hidden = ?", false)
 	if order == "time_created" || order == "created_at" {
 		return querySet.
 			Where("hole.created_at < ?", offset.Time).
 			Order("hole.created_at desc").Limit(size), nil
-	} else {
-		return querySet.
-			Where("hole.updated_at < ?", offset.Time).
-			Order("hole.updated_at desc").Limit(size), nil
 	}
+	return querySet.
+		Where("hole.updated_at < ?", offset.Time).
+		Order("hole.updated_at desc").Limit(size), nil
 }
 
 /************************

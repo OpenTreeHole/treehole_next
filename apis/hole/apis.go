@@ -42,24 +42,63 @@ func ListHomePage(c *fiber.Ctx) (err error) {
 		return err
 	}
 
-	divisionIDs, err := HomepageDivisionIDs(DB, query.ExcludeDivisionIDs)
-	if err != nil {
-		return err
+	if query.Size == 0 {
+		query.Size = query.Size0
+	}
+	// Offset 默认用 Offset0，再兜底当前时间
+	if query.Offset.IsZero() {
+		if query.Offset0.IsZero() {
+			query.Offset = common.CustomTime{Time: time.Now()}
+		} else {
+			query.Offset = query.Offset0
+		}
 	}
 
-	if len(divisionIDs) == 0 {
-		return Serialize(c, &Holes{})
-	}
-
-	// get holes
 	var holes Holes
-	querySet, err := holes.MakeQuerySet(query.Offset, query.Size, query.Order, c)
-	if err != nil {
-		return err
-	}
+	err = DB.Transaction(func(tx *gorm.DB) error {
+		divisionIDs, err := HomepageDivisionIDs(tx, query.ExcludeDivisionIDs)
+		if err != nil {
+			return err
+		}
+		if len(divisionIDs) == 0 {
+			return nil
+		}
 
-	querySet = querySet.Where("hole.division_id in (?)", divisionIDs)
-	err = querySet.Find(&holes).Error
+		querySet, err := holes.MakeQuerySet(query.Offset, query.Size, query.Order, c, tx)
+		if err != nil {
+			return err
+		}
+		querySet = querySet.Where("hole.division_id in (?)", divisionIDs)
+
+		// 仿照 ListHoles：按 Tags 过滤（需同时拥有所有指定标签的树洞）
+		if len(query.Tags) != 0 {
+			var tags []Tag
+			err = tx.Where("name IN ?", query.Tags).Find(&tags).Error
+			if err != nil {
+				return err
+			}
+			if len(tags) != len(query.Tags) {
+				return common.BadRequest("部分标签不存在")
+			}
+			tagIDs := make([]int, len(tags))
+			for i, tag := range tags {
+				tagIDs[i] = tag.ID
+			}
+			var holeIDs []int
+			err = tx.Table("hole_tags").
+				Select("hole_id").
+				Where("tag_id IN ?", tagIDs).
+				Group("hole_id").
+				Having("COUNT(DISTINCT tag_id) = ?", len(tagIDs)).
+				Pluck("hole_id", &holeIDs).Error
+			if err != nil {
+				return err
+			}
+			querySet = querySet.Where("hole.id IN ?", holeIDs)
+		}
+
+		return querySet.Find(&holes).Error
+	})
 	if err != nil {
 		return err
 	}
