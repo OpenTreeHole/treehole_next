@@ -265,7 +265,9 @@ func (floor *Floor) SetDefaults(c *fiber.Ctx) (err error) {
 				floor.Content = "该内容因违反社区规范被删除"
 				floor.Deleted = true
 			} else {
-				floor.Content = "该内容正在审核中"
+				if floor.UserID != user.ID {
+					floor.Content = "该内容正在审核中"
+				}
 			}
 			floor.FoldFrontend = []string{floor.Content}
 			floor.Fold = floor.Content
