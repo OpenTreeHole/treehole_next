@@ -57,20 +57,18 @@ func ListHolesByDivision(c *fiber.Ctx) error {
 	if id != 0 {
 		querySet = querySet.Where("hole.division_id = ?", id)
 	}
-	err = querySet.Find(&holes)
+	err = querySet.Find(&holes).Error
 
-	if (err != nil){
-		return err;
+	if err != nil {
+		return err
 	}
-
 
 	return Serialize(c, &holes)
 }
 
-
 // ListSFWHolesByDivision
 //
-// @Summary List SFW Holes In A Division 
+// @Summary List SFW Holes In A Division
 // @Tags Hole
 // @Produce json
 // @Router /divisions/{division_id}/holes/_sfw [get]
@@ -91,7 +89,7 @@ func ListSFWHolesByDivision(c *fiber.Ctx) error {
 		return err
 	}
 
-	// get sfw holes 
+	// get sfw holes
 	var holes Holes
 	querySet, err := holes.MakeQuerySet(query.Offset, query.Size, query.Order, c)
 	if err != nil {
@@ -109,7 +107,7 @@ func ListSFWHolesByDivision(c *fiber.Ctx) error {
 			Select("hole_tags.hole_id"))
 
 	err = querySet.Find(&holes)
-	if (err !=  nil){
+	if err != nil {
 		return err
 	}
 
