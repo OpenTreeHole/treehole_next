@@ -8,4 +8,6 @@
 *.out
 *.http
 .DS_Store
+treehole
+treehole.exe
 treehole_next
