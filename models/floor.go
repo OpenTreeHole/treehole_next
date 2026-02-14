@@ -141,7 +141,7 @@ func MakeFloorQuerySet(_ *fiber.Ctx) (*gorm.DB, error) {
 // - c: context of the request.
 //
 // It returns a pointer to a gorm.DB instance representing the query set and an error if any occurred during the creation of the query set.
-func (floors Floors) MakeQuerySet(holeID *int, offset, size *int, c *fiber.Ctx) (*gorm.DB, error) {
+func (floors Floors) MakeQuerySet(holeID, offset, size *int, c *fiber.Ctx) (*gorm.DB, error) {
 	querySet, err := MakeFloorQuerySet(c)
 	if err != nil {
 		return nil, err
