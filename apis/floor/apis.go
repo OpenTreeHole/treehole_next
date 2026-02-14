@@ -33,6 +33,9 @@ func ListFloorsInAHole(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
+	if holeID <= 0 {
+		return common.BadRequest("hole_id 必须为正整数")
+	}
 
 	var query ListModel
 	err = common.ValidateQuery(c, &query)
@@ -43,7 +46,7 @@ func ListFloorsInAHole(c *fiber.Ctx) error {
 	// get floors
 	var floors Floors
 	// use ranking field to locate faster
-	querySet, err := floors.MakeQuerySet(&holeID, &query.Offset, &query.Size, c)
+	querySet, err := floors.MakeQuerySet(&holeID, &query.Offset, query.Size, c)
 	if err != nil {
 		return err
 	}
@@ -673,7 +676,7 @@ func ListReplyFloors(c *fiber.Ctx) error {
 
 	// get floors
 	var floors Floors
-	querySet, err := floors.MakeQuerySet(nil, &query.Offset, &query.Size, c)
+	querySet, err := floors.MakeQuerySet(nil, &query.Offset, query.Size, c)
 	if err != nil {
 		return err
 	}
