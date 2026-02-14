@@ -963,7 +963,7 @@ func GenerateSummary(c *fiber.Ctx) error {
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		log.Error().
+		log.Info().
 			Str("url", config.Config.AISummaryURL+"/generate_summary").
 			Int("status", resp.StatusCode).
 			Bytes("req_body", requestJSON).
@@ -976,7 +976,7 @@ func GenerateSummary(c *fiber.Ctx) error {
 
 	err = json.Unmarshal(body, &response)
 	if err != nil {
-		log.Error().
+		log.Info().
 			Str("url", config.Config.AISummaryURL+"/generate_summary").
 			Int("status", resp.StatusCode).
 			Bytes("req_body", requestJSON).
