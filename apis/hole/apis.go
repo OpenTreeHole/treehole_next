@@ -2,6 +2,7 @@ package hole
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -963,11 +964,11 @@ func GenerateSummary(c *fiber.Ctx) error {
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		log.Info().
+		log.Error().
 			Str("url", config.Config.AISummaryURL+"/generate_summary").
 			Int("status", resp.StatusCode).
-			Bytes("req_body", requestJSON).
-			Bytes("resp_body", body).
+			Str("req_body_base64", base64.StdEncoding.EncodeToString(requestJSON)).
+			Str("resp_body_base64", base64.StdEncoding.EncodeToString(body)).
 			Msg("AISummary: generate summary server error")
 		response.Code = 3001
 		response.Message = "service_error"
@@ -976,11 +977,11 @@ func GenerateSummary(c *fiber.Ctx) error {
 
 	err = json.Unmarshal(body, &response)
 	if err != nil {
-		log.Info().
+		log.Error().
 			Str("url", config.Config.AISummaryURL+"/generate_summary").
 			Int("status", resp.StatusCode).
-			Bytes("req_body", requestJSON).
-			Bytes("resp_body", body).
+			Str("req_body_base64", base64.StdEncoding.EncodeToString(requestJSON)).
+			Str("resp_body_base64", base64.StdEncoding.EncodeToString(body)).
 			Msg("AISummary: generate summary server error")
 		response.Code = 3001
 		response.Message = "service_error"
@@ -1001,6 +1002,10 @@ func GenerateSummary(c *fiber.Ctx) error {
 	case 1002, 2001, 2002, 3001, 3002:
 
 	default:
+		log.Error().Str("url", config.Config.AISummaryURL+"/generate_summary").
+			Int("status", resp.StatusCode).
+			Str("req_body_base64", base64.StdEncoding.EncodeToString(requestJSON)).
+			Str("resp_body_base64", base64.StdEncoding.EncodeToString(body))
 		response.Code = 3001
 		response.Message = "service_error"
 	}
