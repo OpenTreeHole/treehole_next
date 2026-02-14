@@ -1753,12 +1753,26 @@ paths:
         name: length
         type: integer
       - in: query
+        name: offset
+        type: string
+      - in: query
         name: order
         type: string
+      - default: 10
+        in: query
+        maximum: 10
+        name: size
+        type: integer
       - description: updated time < offset (default is now)
         in: query
         name: start_time
         type: string
+      - collectionFormat: csv
+        in: query
+        items:
+          type: string
+        name: tags
+        type: array
       produces:
       - application/json
       responses:

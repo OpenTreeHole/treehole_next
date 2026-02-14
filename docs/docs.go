@@ -1333,13 +1333,34 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
                         "name": "order",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 10,
+                        "type": "integer",
+                        "default": 10,
+                        "name": "size",
                         "in": "query"
                     },
                     {
                         "type": "string",
                         "description": "updated time \u003c offset (default is now)",
                         "name": "start_time",
+                        "in": "query"
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "name": "tags",
                         "in": "query"
                     }
                 ],
