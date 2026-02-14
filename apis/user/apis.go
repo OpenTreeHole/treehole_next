@@ -26,7 +26,7 @@ func RegisterRoutes(app fiber.Router) {
 // @Router /users/me [get]
 // @Success 200 {object} User
 func GetCurrentUser(c *fiber.Ctx) error {
-	user, err := GetUser(c)
+	user, err := GetCurrLoginUser(c)
 	if err != nil {
 		return err
 	}
@@ -46,7 +46,7 @@ func GetUserByID(c *fiber.Ctx) error {
 		return err
 	}
 
-	user, err := GetUser(c)
+	user, err := GetCurrLoginUser(c)
 	if err != nil {
 		return err
 	}
@@ -80,7 +80,7 @@ func ModifyUser(c *fiber.Ctx) error {
 		return err
 	}
 
-	user, err := GetUser(c)
+	user, err := GetCurrLoginUser(c)
 	if err != nil {
 		return err
 	}
@@ -125,7 +125,7 @@ func ModifyUser(c *fiber.Ctx) error {
 // @Param json body ModifyModel true "modify user"
 // @Success 200 {object} User
 func ModifyCurrentUser(c *fiber.Ctx) error {
-	user, err := GetUser(c)
+	user, err := GetCurrLoginUser(c)
 	if err != nil {
 		return err
 	}

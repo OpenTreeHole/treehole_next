@@ -531,7 +531,13 @@ const docTemplate = `{
                     {
                         "type": "boolean",
                         "default": false,
+                        "description": "Accurate is used to determine whether to use accurate search",
                         "name": "accurate",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "name": "end_time",
                         "in": "query"
                     },
                     {
@@ -552,6 +558,12 @@ const docTemplate = `{
                         "type": "integer",
                         "default": 10,
                         "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "StartTime and EndTime are used to filter floors by time\nBoth are Unix timestamps, and are optional",
+                        "name": "start_time",
                         "in": "query"
                     }
                 ],
@@ -579,7 +591,13 @@ const docTemplate = `{
                     {
                         "type": "boolean",
                         "default": false,
+                        "description": "Accurate is used to determine whether to use accurate search",
                         "name": "accurate",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "name": "end_time",
                         "in": "query"
                     },
                     {
@@ -600,6 +618,12 @@ const docTemplate = `{
                         "type": "integer",
                         "default": 10,
                         "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "StartTime and EndTime are used to filter floors by time\nBoth are Unix timestamps, and are optional",
+                        "name": "start_time",
                         "in": "query"
                     }
                 ],
@@ -1074,9 +1098,18 @@ const docTemplate = `{
                 "tags": [
                     "Hole"
                 ],
-                "summary": "Old API for Listing Holes",
-                "deprecated": true,
+                "summary": "API for Listing Holes",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "name": "created_end",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "name": "created_start",
+                        "in": "query"
+                    },
                     {
                         "type": "integer",
                         "name": "division_id",
@@ -1091,7 +1124,19 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
                         "name": "order",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 10,
+                        "type": "integer",
+                        "default": 10,
+                        "name": "size",
                         "in": "query"
                     },
                     {
@@ -1102,6 +1147,15 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "name": "tag",
+                        "in": "query"
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "name": "tags",
                         "in": "query"
                     }
                 ],
@@ -2388,7 +2442,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/favourite.DeleteModel"
+                            "$ref": "#/definitions/favourite.DeleteFavoriteGroupModel"
                         }
                     }
                 ],
@@ -3202,6 +3256,17 @@ const docTemplate = `{
                 }
             }
         },
+        "favourite.DeleteFavoriteGroupModel": {
+            "type": "object",
+            "required": [
+                "favorite_group_id"
+            ],
+            "properties": {
+                "favorite_group_id": {
+                    "type": "integer"
+                }
+            }
+        },
         "favourite.DeleteModel": {
             "type": "object",
             "properties": {
@@ -3533,6 +3598,10 @@ const docTemplate = `{
                     "type": "integer",
                     "minimum": 1
                 },
+                "frozen": {
+                    "description": "admin only",
+                    "type": "boolean"
+                },
                 "hidden": {
                     "description": "Admin only",
                     "type": "boolean"
@@ -3787,6 +3856,9 @@ const docTemplate = `{
                     "description": "所属 division 的 id",
                     "type": "integer"
                 },
+                "favorite_count": {
+                    "type": "integer"
+                },
                 "floors": {
                     "description": "返回给前端的楼层列表，包括首楼、尾楼和预加载的前 n 个楼层",
                     "type": "object",
@@ -3816,6 +3888,10 @@ const docTemplate = `{
                         }
                     }
                 },
+                "frozen": {
+                    "description": "冻结状态，仅管理员可见",
+                    "type": "boolean"
+                },
                 "good": {
                     "type": "boolean"
                 },
@@ -3840,6 +3916,9 @@ const docTemplate = `{
                 },
                 "reply": {
                     "description": "回复量（即该洞下 floor 的数量 - 1）",
+                    "type": "integer"
+                },
+                "subscription_count": {
                     "type": "integer"
                 },
                 "tags": {
@@ -3927,6 +4006,17 @@ const docTemplate = `{
             "x-enum-comments": {
                 "MessageTypeModify": "including fold and delete"
             },
+            "x-enum-descriptions": [
+                "",
+                "",
+                "",
+                "including fold and delete",
+                "",
+                "",
+                "",
+                "",
+                ""
+            ],
             "x-enum-varnames": [
                 "MessageTypeFavorite",
                 "MessageTypeReply",
@@ -4054,6 +4144,9 @@ const docTemplate = `{
                 "name": {
                     "description": "/ base info",
                     "type": "string"
+                },
+                "nsfw": {
+                    "type": "boolean"
                 },
                 "tag_id": {
                     "description": "/ generated field",

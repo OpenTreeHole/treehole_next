@@ -1,9 +1,10 @@
 package config
 
 import (
-	"github.com/caarlos0/env/v9"
 	"net/url"
 	"sync/atomic"
+
+	"github.com/caarlos0/env/v9"
 
 	"github.com/rs/zerolog/log"
 )
@@ -43,15 +44,18 @@ var Config struct {
 	YiDunAccessKeyId             string   `env:"YI_DUN_ACCESS_KEY_ID" envDefault:""`
 	YiDunAccessKeySecret         string   `env:"YI_DUN_ACCESS_KEY_SECRET" envDefault:""`
 	ValidImageUrl                []string `env:"VALID_IMAGE_URL"`
-	UrlHostnameWhitelist         []string `env:"URL_HOSTNAME_WHITELIST"`
+	UrlHostnameBlacklist         []string `env:"URL_HOSTNAME_BLACKLIST"`
 	ExternalImageHost            string   `env:"EXTERNAL_IMAGE_HOSTNAME" envDefault:""`
 	NotifiableAdminIds           []int    `env:"NOTIFIABLE_ADMIN_IDS"`
 	ExcludeBanForeverDivisionIds []int    `env:"EXCLUDE_BAN_FOREVER_DIVISION_IDS"`
 	ProxyUrl                     *url.URL `env:"PROXY_URL"`
-	QQBotGroupID                 *int64   `env:"GROUP_ID"`
+	QQBotPhysicsGroupID          *int64   `env:"PHYSICS_GROUP_ID"`
+	QQBotCodingGroupID           *int64   `env:"CODING_GROUP_ID"`
 	QQBotUserID                  *int64   `env:"USER_ID"`
 	QQBotUrl                     *string  `env:"QQ_BOT_URL"`
+	FeishuBotUrl                 *string  `env:"FEISHU_BOT_URL"`
 	AdminOnlyTagIds              []int    `env:"ADMIN_ONLY_TAG_IDS"`
+	AISummaryURL                 string   `env:"AI_SUMMARY_URL" envDefault:"http://127.0.0.1:8080/internal"`
 }
 
 var DynamicConfig struct {

@@ -2,11 +2,12 @@ package floor
 
 import (
 	"fmt"
-	"github.com/opentreehole/go-common"
-	"github.com/rs/zerolog/log"
 	"slices"
 	"time"
 	"treehole_next/utils/sensitive"
+
+	"github.com/opentreehole/go-common"
+	"github.com/rs/zerolog/log"
 
 	. "treehole_next/models"
 	. "treehole_next/utils"
@@ -32,17 +33,22 @@ func ListFloorsInAHole(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
+	if holeID <= 0 {
+		return common.BadRequest("hole_id 必须为正整数")
+	}
 
 	var query ListModel
 	err = common.ValidateQuery(c, &query)
 	if err != nil {
 		return err
 	}
+	if *query.Size == 0 {
+		query.Size = nil
+	}
 
 	// get floors
 	var floors Floors
-	// use ranking field to locate faster
-	querySet, err := floors.MakeQuerySet(&holeID, &query.Offset, &query.Size, c)
+	querySet, err := floors.MakeQuerySet(&holeID, &query.Offset, query.Size, c)
 	if err != nil {
 		return err
 	}
@@ -131,7 +137,7 @@ func GetFloor(c *fiber.Ctx) (err error) {
 		return err
 	}
 
-	user, err := GetUser(c)
+	user, err := GetCurrLoginUser(c)
 	if err != nil {
 		return err
 	}
@@ -184,7 +190,7 @@ func CreateFloor(c *fiber.Ctx) error {
 	}
 
 	// get user from auth
-	user, err := GetUser(c)
+	user, err := GetCurrLoginUser(c)
 	if err != nil {
 		return err
 	}
@@ -253,7 +259,7 @@ func CreateFloorOld(c *fiber.Ctx) error {
 	}
 
 	// get user
-	user, err := GetUser(c)
+	user, err := GetCurrLoginUser(c)
 	if err != nil {
 		return err
 	}
@@ -328,7 +334,7 @@ func ModifyFloor(c *fiber.Ctx) error {
 	}
 
 	// get user
-	user, err := GetUser(c)
+	user, err := GetCurrLoginUser(c)
 	if err != nil {
 		return err
 	}
@@ -598,7 +604,7 @@ func DeleteFloor(c *fiber.Ctx) error {
 	}
 
 	// get user
-	user, err := GetUser(c)
+	user, err := GetCurrLoginUser(c)
 	if err != nil {
 		return err
 	}
@@ -669,10 +675,13 @@ func ListReplyFloors(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
+	if *query.Size == 0 {
+		query.Size = nil
+	}
 
 	// get floors
 	var floors Floors
-	querySet, err := floors.MakeQuerySet(nil, &query.Offset, &query.Size, c)
+	querySet, err := floors.MakeQuerySet(nil, &query.Offset, query.Size, c)
 	if err != nil {
 		return err
 	}
@@ -703,7 +712,7 @@ func GetFloorHistory(c *fiber.Ctx) error {
 	}
 
 	// get user
-	user, err := GetUser(c)
+	user, err := GetCurrLoginUser(c)
 	if err != nil {
 		return err
 	}
@@ -765,7 +774,7 @@ func RestoreFloor(c *fiber.Ctx) error {
 	}
 
 	// get user
-	user, err := GetUser(c)
+	user, err := GetCurrLoginUser(c)
 	if err != nil {
 		return err
 	}
@@ -827,7 +836,7 @@ func GetPunishmentHistory(c *fiber.Ctx) error {
 	}
 
 	// get user
-	user, err := GetUser(c)
+	user, err := GetCurrLoginUser(c)
 	if err != nil {
 		return err
 	}
@@ -880,7 +889,7 @@ func GetUserSilence(c *fiber.Ctx) error {
 	}
 
 	// get user
-	admin, err := GetUser(c)
+	admin, err := GetCurrLoginUser(c)
 	if err != nil {
 		return err
 	}
@@ -926,7 +935,7 @@ func ListSensitiveFloors(c *fiber.Ctx) (err error) {
 	}
 
 	// get user
-	user, err := GetUser(c)
+	user, err := GetCurrLoginUser(c)
 	if err != nil {
 		return err
 	}
@@ -995,7 +1004,7 @@ func ModifyFloorSensitive(c *fiber.Ctx) (err error) {
 	}
 
 	// get user
-	user, err := GetUser(c)
+	user, err := GetCurrLoginUser(c)
 	if err != nil {
 		return err
 	}
@@ -1025,7 +1034,34 @@ func ModifyFloorSensitive(c *fiber.Ctx) (err error) {
 
 		if !body.IsActualSensitive {
 			// save actual_sensitive only
-			return tx.Model(&floor).Select("IsActualSensitive").UpdateColumns(&floor).Error
+			err := tx.Model(&floor).Select("IsActualSensitive").UpdateColumns(&floor).Error
+			if err != nil {
+				return err
+			}
+
+			// update CreatedAt and UpdatedAt to prevent new posts from being buried due to review delays
+			if floor.Ranking == 0 {
+				var hole Hole
+				err = tx.First(&hole, floor.HoleID).Error
+				if err != nil {
+					return err
+				}
+
+				// ad-hoc logic: if the hole was created before 2024, don't update
+				// ref: https://github.com/OpenTreeHole/treehole_next/issues/192
+				if hole.CreatedAt.Year() <= 2024 {
+					return nil
+				}
+				now := time.Now()
+				hole.CreatedAt = now
+				hole.UpdatedAt = now
+				err = tx.Model(&hole).Select("CreatedAt", "UpdatedAt").UpdateColumns(&hole).Error
+				if err != nil {
+					return err
+				}
+			}
+
+			return nil
 		}
 
 		reason := "违反社区规范"

@@ -68,6 +68,13 @@ definitions:
       hole_id:
         type: integer
     type: object
+  favourite.DeleteFavoriteGroupModel:
+    properties:
+      favorite_group_id:
+        type: integer
+    required:
+    - favorite_group_id
+    type: object
   favourite.DeleteModel:
     properties:
       favorite_group_id:
@@ -296,6 +303,9 @@ definitions:
         description: Admin and owner only
         minimum: 1
         type: integer
+      frozen:
+        description: admin only
+        type: boolean
       hidden:
         description: Admin only
         type: boolean
@@ -477,6 +487,8 @@ definitions:
       division_id:
         description: 所属 division 的 id
         type: integer
+      favorite_count:
+        type: integer
       floors:
         description: 返回给前端的楼层列表，包括首楼、尾楼和预加载的前 n 个楼层
         properties:
@@ -494,6 +506,9 @@ definitions:
               $ref: '#/definitions/models.Floor'
             type: array
         type: object
+      frozen:
+        description: 冻结状态，仅管理员可见
+        type: boolean
       good:
         type: boolean
       hidden:
@@ -512,6 +527,8 @@ definitions:
         type: boolean
       reply:
         description: 回复量（即该洞下 floor 的数量 - 1）
+        type: integer
+      subscription_count:
         type: integer
       tags:
         description: tag 列表；不超过 10 个
@@ -574,6 +591,16 @@ definitions:
     type: string
     x-enum-comments:
       MessageTypeModify: including fold and delete
+    x-enum-descriptions:
+    - ""
+    - ""
+    - ""
+    - including fold and delete
+    - ""
+    - ""
+    - ""
+    - ""
+    - ""
     x-enum-varnames:
     - MessageTypeFavorite
     - MessageTypeReply
@@ -664,6 +691,8 @@ definitions:
       name:
         description: / base info
         type: string
+      nsfw:
+        type: boolean
       tag_id:
         description: / generated field
         type: integer
@@ -1484,9 +1513,13 @@ paths:
     get:
       parameters:
       - default: false
+        description: Accurate is used to determine whether to use accurate search
         in: query
         name: accurate
         type: boolean
+      - in: query
+        name: end_time
+        type: integer
       - default: 0
         in: query
         minimum: 0
@@ -1500,6 +1533,12 @@ paths:
         in: query
         minimum: 0
         name: size
+        type: integer
+      - description: |-
+          StartTime and EndTime are used to filter floors by time
+          Both are Unix timestamps, and are optional
+        in: query
+        name: start_time
         type: integer
       produces:
       - application/json
@@ -1516,9 +1555,13 @@ paths:
     post:
       parameters:
       - default: false
+        description: Accurate is used to determine whether to use accurate search
         in: query
         name: accurate
         type: boolean
+      - in: query
+        name: end_time
+        type: integer
       - default: 0
         in: query
         minimum: 0
@@ -1532,6 +1575,12 @@ paths:
         in: query
         minimum: 0
         name: size
+        type: integer
+      - description: |-
+          StartTime and EndTime are used to filter floors by time
+          Both are Unix timestamps, and are optional
+        in: query
+        name: start_time
         type: integer
       produces:
       - application/json
@@ -1547,8 +1596,13 @@ paths:
       - Search
   /holes:
     get:
-      deprecated: true
       parameters:
+      - in: query
+        name: created_end
+        type: string
+      - in: query
+        name: created_start
+        type: string
       - in: query
         name: division_id
         type: integer
@@ -1558,14 +1612,28 @@ paths:
         name: length
         type: integer
       - in: query
+        name: offset
+        type: string
+      - in: query
         name: order
         type: string
+      - default: 10
+        in: query
+        maximum: 10
+        name: size
+        type: integer
       - in: query
         name: start_time
         type: string
       - in: query
         name: tag
         type: string
+      - collectionFormat: csv
+        in: query
+        items:
+          type: string
+        name: tags
+        type: array
       produces:
       - application/json
       responses:
@@ -1575,7 +1643,7 @@ paths:
             items:
               $ref: '#/definitions/models.Hole'
             type: array
-      summary: Old API for Listing Holes
+      summary: API for Listing Holes
       tags:
       - Hole
     post:
@@ -2345,7 +2413,7 @@ paths:
         name: json
         required: true
         schema:
-          $ref: '#/definitions/favourite.DeleteModel'
+          $ref: '#/definitions/favourite.DeleteFavoriteGroupModel'
       produces:
       - application/json
       responses:

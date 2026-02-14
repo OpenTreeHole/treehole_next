@@ -30,16 +30,34 @@ func (q *QueryTime) SetDefaults() {
 }
 
 type ListOldModel struct {
-	Offset     common.CustomTime `json:"start_time" query:"start_time" swaggertype:"string"`
-	Size       int               `json:"length" query:"length" default:"10" validate:"max=10" `
-	Tag        string            `json:"tag" query:"tag"`
-	DivisionID int               `json:"division_id" query:"division_id"`
-	Order      string            `json:"order" query:"order"`
+	Offset0      common.CustomTime  `json:"start_time" query:"start_time" swaggertype:"string"`
+	Offset       common.CustomTime  `json:"offset" query:"offset" swaggertype:"string"`
+	Size0        int                `json:"length" query:"length" default:"10" validate:"max=10"`
+	Size         int                `json:"size" query:"size" default:"10" validate:"max=10" `
+	Tag          string             `json:"tag" query:"tag"`
+	Tags         []string           `json:"tags" query:"tags"`
+	DivisionID   int                `json:"division_id" query:"division_id"`
+	Order        string             `json:"order" query:"order"`
+	CreatedStart *common.CustomTime `json:"created_start" query:"created_start" swaggertype:"string"`
+	CreatedEnd   *common.CustomTime `json:"created_end" query:"created_end" swaggertype:"string"`
 }
 
 func (q *ListOldModel) SetDefaults() {
+	if q.Size == 0 {
+		q.Size = q.Size0
+	}
 	if q.Offset.IsZero() {
-		q.Offset = common.CustomTime{Time: time.Now()}
+		if q.Offset0.IsZero() {
+			q.Offset = common.CustomTime{Time: time.Now()}
+		} else {
+			q.Offset = q.Offset0
+		}
+	}
+	if q.CreatedStart == nil {
+		q.CreatedStart = &common.CustomTime{Time: time.Time{}} // 默认值为零时间
+	}
+	if q.CreatedEnd == nil {
+		q.CreatedEnd = &common.CustomTime{Time: time.Now()}
 	}
 }
 
@@ -78,6 +96,7 @@ type ModifyModel struct {
 	Hidden     *bool `json:"hidden"`                                 // Admin only
 	Unhidden   *bool `json:"unhidden"`                               // admin only
 	Lock       *bool `json:"lock"`                                   // admin only
+	Frozen     *bool `json:"frozen"`                                 // admin only
 }
 
 func (body ModifyModel) CheckPermission(user *models.User, hole *models.Hole) error {
@@ -99,9 +118,49 @@ func (body ModifyModel) CheckPermission(user *models.User, hole *models.Hole) er
 	if body.Lock != nil && !user.IsAdmin {
 		return common.Forbidden("非管理员禁止锁定帖子")
 	}
+	if body.Frozen != nil && !user.IsAdmin {
+		return common.Forbidden("非管理员禁止冻结帖子")
+	}
 	return nil
 }
 
 func (body ModifyModel) DoNothing() bool {
-	return body.Hidden == nil && body.Unhidden == nil && body.Tags == nil && body.DivisionID == nil && body.Lock == nil
+	return body.Hidden == nil && body.Unhidden == nil && body.Tags == nil && body.DivisionID == nil && body.Lock == nil && body.Frozen == nil
+}
+
+type Summary struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+	Data    struct {
+		HoleID   int    `json:"hole_id"`
+		Summary  string `json:"summary"`
+		Branches []struct {
+			ID                   int    `json:"id"`
+			Label                string `json:"label"`
+			Content              string `json:"content"`
+			Color                string `json:"color"`
+			RepresentativeFloors []int  `json:"representative_floors"`
+		} `json:"branches"`
+		Interactions []struct {
+			FromFloor       int    `json:"from_floor"`
+			FromUser        string `json:"from_user"`
+			ToFloor         int    `json:"to_floor"`
+			ToUser          string `json:"to_user"`
+			InteractionType string `json:"interaction_type" enums:"reply,support,rebuttal,supplement,question" default:"reply"`
+			Content         string `json:"content"`
+		} `json:"interactions"`
+		Keywords    []string `json:"keywords"`
+		GeneratedAt string   `json:"generated_at"`
+	} `json:"data"`
+}
+
+type FloorForSummary struct {
+	ID      int    `json:"id"`
+	Content string `json:"content"`
+	// a random username
+	Anonyname string `json:"anonyname"`
+
+	Ranking int `json:"ranking"`
+
+	ReplyTo int `json:"reply_to"`
 }

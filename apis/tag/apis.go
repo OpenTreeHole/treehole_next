@@ -90,13 +90,13 @@ func CreateTag(c *fiber.Ctx) error {
 	}
 
 	// check tag prefix
-	user, err := GetUser(c)
+	user, err := GetCurrLoginUser(c)
 	if err != nil {
 		return err
 	}
 	if !user.IsAdmin {
-		if len(tag.Name) > 15 {
-			return common.BadRequest("tag 名称长度不能超过 15 个字符")
+		if len(tag.Name) > 15 && len([]rune(tag.Name)) > 10 {
+			return common.BadRequest("标签长度不能超过 10 个字符")
 		}
 		if strings.HasPrefix(body.Name, "#") {
 			return common.BadRequest("只有管理员才能创建 # 开头的 tag")
@@ -145,7 +145,7 @@ func CreateTag(c *fiber.Ctx) error {
 // @Failure 404 {object} MessageModel
 func ModifyTag(c *fiber.Ctx) error {
 	// admin
-	user, err := GetUser(c)
+	user, err := GetCurrLoginUser(c)
 	if err != nil {
 		return err
 	}
@@ -212,7 +212,7 @@ func ModifyTag(c *fiber.Ctx) error {
 // @Failure 404 {object} MessageModel
 func DeleteTag(c *fiber.Ctx) error {
 	// admin
-	user, err := GetUser(c)
+	user, err := GetCurrLoginUser(c)
 	if err != nil {
 		return err
 	}

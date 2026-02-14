@@ -133,7 +133,15 @@ func MakeFloorQuerySet(_ *fiber.Ctx) (*gorm.DB, error) {
 	//}
 }
 
-func (floors Floors) MakeQuerySet(holeID *int, offset, size *int, c *fiber.Ctx) (*gorm.DB, error) {
+// MakeQuerySet creates a query set for the Floors model.
+// It takes the following parameters:
+// - holeID: the ID of the hole to filter by.
+// - offset:the offset for pagination.
+// - size: the size for pagination.
+// - c: context of the request.
+//
+// It returns a pointer to a gorm.DB instance representing the query set and an error if any occurred during the creation of the query set.
+func (floors Floors) MakeQuerySet(holeID, offset, size *int, c *fiber.Ctx) (*gorm.DB, error) {
 	querySet, err := MakeFloorQuerySet(c)
 	if err != nil {
 		return nil, err
@@ -147,6 +155,31 @@ func (floors Floors) MakeQuerySet(holeID *int, offset, size *int, c *fiber.Ctx) 
 	}
 	if size != nil {
 		querySet = querySet.Limit(*size)
+	}
+	return querySet, nil
+}
+
+// MakeQuerySetWithTimeRange creates a query set for the Floors model with an optional time range filter.
+// It takes the following parameters:
+// - holeID: the ID of the hole to filter by.
+// - offset:the offset for pagination.
+// - size: the size for pagination.
+// - startTime: a pointer to a time.Time representing the start time for the time range filter.
+// - endTime: a pointer to a time.Time representing the end time for the time range filter.
+// - c: context of the request.
+//
+// It returns a pointer to a gorm.DB instance representing the query set and an error if any occurred during the creation of the query set.
+func (floors Floors) MakeQuerySetWithTimeRange(holeID *int, offset, size *int, startTime, endTime *time.Time, c *fiber.Ctx) (*gorm.DB, error) {
+	querySet, err := floors.MakeQuerySet(holeID, offset, size, c)
+	if err != nil {
+		return nil, err
+	}
+
+	if startTime != nil {
+		querySet = querySet.Where("created_at >= ?", startTime)
+	}
+	if endTime != nil {
+		querySet = querySet.Where("created_at <= ?", endTime)
 	}
 	return querySet, nil
 }
@@ -216,7 +249,7 @@ func (floors Floors) Preprocess(c *fiber.Ctx) (err error) {
 
 func (floor *Floor) SetDefaults(c *fiber.Ctx) (err error) {
 	floor.FloorID = floor.ID
-	user, err := GetUser(c)
+	user, err := GetCurrLoginUser(c)
 	if err != nil {
 		return
 	}
@@ -227,15 +260,12 @@ func (floor *Floor) SetDefaults(c *fiber.Ctx) (err error) {
 			floor.SpecialTag = "sensitive"
 		}
 		if !floor.Deleted {
-			if floor.IsActualSensitive != nil && *floor.IsActualSensitive {
-				// deprecated, deleted already
-				floor.Content = "该内容因违反社区规范被删除"
-				floor.Deleted = true
-			} else {
-				floor.Content = "该内容正在审核中"
+			msg := "该内容正在审核中"
+			if !floor.IsMe {
+				floor.Content = msg
 			}
-			floor.FoldFrontend = []string{floor.Content}
-			floor.Fold = floor.Content
+			floor.FoldFrontend = []string{msg}
+			floor.Fold = msg
 		}
 	}
 	if !user.IsAdmin {
@@ -324,11 +354,12 @@ func (floor *Floor) Create(tx *gorm.DB, hole *Hole, c *fiber.Ctx) (err error) {
 			return err
 		}
 
-		// update hole reply and update_at
-		return tx.Model(&hole).
-			Omit(clause.Associations).
-			Select("Reply").
-			Updates(&hole).Error
+		// update hole reply, skip UpdatedAt if frozen
+		query := tx.Model(&hole).Omit(clause.Associations).Select("Reply")
+		if hole.Frozen {
+			query = query.Omit("UpdatedAt")
+		}
+		return query.Updates(&hole).Error
 	})
 
 	if err != nil {

@@ -114,8 +114,14 @@ func AddUserFavorite(tx *gorm.DB, userID int, holeID int, favoriteGroupID int) e
 	if err != nil {
 		return err
 	}
-	return tx.Clauses(dbresolver.Write).Model(&FavoriteGroup{}).
+	err = tx.Clauses(dbresolver.Write).Model(&FavoriteGroup{}).
 		Where("user_id = ? AND favorite_group_id = ?", userID, favoriteGroupID).Update("count", gorm.Expr("count + 1")).Error
+	if err != nil {
+		return err
+	}
+	return tx.Model(&Hole{}).Where("id = ?", holeID).
+		UpdateColumn("favorite_count", gorm.Expr("favorite_count + ?", 1)).Error
+
 }
 
 // UserGetFavoriteData get all favorite data of a user
@@ -147,13 +153,39 @@ func DeleteUserFavorite(tx *gorm.DB, userID int, holeID int, favoriteGroupID int
 	if !IsHolesExist(tx, []int{holeID}) {
 		return common.NotFound("帖子不存在")
 	}
-	return tx.Clauses(dbresolver.Write).Transaction(func(tx *gorm.DB) error {
-		err := tx.Delete(&UserFavorite{UserID: userID, HoleID: holeID, FavoriteGroupID: favoriteGroupID}).Error
-		if err != nil {
+
+	// 检查记录是否存在
+	var count int64
+	if err := tx.Model(&UserFavorite{}).
+		Where("user_id = ? AND hole_id = ? AND favorite_group_id = ?",
+			userID, holeID, favoriteGroupID).
+		Count(&count).Error; err != nil {
+		return err
+	}
+
+	if count > 0 {
+		// 删除收藏记录
+		if err := tx.Where("user_id = ? AND hole_id = ? AND favorite_group_id = ?",
+			userID, holeID, favoriteGroupID).
+			Delete(&UserFavorite{}).Error; err != nil {
 			return err
 		}
-		return tx.Clauses(dbresolver.Write).Model(&FavoriteGroup{}).Where("user_id = ? AND favorite_group_id = ?", userID, favoriteGroupID).Update("count", gorm.Expr("count - 1")).Error
-	})
+
+		// 更新收藏夹计数
+		if err := tx.Model(&FavoriteGroup{}).
+			Where("favorite_group_id = ? AND user_id = ?", favoriteGroupID, userID).
+			UpdateColumn("count", gorm.Expr("count - ?", 1)).Error; err != nil {
+			return err
+		}
+
+		// 更新帖子收藏计数
+		if err := tx.Model(&Hole{}).Where("id = ?", holeID).
+			UpdateColumn("favorite_count", gorm.Expr("favorite_count - ?", 1)).Error; err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // MoveUserFavorite move holes that are really in the fromFavoriteGroup

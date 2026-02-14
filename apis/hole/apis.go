@@ -1,10 +1,16 @@
 package hole
 
 import (
+	"bytes"
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 	"slices"
 	"strconv"
 	"time"
+	"treehole_next/config"
 	"treehole_next/utils/sensitive"
 
 	"github.com/gofiber/fiber/v2"
@@ -93,7 +99,59 @@ func ListHolesByDivision(c *fiber.Ctx) error {
 	if id != 0 {
 		querySet = querySet.Where("hole.division_id = ?", id)
 	}
-	querySet.Find(&holes)
+	err = querySet.Find(&holes).Error
+
+	if err != nil {
+		return err
+	}
+
+	return Serialize(c, &holes)
+}
+
+// ListSFWHolesByDivision
+//
+// @Summary List SFW Holes In A Division
+// @Tags Hole
+// @Produce json
+// @Router /divisions/{division_id}/holes/_sfw [get]
+// @Param division_id path int true "division_id"
+// @Param object query QueryTime false "query"
+// @Success 200 {array} Hole
+// @Failure 404 {object} MessageModel
+// @Failure 500 {object} MessageModel
+func ListSFWHolesByDivision(c *fiber.Ctx) error {
+	var query QueryTime
+	err := common.ValidateQuery(c, &query)
+	if err != nil {
+		return err
+	}
+
+	id, err := c.ParamsInt("id")
+	if err != nil {
+		return err
+	}
+
+	// get sfw holes
+	var holes Holes
+	querySet, err := holes.MakeQuerySet(query.Offset, query.Size, query.Order, c)
+	if err != nil {
+		return err
+	}
+	if id != 0 {
+		querySet = querySet.Where("hole.division_id = ?", id)
+	}
+
+	//exclude all the holes with tag.nsfw = true
+	querySet = querySet.Not("hole.id IN (?)",
+		DB.Table("hole_tags").
+			Joins("JOIN tag ON hole_tags.tag_id = tag.id").
+			Where("tag.nsfw = ?", true).
+			Select("hole_tags.hole_id"))
+
+	err = querySet.Find(&holes).Error
+	if err != nil {
+		return err
+	}
 
 	return Serialize(c, &holes)
 }
@@ -203,16 +261,15 @@ func ListGoodHoles(c *fiber.Ctx) error {
 	return Serialize(c, &holes)
 }
 
-// ListHolesOld
+// ListHoles
 //
-// @Summary Old API for Listing Holes
-// @Deprecated
+// @Summary API for Listing Holes
 // @Tags Hole
 // @Produce json
 // @Router /holes [get]
 // @Param object query ListOldModel false "query"
 // @Success 200 {array} Hole
-func ListHolesOld(c *fiber.Ctx) error {
+func ListHoles(c *fiber.Ctx) error {
 	var query ListOldModel
 	err := common.ValidateQuery(c, &query)
 	if err != nil {
@@ -220,26 +277,76 @@ func ListHolesOld(c *fiber.Ctx) error {
 	}
 
 	var holes Holes
-	querySet, err := holes.MakeQuerySet(query.Offset, query.Size, query.Order, c)
+	err = DB.Transaction(func(tx *gorm.DB) error {
+		querySet, err := holes.MakeQuerySet(query.Offset, query.Size, query.Order, c)
+		if err != nil {
+			return err
+		}
+
+		if query.CreatedStart != nil {
+			querySet = querySet.Where("hole.created_at >= ?", query.CreatedStart.Time)
+		}
+
+		if query.CreatedEnd != nil {
+			querySet = querySet.Where("hole.created_at <= ?", query.CreatedEnd.Time)
+		}
+
+		if query.DivisionID != 0 {
+			querySet = querySet.Where("hole.division_id = ?", query.DivisionID)
+		}
+
+		if len(query.Tags) != 0 {
+			var tags []Tag
+			err = DB.Where("name IN ?", query.Tags).Find(&tags).Error
+			if err != nil {
+				return err
+			}
+
+			if len(tags) != len(query.Tags) {
+				return common.BadRequest("部分标签不存在")
+			}
+
+			tagIDs := make([]int, len(tags))
+			for i, tag := range tags {
+				tagIDs[i] = tag.ID
+			}
+
+			var holeIDs []int
+			err = DB.Table("hole_tags").
+				Select("hole_id").
+				Where("tag_id IN ?", tagIDs).
+				Group("hole_id").
+				Having("COUNT(DISTINCT tag_id) = ?", len(tagIDs)).
+				Pluck("hole_id", &holeIDs).Error
+			if err != nil {
+				return err
+			}
+
+			querySet = querySet.Where("hole.id IN ?", holeIDs)
+			err = querySet.Find(&holes).Error
+			if err != nil {
+				return err
+			}
+		} else if query.Tag != "" {
+			var tag Tag
+			err = DB.Where("name = ?", query.Tag).Find(&tag).Error
+			if err != nil {
+				return err
+			}
+			err = querySet.Model(&tag).Order("updated_at desc").Association("Holes").Find(&holes)
+			if err != nil {
+				return err
+			}
+		} else {
+			err = querySet.Find(&holes).Error
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	})
 	if err != nil {
 		return err
-	}
-	if query.Tag != "" {
-		var tag Tag
-		err = DB.Where("name = ?", query.Tag).Find(&tag).Error
-		if err != nil {
-			return err
-		}
-		err = querySet.Model(&tag).Order("updated_at desc").Association("Holes").Find(&holes)
-		if err != nil {
-			return err
-		}
-	} else if query.DivisionID != 0 {
-		querySet.
-			Where("hole.division_id = ?", query.DivisionID).
-			Find(&holes)
-	} else {
-		querySet.Find(&holes)
 	}
 
 	// only for danxi v1.3.10 old api
@@ -307,7 +414,7 @@ func CreateHole(c *fiber.Ctx) error {
 	}
 
 	// get user from auth
-	user, err := GetUser(c)
+	user, err := GetCurrLoginUser(c)
 	if err != nil {
 		return err
 	}
@@ -375,7 +482,7 @@ func CreateHoleOld(c *fiber.Ctx) error {
 	}
 
 	// get user from auth
-	user, err := GetUser(c)
+	user, err := GetCurrLoginUser(c)
 	if err != nil {
 		return err
 	}
@@ -460,7 +567,7 @@ func ModifyHole(c *fiber.Ctx) error {
 	}
 
 	// get user
-	user, err := GetUser(c)
+	user, err := GetCurrLoginUser(c)
 	if err != nil {
 		return err
 	}
@@ -596,11 +703,19 @@ func ModifyHole(c *fiber.Ctx) error {
 			MyLog("Hole", "Modify", holeID, user.ID, RoleAdmin, "Lock: ")
 		}
 
+		// modify frozen
+		if body.Frozen != nil {
+			changed = true
+			hole.Frozen = *body.Frozen
+
+			MyLog("Hole", "Modify", holeID, user.ID, RoleAdmin, "Frozen: ")
+		}
+
 		// save
 		if changed {
 			err = tx.Model(&hole).
 				Omit(clause.Associations, "UpdatedAt").
-				Select("DivisionID", "Hidden", "Locked").
+				Select("DivisionID", "Hidden", "Locked", "Frozen").
 				Updates(&hole).Error
 			if err != nil {
 				return err
@@ -617,6 +732,7 @@ func ModifyHole(c *fiber.Ctx) error {
 						"division_id": hole.DivisionID,
 						"hidden":      hole.Hidden,
 						"locked":      hole.Locked,
+						"frozen":      hole.Frozen,
 						"tags":        hole.Tags,
 					},
 					Modify: body,
@@ -658,7 +774,7 @@ func HideHole(c *fiber.Ctx) error {
 	}
 
 	// get user
-	user, err := GetUser(c)
+	user, err := GetCurrLoginUser(c)
 	if err != nil {
 		return err
 	}
@@ -744,7 +860,7 @@ func DeleteHole(c *fiber.Ctx) error {
 		return err
 	}
 
-	user, err := GetUser(c)
+	user, err := GetCurrLoginUser(c)
 	if err != nil {
 		return err
 	}
@@ -794,4 +910,204 @@ func DeleteHole(c *fiber.Ctx) error {
 	}
 
 	return c.Status(204).JSON(nil)
+}
+func GenerateSummary(c *fiber.Ctx) error {
+
+	id, _ := c.ParamsInt("id")
+	var cachedData Summary
+	if GetCache("AISummary"+strconv.Itoa(id), &cachedData) {
+		switch cachedData.Code {
+		case 1000:
+			return c.Status(200).JSON(cachedData)
+		case 1001:
+			// get new summary
+			resp, err := http.Get(config.Config.AISummaryURL + "/get_summary?hole_id=" + strconv.Itoa(id))
+			if err != nil {
+				log.Err(err).Msg("AISummary: get summary from server err")
+				return err
+			}
+			defer resp.Body.Close()
+
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return err
+			}
+			err = json.Unmarshal(body, &cachedData)
+			if err != nil {
+				return err
+			}
+			if len(cachedData.Data.Interactions) > 5 {
+				cachedData.Data.Interactions = cachedData.Data.Interactions[:5]
+			}
+
+			// renew cache
+			if cachedData.Code == 1000 || cachedData.Code == 1001 {
+				//sensitiveCheckResp, err := sensitive.CheckSensitive(sensitive.ParamsForCheck{
+				//	Content:  cachedData.Data.Summary,
+				//	Id:       time.Now().UnixNano(),
+				//	TypeName: sensitive.TypeFloor,
+				//})
+				if true {
+					// set default interaction_type
+					for i := range cachedData.Data.Interactions {
+						if cachedData.Data.Interactions[i].InteractionType == "" {
+							cachedData.Data.Interactions[i].InteractionType = "reply"
+						}
+					}
+					err = SetCache("AISummary"+strconv.Itoa(id), cachedData, 24*time.Hour)
+					if err != nil {
+						log.Err(err).Msg("AISummary: set cache err")
+					}
+				}
+
+			} else {
+				err := DeleteCache("AISummary" + strconv.Itoa(id))
+				if err != nil {
+					log.Err(err).Msg("AISummary: delete cache err")
+				}
+			}
+
+			return c.Status(200).JSON(cachedData)
+		default:
+			err := DeleteCache("AISummary" + strconv.Itoa(id))
+			if err != nil {
+				log.Err(err).Msg("AISummary: delete cache err")
+			}
+		}
+	}
+	// if no cache or the data of cache is invalid, generate a new summary
+
+	// get hole
+	holeSet, err := MakeHoleQuerySet(c)
+	if err != nil {
+		return err
+	}
+	var hole Hole
+	err = holeSet.Take(&hole, id).Error
+	if err != nil {
+		return err
+	}
+	err = hole.Preprocess(c)
+	if err != nil {
+		return err
+	}
+
+	if !hole.AISummaryAvailable {
+		return c.Status(200).JSON(fiber.Map{
+			"code":    2002,
+			"message": "unavailable",
+			"data":    fiber.Map{},
+		})
+	}
+
+	// get floors
+	var floors Floors
+	floorSet, err := floors.MakeQuerySet(&id, nil, nil, c)
+	if err != nil {
+		return err
+	}
+
+	err = floorSet.Find(&floors).Error
+	if err != nil {
+		return err
+	}
+	content := ""
+	if hole.HoleFloor.FirstFloor != nil {
+		content = hole.HoleFloor.FirstFloor.Content
+	}
+
+	summaryFloors := make([]FloorForSummary, len(floors))
+	for i, floor := range floors {
+		summaryFloors[i] = FloorForSummary{
+			ID:        floor.ID,
+			Content:   floor.Content,
+			Anonyname: floor.Anonyname,
+			Ranking:   floor.Ranking,
+			ReplyTo:   floor.ReplyTo,
+		}
+	}
+
+	requestBody := map[string]any{
+		"floors":  summaryFloors,
+		"content": content,
+		"hole_id": hole.ID,
+	}
+
+	requestJSON, err := json.Marshal(requestBody)
+	if err != nil {
+		return err
+	}
+	var response struct {
+		Code    int      `json:"code"`
+		Message string   `json:"message"`
+		Data    struct{} `json:"data"`
+	}
+	log.Info().Str("url", config.Config.AISummaryURL+"/generate_summary")
+	resp, err := http.Post(config.Config.AISummaryURL+"/generate_summary", "application/json", bytes.NewReader(requestJSON))
+	if err != nil {
+		log.Err(err).Msg("AISummary: generate summary from server err")
+		response.Code = 3001
+		response.Message = "service_error"
+		return c.Status(200).JSON(response)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		log.Error().
+			Str("url", config.Config.AISummaryURL+"/generate_summary").
+			Int("status", resp.StatusCode).
+			Str("req_body_base64", base64.StdEncoding.EncodeToString(requestJSON)).
+			Str("resp_body_base64", base64.StdEncoding.EncodeToString(body)).
+			Msg("AISummary: generate summary server error")
+		response.Code = 3001
+		response.Message = "service_error"
+		return c.Status(200).JSON(response)
+	}
+
+	err = json.Unmarshal(body, &response)
+	if err != nil {
+		log.Error().
+			Str("url", config.Config.AISummaryURL+"/generate_summary").
+			Int("status", resp.StatusCode).
+			Str("req_body_base64", base64.StdEncoding.EncodeToString(requestJSON)).
+			Str("resp_body_base64", base64.StdEncoding.EncodeToString(body)).
+			Msg("AISummary: generate summary server error")
+		response.Code = 3001
+		response.Message = "service_error"
+		return c.Status(200).JSON(response)
+	}
+	//create a cache when generate a new summary
+	switch response.Code {
+	case 1000, 1001:
+		var cache Summary
+		cache.Code = 1001
+		err := SetCache("AISummary"+strconv.Itoa(id), cache, 24*time.Hour)
+		if err != nil {
+			log.Err(err).Msg("AISummary: set cache err")
+		}
+
+		response.Code = 1002
+		response.Message = "started"
+	case 1002, 2001, 2002, 3001, 3002:
+
+	default:
+		log.Error().Str("url", config.Config.AISummaryURL+"/generate_summary").
+			Int("status", resp.StatusCode).
+			Str("req_body_base64", base64.StdEncoding.EncodeToString(requestJSON)).
+			Str("resp_body_base64", base64.StdEncoding.EncodeToString(body))
+		response.Code = 3001
+		response.Message = "service_error"
+	}
+
+	c.Set("Content-Type", resp.Header.Get("Content-Type"))
+	return c.Status(200).JSON(response)
+}
+
+func GetFeedback(c *fiber.Ctx) error {
+	return c.Status(200).JSON(fiber.Map{})
 }

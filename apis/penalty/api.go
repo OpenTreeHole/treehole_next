@@ -49,7 +49,7 @@ func BanUser(c *fiber.Ctx) error {
 	}
 
 	// get user
-	user, err := GetUser(c)
+	user, err := GetCurrLoginUser(c)
 	if err != nil {
 		return err
 	}
@@ -151,7 +151,7 @@ func BanUserForever(c *fiber.Ctx) error {
 	}
 
 	// get user
-	user, err := GetUser(c)
+	user, err := GetCurrLoginUser(c)
 	if err != nil {
 		return err
 	}
@@ -211,11 +211,12 @@ func BanUserForever(c *fiber.Ctx) error {
 				EndTime:    time.Now().Add(duration),
 			}
 
-			if user.BanDivision[divisionID] == nil {
-				user.BanDivision[divisionID] = &punishment.EndTime
-			} else {
-				user.BanDivision[divisionID].Add(*punishment.Duration)
-			}
+			user.BanDivision[divisionID] = &punishment.EndTime
+			// if user.BanDivision[divisionID] == nil {
+			// 	user.BanDivision[divisionID] = &punishment.EndTime
+			// } else {
+			// 	*user.BanDivision[divisionID] = user.BanDivision[divisionID].Add(*punishment.Duration)
+			// }
 
 			punishments = append(punishments, punishment)
 		}
@@ -293,7 +294,7 @@ func ListPunishmentsByUserID(c *fiber.Ctx) error {
 		return err
 	}
 
-	currentUser, err := GetUser(c)
+	currentUser, err := GetCurrLoginUser(c)
 	if err != nil {
 		return err
 	}

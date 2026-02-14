@@ -1,10 +1,9 @@
 package tests
 
 import (
+	"github.com/rs/zerolog/log"
 	"strconv"
 	"strings"
-
-	"github.com/rs/zerolog/log"
 
 	"treehole_next/config"
 	. "treehole_next/models"

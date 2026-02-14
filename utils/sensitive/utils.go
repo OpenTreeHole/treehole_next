@@ -92,10 +92,10 @@ func containsUnsafeURL(content string) (bool, string) {
 		if err != nil || parsedURL == nil {
 			return true, matchedURL
 		}
-		checked := slices.ContainsFunc(config.Config.UrlHostnameWhitelist, func(s string) bool {
+		checked := slices.ContainsFunc(config.Config.UrlHostnameBlacklist, func(s string) bool {
 			return strings.HasSuffix(parsedURL.Host, s)
 		})
-		if !checked {
+		if checked {
 			return true, parsedURL.Host
 		}
 	}

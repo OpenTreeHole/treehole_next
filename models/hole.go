@@ -2,8 +2,10 @@ package models
 
 import (
 	"fmt"
-	"golang.org/x/exp/maps"
+	"strconv"
 	"time"
+
+	"golang.org/x/exp/maps"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/opentreehole/go-common"
@@ -37,6 +39,9 @@ type Hole struct {
 	// 锁定帖子，如果锁定则非管理员无法发帖，也无法修改已有发帖
 	Locked bool `json:"locked" gorm:"not null;default:false"`
 
+	// 冻结帖子，如果冻结则发帖不会更新 UpdatedAt
+	Frozen bool `json:"-" gorm:"not null;default:false"`
+
 	Good bool `json:"good" gorm:"not null;default:false"`
 
 	NoPurge bool `json:"no_purge" gorm:"not null;default:false"`
@@ -61,10 +66,17 @@ type Hole struct {
 	// UserSubscriptionHoles
 	UserSubscription Users `json:"-" gorm:"many2many:user_subscription;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 
+	FavoriteCount     int `json:"favorite_count" gorm:"not null;default:0"`
+	SubscriptionCount int `json:"subscription_count" gorm:"not null;default:0"`
+
 	/// generated field
 
 	// 兼容旧版 id
 	HoleID int `json:"hole_id" gorm:"-:all"`
+
+	// 冻结状态，仅管理员可见 true
+	// FrozenFrontend *bool `json:"frozen,omitempty" gorm:"-:all"`
+	FrozenFrontend *bool `json:"frozen" gorm:"-:all"`
 
 	// 返回给前端的楼层列表，包括首楼、尾楼和预加载的前 n 个楼层
 	HoleFloor struct {
@@ -72,6 +84,9 @@ type Hole struct {
 		LastFloor  *Floor `json:"last_floor"`  // 尾楼
 		Floors     Floors `json:"prefetch"`    // 预加载的楼层
 	} `json:"floors" gorm:"-:all"`
+
+	// AI 摘要可用性，仅用于序列化
+	AISummaryAvailable bool `json:"ai_summary_available" gorm:"-"`
 }
 
 func (hole *Hole) GetID() int {
@@ -256,15 +271,64 @@ func (holes Holes) Preprocess(c *fiber.Ctx) error {
 	for _, hole := range holes {
 		hole.SetHoleFloor()
 		floors = append(floors, hole.Floors...)
+		// set ai_summary_available
+		hole.AISummaryAvailable = true
+		for _, tag := range hole.Tags {
+			if len(tag.Name) > 0 && tag.Name[0] == '*' {
+				hole.AISummaryAvailable = false
+				break
+			}
+		}
+		if hole.AISummaryAvailable {
+			err := DB.Transaction(func(tx *gorm.DB) error {
+				query := tx.Model(&Floor{}).Where("hole_id = ?", hole.ID)
+				var count int64
+				var contentSum int64
+				var sensitiveCount int64
 
-		// hide hole if first floor is sensitive
-		//if hole.HoleFloor.FirstFloor.Sensitive() {
-		//	hole.Hidden = true
-		//}
+				err := query.Count(&count).Error
+				if err != nil {
+					return err
+				}
+
+				err = query.Select("COALESCE(SUM(LENGTH(content)), 0)").Scan(&contentSum).Error
+				if err != nil {
+					return err
+				}
+
+				var discard any
+				hole.AISummaryAvailable = count > 15 || contentSum >= 500 || utils.GetCache("AISummary"+strconv.Itoa(hole.ID), &discard)
+
+				if hole.AISummaryAvailable {
+					err = query.Where("is_sensitive = ?", true).Count(&sensitiveCount).Error
+					if err != nil {
+						return err
+					}
+					if sensitiveCount > 0 {
+						hole.AISummaryAvailable = false
+					}
+				}
+				return nil
+			})
+			if err != nil {
+				return err
+			}
+		}
 	}
 	err := floors.Preprocess(c)
 	if err != nil {
 		return err
+	}
+
+	// Set FrozenFrontend field for admin users only
+	// If there's an error getting user info, silently skip (safe default: don't show frozen field)
+	user, err := GetCurrLoginUser(c)
+	if err == nil {
+		for _, hole := range holes {
+			// compatibility for swift client
+			frozenFrontend := user.IsAdmin && hole.Frozen
+			hole.FrozenFrontend = &frozenFrontend
+		}
 	}
 
 	//user, err := GetUser(c)
@@ -307,7 +371,7 @@ func UpdateHoleCache(holes Holes) (err error) {
 }
 
 func MakeHoleQuerySet(c *fiber.Ctx) (*gorm.DB, error) {
-	user, err := GetUser(c)
+	user, err := GetCurrLoginUser(c)
 	if err != nil {
 		return nil, err
 	}
@@ -362,7 +426,7 @@ func (hole *Hole) SetHoleFloor() {
 			hole.HoleFloor.Floors = hole.Floors[0 : holeFloorSize-1]
 		}
 	} else if len(hole.HoleFloor.Floors) != 0 {
-		holeFloorSize := len(hole.Floors)
+		holeFloorSize := len(hole.HoleFloor.Floors)
 
 		hole.HoleFloor.FirstFloor = hole.HoleFloor.Floors[0]
 		hole.HoleFloor.LastFloor = hole.HoleFloor.Floors[holeFloorSize-1]
@@ -489,14 +553,47 @@ func (hole *Hole) HoleHook() {
 			UserID:      config.Config.QQBotUserID,
 			Message:     notifyMessage,
 		})
+		go utils.NotifyFeishu(&utils.FeishuMessage{
+			MsgType: "text",
+			Content: notifyMessage,
+		})
 	}
+
+	tagToGroup := map[string]*int64{
+		"@物理大神": config.Config.QQBotPhysicsGroupID,
+		"@码上辅导": config.Config.QQBotCodingGroupID,
+	}
+
 	for _, tag := range hole.Tags {
-		if tag != nil && tag.Name == "@物理大神" {
-			go utils.NotifyQQ(&utils.BotMessage{
-				MessageType: utils.MessageTypeGroup,
-				GroupID:     config.Config.QQBotGroupID,
-				Message:     notifyMessage,
-			})
+		if tag != nil {
+			if groupID, ok := tagToGroup[tag.Name]; ok {
+				go utils.NotifyQQ(&utils.BotMessage{
+					MessageType: utils.MessageTypeGroup,
+					GroupID:     groupID,
+					Message:     notifyMessage,
+				})
+			}
 		}
+	}
+}
+
+func (hole *Hole) RecalculateStats() {
+	var favoriteCount int64
+	var subscriptionCount int64
+
+	// Recalculate the stats for the hole
+	DB.Model(&UserFavorite{}).Where("hole_id = ?", hole.ID).Count(&favoriteCount)
+	DB.Model(&UserSubscription{}).Where("hole_id = ?", hole.ID).Count(&subscriptionCount)
+
+	hole.FavoriteCount = int(favoriteCount)
+	hole.SubscriptionCount = int(subscriptionCount)
+
+	// Update the hole in the database
+	DB.Save(hole)
+
+	// Update the cache
+	err := utils.SetCache(hole.CacheName(), hole, HoleCacheExpire)
+	if err != nil {
+		return
 	}
 }
