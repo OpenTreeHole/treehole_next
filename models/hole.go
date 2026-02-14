@@ -74,7 +74,7 @@ type Hole struct {
 	// 兼容旧版 id
 	HoleID int `json:"hole_id" gorm:"-:all"`
 
-	// 冻结状态，仅管理员可见
+	// 冻结状态，仅管理员可见 true
 	FrozenFrontend *bool `json:"frozen,omitempty" gorm:"-:all"`
 
 	// 返回给前端的楼层列表，包括首楼、尾楼和预加载的前 n 个楼层
@@ -322,9 +322,10 @@ func (holes Holes) Preprocess(c *fiber.Ctx) error {
 	// Set FrozenFrontend field for admin users only
 	// If there's an error getting user info, silently skip (safe default: don't show frozen field)
 	user, err := GetCurrLoginUser(c)
-	if err == nil && user.IsAdmin {
+	if err == nil {
 		for _, hole := range holes {
-			hole.FrozenFrontend = &hole.Frozen
+			frozenFrontend := user.IsAdmin && hole.Frozen
+			hole.FrozenFrontend = &frozenFrontend
 		}
 	}
 
