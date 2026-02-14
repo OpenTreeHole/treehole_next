@@ -2,6 +2,7 @@ package hole
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -826,7 +827,7 @@ func GenerateSummary(c *fiber.Ctx) error {
 			return c.Status(200).JSON(cachedData)
 		case 1001:
 			// get new summary
-			resp, err := http.Get(config.Config.AISummaryURL + "/get_summary?code=1000&hole_id=" + strconv.Itoa(id))
+			resp, err := http.Get(config.Config.AISummaryURL + "/get_summary?hole_id=" + strconv.Itoa(id))
 			if err != nil {
 				log.Err(err).Msg("AISummary: get summary from server err")
 				return err
@@ -947,8 +948,8 @@ func GenerateSummary(c *fiber.Ctx) error {
 		Message string   `json:"message"`
 		Data    struct{} `json:"data"`
 	}
-
-	resp, err := http.Post(config.Config.AISummaryURL+"/generate_summary?code=1000", "application/json", bytes.NewReader(requestJSON))
+	log.Info().Str("url", config.Config.AISummaryURL+"/generate_summary")
+	resp, err := http.Post(config.Config.AISummaryURL+"/generate_summary", "application/json", bytes.NewReader(requestJSON))
 	if err != nil {
 		log.Err(err).Msg("AISummary: generate summary from server err")
 		response.Code = 3001
@@ -962,9 +963,29 @@ func GenerateSummary(c *fiber.Ctx) error {
 		return err
 	}
 
+	if resp.StatusCode != http.StatusOK {
+		log.Error().
+			Str("url", config.Config.AISummaryURL+"/generate_summary").
+			Int("status", resp.StatusCode).
+			Str("req_body_base64", base64.StdEncoding.EncodeToString(requestJSON)).
+			Str("resp_body_base64", base64.StdEncoding.EncodeToString(body)).
+			Msg("AISummary: generate summary server error")
+		response.Code = 3001
+		response.Message = "service_error"
+		return c.Status(200).JSON(response)
+	}
+
 	err = json.Unmarshal(body, &response)
 	if err != nil {
-		return err
+		log.Error().
+			Str("url", config.Config.AISummaryURL+"/generate_summary").
+			Int("status", resp.StatusCode).
+			Str("req_body_base64", base64.StdEncoding.EncodeToString(requestJSON)).
+			Str("resp_body_base64", base64.StdEncoding.EncodeToString(body)).
+			Msg("AISummary: generate summary server error")
+		response.Code = 3001
+		response.Message = "service_error"
+		return c.Status(200).JSON(response)
 	}
 	//create a cache when generate a new summary
 	switch response.Code {
@@ -981,6 +1002,10 @@ func GenerateSummary(c *fiber.Ctx) error {
 	case 1002, 2001, 2002, 3001, 3002:
 
 	default:
+		log.Error().Str("url", config.Config.AISummaryURL+"/generate_summary").
+			Int("status", resp.StatusCode).
+			Str("req_body_base64", base64.StdEncoding.EncodeToString(requestJSON)).
+			Str("resp_body_base64", base64.StdEncoding.EncodeToString(body))
 		response.Code = 3001
 		response.Message = "service_error"
 	}
