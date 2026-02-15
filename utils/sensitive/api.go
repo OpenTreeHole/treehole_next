@@ -16,6 +16,7 @@ import (
 	"treehole_next/config"
 	"treehole_next/utils"
 
+	"github.com/rs/zerolog/log"
 	"github.com/yidun/yidun-golang-sdk/yidun/service/antispam/image/v5"
 	"github.com/yidun/yidun-golang-sdk/yidun/service/antispam/image/v5/check"
 	"github.com/yidun/yidun-golang-sdk/yidun/service/antispam/label"
@@ -49,6 +50,30 @@ type ResponseForCheck struct {
 var httpClient = &http.Client{}
 
 func CheckSensitive(params ParamsForCheck) (resp *ResponseForCheck, err error) {
+	// log the request and response to detect time usage
+	start := time.Now()
+	contentOriginal := params.Content
+	defer func() {
+		truncate := func(s string, limit int) string {
+			if r := []rune(s); len(r) > limit {
+				return string(r[:limit]) + "..."
+			}
+			return s
+		}
+		ev := log.Info().
+			Dur("duration", time.Since(start)).
+			Str("type", params.TypeName).
+			Str("content_original", truncate(contentOriginal, 200)).
+			Str("content", truncate(params.Content, 200))
+		if resp != nil {
+			ev = ev.Bool("pass", resp.Pass).Str("detail", resp.Detail).Interface("labels", resp.Labels)
+		}
+		if err != nil {
+			ev = ev.Err(err)
+		}
+		ev.Msg("CheckSensitive completed")
+	}()
+
 	images, clearContent, err := findImagesInMarkdownContent(params.Content)
 	if err != nil {
 		return nil, err
