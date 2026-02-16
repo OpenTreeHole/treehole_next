@@ -76,7 +76,9 @@ type Hole struct {
 
 	// 冻结状态，仅管理员可见 true
 	// FrozenFrontend *bool `json:"frozen,omitempty" gorm:"-:all"`
-	FrozenFrontend *bool `json:"frozen" gorm:"-:all"`
+	// FrozenFrontend *bool `json:"frozen" gorm:"-:all"`
+	// Compatibility for Swift client
+	FrozenFrontend bool `json:"frozen" gorm:"-:all"`
 
 	// 返回给前端的楼层列表，包括首楼、尾楼和预加载的前 n 个楼层
 	HoleFloor struct {
@@ -326,8 +328,7 @@ func (holes Holes) Preprocess(c *fiber.Ctx) error {
 	if err == nil {
 		for _, hole := range holes {
 			// compatibility for swift client
-			frozenFrontend := user.IsAdmin && hole.Frozen
-			hole.FrozenFrontend = &frozenFrontend
+			hole.FrozenFrontend = user.IsAdmin && hole.Frozen
 		}
 	}
 

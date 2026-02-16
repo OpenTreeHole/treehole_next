@@ -513,6 +513,8 @@ definitions:
         description: |-
           冻结状态，仅管理员可见 true
           FrozenFrontend *bool `json:"frozen,omitempty" gorm:"-:all"`
+          FrozenFrontend *bool `json:"frozen" gorm:"-:all"`
+          Compatibility for Swift client
         type: boolean
       good:
         type: boolean

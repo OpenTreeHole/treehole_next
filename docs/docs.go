@@ -3969,7 +3969,7 @@ const docTemplate = `{
                     }
                 },
                 "frozen": {
-                    "description": "冻结状态，仅管理员可见 true\nFrozenFrontend *bool ` + "`" + `json:\"frozen,omitempty\" gorm:\"-:all\"` + "`" + `",
+                    "description": "冻结状态，仅管理员可见 true\nFrozenFrontend *bool ` + "`" + `json:\"frozen,omitempty\" gorm:\"-:all\"` + "`" + `\nFrozenFrontend *bool ` + "`" + `json:\"frozen\" gorm:\"-:all\"` + "`" + `\nCompatibility for Swift client",
                     "type": "boolean"
                 },
                 "good": {
