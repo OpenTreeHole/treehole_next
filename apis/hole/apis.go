@@ -1159,7 +1159,10 @@ func GenerateSummary(c *fiber.Ctx) error {
 		if err != nil {
 			log.Err(err).Msg("AISummary: set cache err")
 		}
-
+		var c Summary
+		GetCache("AISummary"+strconv.Itoa(id), &c)
+		log.Info().
+			Str("cache", strconv.Itoa(id))
 		response.Code = 1002
 		response.Message = "started"
 	case 1002, 2001, 2002, 3001, 3002:
