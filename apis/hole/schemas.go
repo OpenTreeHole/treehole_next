@@ -166,4 +166,16 @@ type FloorForSummary struct {
 	Ranking int `json:"ranking"`
 
 	ReplyTo int `json:"reply_to"`
+
+	Like int `json:"like"`
+
+	Dislike int `json:"dislike"`
+
+	FloorID int `json:"floor_id"`
+}
+
+type Response struct {
+	Code    int      `json:"code"`
+	Message string   `json:"message"`
+	Data    struct{} `json:"data"`
 }

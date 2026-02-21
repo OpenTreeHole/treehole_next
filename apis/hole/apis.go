@@ -1063,6 +1063,9 @@ func GenerateSummary(c *fiber.Ctx) error {
 			Anonyname: floor.Anonyname,
 			Ranking:   floor.Ranking,
 			ReplyTo:   floor.ReplyTo,
+			Like:      floor.Like,
+			Dislike:   floor.Dislike,
+			FloorID:   floor.FloorID,
 		}
 	}
 
@@ -1076,11 +1079,7 @@ func GenerateSummary(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	var response struct {
-		Code    int      `json:"code"`
-		Message string   `json:"message"`
-		Data    struct{} `json:"data"`
-	}
+	var response Response
 	log.Info().Str("url", config.Config.AISummaryURL+"/generate_summary")
 	resp, err := http.Post(config.Config.AISummaryURL+"/generate_summary", "application/json", bytes.NewReader(requestJSON))
 	if err != nil {
