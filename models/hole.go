@@ -40,7 +40,7 @@ type Hole struct {
 	Locked bool `json:"locked" gorm:"not null;default:false"`
 
 	// 冻结帖子，如果冻结则发帖不会更新 UpdatedAt
-	Frozen bool `json:"frozen" gorm:"not null;default:false"`
+	Frozen bool `json:"-" gorm:"not null;default:false"`
 
 	Good bool `json:"good" gorm:"not null;default:false"`
 
@@ -73,6 +73,11 @@ type Hole struct {
 
 	// 兼容旧版 id
 	HoleID int `json:"hole_id" gorm:"-:all"`
+
+	// 冻结状态，仅管理员可见 true
+	// FrozenFrontend *bool `json:"frozen,omitempty" gorm:"-:all"`
+	FrozenFrontend *bool `json:"frozen" gorm:"-:all"`
+
 	// 返回给前端的楼层列表，包括首楼、尾楼和预加载的前 n 个楼层
 	HoleFloor struct {
 		FirstFloor *Floor `json:"first_floor"` // 首楼
@@ -313,6 +318,17 @@ func (holes Holes) Preprocess(c *fiber.Ctx) error {
 	err := floors.Preprocess(c)
 	if err != nil {
 		return err
+	}
+
+	// Set FrozenFrontend field for admin users only
+	// If there's an error getting user info, silently skip (safe default: don't show frozen field)
+	user, err := GetCurrLoginUser(c)
+	if err == nil {
+		for _, hole := range holes {
+			// compatibility for swift client
+			frozenFrontend := user.IsAdmin && hole.Frozen
+			hole.FrozenFrontend = &frozenFrontend
+		}
 	}
 
 	//user, err := GetUser(c)

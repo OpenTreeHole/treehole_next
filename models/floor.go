@@ -141,7 +141,7 @@ func MakeFloorQuerySet(_ *fiber.Ctx) (*gorm.DB, error) {
 // - c: context of the request.
 //
 // It returns a pointer to a gorm.DB instance representing the query set and an error if any occurred during the creation of the query set.
-func (floors Floors) MakeQuerySet(holeID *int, offset, size *int, c *fiber.Ctx) (*gorm.DB, error) {
+func (floors Floors) MakeQuerySet(holeID, offset, size *int, c *fiber.Ctx) (*gorm.DB, error) {
 	querySet, err := MakeFloorQuerySet(c)
 	if err != nil {
 		return nil, err
@@ -260,15 +260,12 @@ func (floor *Floor) SetDefaults(c *fiber.Ctx) (err error) {
 			floor.SpecialTag = "sensitive"
 		}
 		if !floor.Deleted {
-			if floor.IsActualSensitive != nil && *floor.IsActualSensitive {
-				// deprecated, deleted already
-				floor.Content = "该内容因违反社区规范被删除"
-				floor.Deleted = true
-			} else {
-				floor.Content = "该内容正在审核中"
+			msg := "该内容正在审核中"
+			if !floor.IsMe {
+				floor.Content = msg
 			}
-			floor.FoldFrontend = []string{floor.Content}
-			floor.Fold = floor.Content
+			floor.FoldFrontend = []string{msg}
+			floor.Fold = msg
 		}
 	}
 	if !user.IsAdmin {
