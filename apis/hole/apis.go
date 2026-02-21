@@ -954,6 +954,13 @@ func GenerateSummary(c *fiber.Ctx) error {
 
 	id, _ := c.ParamsInt("id")
 	var cachedData Summary
+	var errCode2Message = map[int]string{
+		2001: "not_found",
+		2002: "unavailable",
+		3001: "service_error",
+		3002: "error",
+	}
+	var limit = 1000
 	if GetCache("AISummary"+strconv.Itoa(id), &cachedData) {
 		log.Info().Int("hole_id", id).Int("code", cachedData.Code).Msg("AISummary: get summary from cache")
 		switch cachedData.Code {
@@ -976,9 +983,6 @@ func GenerateSummary(c *fiber.Ctx) error {
 			if err != nil {
 				return err
 			}
-			if len(cachedData.Data.Interactions) > 5 {
-				cachedData.Data.Interactions = cachedData.Data.Interactions[:5]
-			}
 
 			// renew cache
 			if cachedData.Code == 1000 || cachedData.Code == 1001 {
@@ -988,10 +992,17 @@ func GenerateSummary(c *fiber.Ctx) error {
 				//	TypeName: sensitive.TypeFloor,
 				//})
 				if true {
+					if len(cachedData.Data.Interactions) > 5 {
+						cachedData.Data.Interactions = cachedData.Data.Interactions[:5]
+					}
 					// set default interaction_type
 					for i := range cachedData.Data.Interactions {
 						if cachedData.Data.Interactions[i].InteractionType == "" {
 							cachedData.Data.Interactions[i].InteractionType = "reply"
+						}
+						contentRunes := []rune(cachedData.Data.Interactions[i].Content)
+						if len(contentRunes) > 15 {
+							cachedData.Data.Interactions[i].Content = string(contentRunes[:15])
 						}
 					}
 					err = SetCache("AISummary"+strconv.Itoa(id), cachedData, 24*time.Hour)
@@ -1086,7 +1097,7 @@ func GenerateSummary(c *fiber.Ctx) error {
 	if err != nil {
 		log.Err(err).Msg("AISummary: generate summary from server err")
 		response.Code = 3001
-		response.Message = "service_error"
+		response.Message = errCode2Message[response.Code]
 		return c.Status(200).JSON(response)
 	}
 	defer resp.Body.Close()
@@ -1100,11 +1111,21 @@ func GenerateSummary(c *fiber.Ctx) error {
 		log.Error().
 			Str("url", config.Config.AISummaryURL+"/generate_summary").
 			Int("status", resp.StatusCode).
-			Str("req_body_base64", base64.StdEncoding.EncodeToString(requestJSON)).
-			Str("resp_body_base64", base64.StdEncoding.EncodeToString(body)).
+			Str("req_body_base64", func() string {
+				if len(requestJSON) > limit {
+					return base64.StdEncoding.EncodeToString(requestJSON[:limit])
+				}
+				return base64.StdEncoding.EncodeToString(requestJSON)
+			}()).
+			Str("resp_body_base64", func() string {
+				if len(body) > limit {
+					return base64.StdEncoding.EncodeToString(body[:limit])
+				}
+				return base64.StdEncoding.EncodeToString(body)
+			}()).
 			Msg("AISummary: generate summary server error")
 		response.Code = 3001
-		response.Message = "service_error"
+		response.Message = errCode2Message[response.Code]
 		return c.Status(200).JSON(response)
 	}
 
@@ -1113,11 +1134,21 @@ func GenerateSummary(c *fiber.Ctx) error {
 		log.Error().
 			Str("url", config.Config.AISummaryURL+"/generate_summary").
 			Int("status", resp.StatusCode).
-			Str("req_body_base64", base64.StdEncoding.EncodeToString(requestJSON)).
-			Str("resp_body_base64", base64.StdEncoding.EncodeToString(body)).
+			Str("req_body_base64", func() string {
+				if len(requestJSON) > limit {
+					return base64.StdEncoding.EncodeToString(requestJSON[:limit])
+				}
+				return base64.StdEncoding.EncodeToString(requestJSON)
+			}()).
+			Str("resp_body_base64", func() string {
+				if len(body) > limit {
+					return base64.StdEncoding.EncodeToString(body[:limit])
+				}
+				return base64.StdEncoding.EncodeToString(body)
+			}()).
 			Msg("AISummary: generate summary server error")
-		response.Code = 3001
-		response.Message = "service_error"
+		response.Code = 3002
+		response.Message = errCode2Message[response.Code]
 		return c.Status(200).JSON(response)
 	}
 	//create a cache when generate a new summary
@@ -1133,14 +1164,19 @@ func GenerateSummary(c *fiber.Ctx) error {
 		response.Code = 1002
 		response.Message = "started"
 	case 1002, 2001, 2002, 3001, 3002:
-
+		response.Message = errCode2Message[response.Code]
 	default:
 		log.Error().Str("url", config.Config.AISummaryURL+"/generate_summary").
 			Int("status", resp.StatusCode).
-			Str("req_body_base64", base64.StdEncoding.EncodeToString(requestJSON)).
+			Str("req_body_base64", func() string {
+				if len(requestJSON) > limit {
+					return base64.StdEncoding.EncodeToString(requestJSON[:limit])
+				}
+				return base64.StdEncoding.EncodeToString(requestJSON)
+			}()).
 			Str("resp_body_base64", base64.StdEncoding.EncodeToString(body))
-		response.Code = 3001
-		response.Message = "service_error"
+		response.Code = 3002
+		response.Message = errCode2Message[response.Code]
 	}
 
 	c.Set("Content-Type", resp.Header.Get("Content-Type"))
