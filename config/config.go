@@ -55,7 +55,7 @@ var Config struct {
 	QQBotUrl                     *string  `env:"QQ_BOT_URL"`
 	FeishuBotUrl                 *string  `env:"FEISHU_BOT_URL"`
 	AdminOnlyTagIds              []int    `env:"ADMIN_ONLY_TAG_IDS"`
-	AISummaryURL                 string   `env:"AI_SUMMARY_URL" envDefault:"http://127.0.0.1:8080/internal"`
+	AISummaryURL                 string   `env:"AI_SUMMARY_URL" envDefault:"http://localhost:8080/internal"`
 }
 
 var DynamicConfig struct {
