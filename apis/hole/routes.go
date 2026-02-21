@@ -7,7 +7,11 @@ import (
 )
 
 func RegisterRoutes(app fiber.Router) {
+	// // order: match first route
+	// app.Get("/divisions/1/holes", ListHomePage)
+	app.Get("/holes/_homepage", ListHomePage)
 	app.Get("/divisions/:id<int>/holes", ListHolesByDivision)
+	app.Get("/divisions/:id<int>/holes/_sfw", ListSFWHolesByDivision)
 	app.Get("/tags/:name/holes", ListHolesByTag)
 	app.Get("/users/me/holes", ListHolesByMe)
 	app.Get("/holes/:id<int>", GetHole)
