@@ -955,6 +955,7 @@ func GenerateSummary(c *fiber.Ctx) error {
 	id, _ := c.ParamsInt("id")
 	var cachedData Summary
 	if GetCache("AISummary"+strconv.Itoa(id), &cachedData) {
+		log.Info().Int("hole_id", id).Int("code", cachedData.Code).Msg("AISummary: get summary from cache")
 		switch cachedData.Code {
 		case 1000:
 			return c.Status(200).JSON(cachedData)
