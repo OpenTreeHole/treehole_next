@@ -71,9 +71,13 @@ func SetCache(key string, value any, expiration time.Duration) error {
 func GetCache(key string, value any) bool {
 	data, err := Cache.Get(context.Background(), key)
 	if err != nil {
+		log.Warn().Err(err).Str("key", key).Msg("get cache failed")
 		return false
 	}
 	err = json.Unmarshal(data, value)
+	if err != nil {
+		log.Warn().Err(err).Str("key", key).Str("data", string(data)).Msg("unmarshal cache failed")
+	}
 	return err == nil
 }
 
