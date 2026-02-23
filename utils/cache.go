@@ -2,6 +2,7 @@ package utils
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/eko/gocache/lib/v4/cache"
@@ -11,6 +12,7 @@ import (
 	"github.com/goccy/go-json"
 	gocache "github.com/patrickmn/go-cache"
 	"github.com/redis/go-redis/v9"
+	"github.com/rs/zerolog/log"
 
 	"treehole_next/config"
 )
@@ -18,15 +20,39 @@ import (
 var Cache *cache.Cache[[]byte]
 
 func InitCache() {
-	if config.Config.RedisURL != "" {
-		redisStore := redis_store.NewRedis(redis.NewClient(&redis.Options{
-			Addr: config.Config.RedisURL,
-		}))
-		Cache = cache.New[[]byte](redisStore)
-	} else {
-		gocacheStore := gocache_store.NewGoCache(gocache.New(5*time.Minute, 10*time.Minute))
-		Cache = cache.New[[]byte](gocacheStore)
+	if config.Config.RedisURL == "" {
+		useGoCache()
+		return
 	}
+	redisClient, err := newRedisClient(config.Config.RedisURL)
+	if err != nil {
+		log.Warn().Err(err).Str("redis_url", config.Config.RedisURL).Msg("redis init failed, fallback to go-cache")
+		useGoCache()
+		return
+	}
+	if err := redisClient.Ping(context.Background()).Err(); err != nil {
+		_ = redisClient.Close()
+		log.Warn().Err(err).Str("redis_url", config.Config.RedisURL).Msg("redis ping failed, fallback to go-cache")
+		useGoCache()
+		return
+	}
+	Cache = cache.New[[]byte](redis_store.NewRedis(redisClient))
+}
+
+func newRedisClient(redisURL string) (*redis.Client, error) {
+	if strings.Contains(redisURL, "://") {
+		opt, err := redis.ParseURL(redisURL)
+		if err != nil {
+			return nil, err
+		}
+		return redis.NewClient(opt), nil
+	}
+	return redis.NewClient(&redis.Options{Addr: redisURL}), nil
+}
+
+func useGoCache() {
+	gocacheStore := gocache_store.NewGoCache(gocache.New(5*time.Minute, 10*time.Minute))
+	Cache = cache.New[[]byte](gocacheStore)
 }
 
 const maxDuration time.Duration = 1<<63 - 1
