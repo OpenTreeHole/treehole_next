@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"bytes"
 	"context"
 	"strings"
 	"time"
@@ -17,7 +18,7 @@ import (
 	"treehole_next/config"
 )
 
-var Cache *cache.Cache[[]byte]
+var Cache *cache.Cache[any]
 
 func InitCache() {
 	if config.Config.RedisURL == "" {
@@ -36,7 +37,7 @@ func InitCache() {
 		useGoCache()
 		return
 	}
-	Cache = cache.New[[]byte](redis_store.NewRedis(redisClient))
+	Cache = cache.New[any](redis_store.NewRedis(redisClient))
 }
 
 func newRedisClient(redisURL string) (*redis.Client, error) {
@@ -52,7 +53,7 @@ func newRedisClient(redisURL string) (*redis.Client, error) {
 
 func useGoCache() {
 	gocacheStore := gocache_store.NewGoCache(gocache.New(5*time.Minute, 10*time.Minute))
-	Cache = cache.New[[]byte](gocacheStore)
+	Cache = cache.New[any](gocacheStore)
 }
 
 const maxDuration time.Duration = 1<<63 - 1
@@ -68,10 +69,28 @@ func SetCache(key string, value any, expiration time.Duration) error {
 	return Cache.Set(context.Background(), key, data, store.WithExpiration(expiration))
 }
 
+// GetCache gets a value from cache by key and unmarshals it into value (must be a pointer).
+// It supports both Redis store (returns string) and go-cache store (returns []byte).
+// Returns true if the key exists and JSON unmarshal succeeds, false otherwise.
 func GetCache(key string, value any) bool {
-	data, err := Cache.Get(context.Background(), key)
+	raw, err := Cache.Get(context.Background(), key)
 	if err != nil {
-		log.Warn().Err(err).Str("key", key).Msg("get cache failed")
+		return false
+	}
+	// Normalize to []byte: Redis store returns string, go-cache returns []byte.
+	var data []byte
+	switch v := raw.(type) {
+	case []byte:
+		data = v
+	case string:
+		data = []byte(v)
+	default:
+		log.Warn().Str("key", key).Msg("cache value type not []byte or string")
+		return false
+	}
+	// Strip leading null bytes to avoid "invalid character '\\u0000'" from legacy or cross-app data.
+	data = bytes.TrimLeft(data, "\x00")
+	if len(data) == 0 {
 		return false
 	}
 	err = json.Unmarshal(data, value)
