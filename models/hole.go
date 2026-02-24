@@ -252,13 +252,15 @@ func (holes Holes) Preprocess(c *fiber.Ctx) error {
 	notInCache := make(Holes, 0, len(holes))
 
 	for _, hole := range holes {
-		cachedHole := new(Hole)
-		ok := utils.GetCache(hole.CacheName(), &cachedHole)
-		if !ok {
-			notInCache = append(notInCache, hole)
-		} else {
-			*hole = *cachedHole
-		}
+		// 禁用 hole cache：统一视为不在缓存中，强制走后续 UpdateHoleCache 加载逻辑
+		//cachedHole := new(Hole)
+		//ok := utils.GetCache(hole.CacheName(), &cachedHole)
+		//if !ok {
+		//	notInCache = append(notInCache, hole)
+		//} else {
+		//	*hole = *cachedHole
+		//}
+		notInCache = append(notInCache, hole)
 	}
 
 	if len(notInCache) > 0 {
@@ -423,8 +425,14 @@ func (hole *Hole) SetHoleFloor() {
 			hole.HoleFloor.Floors = hole.Floors[0 : holeFloorSize-1]
 		}
 	} else if len(hole.HoleFloor.Floors) != 0 {
-		// 来自 cache：hole.Floors 为 json:"-" 未反序列化故为空，HoleFloor 已有正确的 FirstFloor/LastFloor/prefetch。
-		// 仅补全 hole.Floors 供后续 floors.Preprocess 使用；不改写 FirstFloor/LastFloor，以免丢失缓存中的真实尾楼。
+		// 来自 cache：hole.Floors 为 json:"-" 未反序列化故为空，HoleFloor 已有正确的 prefetch，而 FirstFloor/LastFloor 会多一些错误的字段，额外处理很麻烦
+		// Don't use hole cache and never run here expectedly because of error FirstFloor/LastFloor
+		// "mention": null,
+		// "floor_id": 0,
+		// "fold": null,
+		// any more fields?
+		hole.HoleFloor.FirstFloor = hole.HoleFloor.Floors[0]
+		hole.HoleFloor.LastFloor = hole.HoleFloor.Floors[len(hole.HoleFloor.Floors)-1]
 		hole.Floors = hole.HoleFloor.Floors
 	}
 
