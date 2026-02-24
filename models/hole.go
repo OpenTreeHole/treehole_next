@@ -423,14 +423,8 @@ func (hole *Hole) SetHoleFloor() {
 			hole.HoleFloor.Floors = hole.Floors[0 : holeFloorSize-1]
 		}
 	} else if len(hole.HoleFloor.Floors) != 0 {
-		// 来自 cache：Floors 为 json:"-" 未反序列化故为空，HoleFloor 已有正确的 FirstFloor/LastFloor/prefetch，
-		// 仅补全 hole.Floors 供后续 Preprocess 使用，不要用 prefetch[len-1] 覆盖 LastFloor。
-		if hole.HoleFloor.FirstFloor == nil {
-			hole.HoleFloor.FirstFloor = hole.HoleFloor.Floors[0]
-		}
-		if hole.HoleFloor.LastFloor == nil {
-			hole.HoleFloor.LastFloor = hole.HoleFloor.Floors[len(hole.HoleFloor.Floors)-1]
-		}
+		// 来自 cache：hole.Floors 为 json:"-" 未反序列化故为空，HoleFloor 已有正确的 FirstFloor/LastFloor/prefetch。
+		// 仅补全 hole.Floors 供后续 floors.Preprocess 使用；不改写 FirstFloor/LastFloor，以免丢失缓存中的真实尾楼。
 		hole.Floors = hole.HoleFloor.Floors
 	}
 
