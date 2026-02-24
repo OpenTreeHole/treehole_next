@@ -1005,6 +1005,13 @@ func GenerateSummary(c *fiber.Ctx) error {
 							cachedData.Data.Interactions[i].Content = string(contentRunes[:15])
 						}
 					}
+					if cachedData.Data.HoleID != id && cachedData.Data.HoleID != 0 {
+						log.Error().
+							Int("hole_id", id).
+							Int("ai_server_return_id", cachedData.Data.HoleID).
+							Msg("AISummary: hole id error")
+						cachedData.Data.HoleID = id
+					}
 					err = SetCache("AISummary"+strconv.Itoa(id), cachedData, 24*time.Hour)
 					if err != nil {
 						log.Err(err).Msg("AISummary: set cache err")
@@ -1092,7 +1099,6 @@ func GenerateSummary(c *fiber.Ctx) error {
 		return err
 	}
 	var response Response
-	log.Info().Str("url", config.Config.AISummaryURL+"/generate_summary")
 	resp, err := http.Post(config.Config.AISummaryURL+"/generate_summary", "application/json", bytes.NewReader(requestJSON))
 	if err != nil {
 		log.Err(err).Msg("AISummary: generate summary from server err")
@@ -1160,10 +1166,6 @@ func GenerateSummary(c *fiber.Ctx) error {
 		if err != nil {
 			log.Err(err).Msg("AISummary: set cache err")
 		}
-		var c Summary
-		GetCache("AISummary"+strconv.Itoa(id), &c)
-		log.Info().
-			Str("cache", strconv.Itoa(id))
 		response.Code = 1002
 		response.Message = "started"
 	case 1002, 2001, 2002, 3001, 3002:
@@ -1177,7 +1179,8 @@ func GenerateSummary(c *fiber.Ctx) error {
 				}
 				return base64.StdEncoding.EncodeToString(requestJSON)
 			}()).
-			Str("resp_body_base64", base64.StdEncoding.EncodeToString(body))
+			Str("resp_body_base64", base64.StdEncoding.EncodeToString(body)).
+			Msg("AISummary: generate summary server error")
 		response.Code = 3002
 		response.Message = errCode2Message[response.Code]
 	}
