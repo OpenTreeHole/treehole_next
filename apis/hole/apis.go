@@ -984,7 +984,6 @@ func GenerateSummary(c *fiber.Ctx) error {
 			"data":    fiber.Map{},
 		})
 	}
-	println(fmt.Sprintf("AISummary_%d_v%d", id, hole.Reply-hole.Reply%config.Config.SummarySteps))
 	if forceRefresh {
 		err := DeleteCache(fmt.Sprintf("AISummary_%d_v%d", id, hole.Reply-hole.Reply%config.Config.SummarySteps))
 		if err != nil {
