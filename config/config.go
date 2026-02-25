@@ -56,6 +56,10 @@ var Config struct {
 	FeishuBotUrl                 *string  `env:"FEISHU_BOT_URL"`
 	AdminOnlyTagIds              []int    `env:"ADMIN_ONLY_TAG_IDS"`
 	AISummaryURL                 string   `env:"AI_SUMMARY_URL" envDefault:"http://localhost:8080/internal"`
+	SummaryFloorLimit            int      `env:"SUMMARY_FLOOR_LIMIT" envDefault:"15"`
+	SummaryContentLimit          int64    `env:"SUMMARY_CONTENT_LIMIT" envDefault:"500"`
+	SummarySteps                 int      `env:"SUMMARY_STEPS" envDefault:"5"`
+	SummaryLogLimit              int      `env:"SUMMARY_LOG_LIMIT" envDefault:"1000"`
 }
 
 var DynamicConfig struct {
