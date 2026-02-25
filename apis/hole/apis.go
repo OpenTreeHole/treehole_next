@@ -953,6 +953,7 @@ func DeleteHole(c *fiber.Ctx) error {
 func GenerateSummary(c *fiber.Ctx) error {
 
 	id, _ := c.ParamsInt("id")
+	forceRefresh := c.QueryBool("force_refresh")
 	var cachedData Summary
 	var errCode2Message = map[int]string{
 		2001: "not_found",
@@ -960,9 +961,37 @@ func GenerateSummary(c *fiber.Ctx) error {
 		3001: "service_error",
 		3002: "error",
 	}
-	var limit = 1000
-	if GetCache("AISummary"+strconv.Itoa(id), &cachedData) {
-		log.Info().Int("hole_id", id).Int("code", cachedData.Code).Msg("AISummary: get summary from cache")
+	var response Response
+	// get hole
+	holeSet, err := MakeHoleQuerySet(c)
+	if err != nil {
+		return err
+	}
+	var hole Hole
+	err = holeSet.Take(&hole, id).Error
+	if err != nil {
+		return err
+	}
+	err = hole.Preprocess(c)
+	if err != nil {
+		return err
+	}
+
+	if !hole.AISummaryAvailable {
+		return c.Status(200).JSON(fiber.Map{
+			"code":    2002,
+			"message": "unavailable",
+			"data":    fiber.Map{},
+		})
+	}
+	if forceRefresh {
+		err := DeleteCache(fmt.Sprintf("AISummary_%d_v%d", id, hole.Reply-hole.Reply%config.Config.SummarySteps))
+		if err != nil {
+			log.Err(err).Msg("AISummary: delete cache err")
+		}
+	}
+	if GetCache(fmt.Sprintf("AISummary_%d_v%d", id, hole.Reply-hole.Reply%config.Config.SummarySteps), &cachedData) {
+
 		switch cachedData.Code {
 		case 1000:
 			return c.Status(200).JSON(cachedData)
@@ -970,20 +999,24 @@ func GenerateSummary(c *fiber.Ctx) error {
 			// get new summary
 			resp, err := http.Get(config.Config.AISummaryURL + "/get_summary?hole_id=" + strconv.Itoa(id))
 			if err != nil {
-				log.Err(err).Msg("AISummary: get summary from server err")
-				return err
+				response.Code = 3001
+				response.Message = errCode2Message[response.Code]
+				return c.Status(200).JSON(response)
 			}
 			defer resp.Body.Close()
-
 			body, err := io.ReadAll(resp.Body)
 			if err != nil {
-				return err
-			}
-			err = json.Unmarshal(body, &cachedData)
-			if err != nil {
-				return err
+				response.Code = 3001
+				response.Message = errCode2Message[response.Code]
+				return c.Status(200).JSON(response)
 			}
 
+			err = json.Unmarshal(body, &cachedData)
+			if err != nil {
+				response.Code = 3001
+				response.Message = errCode2Message[response.Code]
+				return c.Status(200).JSON(response)
+			}
 			// renew cache
 			if cachedData.Code == 1000 || cachedData.Code == 1001 {
 				//sensitiveCheckResp, err := sensitive.CheckSensitive(sensitive.ParamsForCheck{
@@ -1012,20 +1045,20 @@ func GenerateSummary(c *fiber.Ctx) error {
 							Msg("AISummary: hole id error")
 						cachedData.Data.HoleID = id
 					}
-					err = SetCache("AISummary"+strconv.Itoa(id), cachedData, 24*time.Hour)
+					err = SetCache(fmt.Sprintf("AISummary_%d_v%d", id, hole.Reply-hole.Reply%config.Config.SummarySteps), cachedData, 24*time.Hour)
 					if err != nil {
 						log.Err(err).Msg("AISummary: set cache err")
 					}
 				}
+				return c.Status(200).JSON(cachedData)
 
 			} else {
-				err := DeleteCache("AISummary" + strconv.Itoa(id))
+				err := DeleteCache(fmt.Sprintf("AISummary_%d_v%d", id, hole.Reply-hole.Reply%config.Config.SummarySteps))
 				if err != nil {
 					log.Err(err).Msg("AISummary: delete cache err")
 				}
 			}
 
-			return c.Status(200).JSON(cachedData)
 		default:
 			err := DeleteCache("AISummary" + strconv.Itoa(id))
 			if err != nil {
@@ -1034,29 +1067,6 @@ func GenerateSummary(c *fiber.Ctx) error {
 		}
 	}
 	// if no cache or the data of cache is invalid, generate a new summary
-
-	// get hole
-	holeSet, err := MakeHoleQuerySet(c)
-	if err != nil {
-		return err
-	}
-	var hole Hole
-	err = holeSet.Take(&hole, id).Error
-	if err != nil {
-		return err
-	}
-	err = hole.Preprocess(c)
-	if err != nil {
-		return err
-	}
-
-	if !hole.AISummaryAvailable {
-		return c.Status(200).JSON(fiber.Map{
-			"code":    2002,
-			"message": "unavailable",
-			"data":    fiber.Map{},
-		})
-	}
 
 	// get floors
 	var floors Floors
@@ -1098,7 +1108,7 @@ func GenerateSummary(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	var response Response
+
 	resp, err := http.Post(config.Config.AISummaryURL+"/generate_summary", "application/json", bytes.NewReader(requestJSON))
 	if err != nil {
 		log.Err(err).Msg("AISummary: generate summary from server err")
@@ -1110,7 +1120,9 @@ func GenerateSummary(c *fiber.Ctx) error {
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return err
+		response.Code = 3001
+		response.Message = errCode2Message[response.Code]
+		return c.Status(200).JSON(response)
 	}
 
 	if resp.StatusCode != http.StatusOK {
@@ -1118,14 +1130,14 @@ func GenerateSummary(c *fiber.Ctx) error {
 			Str("url", config.Config.AISummaryURL+"/generate_summary").
 			Int("status", resp.StatusCode).
 			Str("req_body_base64", func() string {
-				if len(requestJSON) > limit {
-					return base64.StdEncoding.EncodeToString(requestJSON[:limit])
+				if len(requestJSON) > config.Config.SummaryLogLimit {
+					return base64.StdEncoding.EncodeToString(requestJSON[:config.Config.SummaryLogLimit])
 				}
 				return base64.StdEncoding.EncodeToString(requestJSON)
 			}()).
 			Str("resp_body_base64", func() string {
-				if len(body) > limit {
-					return base64.StdEncoding.EncodeToString(body[:limit])
+				if len(body) > config.Config.SummaryLogLimit {
+					return base64.StdEncoding.EncodeToString(body[:config.Config.SummaryLogLimit])
 				}
 				return base64.StdEncoding.EncodeToString(body)
 			}()).
@@ -1141,14 +1153,14 @@ func GenerateSummary(c *fiber.Ctx) error {
 			Str("url", config.Config.AISummaryURL+"/generate_summary").
 			Int("status", resp.StatusCode).
 			Str("req_body_base64", func() string {
-				if len(requestJSON) > limit {
-					return base64.StdEncoding.EncodeToString(requestJSON[:limit])
+				if len(requestJSON) > config.Config.SummaryLogLimit {
+					return base64.StdEncoding.EncodeToString(requestJSON[:config.Config.SummaryLogLimit])
 				}
 				return base64.StdEncoding.EncodeToString(requestJSON)
 			}()).
 			Str("resp_body_base64", func() string {
-				if len(body) > limit {
-					return base64.StdEncoding.EncodeToString(body[:limit])
+				if len(body) > config.Config.SummaryLogLimit {
+					return base64.StdEncoding.EncodeToString(body[:config.Config.SummaryLogLimit])
 				}
 				return base64.StdEncoding.EncodeToString(body)
 			}()).
@@ -1162,7 +1174,7 @@ func GenerateSummary(c *fiber.Ctx) error {
 	case 1000, 1001:
 		var cache Summary
 		cache.Code = 1001
-		err := SetCache("AISummary"+strconv.Itoa(id), cache, 24*time.Hour)
+		err := SetCache(fmt.Sprintf("AISummary_%d_v%d", id, hole.Reply-hole.Reply%config.Config.SummarySteps), cache, 24*time.Hour)
 		if err != nil {
 			log.Err(err).Msg("AISummary: set cache err")
 		}
@@ -1174,8 +1186,8 @@ func GenerateSummary(c *fiber.Ctx) error {
 		log.Error().Str("url", config.Config.AISummaryURL+"/generate_summary").
 			Int("status", resp.StatusCode).
 			Str("req_body_base64", func() string {
-				if len(requestJSON) > limit {
-					return base64.StdEncoding.EncodeToString(requestJSON[:limit])
+				if len(requestJSON) > config.Config.SummaryLogLimit {
+					return base64.StdEncoding.EncodeToString(requestJSON[:config.Config.SummaryLogLimit])
 				}
 				return base64.StdEncoding.EncodeToString(requestJSON)
 			}()).

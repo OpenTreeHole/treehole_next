@@ -286,22 +286,16 @@ func (holes Holes) Preprocess(c *fiber.Ctx) error {
 		if hole.AISummaryAvailable {
 			err := DB.Transaction(func(tx *gorm.DB) error {
 				query := tx.Model(&Floor{}).Where("hole_id = ?", hole.ID)
-				var count int64
 				var contentSum int64
 				var sensitiveCount int64
 
-				err := query.Count(&count).Error
-				if err != nil {
-					return err
-				}
-
-				err = query.Select("COALESCE(SUM(LENGTH(content)), 0)").Scan(&contentSum).Error
+				err := query.Select("COALESCE(SUM(LENGTH(content)), 0)").Scan(&contentSum).Error
 				if err != nil {
 					return err
 				}
 
 				var discard any
-				hole.AISummaryAvailable = count > 15 || contentSum >= 500 || utils.GetCache("AISummary"+strconv.Itoa(hole.ID), &discard)
+				hole.AISummaryAvailable = hole.Reply > config.Config.SummaryFloorLimit || contentSum >= config.Config.SummaryContentLimit || utils.GetCache("AISummary"+strconv.Itoa(hole.ID), &discard)
 
 				if hole.AISummaryAvailable {
 					err = query.Where("is_sensitive = ?", true).Count(&sensitiveCount).Error
