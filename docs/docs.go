@@ -223,6 +223,67 @@ const docTemplate = `{
                 }
             }
         },
+        "/divisions/{division_id}/holes/_sfw": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Hole"
+                ],
+                "summary": "List SFW Holes In A Division",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "division_id",
+                        "name": "division_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "updated time \u003c offset (default is now)",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "name": "order",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 10,
+                        "type": "integer",
+                        "default": 10,
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Hole"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.MessageModel"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.MessageModel"
+                        }
+                    }
+                }
+            }
+        },
         "/divisions/{id}": {
             "get": {
                 "produces": [
@@ -1243,6 +1304,91 @@ const docTemplate = `{
                 }
             }
         },
+        "/holes/_homepage": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Hole"
+                ],
+                "summary": "List Holes In Home Page",
+                "parameters": [
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "integer"
+                        },
+                        "collectionFormat": "csv",
+                        "description": "default is all",
+                        "name": "exclude_division_ids",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 10,
+                        "type": "integer",
+                        "default": 10,
+                        "name": "length",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "name": "order",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 10,
+                        "type": "integer",
+                        "default": 10,
+                        "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "updated time \u003c offset (default is now)",
+                        "name": "start_time",
+                        "in": "query"
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "name": "tags",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Hole"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.MessageModel"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.MessageModel"
+                        }
+                    }
+                }
+            }
+        },
         "/holes/{hole_id}/floors": {
             "get": {
                 "produces": [
@@ -1264,7 +1410,6 @@ const docTemplate = `{
                         "minimum": 0,
                         "type": "integer",
                         "default": 0,
-                        "description": "offset of object array",
                         "name": "offset",
                         "in": "query"
                     },
@@ -1280,11 +1425,9 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
-                        "maximum": 50,
                         "minimum": 0,
                         "type": "integer",
                         "default": 30,
-                        "description": "length of object array",
                         "name": "size",
                         "in": "query"
                     },
@@ -2752,7 +2895,6 @@ const docTemplate = `{
                         "minimum": 0,
                         "type": "integer",
                         "default": 0,
-                        "description": "offset of object array",
                         "name": "offset",
                         "in": "query"
                     },
@@ -2768,11 +2910,9 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
-                        "maximum": 50,
                         "minimum": 0,
                         "type": "integer",
                         "default": 30,
-                        "description": "length of object array",
                         "name": "size",
                         "in": "query"
                     },
@@ -3607,6 +3747,9 @@ const docTemplate = `{
                         "$ref": "#/definitions/models.Hole"
                     }
                 },
+                "show_in_home_page": {
+                    "type": "boolean"
+                },
                 "time_created": {
                     "type": "string"
                 },
@@ -3785,6 +3928,10 @@ const docTemplate = `{
         "models.Hole": {
             "type": "object",
             "properties": {
+                "ai_summary_available": {
+                    "description": "AI 摘要可用性，仅用于序列化",
+                    "type": "boolean"
+                },
                 "division_id": {
                     "description": "所属 division 的 id",
                     "type": "integer"
@@ -3822,7 +3969,7 @@ const docTemplate = `{
                     }
                 },
                 "frozen": {
-                    "description": "冻结帖子，如果冻结则发帖不会更新 UpdatedAt",
+                    "description": "冻结状态，仅管理员可见 true\nFrozenFrontend *bool ` + "`" + `json:\"frozen,omitempty\" gorm:\"-:all\"` + "`" + `\nFrozenFrontend *bool ` + "`" + `json:\"frozen\" gorm:\"-:all\"` + "`" + `\nCompatibility for Swift client",
                     "type": "boolean"
                 },
                 "good": {

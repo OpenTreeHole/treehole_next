@@ -152,13 +152,13 @@ func InitDB() {
 		&AdminLog{},
 		&UserFavorite{},
 		&FavoriteGroup{},
-		&UrlHostnameWhitelist{},
+		&UrlHostnameBlacklist{},
 	)
 	if err != nil {
 		log.Fatal().Err(err).Send()
 	}
 
-	err = DB.Model(&UrlHostnameWhitelist{}).Pluck("hostname", &config.Config.UrlHostnameWhitelist).Error
+	err = DB.Model(&UrlHostnameBlacklist{}).Pluck("hostname", &config.Config.UrlHostnameBlacklist).Error
 	if err != nil {
 		log.Fatal().Err(err).Send()
 	}

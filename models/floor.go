@@ -115,22 +115,13 @@ func (floor *Floor) Preprocess(c *fiber.Ctx) error {
 	return Floors{floor}.Preprocess(c)
 }
 
-func MakeFloorQuerySet(_ *fiber.Ctx) (*gorm.DB, error) {
-	return DB.Preload("Mention"), nil
-	//user, err := GetUser(c)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//if user.IsAdmin {
-	//	return DB.Preload("Mention"), nil
-	//} else {
-	//	userID, err := common.GetUserID(c)
-	//	if err != nil {
-	//		return nil, err
-	//	}
-	//	return DB.Where("(is_sensitive = 0 AND is_actual_sensitive IS NULL) OR is_actual_sensitive = 0 OR user_id = ?", userID).
-	//		Preload("Mention", "(is_sensitive = 0 AND is_actual_sensitive IS NULL) OR is_actual_sensitive = 0 OR user_id = ?", userID), nil
-	//}
+// MakeFloorQuerySet 构建楼层查询集。若传入 tx 则基于该 DB，否则使用全局 DB。
+func MakeFloorQuerySet(_ *fiber.Ctx, tx ...*gorm.DB) (*gorm.DB, error) {
+	db := DB
+	if len(tx) > 0 && tx[0] != nil {
+		db = tx[0]
+	}
+	return db.Preload("Mention"), nil
 }
 
 // MakeQuerySet creates a query set for the Floors model.
@@ -139,10 +130,11 @@ func MakeFloorQuerySet(_ *fiber.Ctx) (*gorm.DB, error) {
 // - offset:the offset for pagination.
 // - size: the size for pagination.
 // - c: context of the request.
+// - tx: optional *gorm.DB, use it when provided (e.g. in transaction).
 //
 // It returns a pointer to a gorm.DB instance representing the query set and an error if any occurred during the creation of the query set.
-func (floors Floors) MakeQuerySet(holeID *int, offset, size *int, c *fiber.Ctx) (*gorm.DB, error) {
-	querySet, err := MakeFloorQuerySet(c)
+func (floors Floors) MakeQuerySet(holeID, offset, size *int, c *fiber.Ctx, tx ...*gorm.DB) (*gorm.DB, error) {
+	querySet, err := MakeFloorQuerySet(c, tx...)
 	if err != nil {
 		return nil, err
 	}
@@ -167,10 +159,11 @@ func (floors Floors) MakeQuerySet(holeID *int, offset, size *int, c *fiber.Ctx) 
 // - startTime: a pointer to a time.Time representing the start time for the time range filter.
 // - endTime: a pointer to a time.Time representing the end time for the time range filter.
 // - c: context of the request.
+// - tx: optional *gorm.DB, use it when provided (e.g. in transaction).
 //
 // It returns a pointer to a gorm.DB instance representing the query set and an error if any occurred during the creation of the query set.
-func (floors Floors) MakeQuerySetWithTimeRange(holeID *int, offset, size *int, startTime, endTime *time.Time, c *fiber.Ctx) (*gorm.DB, error) {
-	querySet, err := floors.MakeQuerySet(holeID, offset, size, c)
+func (floors Floors) MakeQuerySetWithTimeRange(holeID *int, offset, size *int, startTime, endTime *time.Time, c *fiber.Ctx, tx ...*gorm.DB) (*gorm.DB, error) {
+	querySet, err := floors.MakeQuerySet(holeID, offset, size, c, tx...)
 	if err != nil {
 		return nil, err
 	}
@@ -260,15 +253,12 @@ func (floor *Floor) SetDefaults(c *fiber.Ctx) (err error) {
 			floor.SpecialTag = "sensitive"
 		}
 		if !floor.Deleted {
-			if floor.IsActualSensitive != nil && *floor.IsActualSensitive {
-				// deprecated, deleted already
-				floor.Content = "该内容因违反社区规范被删除"
-				floor.Deleted = true
-			} else {
-				floor.Content = "该内容正在审核中"
+			msg := "该内容正在审核中"
+			if !floor.IsMe {
+				floor.Content = msg
 			}
-			floor.FoldFrontend = []string{floor.Content}
-			floor.Fold = floor.Content
+			floor.FoldFrontend = []string{msg}
+			floor.Fold = msg
 		}
 	}
 	if !user.IsAdmin {

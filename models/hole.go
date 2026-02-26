@@ -2,6 +2,7 @@ package models
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 
 	"golang.org/x/exp/maps"
@@ -39,7 +40,7 @@ type Hole struct {
 	Locked bool `json:"locked" gorm:"not null;default:false"`
 
 	// 冻结帖子，如果冻结则发帖不会更新 UpdatedAt
-	Frozen bool `json:"frozen" gorm:"not null;default:false"`
+	Frozen bool `json:"-" gorm:"not null;default:false"`
 
 	Good bool `json:"good" gorm:"not null;default:false"`
 
@@ -73,12 +74,21 @@ type Hole struct {
 	// 兼容旧版 id
 	HoleID int `json:"hole_id" gorm:"-:all"`
 
+	// 冻结状态，仅管理员可见 true
+	// FrozenFrontend *bool `json:"frozen,omitempty" gorm:"-:all"`
+	// FrozenFrontend *bool `json:"frozen" gorm:"-:all"`
+	// Compatibility for Swift client
+	FrozenFrontend bool `json:"frozen" gorm:"-:all"`
+
 	// 返回给前端的楼层列表，包括首楼、尾楼和预加载的前 n 个楼层
 	HoleFloor struct {
 		FirstFloor *Floor `json:"first_floor"` // 首楼
 		LastFloor  *Floor `json:"last_floor"`  // 尾楼
 		Floors     Floors `json:"prefetch"`    // 预加载的楼层
 	} `json:"floors" gorm:"-:all"`
+
+	// AI 摘要可用性，仅用于序列化
+	AISummaryAvailable bool `json:"ai_summary_available" gorm:"-"`
 }
 
 func (hole *Hole) GetID() int {
@@ -242,13 +252,15 @@ func (holes Holes) Preprocess(c *fiber.Ctx) error {
 	notInCache := make(Holes, 0, len(holes))
 
 	for _, hole := range holes {
-		cachedHole := new(Hole)
-		ok := utils.GetCache(hole.CacheName(), &cachedHole)
-		if !ok {
-			notInCache = append(notInCache, hole)
-		} else {
-			*hole = *cachedHole
-		}
+		// 禁用 hole cache：统一视为不在缓存中，强制走后续 UpdateHoleCache 加载逻辑
+		//cachedHole := new(Hole)
+		//ok := utils.GetCache(hole.CacheName(), &cachedHole)
+		//if !ok {
+		//	notInCache = append(notInCache, hole)
+		//} else {
+		//	*hole = *cachedHole
+		//}
+		notInCache = append(notInCache, hole)
 	}
 
 	if len(notInCache) > 0 {
@@ -263,15 +275,57 @@ func (holes Holes) Preprocess(c *fiber.Ctx) error {
 	for _, hole := range holes {
 		hole.SetHoleFloor()
 		floors = append(floors, hole.Floors...)
+		// set ai_summary_available
+		hole.AISummaryAvailable = true
+		for _, tag := range hole.Tags {
+			if len(tag.Name) > 0 && tag.Name[0] == '*' {
+				hole.AISummaryAvailable = false
+				break
+			}
+		}
+		if hole.AISummaryAvailable {
+			err := DB.Transaction(func(tx *gorm.DB) error {
+				query := tx.Model(&Floor{}).Where("hole_id = ?", hole.ID)
+				var contentSum int64
+				var sensitiveCount int64
 
-		// hide hole if first floor is sensitive
-		//if hole.HoleFloor.FirstFloor.Sensitive() {
-		//	hole.Hidden = true
-		//}
+				err := query.Select("COALESCE(SUM(LENGTH(content)), 0)").Scan(&contentSum).Error
+				if err != nil {
+					return err
+				}
+
+				var discard any
+				hole.AISummaryAvailable = hole.Reply > config.Config.SummaryFloorLimit || contentSum >= config.Config.SummaryContentLimit || utils.GetCache("AISummary"+strconv.Itoa(hole.ID), &discard)
+
+				if hole.AISummaryAvailable {
+					err = query.Where("is_sensitive = ?", true).Count(&sensitiveCount).Error
+					if err != nil {
+						return err
+					}
+					if sensitiveCount > 0 {
+						hole.AISummaryAvailable = false
+					}
+				}
+				return nil
+			})
+			if err != nil {
+				return err
+			}
+		}
 	}
 	err := floors.Preprocess(c)
 	if err != nil {
 		return err
+	}
+
+	// Set FrozenFrontend field for admin users only
+	// If there's an error getting user info, silently skip (safe default: don't show frozen field)
+	user, err := GetCurrLoginUser(c)
+	if err == nil {
+		for _, hole := range holes {
+			// compatibility for swift client
+			hole.FrozenFrontend = user.IsAdmin && hole.Frozen
+		}
 	}
 
 	//user, err := GetUser(c)
@@ -313,40 +367,36 @@ func UpdateHoleCache(holes Holes) (err error) {
 	return
 }
 
-func MakeHoleQuerySet(c *fiber.Ctx) (*gorm.DB, error) {
+// MakeHoleQuerySet 构建树洞查询集。若传入 tx 则基于该 DB，否则使用全局 DB。
+func MakeHoleQuerySet(c *fiber.Ctx, tx ...*gorm.DB) (*gorm.DB, error) {
+	db := DB
+	if len(tx) > 0 && tx[0] != nil {
+		db = tx[0]
+	}
 	user, err := GetCurrLoginUser(c)
 	if err != nil {
 		return nil, err
 	}
 	if user.IsAdmin {
-		return DB.Unscoped(), nil
-	} else {
-		return DB.Where("hidden = ?", false), nil
-		//userID, err := common.GetUserID(c)
-		//if err != nil {
-		//	return nil, err
-		//}
-		//return DB.Joins("JOIN floor ON hole.id = floor.hole_id").
-		//	Where("floor.ranking = 0 AND "+
-		//		"((floor.is_sensitive = 0 AND floor.is_actual_sensitive IS NULL) OR floor.is_actual_sensitive = 0 OR floor.user_id = ?)", userID), err
+		return db.Unscoped(), nil
 	}
+	return db.Where("hidden = ?", false), nil
 }
 
-func (holes Holes) MakeQuerySet(offset common.CustomTime, size int, order string, c *fiber.Ctx) (*gorm.DB, error) {
-	querySet, err := MakeHoleQuerySet(c)
+// MakeQuerySet 构建带分页与排序的树洞查询集。若传入 tx 则基于该 DB，否则使用全局 DB。
+func (holes Holes) MakeQuerySet(offset common.CustomTime, size int, order string, c *fiber.Ctx, tx ...*gorm.DB) (*gorm.DB, error) {
+	querySet, err := MakeHoleQuerySet(c, tx...)
 	if err != nil {
 		return nil, err
 	}
-	//querySet.Where("hole.hidden = ?", false)
 	if order == "time_created" || order == "created_at" {
 		return querySet.
 			Where("hole.created_at < ?", offset.Time).
 			Order("hole.created_at desc").Limit(size), nil
-	} else {
-		return querySet.
-			Where("hole.updated_at < ?", offset.Time).
-			Order("hole.updated_at desc").Limit(size), nil
 	}
+	return querySet.
+		Where("hole.updated_at < ?", offset.Time).
+		Order("hole.updated_at desc").Limit(size), nil
 }
 
 /************************
@@ -369,10 +419,14 @@ func (hole *Hole) SetHoleFloor() {
 			hole.HoleFloor.Floors = hole.Floors[0 : holeFloorSize-1]
 		}
 	} else if len(hole.HoleFloor.Floors) != 0 {
-		holeFloorSize := len(hole.HoleFloor.Floors)
-
+		// 来自 cache：hole.Floors 为 json:"-" 未反序列化故为空，HoleFloor 已有正确的 prefetch，而 FirstFloor/LastFloor 会多一些错误的字段，额外处理很麻烦
+		// Don't use hole cache and never run here expectedly because of error FirstFloor/LastFloor
+		// "mention": null,
+		// "floor_id": 0,
+		// "fold": null,
+		// any more fields?
 		hole.HoleFloor.FirstFloor = hole.HoleFloor.Floors[0]
-		hole.HoleFloor.LastFloor = hole.HoleFloor.Floors[holeFloorSize-1]
+		hole.HoleFloor.LastFloor = hole.HoleFloor.Floors[len(hole.HoleFloor.Floors)-1]
 		hole.Floors = hole.HoleFloor.Floors
 	}
 

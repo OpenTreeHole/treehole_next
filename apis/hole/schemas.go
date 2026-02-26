@@ -9,6 +9,16 @@ import (
 	"treehole_next/models"
 )
 
+type ShowHomePageModel struct {
+	ExcludeDivisionIDs *[]int            `json:"exclude_division_ids" query:"exclude_division_ids" validate:"omitempty"` // default is all
+	Size0              int               `json:"length" query:"size" default:"10" validate:"max=10"`
+	Size               int               `json:"size" query:"size" default:"10" validate:"max=10"`
+	Offset0            common.CustomTime `json:"start_time" query:"offset" swaggertype:"string"` // updated time < offset (default is now)
+	Offset             common.CustomTime `json:"offset" query:"offset" swaggertype:"string"`
+	Tags               []string          `json:"tags" query:"tags"`
+	Order              string            `json:"order" query:"order"`
+}
+
 type QueryTime struct {
 	Size int `json:"size" query:"size" default:"10" validate:"max=10"`
 	// updated time < offset (default is now)
@@ -119,4 +129,53 @@ func (body ModifyModel) CheckPermission(user *models.User, hole *models.Hole) er
 
 func (body ModifyModel) DoNothing() bool {
 	return body.Hidden == nil && body.Unhidden == nil && body.Tags == nil && body.DivisionID == nil && body.Lock == nil && body.Frozen == nil
+}
+
+type Summary struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+	Data    struct {
+		HoleID   int    `json:"hole_id"`
+		Summary  string `json:"summary"`
+		Branches []struct {
+			ID                   int    `json:"id"`
+			Label                string `json:"label"`
+			Content              string `json:"content"`
+			Color                string `json:"color"`
+			RepresentativeFloors []int  `json:"representative_floors"`
+		} `json:"branches"`
+		Interactions []struct {
+			FromFloor       int    `json:"from_floor"`
+			FromUser        string `json:"from_user"`
+			ToFloor         int    `json:"to_floor"`
+			ToUser          string `json:"to_user"`
+			InteractionType string `json:"interaction_type" enums:"reply,support,rebuttal,supplement,question" default:"reply"`
+			Content         string `json:"content"`
+		} `json:"interactions"`
+		Keywords    []string `json:"keywords"`
+		GeneratedAt string   `json:"generated_at"`
+	} `json:"data"`
+}
+
+type FloorForSummary struct {
+	ID      int    `json:"id"`
+	Content string `json:"content"`
+	// a random username
+	Anonyname string `json:"anonyname"`
+
+	Ranking int `json:"ranking"`
+
+	ReplyTo int `json:"reply_to"`
+
+	Like int `json:"like"`
+
+	Dislike int `json:"dislike"`
+
+	FloorID int `json:"floor_id"`
+}
+
+type Response struct {
+	Code    int      `json:"code"`
+	Message string   `json:"message"`
+	Data    struct{} `json:"data"`
 }
