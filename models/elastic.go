@@ -241,7 +241,13 @@ func Search(c *fiber.Ctx, keyword string, size, offset int, accurate bool, start
 		}
 		floorIDs[i] = id
 		if hit.Highlight != nil {
-			if fragments, ok := hit.Highlight["content"]; ok {
+			var fragments []string
+			if f, ok := hit.Highlight["content"]; ok && len(f) > 0 {
+				fragments = f
+			} else if f, ok := hit.Highlight["content.ik_smart"]; ok && len(f) > 0 {
+				fragments = f
+			}
+			if len(fragments) > 0 {
 				highlightedContents[id] = fragments[0]
 			}
 		}
@@ -275,7 +281,11 @@ func Search(c *fiber.Ctx, keyword string, size, offset int, accurate bool, start
 		if floor.Sensitive() && !floor.Deleted && !floor.IsMe {
 			highlightedContent = floor.Content
 		} else {
-			highlightedContent = highlightedContents[floor.ID]
+			if hc, ok := highlightedContents[floor.ID]; ok {
+				highlightedContent = hc
+			} else {
+				highlightedContent = floor.Content
+			}
 		}
 		highlightedFloors[i] = &HighlightedFloor{
 			Floor:              floor,
