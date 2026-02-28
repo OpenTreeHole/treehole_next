@@ -373,7 +373,7 @@ func MakeHoleQuerySet(c *fiber.Ctx, tx ...*gorm.DB) (*gorm.DB, error) {
 	if len(tx) > 0 && tx[0] != nil {
 		db = tx[0]
 	}
-	db = db.Table("holes AS hole")
+	db = db.Model(&Hole{})
 	user, err := GetCurrLoginUser(c)
 	if err != nil {
 		return nil, err
