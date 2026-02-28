@@ -373,6 +373,7 @@ func MakeHoleQuerySet(c *fiber.Ctx, tx ...*gorm.DB) (*gorm.DB, error) {
 	if len(tx) > 0 && tx[0] != nil {
 		db = tx[0]
 	}
+	db = db.Table("holes AS hole")
 	user, err := GetCurrLoginUser(c)
 	if err != nil {
 		return nil, err
@@ -380,7 +381,7 @@ func MakeHoleQuerySet(c *fiber.Ctx, tx ...*gorm.DB) (*gorm.DB, error) {
 	if user.IsAdmin {
 		return db.Unscoped(), nil
 	}
-	return db.Where("hidden = ?", false), nil
+	return db.Where("hole.hidden = ?", false), nil
 }
 
 // MakeQuerySet 构建带分页与排序的树洞查询集。若传入 tx 则基于该 DB，否则使用全局 DB。
