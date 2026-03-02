@@ -60,6 +60,7 @@ var Config struct {
 	SummaryContentLimit          int64    `env:"SUMMARY_CONTENT_LIMIT" envDefault:"500"`
 	SummarySteps                 int      `env:"SUMMARY_STEPS" envDefault:"5"`
 	SummaryLogLimit              int      `env:"SUMMARY_LOG_LIMIT" envDefault:"1000"`
+	WhiteListUserIds             []int    `env:"WHITE_LIST_USER_IDS"`
 }
 
 var DynamicConfig struct {

@@ -2,7 +2,6 @@ package models
 
 import (
 	"fmt"
-	"strconv"
 	"time"
 
 	"golang.org/x/exp/maps"
@@ -276,7 +275,8 @@ func (holes Holes) Preprocess(c *fiber.Ctx) error {
 		hole.SetHoleFloor()
 		floors = append(floors, hole.Floors...)
 		// set ai_summary_available
-		hole.AISummaryAvailable = true
+		uid, _ := common.GetUserID(c)
+		hole.AISummaryAvailable = config.Config.WhiteListUserIds == nil || slices.Contains(config.Config.WhiteListUserIds, uid)
 		for _, tag := range hole.Tags {
 			if len(tag.Name) > 0 && tag.Name[0] == '*' {
 				hole.AISummaryAvailable = false
@@ -294,14 +294,11 @@ func (holes Holes) Preprocess(c *fiber.Ctx) error {
 					return err
 				}
 
-				var discard any
-				hole.AISummaryAvailable = hole.Reply > config.Config.SummaryFloorLimit || contentSum >= config.Config.SummaryContentLimit || utils.GetCache("AISummary"+strconv.Itoa(hole.ID), &discard)
+				// var discard any
+				hole.AISummaryAvailable = hole.Reply > config.Config.SummaryFloorLimit || contentSum >= config.Config.SummaryContentLimit // || utils.GetCache("AISummary"+strconv.Itoa(hole.ID), &discard)
 
 				if hole.AISummaryAvailable {
-					err = query.Where("is_sensitive = ?", true).Count(&sensitiveCount).Error
-					if err != nil {
-						return err
-					}
+					query.Where("is_sensitive = ? AND is_actual_sensitive IS NULL", true).Count(&sensitiveCount)
 					if sensitiveCount > 0 {
 						hole.AISummaryAvailable = false
 					}
