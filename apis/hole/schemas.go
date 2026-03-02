@@ -133,6 +133,7 @@ func (body ModifyModel) DoNothing() bool {
 
 type Summary struct {
 	Code    int    `json:"code"`
+	TraceID string `json:"trace_id"`
 	Message string `json:"message"`
 	Data    struct {
 		HoleID   int    `json:"hole_id"`

@@ -14,6 +14,7 @@ import (
 	"treehole_next/utils/sensitive"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
 	"github.com/opentreehole/go-common"
 	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
@@ -951,7 +952,13 @@ func DeleteHole(c *fiber.Ctx) error {
 	return c.Status(204).JSON(nil)
 }
 func GenerateSummary(c *fiber.Ctx) error {
-
+	uid, _ := common.GetUserID(c)
+	if config.Config.WhiteListUserIds != nil && !slices.Contains(config.Config.WhiteListUserIds, uid) {
+		return c.Status(404).JSON(fiber.Map{
+			"code":    404,
+			"message": "Cannot GET " + c.Path(),
+		})
+	}
 	id, _ := c.ParamsInt("id")
 	forceRefresh := c.QueryBool("force_refresh")
 	var cachedData Summary
@@ -1041,6 +1048,7 @@ func GenerateSummary(c *fiber.Ctx) error {
 					if cachedData.Data.HoleID != id && cachedData.Data.HoleID != 0 {
 						log.Error().
 							Int("hole_id", id).
+							Str("trace_id", cachedData.TraceID).
 							Int("ai_server_return_id", cachedData.Data.HoleID).
 							Msg("AISummary: hole id error")
 						cachedData.Data.HoleID = id
@@ -1099,9 +1107,10 @@ func GenerateSummary(c *fiber.Ctx) error {
 	}
 
 	requestBody := map[string]any{
-		"floors":  summaryFloors,
-		"content": content,
-		"hole_id": hole.ID,
+		"floors":   summaryFloors,
+		"content":  content,
+		"hole_id":  hole.ID,
+		"trace_id": uuid.NewString(),
 	}
 
 	requestJSON, err := json.Marshal(requestBody)
@@ -1128,6 +1137,7 @@ func GenerateSummary(c *fiber.Ctx) error {
 	if resp.StatusCode != http.StatusOK {
 		log.Error().
 			Str("url", config.Config.AISummaryURL+"/generate_summary").
+			Str("trace_id", requestBody["trace_id"].(string)).
 			Int("status", resp.StatusCode).
 			Str("req_body_base64", func() string {
 				if len(requestJSON) > config.Config.SummaryLogLimit {
@@ -1151,6 +1161,7 @@ func GenerateSummary(c *fiber.Ctx) error {
 	if err != nil {
 		log.Error().
 			Str("url", config.Config.AISummaryURL+"/generate_summary").
+			Str("trace_id", requestBody["trace_id"].(string)).
 			Int("status", resp.StatusCode).
 			Str("req_body_base64", func() string {
 				if len(requestJSON) > config.Config.SummaryLogLimit {
@@ -1184,6 +1195,7 @@ func GenerateSummary(c *fiber.Ctx) error {
 		response.Message = errCode2Message[response.Code]
 	default:
 		log.Error().Str("url", config.Config.AISummaryURL+"/generate_summary").
+			Str("trace_id", requestBody["trace_id"].(string)).
 			Int("status", resp.StatusCode).
 			Str("req_body_base64", func() string {
 				if len(requestJSON) > config.Config.SummaryLogLimit {
