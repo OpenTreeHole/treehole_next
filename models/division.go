@@ -57,7 +57,7 @@ func (divisions Divisions) Preprocess(c *fiber.Ctx) error {
 			return err
 		}
 	}
-	return utils.SetCache("divisions", divisions, 0)
+	return nil //utils.SetCache("divisions", divisions, 0)
 }
 
 func (division *Division) Preprocess(c *fiber.Ctx) error {
