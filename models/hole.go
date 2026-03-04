@@ -289,7 +289,12 @@ func (holes Holes) Preprocess(c *fiber.Ctx) error {
 				var contentSum int64
 				var sensitiveCount int64
 
-				err := query.Select("COALESCE(SUM(LENGTH(content)), 0)").Scan(&contentSum).Error
+				contentSumQuery := "SUM(CHAR_LENGTH(content))"
+				if DB.Dialector.Name() == "sqlite" {
+					contentSumQuery = "SUM(LENGTH(content))"
+				}
+
+				err := query.Select(fmt.Sprintf("COALESCE(%s, 0)", contentSumQuery)).Scan(&contentSum).Error
 				if err != nil {
 					return err
 				}
