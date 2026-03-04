@@ -1214,5 +1214,10 @@ func GenerateSummary(c *fiber.Ctx) error {
 }
 
 func GetFeedback(c *fiber.Ctx) error {
+	var body SummaryFeedback
+	err := common.ValidateBody(c, &body)
+	if err != nil {
+		return err
+	}
 	return c.Status(200).JSON(fiber.Map{})
 }

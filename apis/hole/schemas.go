@@ -180,3 +180,9 @@ type Response struct {
 	Message string   `json:"message"`
 	Data    struct{} `json:"data"`
 }
+
+type SummaryFeedback struct {
+	TraceID string `json:"trace_id"`
+	Type    int    `json:"type"`
+	Reason  string `json:"reason"`
+}
