@@ -98,6 +98,20 @@ func (hole *Hole) CacheName() string {
 	return fmt.Sprintf("hole_%d", hole.ID)
 }
 
+func (hole *Hole) SummaryCacheName() string {
+	var step int
+	if hole.Reply <= config.Config.SummaryReplyBoundary1 {
+		step = config.Config.SummarySteps
+	} else if hole.Reply > config.Config.SummaryReplyBoundary1 && hole.Reply <= config.Config.SummaryReplyBoundary2 {
+		step = config.Config.SummarySteps * 2
+	} else if hole.Reply > config.Config.SummaryReplyBoundary2 && hole.Reply <= config.Config.SummaryReplyBoundary3 {
+		step = config.Config.SummarySteps * 4
+	} else {
+		step = config.Config.SummarySteps * 10
+	}
+	return fmt.Sprintf("AISummary_%d_v%d", hole.ID, hole.Reply-hole.Reply%step)
+}
+
 type Holes []*Hole
 
 func IsHolesExist(tx *gorm.DB, holeID []int) bool {

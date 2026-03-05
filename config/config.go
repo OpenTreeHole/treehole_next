@@ -59,6 +59,9 @@ var Config struct {
 	SummaryFloorLimit            int      `env:"SUMMARY_FLOOR_LIMIT" envDefault:"15"`
 	SummaryContentLimit          int64    `env:"SUMMARY_CONTENT_LIMIT" envDefault:"500"`
 	SummarySteps                 int      `env:"SUMMARY_STEPS" envDefault:"5"`
+	SummaryReplyBoundary1        int      `env:"SUMMARY_REPLY_BOUNDARY_1" envDefault:"50"`
+	SummaryReplyBoundary2        int      `env:"SUMMARY_REPLY_BOUNDARY_1" envDefault:"200"`
+	SummaryReplyBoundary3        int      `env:"SUMMARY_REPLY_BOUNDARY_1" envDefault:"1000"`
 	SummaryLogLimit              int      `env:"SUMMARY_LOG_LIMIT" envDefault:"1000"`
 	WhiteListUserIds             []int    `env:"WHITE_LIST_USER_IDS"`
 }
