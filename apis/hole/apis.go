@@ -992,12 +992,12 @@ func GenerateSummary(c *fiber.Ctx) error {
 		})
 	}
 	if forceRefresh {
-		err := DeleteCache(fmt.Sprintf("AISummary_%d_v%d", id, hole.Reply-hole.Reply%config.Config.SummarySteps))
+		err := DeleteCache(hole.SummaryCacheName())
 		if err != nil {
 			log.Err(err).Msg("AISummary: delete cache err")
 		}
 	}
-	if GetCache(fmt.Sprintf("AISummary_%d_v%d", id, hole.Reply-hole.Reply%config.Config.SummarySteps), &cachedData) {
+	if GetCache(hole.SummaryCacheName(), &cachedData) {
 
 		switch cachedData.Code {
 		case 1000:
@@ -1053,7 +1053,7 @@ func GenerateSummary(c *fiber.Ctx) error {
 							Msg("AISummary: hole id error")
 						cachedData.Data.HoleID = id
 					}
-					err = SetCache(fmt.Sprintf("AISummary_%d_v%d", id, hole.Reply-hole.Reply%config.Config.SummarySteps), cachedData, 24*time.Hour)
+					err = SetCache(hole.SummaryCacheName(), cachedData, 24*time.Hour)
 					if err != nil {
 						log.Err(err).Msg("AISummary: set cache err")
 					}
@@ -1061,14 +1061,14 @@ func GenerateSummary(c *fiber.Ctx) error {
 				return c.Status(200).JSON(cachedData)
 
 			} else {
-				err := DeleteCache(fmt.Sprintf("AISummary_%d_v%d", id, hole.Reply-hole.Reply%config.Config.SummarySteps))
+				err := DeleteCache(hole.SummaryCacheName())
 				if err != nil {
 					log.Err(err).Msg("AISummary: delete cache err")
 				}
 			}
 
 		default:
-			err := DeleteCache("AISummary" + strconv.Itoa(id))
+			err := DeleteCache(hole.SummaryCacheName())
 			if err != nil {
 				log.Err(err).Msg("AISummary: delete cache err")
 			}
@@ -1185,7 +1185,7 @@ func GenerateSummary(c *fiber.Ctx) error {
 	case 1000, 1001:
 		var cache Summary
 		cache.Code = 1001
-		err := SetCache(fmt.Sprintf("AISummary_%d_v%d", id, hole.Reply-hole.Reply%config.Config.SummarySteps), cache, 24*time.Hour)
+		err := SetCache(hole.SummaryCacheName(), cache, 24*time.Hour)
 		if err != nil {
 			log.Err(err).Msg("AISummary: set cache err")
 		}
