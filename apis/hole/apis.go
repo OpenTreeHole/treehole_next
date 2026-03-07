@@ -70,12 +70,12 @@ func ListHomePage(c *fiber.Ctx) (err error) {
 		if err != nil {
 			return err
 		}
-		querySet = querySet.Where("hole.division_id in (?)", divisionIDs)
+		querySet = querySet.Where("hole.division_id IN ?", divisionIDs)
 
 		// 仿照 ListHoles：按 Tags 过滤（需同时拥有所有指定标签的树洞）
 		if len(query.Tags) != 0 {
 			var tags []Tag
-			err = tx.Where("name IN ?", query.Tags).Find(&tags).Error
+			err = tx.Model(&Tag{}).Where("name IN ?", query.Tags).Find(&tags).Error
 			if err != nil {
 				return err
 			}

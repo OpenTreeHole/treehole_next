@@ -5,9 +5,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/gofiber/fiber/v2"
+	"regexp"
 	"strconv"
 	"time"
+
+	"github.com/gofiber/fiber/v2"
 
 	"github.com/elastic/go-elasticsearch/v8/typedapi/types"
 	"github.com/elastic/go-elasticsearch/v8/typedapi/types/enums/refresh"
@@ -20,6 +22,8 @@ import (
 
 	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/goccy/go-json"
+
+	stdjson "encoding/json"
 )
 
 var ES *elasticsearch.TypedClient
@@ -62,6 +66,33 @@ type FloorModel struct {
 	Content   string    `json:"content"`
 }
 
+const HighlightBegin = "<em>"
+const HighlightEnd = "</em>"
+const HighlightReplace = HighlightBegin + "$0" + HighlightEnd
+
+type HighlightedFloor struct {
+	*Floor
+	HighlightedContent string
+}
+
+func (floor HighlightedFloor) MarshalJSON() ([]byte, error) {
+	// workaround: use stdjson to avoid go-json panicking upon flattening structs with recursive fields
+	return stdjson.Marshal(&struct {
+		*Floor
+		HighlightedContent string `json:"highlighted_content"`
+	}{
+		Floor:              floor.Floor,
+		HighlightedContent: floor.HighlightedContent,
+	})
+}
+
+type HighlightedFloors []*HighlightedFloor
+
+func (floors HighlightedFloors) Preprocess(_ *fiber.Ctx) error {
+	// no-op intended (preprocessing done for Floors in Search and SearchOld)
+	return nil
+}
+
 // Search searches floors by keyword.
 //
 // Parameters:
@@ -73,9 +104,9 @@ type FloorModel struct {
 // - startTime and endTime: Filter floors by time (If not specified, set to nil)
 //
 // Returns:
-// - Floors: A list of floors matching the search criteria
+// - HighlightedFloors: A list of floors matching the search criteria, each floor with an extra HighlightedContent field
 // - error: An error if the search fails
-func Search(c *fiber.Ctx, keyword string, size, offset int, accurate bool, startTime *int64, endTime *int64) (Floors, error) {
+func Search(c *fiber.Ctx, keyword string, size, offset int, accurate bool, startTime *int64, endTime *int64) (HighlightedFloors, error) {
 	if ES == nil {
 		return SearchOld(c, keyword, size, offset, startTime, endTime)
 	}
@@ -89,14 +120,14 @@ func Search(c *fiber.Ctx, keyword string, size, offset int, accurate bool, start
 	// 					"queries": [{
 	// 						 "multi_match": {}
 	// 					 },
-	// 					 { 
+	// 					 {
 	// 						 "multi_match": {}
 	// 					 }]
 	// 				}
 	// 			},
 	// 			"filter": {
 	// 				//Term filter
-	// 			}           
+	// 			}
 	// 		}
 	// 	}
 	// }
@@ -147,9 +178,23 @@ func Search(c *fiber.Ctx, keyword string, size, offset int, accurate bool, start
 		},
 	}
 
+	highlight := &types.Highlight{
+		Fields: map[string]types.HighlightField{
+			"content": {
+				NumberOfFragments: &[]int{0}[0],
+			},
+			"content.ik_smart": {
+				NumberOfFragments: &[]int{0}[0],
+			},
+		},
+		PreTags:  []string{HighlightBegin},
+		PostTags: []string{HighlightEnd},
+	}
+
 	res, err := ES.Search().
 		Index(IndexName).From(offset).
 		Size(size).Query(&query).
+		Highlight(highlight).
 		Sort(
 			types.SortOptions{
 				SortOptions: map[string]types.FieldSort{
@@ -165,48 +210,95 @@ func Search(c *fiber.Ctx, keyword string, size, offset int, accurate bool, start
 
 	if err != nil {
 		var errorMsg = fmt.Sprintf("error searching floors: %e", err)
-		var elasticsearchError *types.ElasticsearchError
-		if errors.As(err, &elasticsearchError) {
-			data, _ := json.Marshal(elasticsearchError)
+		log.Err(err).Msg("error searching floors")
+
+		var esError *types.ElasticsearchError
+		if errors.As(err, &esError) {
+			data, _ := json.Marshal(esError)
 			log.Err(err).
 				Bytes("error_detail", data).
 				Msg("error searching floors")
-			return nil, &common.HttpError{Code: elasticsearchError.Status, Message: errorMsg}
+			return nil, &common.HttpError{Code: esError.Status, Message: errorMsg}
 		}
 		return nil, common.InternalServerError(errorMsg)
 	}
 
 	// get floors
 	floorSize := len(res.Hits.Hits)
-	floors := make(Floors, 0, floorSize)
 	if floorSize == 0 {
-		return floors, nil
+		return HighlightedFloors{}, nil
 	}
+	floors := make(Floors, 0, floorSize)
 
 	floorIDs := make([]int, floorSize)
+	highlightedContents := make(map[int]string)
 	for i, hit := range res.Hits.Hits {
-		floorIDs[i], err = strconv.Atoi(*hit.Id_)
+		id, err := strconv.Atoi(*hit.Id_)
 		if err != nil {
-			return nil, common.InternalServerError("error parse floor_id from elasticsearch ID")
+			var errorMsg = "error parsing floor_id from ElasticSearch ID"
+			log.Err(err).Msg(errorMsg)
+			return nil, common.InternalServerError(errorMsg)
+		}
+		floorIDs[i] = id
+		if hit.Highlight != nil {
+			var fragments []string
+			if f, ok := hit.Highlight["content"]; ok && len(f) > 0 {
+				fragments = f
+			} else if f, ok := hit.Highlight["content.ik_smart"]; ok && len(f) > 0 {
+				fragments = f
+			}
+			if len(fragments) > 0 {
+				highlightedContents[id] = fragments[0]
+			}
 		}
 	}
 	log.Info().Ints("floor_ids", floorIDs).Msg("search response")
 
 	querySet, err := MakeFloorQuerySet(c)
 	if err != nil {
+		log.Err(err).Msg("error building floor query set")
 		return nil, err
 	}
 	err = querySet.Find(&floors, floorIDs).Error
 	if err != nil {
+		log.Err(err).Msgf("error finding floors by IDs: %v", floorIDs)
 		return nil, err
 	}
 
-	return utils.OrderInGivenOrder(floors, floorIDs), nil
+	floors = utils.OrderInGivenOrder(floors, floorIDs)
+	// preprocess here to reuse Floors#Preprocess
+	err = floors.Preprocess(c)
+	if err != nil {
+		log.Err(err).Msg("error preprocessing floors")
+		return nil, err
+	}
+
+	highlightedFloors := make(HighlightedFloors, len(floors))
+	for i, floor := range floors {
+		var highlightedContent string
+		// ElasticSearch is not aware of potentially sensitive content, so we replace highlighted content with the
+		// sanitized one from floor.Content if the floor is sensitive
+		if floor.Sensitive() && !floor.Deleted && !floor.IsMe {
+			highlightedContent = floor.Content
+		} else {
+			if hc, ok := highlightedContents[floor.ID]; ok {
+				highlightedContent = hc
+			} else {
+				highlightedContent = floor.Content
+			}
+		}
+		highlightedFloors[i] = &HighlightedFloor{
+			Floor:              floor,
+			HighlightedContent: highlightedContent,
+		}
+	}
+
+	return highlightedFloors, nil
 }
 
 // SearchOld searches floors by keyword by Database.
 // It is used when ElasticSearch is not available. (Not recommended)
-func SearchOld(c *fiber.Ctx, keyword string, size, offset int, startTimeUnix *int64, endTimeUnix *int64) (Floors, error) {
+func SearchOld(c *fiber.Ctx, keyword string, size, offset int, startTimeUnix *int64, endTimeUnix *int64) (HighlightedFloors, error) {
 	floors := Floors{}
 	var startTime, endTime *time.Time
 	if startTimeUnix != nil {
@@ -219,14 +311,72 @@ func SearchOld(c *fiber.Ctx, keyword string, size, offset int, startTimeUnix *in
 	}
 	querySet, err := floors.MakeQuerySetWithTimeRange(nil, &offset, &size, startTime, endTime, c)
 	if err != nil {
+		log.Err(err).Msg("error building floor query set with time range")
 		return nil, err
 	}
 
-	result := querySet.
+	err = querySet.
 		Where("content like ?", "%"+keyword+"%").
 		Where("hole_id in (?)", DB.Table("hole").Select("id").Where("hidden = false")).
-		Order("id desc").Find(&floors)
-	return floors, result.Error
+		Order("id desc").Find(&floors).Error
+	if err != nil {
+		log.Err(err).Msgf("error finding floors by keyword '%s'", keyword)
+		return nil, err
+	}
+
+	result, err := PreprocessAndHighlight(c, floors, keyword)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+func PreprocessAndHighlight(c *fiber.Ctx, floors Floors, keyword string) (HighlightedFloors, error) {
+	// preprocess here to reuse Floors#Preprocess
+	err := floors.Preprocess(c)
+	if err != nil {
+		log.Err(err).Msg("error preprocessing floors")
+		return nil, err
+	}
+
+	// at this point potentially sensitive content is wiped out by Preprocess, so we can highlight safely
+	highlighted := make(HighlightedFloors, len(floors))
+
+	// skip highlighting if keyword is empty
+	if keyword == "" {
+		CopyToHighlightedFloors(floors, highlighted)
+		return highlighted, nil
+	}
+
+	// (?i) for case insensitivity, QuoteMeta to avoid regex injection
+	regex := "(?i)" + regexp.QuoteMeta(keyword)
+	pattern, err := regexp.Compile(regex)
+	if err != nil {
+		log.Err(err).Msgf("error compiling highlight regex: '%s'", regex)
+		// fall back to unhighlighted result
+		CopyToHighlightedFloors(floors, highlighted)
+		return highlighted, nil
+	}
+
+	for i, floor := range floors {
+		highlighted[i] = &HighlightedFloor{
+			Floor:              floor,
+			HighlightedContent: pattern.ReplaceAllString(floor.Content, HighlightReplace),
+		}
+	}
+
+	return highlighted, nil
+}
+
+// CopyToHighlightedFloors converts Floors to HighlightedFloors but doesn't actually perform the highlighting
+func CopyToHighlightedFloors(floors Floors, result HighlightedFloors) {
+	for i, floor := range floors {
+		result[i] = &HighlightedFloor{
+			Floor:              floor,
+			HighlightedContent: floor.Content,
+		}
+	}
 }
 
 // BulkInsert run in single goroutine only
