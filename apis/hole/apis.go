@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math/rand"
 	"net/http"
 	"slices"
 	"strconv"
@@ -1087,6 +1088,54 @@ func GenerateSummary(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
+
+	if len(floors) > config.Config.MaxSummaryFloors {
+		// 1. 按 UpdatedAt 升序排序
+		slices.SortFunc(floors, func(a, b *Floor) int {
+			if a.UpdatedAt.Equal(b.UpdatedAt) {
+				return 0
+			}
+			if a.UpdatedAt.Before(b.UpdatedAt) {
+				return -1
+			}
+			return 1
+		})
+
+		// 2. 提取头尾
+		earliestFloors := config.Config.MaxSummaryFloors / 5
+		newestFloors := config.Config.MaxSummaryFloors / 5 * 2
+		earliest := floors[:earliestFloors]
+		newest := floors[len(floors)-newestFloors:]
+
+		// 3. 提取中间并按 Like 降序筛选
+		middle := make(Floors, len(floors)-earliestFloors-newestFloors)
+		copy(middle, floors[earliestFloors:len(floors)-newestFloors]) // copy 防止影响原切片顺序
+
+		rand.Shuffle(len(middle), func(i, j int) {
+			middle[i], middle[j] = middle[j], middle[i]
+		})
+
+		slices.SortFunc(middle, func(a, b *Floor) int {
+			return b.Like - a.Like
+		})
+
+		// 4.即使中间不足20条也能安全截取 (len(floors)>50 保证了 middle 长度至少为 21)
+		topLikes := middle[:config.Config.MaxSummaryFloors-earliestFloors-newestFloors]
+
+		// 5. 合并
+		newFloors := make(Floors, 0, config.Config.MaxSummaryFloors)
+		newFloors = append(newFloors, earliest...)
+		newFloors = append(newFloors, topLikes...)
+		newFloors = append(newFloors, newest...)
+
+		floors = newFloors
+
+		// 6. 按 ID 重新排序以恢复对话流上下文
+		slices.SortFunc(floors, func(a, b *Floor) int {
+			return a.Ranking - b.Ranking
+		})
+	}
+
 	content := ""
 	if hole.HoleFloor.FirstFloor != nil {
 		content = hole.HoleFloor.FirstFloor.Content
@@ -1105,7 +1154,6 @@ func GenerateSummary(c *fiber.Ctx) error {
 			FloorID:   floor.FloorID,
 		}
 	}
-
 	requestBody := map[string]any{
 		"floors":   summaryFloors,
 		"content":  content,
