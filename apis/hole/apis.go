@@ -1049,7 +1049,7 @@ func GenerateSummary(c *fiber.Ctx) error {
 					if cachedData.Data.HoleID != id && cachedData.Data.HoleID != 0 {
 						log.Error().
 							Int("hole_id", id).
-							Str("trace_id", cachedData.TraceID).
+							Str("trace_id", cachedData.Data.TraceID).
 							Int("ai_server_return_id", cachedData.Data.HoleID).
 							Msg("AISummary: hole id error")
 						cachedData.Data.HoleID = id

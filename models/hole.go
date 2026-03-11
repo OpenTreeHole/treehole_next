@@ -290,7 +290,11 @@ func (holes Holes) Preprocess(c *fiber.Ctx) error {
 		floors = append(floors, hole.Floors...)
 		// set ai_summary_available
 		uid, _ := common.GetUserID(c)
+
+		// for users in whitelist or whitelist is empty, AISummaryAvailable is true,
 		hole.AISummaryAvailable = config.Config.WhiteListUserIds == nil || slices.Contains(config.Config.WhiteListUserIds, uid)
+
+		hole.AISummaryAvailable = !(hole.Locked || hole.Hidden || hole.Frozen)
 		for _, tag := range hole.Tags {
 			if len(tag.Name) > 0 && tag.Name[0] == '*' {
 				hole.AISummaryAvailable = false
@@ -313,7 +317,6 @@ func (holes Holes) Preprocess(c *fiber.Ctx) error {
 					return err
 				}
 
-				// var discard any
 				hole.AISummaryAvailable = hole.Reply > config.Config.SummaryFloorLimit || contentSum >= config.Config.SummaryContentLimit // || utils.GetCache("AISummary"+strconv.Itoa(hole.ID), &discard)
 
 				if hole.AISummaryAvailable {
