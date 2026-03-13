@@ -167,7 +167,7 @@ func (report *Report) SendCreate(_ *gorm.DB) error {
 		URL:         fmt.Sprintf("/api/reports/%d", report.ID),
 	}
 	_, err := message.Send()
-	utils.Notify(utils.NotificationTargetFeishuDivision, desc)
+	utils.Notify(utils.NotificationTargetFeishuAdmin, desc)
 	return err
 }
 
