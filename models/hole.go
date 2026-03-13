@@ -565,31 +565,19 @@ func (hole *Hole) HoleHook() {
 	}
 
 	if hole.DivisionID == 4 {
-		go utils.NotifyQQ(&utils.BotMessage{
-			MessageType: utils.MessageTypePrivate,
-			UserID:      config.Config.QQBotUserID,
-			Message:     notifyMessage,
-		})
-		go utils.NotifyFeishu(&utils.FeishuMessage{
-			MsgType: "text",
-			Content: notifyMessage,
-		})
-	}
-
-	tagToGroup := map[string]*int64{
-		"@物理大神": config.Config.QQBotPhysicsGroupID,
-		"@码上辅导": config.Config.QQBotCodingGroupID,
+		utils.Notify(utils.NotificationTargetQQUser, notifyMessage)
+		utils.Notify(utils.NotificationTargetFeishuDivision, notifyMessage)
 	}
 
 	for _, tag := range hole.Tags {
-		if tag != nil {
-			if groupID, ok := tagToGroup[tag.Name]; ok {
-				go utils.NotifyQQ(&utils.BotMessage{
-					MessageType: utils.MessageTypeGroup,
-					GroupID:     groupID,
-					Message:     notifyMessage,
-				})
-			}
+		if tag == nil {
+			continue
+		}
+		switch tag.Name {
+		case "@物理大神":
+			utils.Notify(utils.NotificationTargetQQPhysicsGroup, notifyMessage)
+		case "@码上辅导":
+			utils.Notify(utils.NotificationTargetQQCodingGroup, notifyMessage)
 		}
 	}
 }

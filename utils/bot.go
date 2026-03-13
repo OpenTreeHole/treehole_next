@@ -6,8 +6,23 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 	"treehole_next/config"
 )
+
+type NotificationTarget string
+
+const (
+	NotificationTargetQQUser         NotificationTarget = "qq_user"
+	NotificationTargetQQPhysicsGroup NotificationTarget = "qq_physics_group"
+	NotificationTargetQQCodingGroup  NotificationTarget = "qq_coding_group"
+	NotificationTargetFeishuAdmin    NotificationTarget = "feishu_admin"
+	NotificationTargetFeishuDivision NotificationTarget = "feishu_division"
+)
+
+type Notifier interface {
+	Notify(target NotificationTarget, message string)
+}
 
 type BotMessageType string
 
@@ -16,7 +31,7 @@ const (
 	MessageTypePrivate BotMessageType = "private"
 )
 
-type BotMessage struct {
+type qqBotMessage struct {
 	MessageType BotMessageType `json:"message_type"`
 	GroupID     *int64         `json:"group_id"`
 	UserID      *int64         `json:"user_id"`
@@ -24,19 +39,66 @@ type BotMessage struct {
 	AutoEscape  bool           `json:"auto_escape default:false"`
 }
 
-type FeishuMessage struct {
+type feishuMessage struct {
 	MsgType string `json:"msg_type"`
 	Content string `json:"message"`
 }
 
-func NotifyFeishu(feishuMessage *FeishuMessage) {
+type botNotifier struct{}
+
+var defaultNotifier Notifier = botNotifier{}
+var notificationHTTPClient = &http.Client{Timeout: 5 * time.Minute}
+
+func Notify(target NotificationTarget, message string) {
+	defaultNotifier.Notify(target, message)
+}
+
+func (botNotifier) Notify(target NotificationTarget, message string) {
+	if message == "" {
+		return
+	}
+
+	go func() {
+		switch target {
+		case NotificationTargetQQUser:
+			notifyQQ(&qqBotMessage{
+				MessageType: MessageTypePrivate,
+				UserID:      config.Config.QQBotUserID,
+				Message:     message,
+			})
+		case NotificationTargetQQPhysicsGroup:
+			notifyQQ(&qqBotMessage{
+				MessageType: MessageTypeGroup,
+				GroupID:     config.Config.QQBotPhysicsGroupID,
+				Message:     message,
+			})
+		case NotificationTargetQQCodingGroup:
+			notifyQQ(&qqBotMessage{
+				MessageType: MessageTypeGroup,
+				GroupID:     config.Config.QQBotCodingGroupID,
+				Message:     message,
+			})
+		case NotificationTargetFeishuAdmin:
+			notifyFeishu(config.Config.FeishuAdminNotifierUrl, &feishuMessage{
+				MsgType: "text",
+				Content: message,
+			})
+		case NotificationTargetFeishuDivision:
+			notifyFeishu(config.Config.FeishuDivisionNotifierUrl, &feishuMessage{
+				MsgType: "text",
+				Content: message,
+			})
+		}
+	}()
+}
+
+func notifyFeishu(url *string, feishuMessage *feishuMessage) {
 	if feishuMessage == nil || feishuMessage.MsgType == "" {
 		return
 	}
-	if config.Config.FeishuBotUrl == nil {
+	if url == nil || *url == "" {
 		return
 	}
-	url := *config.Config.FeishuBotUrl
 
 	jsonData, err := json.Marshal(feishuMessage)
 	if err != nil {
@@ -46,7 +108,7 @@ func NotifyFeishu(feishuMessage *FeishuMessage) {
 
 	RequestLog(fmt.Sprintf("Request: %s", string(jsonData)), "NotifyFeishu", 0, false)
 
-	resp, err := http.Post(url, "application/json", bytes.NewBuffer(jsonData))
+	resp, err := notificationHTTPClient.Post(*url, "application/json", bytes.NewBuffer(jsonData))
 	if err != nil {
 		RequestLog("Error creating request", "NotifyFeishu", 0, false)
 		return
@@ -62,7 +124,7 @@ func NotifyFeishu(feishuMessage *FeishuMessage) {
 	}
 }
 
-func NotifyQQ(botMessage *BotMessage) {
+func notifyQQ(botMessage *qqBotMessage) {
 	if botMessage == nil {
 		return
 	}
@@ -86,7 +148,7 @@ func NotifyQQ(botMessage *BotMessage) {
 
 	RequestLog(fmt.Sprintf("Request: %s", string(jsonData)), "NotifyQQ", 0, false)
 
-	resp, err := http.Post(url, "application/json", bytes.NewBuffer(jsonData))
+	resp, err := notificationHTTPClient.Post(url, "application/json", bytes.NewBuffer(jsonData))
 	if err != nil {
 		RequestLog("Error creating request", "NotifyQQ", 0, false)
 		return

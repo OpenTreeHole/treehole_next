@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sync/atomic"
 	"time"
+	"treehole_next/utils"
 
 	"github.com/rs/zerolog/log"
 
@@ -152,21 +153,21 @@ func (report *Report) SendCreate(_ *gorm.DB) error {
 	userIDs := []int{adminList.data[currentCounter-1]}
 
 	// construct message
+	desc := fmt.Sprintf(
+		"理由：%s，内容：%s",
+		report.Reason,
+		report.Floor.Content,
+	)
 	message := Notification{
-		Data:       report,
-		Recipients: userIDs,
-		Description: fmt.Sprintf(
-			"理由：%s，内容：%s",
-			report.Reason,
-			report.Floor.Content,
-		),
-		Title: "您有举报需要处理",
-		Type:  MessageTypeReport,
-		URL:   fmt.Sprintf("/api/reports/%d", report.ID),
+		Data:        report,
+		Recipients:  userIDs,
+		Description: desc,
+		Title:       "您有举报需要处理",
+		Type:        MessageTypeReport,
+		URL:         fmt.Sprintf("/api/reports/%d", report.ID),
 	}
-
-	// send
 	_, err := message.Send()
+	utils.Notify(utils.NotificationTargetFeishuDivision, desc)
 	return err
 }
 

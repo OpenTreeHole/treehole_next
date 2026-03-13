@@ -53,7 +53,8 @@ var Config struct {
 	QQBotCodingGroupID           *int64   `env:"CODING_GROUP_ID"`
 	QQBotUserID                  *int64   `env:"USER_ID"`
 	QQBotUrl                     *string  `env:"QQ_BOT_URL"`
-	FeishuBotUrl                 *string  `env:"FEISHU_BOT_URL"`
+	FeishuAdminNotifierUrl       *string  `env:"FEISHU_ADMIN_NOTIFIER_URL"`
+	FeishuDivisionNotifierUrl    *string  `env:"FEISHU_DIVISION_NOTIFIER_URL"`
 	AdminOnlyTagIds              []int    `env:"ADMIN_ONLY_TAG_IDS"`
 	AISummaryURL                 string   `env:"AI_SUMMARY_URL" envDefault:"http://localhost:8080/internal"`
 	SummaryFloorLimit            int      `env:"SUMMARY_FLOOR_LIMIT" envDefault:"15"`
