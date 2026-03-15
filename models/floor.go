@@ -596,16 +596,16 @@ func (floor *Floor) SendSensitive(_ *gorm.DB) error {
 	}
 
 	// construct message
-	desc := fmt.Sprintf("有新的敏感内容需要审核，floorID: %d", floor.ID)
+	desc := "您有待审核的内容"
 	message := Notification{
 		Data:        floor,
 		Recipients:  userIDs,
 		Description: desc,
-		Title:       "您有待审核的内容",
+		Title:       desc,
 		Type:        MessageTypeSensitive,
 		URL:         fmt.Sprintf("/api/floors/%d", floor.ID),
 	}
 	_, err := message.Send()
-	utils.Notify(utils.NotificationTargetFeishuAdmin, desc)
+	utils.Notify(utils.NotificationTargetFeishuAdmin, desc+fmt.Sprintf("\n##%d\n%s", floor.ID, floor.Content))
 	return err
 }
