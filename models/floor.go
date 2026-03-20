@@ -606,6 +606,6 @@ func (floor *Floor) SendSensitive(_ *gorm.DB) error {
 		URL:         fmt.Sprintf("/api/floors/%d", floor.ID),
 	}
 	_, err := message.Send()
-	utils.Notify(utils.NotificationTargetFeishuAdmin, desc+fmt.Sprintf("\n##%d\n%s", floor.ID, floor.Content))
+	utils.Notify(utils.NotificationTargetFeishuAdmin, desc+fmt.Sprintf("\n##%d\n\n%s\n\n%s", floor.ID, floor.Content, floor.SensitiveDetail))
 	return err
 }
