@@ -293,8 +293,7 @@ func (holes Holes) Preprocess(c *fiber.Ctx) error {
 
 		// for users in whitelist or whitelist is empty, AISummaryAvailable is true,
 		hole.AISummaryAvailable = config.Config.WhiteListUserIds == nil || slices.Contains(config.Config.WhiteListUserIds, uid)
-
-		hole.AISummaryAvailable = !(hole.Locked || hole.Hidden || hole.Frozen)
+		hole.AISummaryAvailable = hole.AISummaryAvailable && !(hole.Locked || hole.Hidden || hole.Frozen)
 		for _, tag := range hole.Tags {
 			if len(tag.Name) > 0 && tag.Name[0] == '*' {
 				hole.AISummaryAvailable = false
