@@ -153,6 +153,55 @@ func GetFloor(c *fiber.Ctx) (err error) {
 	return Serialize(c, &floor)
 }
 
+// GetFloorSurroundings
+//
+// @Summary Get Surrounding Floors
+// @Description 获取指定楼层前后各 size 个楼层，用于跳转定位
+// @Tags Floor
+// @Produce application/json
+// @Router /floors/{id}/surroundings [get]
+// @Param id path int true "floor id"
+// @Param size query int false "上下各加载的楼层数" default(10)
+// @Success 200 {array} Floor
+func GetFloorSurroundings(c *fiber.Ctx) error {
+	floorID, err := c.ParamsInt("id")
+	if err != nil {
+		return err
+	}
+
+	var query SurroundingModel
+	err = common.ValidateQuery(c, &query)
+	if err != nil {
+		return err
+	}
+
+	// get target floor's hole_id and ranking
+	var target Floor
+	err = DB.Select("hole_id", "ranking").First(&target, floorID).Error
+	if err != nil {
+		return err
+	}
+
+	// load floors within ranking range
+	var floors Floors
+	querySet, err := MakeFloorQuerySet(c)
+	if err != nil {
+		return err
+	}
+	err = querySet.
+		Where("hole_id = ? AND ranking BETWEEN ? AND ?",
+			target.HoleID,
+			target.Ranking-query.Size,
+			target.Ranking+query.Size).
+		Order("ranking ASC").
+		Find(&floors).Error
+	if err != nil {
+		return err
+	}
+
+	return Serialize(c, &floors)
+}
+
 // CreateFloor
 //
 // @Summary Create A Floor
