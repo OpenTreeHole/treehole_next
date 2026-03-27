@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"slices"
 	"time"
+	"treehole_next/apis/message"
 	"treehole_next/utils/sensitive"
 
 	"github.com/opentreehole/go-common"
@@ -629,6 +630,11 @@ func DeleteFloor(c *fiber.Ctx) error {
 
 		floor.Deleted = true
 		floor.Content = generateDeleteReason(body.Reason, user.ID == floor.UserID)
+		err = message.DeleteMessageByRelatedFloorID(tx, floor.ID)
+		if err != nil {
+			return err
+		}
+
 		return tx.Save(&floor).Error
 	})
 	if err != nil {
@@ -857,15 +863,15 @@ func GetPunishmentHistory(c *fiber.Ctx) error {
 	// search DB for user punishment history
 	punishments := make([]string, 0, 10)
 	err = DB.Raw(
-		`SELECT f.content 
+		`SELECT f.content
 FROM floor f
 WHERE f.id IN (
-	SELECT distinct floor.id
-	FROM floor
-	JOIN floor_history ON floor.id = floor_history.floor_id 
-	WHERE floor.user_id <> floor_history.user_id 
-	AND floor.user_id = ? 
-	AND floor.deleted = true
+    SELECT distinct floor.id
+    FROM floor
+	JOIN floor_history ON floor.id = floor_history.floor_id
+    WHERE floor.user_id <> floor_history.user_id
+    AND floor.user_id = ?
+    AND floor.deleted = true
 )`, userID).Scan(&punishments).Error
 	if err != nil {
 		return err
@@ -1066,6 +1072,10 @@ func ModifyFloorSensitive(c *fiber.Ctx) (err error) {
 
 		reason := "违反社区规范"
 		err = floor.Backup(tx, user.ID, reason)
+		if err != nil {
+			return err
+		}
+		err = message.DeleteMessageByRelatedFloorID(tx, floor.ID)
 		if err != nil {
 			return err
 		}

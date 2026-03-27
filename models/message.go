@@ -19,11 +19,13 @@ type Message struct {
 	Description string      `json:"description" gorm:"size:65536;not null"`
 	Data        any         `json:"data" gorm:"serializer:json" `
 	Type        MessageType `json:"code" gorm:"size:16;not null"`
-	URL         string      `json:"url" gorm:"size:64;default:'';not null"`
-	Recipients  []int       `json:"-" gorm:"-:all" `
-	MessageID   int         `json:"message_id" gorm:"-:all"`       // 兼容旧版 id
-	HasRead     bool        `json:"has_read" gorm:"default:false"` // 兼容旧版, 永远为false，以MessageUser的HasRead为准
-	Users       Users       `json:"-" gorm:"many2many:message_user;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	URL            string      `json:"url" gorm:"size:64;default:'';not null"`
+	RelatedFloorID *int        `json:"related_floor_id,omitempty" gorm:"index"`
+	RelatedHoleID  *int        `json:"related_hole_id,omitempty" gorm:"index"`
+	Recipients     []int       `json:"-" gorm:"-:all" `
+	MessageID      int         `json:"message_id" gorm:"-:all"`       // 兼容旧版 id
+	HasRead        bool        `json:"has_read" gorm:"default:false"` // 兼容旧版, 永远为false，以MessageUser的HasRead为准
+	Users          Users       `json:"-" gorm:"many2many:message_user;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 }
 
 type MessageUser struct {
