@@ -34,12 +34,14 @@ type Notifications []Notification
 
 type Notification struct {
 	// Should be same as CrateModel in notification project
-	Title       string      `json:"message"`
-	Description string      `json:"description"`
-	Data        any         `json:"data"`
-	Type        MessageType `json:"code"`
-	URL         string      `json:"url"`
-	Recipients  []int       `json:"recipients"`
+	Title          string      `json:"message"`
+	Description    string      `json:"description"`
+	Data           any         `json:"data"`
+	Type           MessageType `json:"code"`
+	URL            string      `json:"url"`
+	Recipients     []int       `json:"recipients"`
+	RelatedFloorID *int        `json:"related_floor_id,omitempty"`
+	RelatedHoleID  *int        `json:"related_hole_id,omitempty"`
 }
 
 func readRespNotification(body io.ReadCloser) Notification {
@@ -140,12 +142,14 @@ func (message Notification) Send() (Message, error) {
 
 	// save to database first
 	body := Message{
-		Type:        message.Type,
-		Title:       message.Title,
-		Description: message.Description,
-		Data:        message.Data,
-		URL:         message.URL,
-		Recipients:  message.Recipients,
+		Type:           message.Type,
+		Title:          message.Title,
+		Description:    message.Description,
+		Data:           message.Data,
+		URL:            message.URL,
+		Recipients:     message.Recipients,
+		RelatedFloorID: message.RelatedFloorID,
+		RelatedHoleID:  message.RelatedHoleID,
 	}
 	err = DB.Omit(clause.Associations).Create(&body).Error
 	if err != nil {

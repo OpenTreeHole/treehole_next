@@ -2,6 +2,7 @@ package message
 
 import (
 	"github.com/opentreehole/go-common"
+	"gorm.io/gorm"
 
 	. "treehole_next/models"
 	. "treehole_next/utils"
@@ -153,4 +154,26 @@ func DeleteMessage(c *fiber.Ctx) error {
 		return result.Error
 	}
 	return c.Status(204).JSON(nil)
+}
+
+func deleteMessagesByCondition(db *gorm.DB, condition string, value int) error {
+	var messageIDs []int
+	if err := db.Model(&Message{}).Where(condition, value).Pluck("id", &messageIDs).Error; err != nil {
+		return err
+	}
+	if len(messageIDs) == 0 {
+		return nil
+	}
+	if err := db.Where("message_id IN ?", messageIDs).Delete(&MessageUser{}).Error; err != nil {
+		return err
+	}
+	return db.Where("id IN ?", messageIDs).Delete(&Message{}).Error
+}
+
+func DeleteMessageByRelatedFloorID(db *gorm.DB, floorID int) error {
+	return deleteMessagesByCondition(db, "related_floor_id = ?", floorID)
+}
+
+func DeleteMessageByRelatedHoleID(db *gorm.DB, holeID int) error {
+	return deleteMessagesByCondition(db, "related_hole_id = ?", holeID)
 }

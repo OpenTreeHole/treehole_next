@@ -11,6 +11,7 @@ import (
 	"slices"
 	"strconv"
 	"time"
+	"treehole_next/apis/message"
 	"treehole_next/config"
 	"treehole_next/utils/sensitive"
 
@@ -859,6 +860,10 @@ func HideHole(c *fiber.Ctx) error {
 	var floors Floors
 	_ = DB.Where("hole_id = ?", hole.ID).Find(&floors)
 	go BulkDelete(Models2IDSlice(floors))
+	err = message.DeleteMessageByRelatedHoleID(DB, hole.ID)
+	if err != nil {
+		return err
+	}
 
 	return c.Status(204).JSON(nil)
 }
@@ -948,6 +953,10 @@ func DeleteHole(c *fiber.Ctx) error {
 	err = DeleteCache("divisions")
 	if err != nil {
 		log.Err(err).Msg("DeleteHole: delete cache divisions")
+	}
+	err = message.DeleteMessageByRelatedHoleID(DB, hole.ID)
+	if err != nil {
+		return err
 	}
 
 	return c.Status(204).JSON(nil)

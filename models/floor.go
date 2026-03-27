@@ -503,12 +503,13 @@ func (floor *Floor) SendSubscription(tx *gorm.DB) Notification {
 
 	// Construct Notification
 	message := Notification{
-		Data:        floor,
-		Recipients:  userIDs,
-		Description: floor.Content,
-		Title:       "您关注的帖子有新回复",
-		Type:        MessageTypeFavorite,
-		URL:         fmt.Sprintf("/api/floors/%d", floor.ID),
+		Data:           floor,
+		Recipients:     userIDs,
+		Description:    floor.Content,
+		Title:          "您关注的帖子有新回复",
+		Type:           MessageTypeFavorite,
+		URL:            fmt.Sprintf("/api/floors/%d", floor.ID),
+		RelatedFloorID: &floor.ID,
 	}
 
 	return message
@@ -530,12 +531,13 @@ func (floor *Floor) SendReply(tx *gorm.DB) Notification {
 
 	// construct message
 	message := Notification{
-		Data:        floor,
-		Recipients:  userIDs,
-		Description: floor.Content,
-		Title:       "您的内容有新回复",
-		Type:        MessageTypeReply,
-		URL:         fmt.Sprintf("/api/floors/%d", floor.ID),
+		Data:           floor,
+		Recipients:     userIDs,
+		Description:    floor.Content,
+		Title:          "您的内容有新回复",
+		Type:           MessageTypeReply,
+		URL:            fmt.Sprintf("/api/floors/%d", floor.ID),
+		RelatedFloorID: &floor.ID,
 	}
 
 	return message
@@ -555,12 +557,13 @@ func (floor *Floor) SendMention(_ *gorm.DB) Notification {
 
 	// construct message
 	message := Notification{
-		Data:        floor,
-		Recipients:  userIDs,
-		Description: floor.Content,
-		Title:       "您的内容被引用了",
-		Type:        MessageTypeMention,
-		URL:         fmt.Sprintf("/api/floors/%d", floor.ID),
+		Data:           floor,
+		Recipients:     userIDs,
+		Description:    floor.Content,
+		Title:          "您的内容被引用了",
+		Type:           MessageTypeMention,
+		URL:            fmt.Sprintf("/api/floors/%d", floor.ID),
+		RelatedFloorID: &floor.ID,
 	}
 
 	return message
@@ -572,12 +575,13 @@ func (floor *Floor) SendModify(_ *gorm.DB) error {
 
 	// construct message
 	message := Notification{
-		Data:        floor,
-		Recipients:  userIDs,
-		Description: floor.Content,
-		Title:       "您的内容被管理员修改了",
-		Type:        MessageTypeModify,
-		URL:         fmt.Sprintf("/api/floors/%d", floor.ID),
+		Data:           floor,
+		Recipients:     userIDs,
+		Description:    floor.Content,
+		Title:          "您的内容被管理员修改了",
+		Type:           MessageTypeModify,
+		URL:            fmt.Sprintf("/api/floors/%d", floor.ID),
+		RelatedFloorID: &floor.ID,
 	}
 
 	// send
@@ -598,12 +602,13 @@ func (floor *Floor) SendSensitive(_ *gorm.DB) error {
 	// construct message
 	desc := "您有待审核的内容"
 	message := Notification{
-		Data:        floor,
-		Recipients:  userIDs,
-		Description: desc,
-		Title:       desc,
-		Type:        MessageTypeSensitive,
-		URL:         fmt.Sprintf("/api/floors/%d", floor.ID),
+		Data:          floor,
+		Recipients:    userIDs,
+		Description:   desc,
+		Title:         desc,
+		Type:          MessageTypeSensitive,
+		URL:           fmt.Sprintf("/api/floors/%d", floor.ID),
+		RelatedFloorID: &floor.ID,
 	}
 	_, err := message.Send()
 	utils.Notify(utils.NotificationTargetFeishuAdmin, desc+fmt.Sprintf("\n##%d\n\n%s\n\n%s", floor.ID, floor.Content, floor.SensitiveDetail))
