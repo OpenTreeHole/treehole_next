@@ -74,6 +74,10 @@ func CheckSensitive(params ParamsForCheck) (resp *ResponseForCheck, err error) {
 		ev.Msg("CheckSensitive completed")
 	}()
 
+	if !config.Config.OpenSensitiveCheck {
+		return &ResponseForCheck{Pass: true}, nil
+	}
+
 	images, clearContent, err := findImagesInMarkdownContent(params.Content)
 	if err != nil {
 		return nil, err
