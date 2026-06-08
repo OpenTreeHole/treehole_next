@@ -13,6 +13,7 @@ func RegisterRoutes(app fiber.Router) {
 	app.Get("/holes/:id<int>/floors", ListFloorsInAHole)
 	app.Get("/floors", ListFloorsOld)
 	app.Get("/floors/:id<int>", GetFloor)
+	app.Get("/floors/:id<int>/surroundings", GetFloorSurroundings)
 	app.Post("/holes/:id<int>/floors", utils.MiddlewareHasAnsweredQuestions, CreateFloor)
 	app.Post("/floors", utils.MiddlewareHasAnsweredQuestions, CreateFloorOld)
 	app.Put("/floors/:id<int>", ModifyFloor)
