@@ -66,7 +66,7 @@ func BanUser(c *fiber.Ctx) error {
 	}
 
 	var hole Hole
-	err = DB.Take(&hole, floor.HoleID).Error
+	err = DB.Unscoped().Select("id", "division_id").Take(&hole, floor.HoleID).Error
 	if err != nil {
 		return err
 	}
