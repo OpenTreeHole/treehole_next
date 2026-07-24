@@ -37,6 +37,24 @@ func TestListReport(t *testing.T) {
 	data = Map{"range": 2}
 	testAPIModelWithQuery(t, "get", "/api/reports", 200, &getReports, data)
 	log.Printf("getReports: %+v\n", getReports)
+
+	data = Map{"range": 2, "order_by": "id", "sort": "asc"}
+	testAPIModelWithQuery(t, "get", "/api/reports", 200, &getReports, data)
+	for i := 1; i < len(getReports); i++ {
+		assert.Less(t, getReports[i-1].ID, getReports[i].ID)
+	}
+
+	data = Map{"range": 2, "order_by": "id", "sort": "desc"}
+	testAPIModelWithQuery(t, "get", "/api/reports", 200, &getReports, data)
+	for i := 1; i < len(getReports); i++ {
+		assert.Greater(t, getReports[i-1].ID, getReports[i].ID)
+	}
+}
+
+func TestListReportRejectsUnsafeOrderBy(t *testing.T) {
+	testCommonQuery(t, "get", "/api/reports", 400, Map{
+		"order_by": "id` DESC, IF(1=1, SLEEP(1), 0) -- ",
+	})
 }
 
 func TestAddReport(t *testing.T) {

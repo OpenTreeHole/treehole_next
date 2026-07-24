@@ -1,9 +1,8 @@
 package report
 
 import (
-	"fmt"
-
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 
 	. "treehole_next/models"
 )
@@ -19,7 +18,7 @@ const (
 type ListModel struct {
 	Size    int    `query:"size" default:"30" validate:"min=0,max=50"`
 	Offset  int    `query:"offset" default:"0" validate:"min=0"`
-	OrderBy string `query:"order_by" default:"id"`
+	OrderBy string `json:"order_by" query:"order_by" default:"id" validate:"oneof=id"`
 	// Sort order, default is desc
 	Sort string `json:"sort" query:"sort" default:"desc" validate:"oneof=asc desc"`
 	// Range, 0: not dealt, 1: dealt, 2: all
@@ -30,7 +29,10 @@ func (q *ListModel) BaseQuery() *gorm.DB {
 	return DB.
 		Limit(q.Size).
 		Offset(q.Offset).
-		Order(fmt.Sprintf("`report`.`%s` %s", q.OrderBy, q.Sort))
+		Order(clause.OrderByColumn{
+			Column: clause.Column{Table: "report", Name: "id"},
+			Desc:   q.Sort == "desc",
+		})
 }
 
 type AddModel struct {

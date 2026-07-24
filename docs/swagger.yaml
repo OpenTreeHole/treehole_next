@@ -572,6 +572,10 @@ definitions:
       message_id:
         description: 兼容旧版 id
         type: integer
+      related_floor_id:
+        type: integer
+      related_hole_id:
+        type: integer
       time_created:
         type: string
       time_updated:
@@ -2145,8 +2149,10 @@ paths:
         name: offset
         type: integer
       - default: id
+        enum:
+        - id
         in: query
-        name: orderBy
+        name: order_by
         type: string
       - description: 'Range, 0: not dealt, 1: dealt, 2: all'
         enum:

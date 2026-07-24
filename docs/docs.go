@@ -1917,9 +1917,12 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "enum": [
+                            "id"
+                        ],
                         "type": "string",
                         "default": "id",
-                        "name": "orderBy",
+                        "name": "order_by",
                         "in": "query"
                     },
                     {
@@ -4049,6 +4052,12 @@ const docTemplate = `{
                 },
                 "message_id": {
                     "description": "兼容旧版 id",
+                    "type": "integer"
+                },
+                "related_floor_id": {
+                    "type": "integer"
+                },
+                "related_hole_id": {
                     "type": "integer"
                 },
                 "time_created": {
