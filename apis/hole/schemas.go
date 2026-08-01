@@ -94,12 +94,20 @@ type CreateOldResponse struct {
 }
 
 type ModifyModel struct {
-	TagCreateModelSlice
-	DivisionID *int  `json:"division_id" validate:"omitempty,min=1"` // Admin and owner only
-	Hidden     *bool `json:"hidden"`                                 // Admin only
-	Unhidden   *bool `json:"unhidden"`                               // admin only
-	Lock       *bool `json:"lock"`                                   // admin only
-	Frozen     *bool `json:"frozen"`                                 // admin only
+	Tags       []tag.CreateModel `json:"tags" validate:"omitempty,min=1,dive"`   // Admin only, no count limit
+	DivisionID *int              `json:"division_id" validate:"omitempty,min=1"` // Admin and owner only
+	Hidden     *bool             `json:"hidden"`                                 // Admin only
+	Unhidden   *bool             `json:"unhidden"`                               // admin only
+	Lock       *bool             `json:"lock"`                                   // admin only
+	Frozen     *bool             `json:"frozen"`                                 // admin only
+}
+
+func (body ModifyModel) ToName() []string {
+	tags := make([]string, 0, len(body.Tags))
+	for _, tagCreateModel := range body.Tags {
+		tags = append(tags, tagCreateModel.Name)
+	}
+	return tags
 }
 
 func (body ModifyModel) CheckPermission(user *models.User, hole *models.Hole) error {
