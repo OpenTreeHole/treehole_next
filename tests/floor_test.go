@@ -221,3 +221,32 @@ func TestDeleteFloor(t *testing.T) {
 	DB.Where("hole_id = ?", hole.ID).Offset(1).First(&floor)
 	testAPI(t, "delete", "/api/floors/"+strconv.Itoa(floor.ID), 200, data)
 }
+
+func TestGetFloorSurroundings(t *testing.T) {
+	// division 7 的第一个 hole 有 50 个 floor (ranking 0-49)
+	var hole Hole
+	DB.Where("division_id = ?", 7).First(&hole)
+
+	// 取中间位置的 floor
+	var midFloor Floor
+	DB.Where("hole_id = ? AND ranking = ?", hole.ID, 25).First(&midFloor)
+
+	// 默认 size=10，应返回 ranking 15-35 共 21 个
+	var floors Floors
+	testAPIModel(t, "get", "/api/floors/"+strconv.Itoa(midFloor.ID)+"/surroundings", 200, &floors)
+	assert.EqualValues(t, 21, len(floors))
+
+	// 自定义 size=5，应返回 ranking 20-30 共 11 个
+	data := Map{"size": 5}
+	testAPIModelWithQuery(t, "get", "/api/floors/"+strconv.Itoa(midFloor.ID)+"/surroundings", 200, &floors, data)
+	assert.EqualValues(t, 11, len(floors))
+
+	// 边界：第一个 floor (ranking=0), size=10 → ranking 0-10 共 11 个
+	var firstFloor Floor
+	DB.Where("hole_id = ? AND ranking = ?", hole.ID, 0).First(&firstFloor)
+	testAPIModel(t, "get", "/api/floors/"+strconv.Itoa(firstFloor.ID)+"/surroundings", 200, &floors)
+	assert.EqualValues(t, 11, len(floors))
+
+	// 404
+	testCommon(t, "get", "/api/floors/"+strconv.Itoa(largeInt)+"/surroundings", 404)
+}

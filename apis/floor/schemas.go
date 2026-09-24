@@ -22,6 +22,10 @@ type ListOldModel struct {
 	Search string `query:"s"           json:"s"`
 }
 
+type SurroundingModel struct {
+	Size int `json:"size" query:"size" default:"10" validate:"min=1,max=50"`
+}
+
 type CreateModel struct {
 	Content string `json:"content" validate:"required"`
 	// Admin and Operator only
