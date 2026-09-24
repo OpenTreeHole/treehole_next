@@ -88,17 +88,14 @@ func ListHomePage(c *fiber.Ctx) (err error) {
 			for i, tag := range tags {
 				tagIDs[i] = tag.ID
 			}
-			var holeIDs []int
-			err = tx.Table("hole_tags").
-				Select("hole_id").
-				Where("tag_id IN ?", tagIDs).
-				Group("hole_id").
-				Having("COUNT(DISTINCT tag_id) = ?", len(tagIDs)).
-				Pluck("hole_id", &holeIDs).Error
-			if err != nil {
-				return err
-			}
-			querySet = querySet.Where("hole.id IN ?", holeIDs)
+			// Use a subquery instead of plucking all hole ids, because plucking
+			// them would blow past MySQL's placeholder limit for popular tags.
+			querySet = querySet.Where("hole.id IN (?)",
+				tx.Table("hole_tags").
+					Select("hole_id").
+					Where("tag_id IN ?", tagIDs).
+					Group("hole_id").
+					Having("COUNT(DISTINCT tag_id) = ?", len(tagIDs)))
 		}
 
 		return querySet.Find(&holes).Error
@@ -354,18 +351,14 @@ func ListHoles(c *fiber.Ctx) error {
 				tagIDs[i] = tag.ID
 			}
 
-			var holeIDs []int
-			err = DB.Table("hole_tags").
-				Select("hole_id").
-				Where("tag_id IN ?", tagIDs).
-				Group("hole_id").
-				Having("COUNT(DISTINCT tag_id) = ?", len(tagIDs)).
-				Pluck("hole_id", &holeIDs).Error
-			if err != nil {
-				return err
-			}
-
-			querySet = querySet.Where("hole.id IN ?", holeIDs)
+			// Use a subquery instead of plucking all hole ids, because plucking
+			// them would blow past MySQL's placeholder limit for popular tags.
+			querySet = querySet.Where("hole.id IN (?)",
+				DB.Table("hole_tags").
+					Select("hole_id").
+					Where("tag_id IN ?", tagIDs).
+					Group("hole_id").
+					Having("COUNT(DISTINCT tag_id) = ?", len(tagIDs)))
 			err = querySet.Find(&holes).Error
 			if err != nil {
 				return err
