@@ -3,7 +3,6 @@ package sensitive
 import (
 	"bytes"
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -481,7 +480,7 @@ func getImageBase64FromURL(imgurl string) (string, error) {
 
 	req, err := http.NewRequest(
 		"GET",
-		imgurl,
+		imgUrl.String(),
 		nil,
 	)
 	if err != nil {
@@ -503,14 +502,20 @@ func getImageBase64FromURL(imgurl string) (string, error) {
 		return "", fmt.Errorf("Request failed with status code: %d", res.StatusCode)
 	}
 
+	if res.ContentLength > maxDownloadedImageBytes {
+		return "", errImageTooLarge
+	}
+
 	// 读取响应体到内存
 	var buffer bytes.Buffer
-	_, err = io.Copy(&buffer, res.Body)
+	_, err = io.Copy(&buffer, io.LimitReader(res.Body, maxDownloadedImageBytes+1))
 	if err != nil {
 		fmt.Printf("Failed to read response body: %v in getImageBase64FromURL\n", err)
 		return "", err
 	}
 
-	// 将图片数据转为 Base64
-	return base64.StdEncoding.EncodeToString(buffer.Bytes()), nil
+	if buffer.Len() > maxDownloadedImageBytes {
+		return "", errImageTooLarge
+	}
+	return prepareImageForYidun(buffer.Bytes())
 }
