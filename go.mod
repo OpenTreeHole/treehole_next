@@ -1,13 +1,16 @@
 module treehole_next
 
-go 1.25.7
+go 1.26.4
 
 require (
+	github.com/anthonynsimon/bild v0.17.1
 	github.com/caarlos0/env/v9 v9.0.0
 	github.com/eko/gocache/lib/v4 v4.2.3
 	github.com/eko/gocache/store/go_cache/v4 v4.2.4
 	github.com/eko/gocache/store/redis/v4 v4.2.6
 	github.com/elastic/go-elasticsearch/v8 v8.14.0
+	github.com/gen2brain/h265 v0.2.3
+	github.com/gen2brain/vpx v0.2.1
 	github.com/goccy/go-json v0.10.5
 	github.com/gofiber/fiber/v2 v2.52.13
 	github.com/google/uuid v1.6.0
@@ -21,6 +24,7 @@ require (
 	github.com/swaggo/swag v1.16.6
 	github.com/yidun/yidun-golang-sdk v1.0.33
 	golang.org/x/exp v0.0.0-20260209203927-2842357ff358
+	golang.org/x/image v0.45.0
 	gorm.io/driver/mysql v1.6.0
 	gorm.io/driver/sqlite v1.6.0
 	gorm.io/gorm v1.31.1
@@ -80,13 +84,13 @@ require (
 	go.opentelemetry.io/otel/trace v1.41.0 // indirect
 	go.yaml.in/yaml/v2 v2.4.3 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
-	golang.org/x/crypto v0.52.0 // indirect
-	golang.org/x/mod v0.35.0 // indirect
-	golang.org/x/net v0.54.0 // indirect
-	golang.org/x/sync v0.20.0 // indirect
-	golang.org/x/sys v0.45.0 // indirect
-	golang.org/x/text v0.37.0 // indirect
-	golang.org/x/tools v0.44.0 // indirect
+	golang.org/x/crypto v0.54.0 // indirect
+	golang.org/x/mod v0.38.0 // indirect
+	golang.org/x/net v0.57.0 // indirect
+	golang.org/x/sync v0.22.0 // indirect
+	golang.org/x/sys v0.47.0 // indirect
+	golang.org/x/text v0.41.0 // indirect
+	golang.org/x/tools v0.48.0 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
