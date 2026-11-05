@@ -67,11 +67,15 @@ func AddDivision(c *fiber.Ctx) error {
 // @Success 200 {array} models.Division
 func ListDivisions(c *fiber.Ctx) error {
 	var divisions Divisions
+	user, err := GetCurrLoginUser(c)
+	if err != nil {
+		return err
+	}
 	// Temporarily disable cache
 	//if GetCache("divisions", &divisions) {
 	//	return c.JSON(divisions)
 	//}
-	err := DB.Find(&divisions, "hidden = false").Error
+	err = VisibleDivisions(DB, user.ID).Find(&divisions).Error
 	if err != nil {
 		return err
 	}

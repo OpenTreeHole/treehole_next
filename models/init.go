@@ -140,6 +140,7 @@ func InitDB() {
 	// models must be registered here to migrate into the database
 	err = DB.AutoMigrate(
 		&Division{},
+		&UserHiddenDivision{},
 		&Tag{},
 		&User{},
 		&Floor{},

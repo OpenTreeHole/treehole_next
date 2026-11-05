@@ -50,6 +50,20 @@ func (division *Division) GetID() int {
 
 type Divisions []*Division
 
+// UserHiddenDivision hides a division from a user's division list. It does not
+// restrict access to the division or its content through other endpoints.
+type UserHiddenDivision struct {
+	UserID     int `gorm:"primaryKey;autoIncrement:false"`
+	DivisionID int `gorm:"primaryKey;autoIncrement:false"`
+}
+
+// VisibleDivisions returns the existing public list with user-specific entries
+// excluded. An absent configuration leaves the list unchanged.
+func VisibleDivisions(db *gorm.DB, userID int) *gorm.DB {
+	hiddenIDs := db.Model(&UserHiddenDivision{}).Select("division_id").Where("user_id = ?", userID)
+	return db.Where("hidden = ? AND id NOT IN (?)", false, hiddenIDs)
+}
+
 func (divisions Divisions) Preprocess(c *fiber.Ctx) error {
 	for _, division := range divisions {
 		err := division.Preprocess(c)
