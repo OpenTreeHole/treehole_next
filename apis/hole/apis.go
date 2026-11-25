@@ -9,6 +9,7 @@ import (
 	"io"
 	"math/rand"
 	"net/http"
+	"net/url"
 	"slices"
 	"strconv"
 	"time"
@@ -40,6 +41,11 @@ import (
 // @Failure 404 {object} MessageModel
 // @Failure 500 {object} MessageModel
 func ListHomePage(c *fiber.Ctx) (err error) {
+	uid, filterErr := FilterUserID(c)
+	if filterErr != nil {
+		return filterErr
+	}
+
 	var query ShowHomePageModel
 	err = common.ValidateQuery(c, &query)
 	if err != nil {
@@ -77,7 +83,7 @@ func ListHomePage(c *fiber.Ctx) (err error) {
 		// 仿照 ListHoles：按 Tags 过滤（需同时拥有所有指定标签的树洞）
 		if len(query.Tags) != 0 {
 			var tags []Tag
-			err = tx.Model(&Tag{}).Where("name IN ?", query.Tags).Find(&tags).Error
+			err = SelectableTags(tx, uid).Where("name IN ?", query.Tags).Find(&tags).Error
 			if err != nil {
 				return err
 			}
@@ -207,6 +213,11 @@ func ListSFWHolesByDivision(c *fiber.Ctx) error {
 // @Success 200 {array} Hole
 // @Failure 404 {object} MessageModel
 func ListHolesByTag(c *fiber.Ctx) error {
+	uid, filterErr := FilterUserID(c)
+	if filterErr != nil {
+		return filterErr
+	}
+
 	var query QueryTime
 	err := common.ValidateQuery(c, &query)
 	if err != nil {
@@ -215,8 +226,11 @@ func ListHolesByTag(c *fiber.Ctx) error {
 
 	// get tag
 	var tag Tag
-	tagName := c.Params("name")
-	result := DB.Where("name = ?", tagName).First(&tag)
+	tagName, err := url.PathUnescape(c.Params("name"))
+	if err != nil {
+		return fiber.ErrBadRequest
+	}
+	result := SelectableTags(DB, uid).Where("name = ?", tagName).First(&tag)
 	if result.Error != nil {
 		return result.Error
 	}
@@ -310,6 +324,11 @@ func ListGoodHoles(c *fiber.Ctx) error {
 // @Param object query ListOldModel false "query"
 // @Success 200 {array} Hole
 func ListHoles(c *fiber.Ctx) error {
+	uid, filterErr := FilterUserID(c)
+	if filterErr != nil {
+		return filterErr
+	}
+
 	var query ListOldModel
 	err := common.ValidateQuery(c, &query)
 	if err != nil {
@@ -337,7 +356,7 @@ func ListHoles(c *fiber.Ctx) error {
 
 		if len(query.Tags) != 0 {
 			var tags []Tag
-			err = DB.Where("name IN ?", query.Tags).Find(&tags).Error
+			err = SelectableTags(DB, uid).Where("name IN ?", query.Tags).Find(&tags).Error
 			if err != nil {
 				return err
 			}
@@ -365,7 +384,7 @@ func ListHoles(c *fiber.Ctx) error {
 			}
 		} else if query.Tag != "" {
 			var tag Tag
-			err = DB.Where("name = ?", query.Tag).Find(&tag).Error
+			err = SelectableTags(DB, uid).Where("name = ?", query.Tag).Find(&tag).Error
 			if err != nil {
 				return err
 			}
@@ -628,6 +647,13 @@ func ModifyHole(c *fiber.Ctx) error {
 
 		// modify division
 		if body.DivisionID != nil && *body.DivisionID != 0 && *body.DivisionID != hole.DivisionID {
+			uid, err := FilterUserID(c)
+			if err != nil {
+				return err
+			}
+			if err := RequireVisibleDivision(tx, uid, *body.DivisionID); err != nil {
+				return err
+			}
 			hole.DivisionID = *body.DivisionID
 			changed = true
 			// log
@@ -693,7 +719,11 @@ func ModifyHole(c *fiber.Ctx) error {
 		// modify tags
 		if len(body.Tags) != 0 {
 			changed = true
-			hole.Tags, err = FindOrCreateTags(tx, user, body.ToName())
+			uid, err := FilterUserID(c)
+			if err != nil {
+				return err
+			}
+			hole.Tags, err = FindOrCreateTags(tx, user, body.ToName(), uid)
 			if err != nil {
 				return err
 			}

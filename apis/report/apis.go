@@ -31,7 +31,11 @@ func GetReport(c *fiber.Ctx) error {
 
 	// find report
 	var report Report
-	result := LoadReportFloor(DB).First(&report, reportID)
+	querySet, err := LoadReportFloor(c, DB)
+	if err != nil {
+		return err
+	}
+	result := querySet.First(&report, reportID)
 	if result.Error != nil {
 		return result.Error
 	}
@@ -58,7 +62,10 @@ func ListReports(c *fiber.Ctx) error {
 	// find reports
 	var reports Reports
 
-	querySet := LoadReportFloor(query.BaseQuery())
+	querySet, err := LoadReportFloor(c, query.BaseQuery())
+	if err != nil {
+		return err
+	}
 
 	var result *gorm.DB
 	switch query.Range {
@@ -104,6 +111,16 @@ func AddReport(c *fiber.Ctx) error {
 		return common.Forbidden(user.BanReportMessage())
 	}
 
+	uid, err := FilterUserID(c)
+	if err != nil {
+		return err
+	}
+	if uid != 0 {
+		var floor Floor
+		if err = VisibleFloorIDs(DB, uid).Take(&floor, body.FloorID).Error; err != nil {
+			return err
+		}
+	}
 	// add report
 	report := Report{
 		FloorID: body.FloorID,
@@ -158,7 +175,11 @@ func DeleteReport(c *fiber.Ctx) error {
 
 	// modify report
 	var report Report
-	result := LoadReportFloor(DB).First(&report, reportID)
+	querySet, err := LoadReportFloor(c, DB)
+	if err != nil {
+		return err
+	}
+	result := querySet.First(&report, reportID)
 	if result.Error != nil {
 		return result.Error
 	}

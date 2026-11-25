@@ -41,13 +41,6 @@ func ListSubscriptions(c *fiber.Ctx) error {
 		if err != nil {
 			return err
 		}
-		if enabled && len(data) > 0 {
-			var visible []int
-			if err := FilterHoles(DB.Model(&Hole{}), userID).Where("hole.id IN ?", data).Pluck("hole.id", &visible).Error; err != nil {
-				return err
-			}
-			data = visible
-		}
 		return c.JSON(Map{"data": data})
 	} else {
 		holes := make(Holes, 0)
@@ -92,6 +85,10 @@ func AddSubscription(c *fiber.Ctx) error {
 
 	err = DB.Clauses(dbresolver.Write).Transaction(func(tx *gorm.DB) error {
 		// add favorites
+
+		if err := RequireCollectionTargets(c, tx, []int{body.HoleID}); err != nil {
+			return err
+		}
 		err = AddUserSubscription(tx, userID, body.HoleID)
 		if err != nil {
 			return err
@@ -137,6 +134,9 @@ func DeleteSubscription(c *fiber.Ctx) error {
 
 	err = DB.Clauses(dbresolver.Write).Transaction(func(tx *gorm.DB) error {
 		// 删除订阅并更新计数
+		if err := RequireCollectionTargets(c, tx, []int{body.HoleID}); err != nil {
+			return err
+		}
 		if err := RemoveUserSubscription(tx, userID, body.HoleID); err != nil {
 			return err
 		}
@@ -146,6 +146,9 @@ func DeleteSubscription(c *fiber.Ctx) error {
 		return err
 	})
 
+	if err != nil {
+		return err
+	}
 	return c.JSON(&Response{
 		Message: "删除成功",
 		Data:    data,

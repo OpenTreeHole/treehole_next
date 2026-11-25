@@ -476,8 +476,15 @@ func (hole *Hole) SetHoleFloor() {
 }
 
 func (hole *Hole) Create(tx *gorm.DB, user *User, tagNames []string, c *fiber.Ctx) (err error) {
+	uid, err := FilterUserID(c)
+	if err != nil {
+		return err
+	}
+	if err := RequireVisibleDivision(tx, uid, hole.DivisionID); err != nil {
+		return err
+	}
 	// Create hole.Tags, in different sql session
-	hole.Tags, err = FindOrCreateTags(tx, user, tagNames)
+	hole.Tags, err = FindOrCreateTags(tx, user, tagNames, uid)
 	if err != nil {
 		return err
 	}
@@ -485,7 +492,10 @@ func (hole *Hole) Create(tx *gorm.DB, user *User, tagNames []string, c *fiber.Ct
 	var firstFloor = hole.Floors[0]
 
 	// Find floor.Mentions, in different sql session
-	firstFloor.Mention, err = LoadFloorMentions(tx, firstFloor.Content)
+	firstFloor.Mention, err = LoadFloorMentions(c, tx, firstFloor.Content)
+	if err != nil {
+		return err
+	}
 
 	err = tx.Clauses(dbresolver.Write).Transaction(func(tx *gorm.DB) error {
 		// Create hole

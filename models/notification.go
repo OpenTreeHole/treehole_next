@@ -135,6 +135,69 @@ func (message Notification) Send() (Message, error) {
 	var err error
 
 	message.checkConfig()
+	if len(message.Recipients) == 0 {
+		return Message{}, nil
+	}
+	var restricted []int
+	if err = DB.Model(&UserContentFilter{}).Where("user_id IN ?", message.Recipients).Pluck("user_id", &restricted).Error; err != nil {
+		return Message{}, err
+	}
+	if len(restricted) == 0 {
+		return message.deliver()
+	}
+	ordinary := make([]int, 0, len(message.Recipients))
+	for _, id := range message.Recipients {
+		if !slices.Contains(restricted, id) {
+			ordinary = append(ordinary, id)
+		}
+	}
+	filtered := message
+	filtered.Recipients = nil
+	filtered.Data = nil
+	for _, id := range restricted {
+		visible, err := message.visibleTo(id)
+		if err != nil {
+			return Message{}, err
+		}
+		if visible {
+			filtered.Recipients = append(filtered.Recipients, id)
+		}
+	}
+	message.Recipients = ordinary
+	first, err := message.deliver()
+	if err != nil {
+		return first, err
+	}
+	second, err := filtered.deliver()
+	if first.ID != 0 {
+		return first, err
+	}
+	return second, err
+}
+
+func (message Notification) visibleTo(uid int) (bool, error) {
+	if message.RelatedFloorID == nil && message.RelatedHoleID == nil {
+		return message.Type == MessageTypeMail, nil
+	}
+	if message.RelatedFloorID != nil {
+		var count int64
+		err := VisibleFloorIDs(DB, uid).Where("floor.id = ?", *message.RelatedFloorID).Count(&count).Error
+		if err != nil || count == 0 {
+			return false, err
+		}
+	}
+	if message.RelatedHoleID != nil {
+		var count int64
+		err := VisiblePublicHoleIDs(DB, uid).Where("hole.id = ?", *message.RelatedHoleID).Count(&count).Error
+		if err != nil || count == 0 {
+			return false, err
+		}
+	}
+	return true, nil
+}
+
+func (message Notification) deliver() (Message, error) {
+	var err error
 	// return if no recipient
 	if len(message.Recipients) == 0 {
 		return Message{}, nil
@@ -159,7 +222,7 @@ func (message Notification) Send() (Message, error) {
 	if config.Config.NotificationUrl == "" {
 		return Message{}, nil
 	}
-	message.Title = utils.StripContent(message.Title, 32)             //varchar(32)
+	message.Title = utils.StripContent(message.Title, 32)                                           //varchar(32)
 	message.Description = utils.StripContent(cleanNotificationDescription(message.Description), 64) //varchar(64)
 	body.Title = message.Title
 	body.Description = message.Description
@@ -270,7 +333,7 @@ func UpdateAdminList(ctx context.Context) {
 }
 
 var (
-	reMention    = regexp.MustCompile(`#{1,2}\d+`)
+	reMention = regexp.MustCompile(`#{1,2}\d+`)
 	reFormula = regexp.MustCompile(`(?s)\${1,2}.*?\${1,2}`)
 	reSticker = regexp.MustCompile(`!\[\]\(dx_\S+?\)`)
 	reImage   = regexp.MustCompile(`!\[.*?\]\(.*?\)`)
@@ -279,8 +342,8 @@ var (
 func cleanNotificationDescription(content string) string {
 	newContent := reMention.ReplaceAllString(content, "")
 	newContent = reFormula.ReplaceAllString(newContent, "[公式]")
-    	newContent = reSticker.ReplaceAllString(newContent, "[表情]")
-    	newContent = reImage.ReplaceAllString(newContent, "[图片]")
+	newContent = reSticker.ReplaceAllString(newContent, "[表情]")
+	newContent = reImage.ReplaceAllString(newContent, "[图片]")
 	newContent = strings.ReplaceAll(newContent, "\n", "")
 	if newContent == "" {
 		return content

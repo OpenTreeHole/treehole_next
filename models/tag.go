@@ -67,12 +67,12 @@ func (tag *Tag) AfterCreate(_ *gorm.DB) (err error) {
 	return nil
 }
 
-func FindOrCreateTags(tx *gorm.DB, user *User, names []string) (Tags, error) {
+func FindOrCreateTags(tx *gorm.DB, user *User, names []string, uid int) (Tags, error) {
 	tags := make(Tags, 0)
 	for i, name := range names {
 		names[i] = strings.TrimSpace(name)
 	}
-	err := tx.Where("name in ?", names).Find(&tags).Error
+	err := SelectableTags(tx, uid).Where("name in ?", names).Find(&tags).Error
 	if err != nil {
 		return nil, err
 	}
@@ -101,6 +101,9 @@ func FindOrCreateTags(tx *gorm.DB, user *User, names []string) (Tags, error) {
 
 	if len(newTags) == 0 {
 		return tags, nil
+	}
+	if uid != 0 {
+		return nil, common.NotFound()
 	}
 	for _, tag := range newTags {
 		if !user.IsAdmin {

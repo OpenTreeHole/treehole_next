@@ -400,7 +400,7 @@ func ModifyFloor(c *fiber.Ctx) error {
 				return err
 			}
 
-			floor.Mention, err = LoadFloorMentions(tx, floor.Content)
+			floor.Mention, err = LoadFloorMentions(c, tx, floor.Content)
 			if err != nil {
 				return err
 			}
@@ -796,7 +796,15 @@ func RestoreFloor(c *fiber.Ctx) error {
 		return result.Error
 	}
 	var floorHistory FloorHistory
-	result = DB.First(&floorHistory, floorHistoryID)
+	historyQuery := DB
+	uid, err := FilterUserID(c)
+	if err != nil {
+		return err
+	}
+	if uid != 0 {
+		historyQuery = historyQuery.Where("floor_id = ?", floorID)
+	}
+	result = historyQuery.First(&floorHistory, floorHistoryID)
 	if result.Error != nil {
 		return result.Error
 	}
@@ -862,17 +870,16 @@ func GetPunishmentHistory(c *fiber.Ctx) error {
 
 	// search DB for user punishment history
 	punishments := make([]string, 0, 10)
-	err = DB.Raw(
-		`SELECT f.content
-FROM floor f
-WHERE f.id IN (
-    SELECT distinct floor.id
-    FROM floor
-	JOIN floor_history ON floor.id = floor_history.floor_id
-    WHERE floor.user_id <> floor_history.user_id
-    AND floor.user_id = ?
-    AND floor.deleted = true
-)`, userID).Scan(&punishments).Error
+	uid, err := FilterUserID(c)
+	if err != nil {
+		return err
+	}
+	history := DB.Model(&Floor{}).Where("floor.user_id = ? AND floor.deleted = ?", userID, true).
+		Where("EXISTS (SELECT 1 FROM floor_history fh WHERE fh.floor_id = floor.id AND fh.user_id <> floor.user_id)")
+	if uid != 0 {
+		history = history.Where("floor.id IN (?)", VisibleFloorIDs(DB, uid))
+	}
+	err = history.Pluck("floor.content", &punishments).Error
 	if err != nil {
 		return err
 	}
@@ -953,7 +960,14 @@ func ListSensitiveFloors(c *fiber.Ctx) (err error) {
 
 	// get floors
 	var floors Floors
+	uid, err := FilterUserID(c)
+	if err != nil {
+		return err
+	}
 	querySet := DB
+	if uid != 0 {
+		querySet = querySet.Where("floor.id IN (?)", VisibleFloorIDs(DB, uid))
+	}
 	if query.All == true {
 		querySet = querySet.Where("is_sensitive = true")
 	} else {

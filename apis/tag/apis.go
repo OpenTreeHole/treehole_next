@@ -40,7 +40,7 @@ func ListTags(c *fiber.Ctx) error {
 		if err != nil {
 			return err
 		}
-		querySet := DB.Where("tag.id NOT IN (?)", HiddenTagIDs(DB, user.ID))
+		querySet := SelectableTags(DB, user.ID)
 		if query.Search != "" {
 			querySet = querySet.Where("name LIKE ?", "%"+query.Search+"%")
 		}
@@ -111,6 +111,16 @@ func CreateTag(c *fiber.Ctx) error {
 	user, err := GetCurrLoginUser(c)
 	if err != nil {
 		return err
+	}
+	uid, err := FilterUserID(c)
+	if err != nil {
+		return err
+	}
+	if uid != 0 {
+		if err := SelectableTags(DB, uid).Where("name = ?", strings.TrimSpace(body.Name)).Take(&tag).Error; err != nil {
+			return err
+		}
+		return Serialize(c, &tag)
 	}
 	if !user.IsAdmin {
 		if len(tag.Name) > 15 && len([]rune(tag.Name)) > 10 {

@@ -275,7 +275,7 @@ func ListMyPunishments(c *fiber.Ctx) error {
 		return err
 	}
 
-	punishments, err := listPunishmentsByUserID(userID)
+	punishments, err := listPunishmentsByUserID(c, userID)
 	if err != nil {
 		return err
 	}
@@ -304,7 +304,7 @@ func ListPunishmentsByUserID(c *fiber.Ctx) error {
 		return common.Forbidden()
 	}
 
-	punishments, err := listPunishmentsByUserID(userID)
+	punishments, err := listPunishmentsByUserID(c, userID)
 	if err != nil {
 		return err
 	}
@@ -312,9 +312,18 @@ func ListPunishmentsByUserID(c *fiber.Ctx) error {
 	return c.JSON(punishments)
 }
 
-func listPunishmentsByUserID(userID int) ([]Punishment, error) {
+func listPunishmentsByUserID(c *fiber.Ctx, userID int) ([]Punishment, error) {
 	var punishments []Punishment
-	err := DB.Where("user_id = ?", userID).Preload("Floor").Find(&punishments).Error
+	uid, err := FilterUserID(c)
+	if err != nil {
+		return nil, err
+	}
+	q := DB.Where("user_id = ?", userID)
+	if uid != 0 {
+		q = q.Where("(floor_id IS NULL OR floor_id IN (?))", VisibleFloorIDs(DB, uid)).
+			Where("division_id NOT IN (?)", DB.Model(&UserHiddenDivision{}).Select("division_id").Where("user_id = ?", uid))
+	}
+	err = q.Preload("Floor").Find(&punishments).Error
 	if err != nil {
 		return nil, err
 	}
