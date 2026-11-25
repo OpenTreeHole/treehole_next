@@ -13,8 +13,9 @@ type UserContentFilter struct {
 
 // UserHiddenTag stores a tag keyword for an individual user.
 type UserHiddenTag struct {
-	UserID int    `gorm:"primaryKey;autoIncrement:false"`
-	Name   string `gorm:"primaryKey;size:64"`
+	UserID     int    `gorm:"primaryKey;autoIncrement:false"`
+	Name       string `gorm:"primaryKey;size:64"`
+	ExactMatch bool   `gorm:"not null;default:false"`
 }
 
 const contentFilterLocal = "user_content_filter_enabled"
@@ -41,9 +42,10 @@ func ContentFilterEnabled(c *fiber.Ctx) (bool, error) {
 func HiddenTagIDs(db *gorm.DB, userID int) *gorm.DB {
 	return db.Session(&gorm.Session{NewDB: true}).Model(&Tag{}).Select("tag.id").
 		Where(`EXISTS (SELECT 1 FROM user_hidden_tag rule WHERE rule.user_id = ?
-			AND LENGTH(REPLACE(rule.name, '*', '')) > 0
+			AND ((rule.exact_match AND LOWER(tag.name) = LOWER(rule.name))
+			OR (NOT rule.exact_match AND LENGTH(REPLACE(rule.name, '*', '')) > 0
 			AND INSTR(LOWER(tag.name), LOWER(CASE WHEN SUBSTR(rule.name, 1, 1) = '*'
-				THEN SUBSTR(rule.name, 2) ELSE rule.name END)) > 0)`, userID)
+				THEN SUBSTR(rule.name, 2) ELSE rule.name END)) > 0)))`, userID)
 }
 
 // FilterHoles applies account-specific division and tag restrictions to a

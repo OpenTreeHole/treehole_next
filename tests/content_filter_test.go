@@ -22,6 +22,14 @@ func TestContentFilterEndpoints(t *testing.T) {
 
 	tag := Tag{Name: "*lGbT+讨论"}
 	require.NoError(t, DB.Create(&tag).Error)
+	exactRule := UserHiddenTag{UserID: 1, Name: "开盒", ExactMatch: true}
+	require.NoError(t, DB.Create(&exactRule).Error)
+	exactTag := Tag{Name: exactRule.Name}
+	require.NoError(t, DB.Create(&exactTag).Error)
+	testCommon(t, "get", fmt.Sprintf("/api/tags/%d", exactTag.ID), 404)
+	reminderTag := Tag{Name: "别来开盒"}
+	require.NoError(t, DB.Create(&reminderTag).Error)
+	testCommon(t, "get", fmt.Sprintf("/api/tags/%d", reminderTag.ID), 200)
 	safeTag := Tag{Name: "filtertestsafe"}
 	require.NoError(t, DB.Create(&safeTag).Error)
 	blockedByTag := Hole{DivisionID: 1, Tags: Tags{&tag, &safeTag}}
