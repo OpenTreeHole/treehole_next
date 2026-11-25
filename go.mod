@@ -12,7 +12,7 @@ require (
 	github.com/gen2brain/h265 v0.2.3
 	github.com/gen2brain/vpx v0.2.1
 	github.com/goccy/go-json v0.10.5
-	github.com/gofiber/fiber/v2 v2.52.13
+	github.com/gofiber/fiber/v2 v2.52.14
 	github.com/google/uuid v1.6.0
 	github.com/hetiansu5/urlquery v1.2.7
 	github.com/opentreehole/go-common v0.1.7
