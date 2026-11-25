@@ -93,9 +93,9 @@ func SelectableTags(tx *gorm.DB, uid int) *gorm.DB {
 		return q
 	}
 	linked := VisiblePublicHoleIDs(tx, uid).Select("1").
-		Joins("JOIN hole_tags link ON link.hole_id=hole.id").Where("link.tag_id=tag.id")
-	// Skip explicitly hidden names before looking for an eligible post, even for popular tags.
-	return q.Where("NOT EXISTS (SELECT 1 FROM user_hidden_tag r WHERE r.user_id = ? AND "+tagNameMatch(tx, "tag.name")+")", uid).Where("EXISTS (?)", linked)
+		Joins("JOIN hole_tags link ON link.hole_id=hole.id").Where("link.tag_id=tag.id").Limit(1)
+	// A scalar LIMIT stops at the first visible post even for popular tags.
+	return q.Where("NOT EXISTS (SELECT 1 FROM user_hidden_tag r WHERE r.user_id = ? AND "+tagNameMatch(tx, "tag.name")+")", uid).Where("1 = (?)", linked)
 }
 
 func RequireVisibleDivision(tx *gorm.DB, uid, id int) error {
