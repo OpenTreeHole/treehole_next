@@ -24,10 +24,13 @@ func TestContentFilterEndpoints(t *testing.T) {
 	// The test-mode API uses user 1. User 2 remains unrestricted.
 	require.NoError(t, DB.Create(&UserContentFilter{UserID: 1}).Error)
 	require.NoError(t, DB.Create(&UserHiddenDivision{UserID: 1, DivisionID: 2}).Error)
-	require.NoError(t, DB.Create(&UserHiddenTag{UserID: 1, Name: "LGBT"}).Error)
+	require.NoError(t, DB.Create(&UserHiddenTag{UserID: 1, Name: "*LGBT+讨论"}).Error)
 
 	tag := Tag{Name: "*lGbT+讨论"}
 	require.NoError(t, DB.Create(&tag).Error)
+	unlisted := Tag{Name: "提醒*lgbt+讨论"}
+	require.NoError(t, DB.Create(&unlisted).Error)
+	testCommon(t, "get", fmt.Sprintf("/api/tags/%d", unlisted.ID), 200)
 	safeTag := Tag{Name: "filtertestsafe"}
 	require.NoError(t, DB.Create(&safeTag).Error)
 	blockedByTag := Hole{DivisionID: 1, Tags: Tags{&tag, &safeTag}}

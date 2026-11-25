@@ -11,7 +11,7 @@ type UserContentFilter struct {
 	UserID int `gorm:"primaryKey;autoIncrement:false"`
 }
 
-// UserHiddenTag stores a tag keyword for an individual user.
+// UserHiddenTag stores one full tag name for an individual user.
 type UserHiddenTag struct {
 	UserID int    `gorm:"primaryKey;autoIncrement:false"`
 	Name   string `gorm:"primaryKey;size:64"`
@@ -36,14 +36,11 @@ func ContentFilterEnabled(c *fiber.Ctx) (bool, error) {
 	return enabled, nil
 }
 
-// HiddenTagIDs matches the configured keywords literally within the current
-// tag names. A leading asterisk on a rule is a tag prefix, not a wildcard.
+// HiddenTagIDs resolves the account's explicit list of tag names.
 func HiddenTagIDs(db *gorm.DB, userID int) *gorm.DB {
 	return db.Session(&gorm.Session{NewDB: true}).Model(&Tag{}).Select("tag.id").
 		Where(`EXISTS (SELECT 1 FROM user_hidden_tag rule WHERE rule.user_id = ?
-			AND LENGTH(REPLACE(rule.name, '*', '')) > 0
-			AND INSTR(LOWER(tag.name), LOWER(CASE WHEN SUBSTR(rule.name, 1, 1) = '*'
-				THEN SUBSTR(rule.name, 2) ELSE rule.name END)) > 0)`, userID)
+			AND LOWER(rule.name) = LOWER(tag.name))`, userID)
 }
 
 // FilterHoles applies account-specific division and tag restrictions to a
