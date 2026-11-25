@@ -85,6 +85,10 @@ func AddSubscription(c *fiber.Ctx) error {
 
 	err = DB.Clauses(dbresolver.Write).Transaction(func(tx *gorm.DB) error {
 		// add favorites
+
+		if err := RequireCollectionTargets(c, tx, []int{body.HoleID}); err != nil {
+			return err
+		}
 		err = AddUserSubscription(tx, userID, body.HoleID)
 		if err != nil {
 			return err
@@ -130,6 +134,9 @@ func DeleteSubscription(c *fiber.Ctx) error {
 
 	err = DB.Clauses(dbresolver.Write).Transaction(func(tx *gorm.DB) error {
 		// 删除订阅并更新计数
+		if err := RequireCollectionTargets(c, tx, []int{body.HoleID}); err != nil {
+			return err
+		}
 		if err := RemoveUserSubscription(tx, userID, body.HoleID); err != nil {
 			return err
 		}

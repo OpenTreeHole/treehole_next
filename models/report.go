@@ -58,8 +58,15 @@ func (reports Reports) Preprocess(c *fiber.Ctx) error {
 	return nil
 }
 
-func LoadReportFloor(tx *gorm.DB) *gorm.DB {
-	return tx.Preload("Floor.Mention").Preload("Floor")
+func LoadReportFloor(c *fiber.Ctx, tx *gorm.DB) (*gorm.DB, error) {
+	uid, err := FilterUserID(c)
+	if err != nil {
+		return nil, err
+	}
+	if uid == 0 {
+		return tx.Preload("Floor.Mention").Preload("Floor"), nil
+	}
+	return tx.Where("report.floor_id IN (?)", VisibleFloorIDs(tx, uid)).Preload("Floor.Mention", "floor.id IN (?)", VisibleFloorIDs(tx, uid)).Preload("Floor"), nil
 }
 
 func (report *Report) Create(c *fiber.Ctx, db ...*gorm.DB) error {
@@ -159,12 +166,13 @@ func (report *Report) SendCreate(_ *gorm.DB) error {
 		report.Floor.Content,
 	)
 	message := Notification{
-		Data:        report,
-		Recipients:  userIDs,
-		Description: desc,
-		Title:       "您有举报需要处理",
-		Type:        MessageTypeReport,
-		URL:         fmt.Sprintf("/api/reports/%d", report.ID),
+		RelatedFloorID: &report.FloorID,
+		Data:           report,
+		Recipients:     userIDs,
+		Description:    desc,
+		Title:          "您有举报需要处理",
+		Type:           MessageTypeReport,
+		URL:            fmt.Sprintf("/api/reports/%d", report.ID),
 	}
 	_, err := message.Send()
 	utils.Notify(utils.NotificationTargetFeishuAdmin, desc)
@@ -177,8 +185,9 @@ func (report *Report) SendModify(_ *gorm.DB) error {
 
 	// construct message
 	message := Notification{
-		Data:       report,
-		Recipients: userIDs,
+		RelatedFloorID: &report.FloorID,
+		Data:           report,
+		Recipients:     userIDs,
 		Description: fmt.Sprintf(
 			"处理结果：%s\n感谢您为维护社区秩序所做的贡献。",
 			report.Result,

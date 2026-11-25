@@ -30,12 +30,14 @@ func TestContentFilterEndpoints(t *testing.T) {
 	require.NoError(t, DB.Create(&tag).Error)
 	unlisted := Tag{Name: "提醒*lgbt+讨论"}
 	require.NoError(t, DB.Create(&unlisted).Error)
-	testCommon(t, "get", fmt.Sprintf("/api/tags/%d", unlisted.ID), 200)
+
 	safeTag := Tag{Name: "filtertestsafe"}
 	require.NoError(t, DB.Create(&safeTag).Error)
 	blockedByTag := Hole{DivisionID: 1, Tags: Tags{&tag, &safeTag}}
-	blockedByDivision := Hole{DivisionID: 2}
-	allowed := Hole{DivisionID: 1, Tags: Tags{&safeTag}}
+	roundtableTag := Tag{Name: "roundtableonly"}
+	require.NoError(t, DB.Create(&roundtableTag).Error)
+	blockedByDivision := Hole{DivisionID: 2, Tags: Tags{&roundtableTag}}
+	allowed := Hole{DivisionID: 1, Tags: Tags{&safeTag, &unlisted}}
 	floorIDs := map[int]int{}
 	for _, hole := range []*Hole{&blockedByTag, &blockedByDivision, &allowed} {
 		require.NoError(t, DB.Create(hole).Error)
@@ -44,6 +46,69 @@ func TestContentFilterEndpoints(t *testing.T) {
 		floorIDs[hole.ID] = floor.ID
 		require.NoError(t, DB.Create(&UserFavorite{UserID: 1, HoleID: hole.ID}).Error)
 		require.NoError(t, DB.Create(&UserSubscription{UserID: 1, HoleID: hole.ID}).Error)
+	}
+	testCommon(t, "get", fmt.Sprintf("/api/tags/%d", unlisted.ID), 200)
+	for _, name := range []string{tag.Name, roundtableTag.Name} {
+		testCommon(t, "post", "/api/tags", 404, Map{"name": name})
+		require.Empty(t, testAPIArray(t, "get", "/api/tags?s="+name, 200))
+	}
+	testCommon(t, "get", fmt.Sprintf("/api/tags/%d", roundtableTag.ID), 404)
+	testCommon(t, "post", "/api/tags", 200, Map{"name": safeTag.Name})
+
+	// Use synthetic messages and verify both inbox and delivery for mixed recipients.
+	for _, id := range []int{1, 2} {
+		var u User
+		require.NoError(t, DB.FirstOrCreate(&u, User{ID: id}).Error)
+	}
+	for _, h := range []*Hole{&blockedByTag, &blockedByDivision, &allowed} {
+		fid := floorIDs[h.ID]
+		report := Report{FloorID: fid, Reason: "fixture"}
+		require.NoError(t, DB.Create(&report).Error)
+		msg := Message{Title: fmt.Sprintf("inbox-%d", h.ID), Type: MessageTypeReply, RelatedFloorID: &fid, Recipients: []int{1}, Data: Map{"snapshot": "old"}}
+		require.NoError(t, DB.Create(&msg).Error)
+		legacy := Message{Title: fmt.Sprintf("legacy-%d", h.ID), URL: fmt.Sprintf("/api/reports/%d", report.ID), Type: MessageTypeReportDealt, Recipients: []int{1}}
+		require.NoError(t, DB.Create(&legacy).Error)
+		punishment := Punishment{UserID: 1, FloorID: &fid, DivisionID: h.DivisionID}
+		require.NoError(t, DB.Create(&punishment).Error)
+		status := 404
+		if h == &allowed {
+			status = 200
+		}
+		testCommon(t, "get", fmt.Sprintf("/api/reports/%d", report.ID), status)
+		push := Notification{Title: fmt.Sprintf("delivery-%d", h.ID), Type: MessageTypeReply, RelatedFloorID: &fid, Recipients: []int{1, 2}, Data: Map{"snapshot": "old"}}
+		_, err := push.Send()
+		require.NoError(t, err)
+		var received []int
+		require.NoError(t, DB.Table("message_user").Joins("JOIN message ON message.id=message_user.message_id").Where("message.title = ?", push.Title).Pluck("user_id", &received).Error)
+		if h == &allowed {
+			require.Contains(t, received, 1)
+		} else {
+			require.NotContains(t, received, 1)
+		}
+		require.Contains(t, received, 2)
+	}
+	body := testCommon(t, "get", "/api/messages", 200)
+	require.Contains(t, string(body), fmt.Sprintf("legacy-%d", allowed.ID))
+	punishments := testAPIArray(t, "get", "/api/users/me/punishments", 200)
+	var pf []int
+	for _, p := range punishments {
+		if p["floor_id"] != nil {
+			pf = append(pf, int(p["floor_id"].(float64)))
+		}
+	}
+	require.Contains(t, pf, floorIDs[allowed.ID])
+	for _, h := range []*Hole{&blockedByTag, &blockedByDivision} {
+		require.NotContains(t, string(body), fmt.Sprintf("legacy-%d", h.ID))
+		require.NotContains(t, pf, floorIDs[h.ID])
+	}
+
+	require.Contains(t, string(body), fmt.Sprintf("inbox-%d", allowed.ID))
+	require.NotContains(t, string(body), `"snapshot":"old"`)
+	for _, h := range []*Hole{&blockedByTag, &blockedByDivision} {
+		require.NotContains(t, string(body), fmt.Sprintf("inbox-%d", h.ID))
+		for _, path := range []string{"/api/user/favorites", "/api/users/subscriptions"} {
+			testCommon(t, "post", path, 404, Map{"hole_id": h.ID})
+		}
 	}
 	for _, hole := range []*Hole{&blockedByTag, &blockedByDivision} {
 		testCommon(t, "get", fmt.Sprintf("/api/holes/%d", hole.ID), 404)
@@ -102,6 +167,13 @@ func TestContentFilterEndpoints(t *testing.T) {
 		testCommon(t, "get", fmt.Sprintf("/api/floors/%d/history", floorIDs[hole.ID]), 404)
 		require.Empty(t, testAPIArray(t, "get", fmt.Sprintf("/api/floors?hole_id=%d", hole.ID), 200))
 	}
+
+	// Writes resolve embedded mentions with the same visibility as reads.
+	text := fmt.Sprintf("##%d ##%d ##%d", floorIDs[blockedByTag.ID], floorIDs[blockedByDivision.ID], floorIDs[allowed.ID])
+	response := testAPI(t, "post", fmt.Sprintf("/api/holes/%d/floors", allowed.ID), 201, Map{"content": text})
+	embedded := response["mention"].([]any)
+	require.Len(t, embedded, 1)
+	require.EqualValues(t, floorIDs[allowed.ID], embedded[0].(map[string]any)["id"])
 
 	// A successful collection edit also returns the current collection.
 	for _, path := range []string{"/api/user/favorites", "/api/users/subscriptions"} {

@@ -2,9 +2,6 @@ package apis
 
 import (
 	"github.com/opentreehole/go-common"
-	"net/url"
-	"strconv"
-	"strings"
 
 	"treehole_next/apis/division"
 	"treehole_next/apis/favourite"
@@ -40,9 +37,11 @@ func RegisterRoutes(app *fiber.App) {
 	group := app.Group("/api")
 	group.Get("/", Index)
 	group.Use(MiddlewareGetUser)
-	group.Use(MiddlewareContentAccess)
+	group.Use("/divisions/:id<int>", visibleResource("division"))
+	group.Use("/holes/:id<int>", visibleResource("hole"))
+	group.Use("/floors/:id<int>", visibleResource("floor"))
 	division.RegisterRoutes(group)
-	tag.RegisterRoutes(group)
+	tag.RegisterRoutes(group, visibleResource("tag"))
 	hole.RegisterRoutes(group)
 	floor.RegisterRoutes(group)
 	report.RegisterRoutes(group)
@@ -53,81 +52,45 @@ func RegisterRoutes(app *fiber.App) {
 	message.RegisterRoutes(group)
 }
 
-// MiddlewareContentAccess guards direct URLs, including nested floor and
-// summary routes. List queries are filtered separately before pagination.
-func MiddlewareContentAccess(c *fiber.Ctx) error {
-	if c.Method() != fiber.MethodGet {
-		return c.Next()
-	}
-	enabled, err := models.ContentFilterEnabled(c)
-	if err != nil {
-		return err
-	}
-	if !enabled {
-		return c.Next()
-	}
-	user, err := models.GetCurrLoginUser(c)
-	if err != nil {
-		return err
-	}
-	parts := strings.Split(strings.Trim(c.Path(), "/"), "/")
-	if len(parts) < 3 || parts[0] != "api" {
-		return c.Next()
-	}
-	var count int64
-	switch parts[1] {
-	case "divisions":
-		id, parseErr := strconv.Atoi(parts[2])
-		if parseErr != nil {
-			return c.Next()
-		}
-		err = models.DB.Model(&models.UserHiddenDivision{}).Where("user_id = ? AND division_id = ?", user.ID, id).Count(&count).Error
+// Use router parameters so aliases and every HTTP method share the same check.
+func visibleResource(kind string) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		uid, err := models.FilterUserID(c)
 		if err != nil {
 			return err
 		}
-		if count > 0 {
-			return common.NotFound()
-		}
-	case "holes", "floors":
-		id, parseErr := strconv.Atoi(parts[2])
-		if parseErr != nil {
+		if uid == 0 {
 			return c.Next()
 		}
-		query := models.FilterHoles(models.DB.Model(&models.Hole{}), user.ID)
-		if parts[1] == "holes" {
-			query = query.Where("hole.id = ?", id)
-		} else {
-			query = query.Joins("JOIN floor ON floor.hole_id = hole.id").Where("floor.id = ?", id)
-		}
-		if err = query.Count(&count).Error; err != nil {
-			return err
-		}
-		if count == 0 {
+		id, err := c.ParamsInt("id")
+		if err != nil {
 			return common.NotFound()
 		}
-	case "tags":
-		query := models.DB.Model(&models.Tag{}).Where("id IN (?)", models.HiddenTagIDs(models.DB, user.ID))
-		if len(parts) == 3 {
-			id, parseErr := strconv.Atoi(parts[2])
-			if parseErr != nil {
-				return c.Next()
+		var count int64
+		switch kind {
+		case "division":
+			// Zero is the legacy all-divisions list.
+			if id != 0 {
+				err = models.RequireVisibleDivision(models.DB, uid, id)
 			}
-			query = query.Where("id = ?", id)
-		} else {
-			name, err := url.PathUnescape(parts[2])
-			if err != nil {
-				return fiber.ErrBadRequest
+		case "hole":
+			err = models.RequireVisibleHoles(models.DB, uid, []int{id})
+		case "floor":
+			err = models.VisibleFloorIDs(models.DB, uid).Where("floor.id = ?", id).Count(&count).Error
+			if err == nil && count == 0 {
+				return common.NotFound()
 			}
-			query = query.Where("LOWER(name) = LOWER(?)", name)
+		case "tag":
+			err = models.SelectableTags(models.DB, uid).Where("tag.id = ?", id).Count(&count).Error
+			if err == nil && count == 0 {
+				return common.NotFound()
+			}
 		}
-		if err = query.Count(&count).Error; err != nil {
+		if err != nil {
 			return err
 		}
-		if count > 0 {
-			return common.NotFound()
-		}
+		return c.Next()
 	}
-	return c.Next()
 }
 
 func MiddlewareGetUser(c *fiber.Ctx) error {
@@ -136,6 +99,10 @@ func MiddlewareGetUser(c *fiber.Ctx) error {
 		return err
 	}
 	c.Locals("user", userObject)
+	// Resolve the request policy before a handler opens a write transaction.
+	if _, err := models.ContentFilterEnabled(c); err != nil {
+		return err
+	}
 	if config.Config.AdminOnly {
 		if !userObject.IsAdmin {
 			return common.Forbidden()

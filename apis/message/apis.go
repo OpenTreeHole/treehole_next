@@ -31,24 +31,35 @@ func ListMessages(c *fiber.Ctx) error {
 
 	messages := Messages{}
 
+	q := DB.Model(&Message{}).Select("message.*,message_user.has_read").Joins("JOIN message_user ON message.id=message_user.message_id").Where("message_user.user_id = ?", userID)
 	if query.NotRead {
-		DB.Raw(`
-			SELECT message.*,message_user.has_read FROM message
-			INNER JOIN message_user 
-			WHERE message.id = message_user.message_id and message_user.user_id = ? and message_user.has_read = false
-			ORDER BY updated_at DESC`,
-			userID,
-		).Scan(&messages)
-	} else {
-		DB.Raw(`
-			SELECT message.*,message_user.has_read FROM message
-			INNER JOIN message_user
-			WHERE message.id = message_user.message_id and message_user.user_id = ?
-			ORDER BY updated_at DESC`,
-			userID,
-		).Scan(&messages)
+		q = q.Where("message_user.has_read = ?", false)
 	}
-
+	uid, err := FilterUserID(c)
+	if err != nil {
+		return err
+	}
+	if uid != 0 {
+		// Older notifications stored their canonical source only in the URL.
+		// Resolve those links in bulk, then apply the same policy as newer messages.
+		q = q.Joins(`LEFT JOIN report legacy_report ON message.related_floor_id IS NULL AND
+ message.url LIKE '/api/reports/%' AND legacy_report.id=CAST(SUBSTR(message.url,14) AS SIGNED)`)
+		floorSource := `COALESCE(message.related_floor_id,legacy_report.floor_id,
+ CASE WHEN message.url LIKE '/api/floors/%' THEN CAST(SUBSTR(message.url,13) AS SIGNED) END)`
+		holeSource := `COALESCE(message.related_hole_id,
+ CASE WHEN message.url LIKE '/api/holes/%' THEN CAST(SUBSTR(message.url,12) AS SIGNED) END)`
+		q = q.Where("(message.type = ? OR "+floorSource+" IS NOT NULL OR "+holeSource+" IS NOT NULL)", MessageTypeMail).
+			Where("("+floorSource+" IS NULL OR "+floorSource+" IN (?))", VisibleFloorIDs(DB, uid)).
+			Where("("+holeSource+" IS NULL OR "+holeSource+" IN (?))", VisiblePublicHoleIDs(DB, uid))
+	}
+	if err = q.Order("message.updated_at DESC").Scan(&messages).Error; err != nil {
+		return err
+	}
+	if uid != 0 {
+		for i := range messages {
+			messages[i].Data = nil
+		}
+	}
 	return Serialize(c, &messages)
 }
 

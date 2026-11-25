@@ -114,6 +114,10 @@ func AddFavorite(c *fiber.Ctx) error {
 
 	err = DB.Clauses(dbresolver.Write).Transaction(func(tx *gorm.DB) error {
 		// add favorite
+
+		if err := RequireCollectionTargets(c, tx, []int{body.HoleID}); err != nil {
+			return err
+		}
 		err = AddUserFavorite(tx, userID, body.HoleID, body.FavoriteGroupID)
 		if err != nil {
 			return err
@@ -160,6 +164,10 @@ func ModifyFavorite(c *fiber.Ctx) error {
 	var data []int
 	err = DB.Transaction(func(tx *gorm.DB) error {
 		// modify favorite
+
+		if err := RequireCollectionTargets(c, tx, body.HoleIDs); err != nil {
+			return err
+		}
 		err = ModifyUserFavorite(tx, userID, body.HoleIDs, body.FavoriteGroupID)
 		if err != nil {
 			return err
@@ -208,6 +216,10 @@ func DeleteFavorite(c *fiber.Ctx) error {
 	var data []int
 	err = DB.Clauses(dbresolver.Write).Transaction(func(tx *gorm.DB) error {
 		// delete favorite
+
+		if err := RequireCollectionTargets(c, tx, []int{body.HoleID}); err != nil {
+			return err
+		}
 		err = DeleteUserFavorite(tx, userID, body.HoleID, body.FavoriteGroupID)
 		if err != nil {
 			return err
@@ -429,6 +441,10 @@ func MoveFavorite(c *fiber.Ctx) error {
 	var data []int
 	err = DB.Transaction(func(tx *gorm.DB) error {
 		// move favorite
+
+		if err := RequireCollectionTargets(c, tx, body.HoleIDs); err != nil {
+			return err
+		}
 		err = MoveUserFavorite(tx, userID, body.HoleIDs, *body.FromFavoriteGroupID, *body.ToFavoriteGroupID)
 		if err != nil {
 			return err

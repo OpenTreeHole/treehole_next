@@ -335,7 +335,7 @@ func (floor *Floor) Create(tx *gorm.DB, hole *Hole, c *fiber.Ctx) (err error) {
 	floor.SensitiveDetail = sensitiveCheckResp.Detail
 
 	// load floor mention, in another session
-	floor.Mention, err = LoadFloorMentions(DB, floor.Content)
+	floor.Mention, err = LoadFloorMentions(c, DB, floor.Content)
 	if err != nil {
 		return
 	}
