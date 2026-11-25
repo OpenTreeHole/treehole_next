@@ -56,3 +56,10 @@ func FilterHoles(db *gorm.DB, userID int) *gorm.DB {
 func VisibleHoleIDs(db *gorm.DB, userID int) *gorm.DB {
 	return FilterHoles(db.Model(&Hole{}), userID).Select("hole.id")
 }
+
+// CollectionIDs returns a user's saved hole IDs using the same visibility
+// policy for list requests and for responses after a collection is edited.
+func CollectionIDs(tx *gorm.DB, userID int) *gorm.DB {
+	enabled := tx.Model(&UserContentFilter{}).Select("1").Where("user_id = ?", userID)
+	return tx.Where("(NOT EXISTS (?) OR hole_id IN (?))", enabled, VisibleHoleIDs(tx, userID))
+}

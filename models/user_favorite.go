@@ -127,7 +127,7 @@ func AddUserFavorite(tx *gorm.DB, userID int, holeID int, favoriteGroupID int) e
 // UserGetFavoriteData get all favorite data of a user
 func UserGetFavoriteData(tx *gorm.DB, userID int) ([]int, error) {
 	data := make([]int, 0, 10)
-	err := tx.Clauses(dbresolver.Write).Model(&UserFavorite{}).Where("user_id = ?", userID).Distinct().
+	err := CollectionIDs(tx, userID).Clauses(dbresolver.Write).Model(&UserFavorite{}).Where("user_id = ?", userID).Distinct().
 		Pluck("hole_id", &data).Error
 	return data, err
 }
@@ -138,7 +138,7 @@ func UserGetFavoriteDataByFavoriteGroup(tx *gorm.DB, userID int, favoriteGroupID
 		return nil, common.NotFound("收藏夹不存在")
 	}
 	data := make([]int, 0, 10)
-	err := tx.Clauses(dbresolver.Write).Model(&UserFavorite{}).
+	err := CollectionIDs(tx, userID).Clauses(dbresolver.Write).Model(&UserFavorite{}).
 		Where("user_id = ? AND favorite_group_id = ?", userID, favoriteGroupID).Pluck("hole_id", &data).Error
 	return data, err
 }

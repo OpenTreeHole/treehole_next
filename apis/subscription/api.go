@@ -41,13 +41,6 @@ func ListSubscriptions(c *fiber.Ctx) error {
 		if err != nil {
 			return err
 		}
-		if enabled && len(data) > 0 {
-			var visible []int
-			if err := FilterHoles(DB.Model(&Hole{}), userID).Where("hole.id IN ?", data).Pluck("hole.id", &visible).Error; err != nil {
-				return err
-			}
-			data = visible
-		}
 		return c.JSON(Map{"data": data})
 	} else {
 		holes := make(Holes, 0)
@@ -146,6 +139,9 @@ func DeleteSubscription(c *fiber.Ctx) error {
 		return err
 	})
 
+	if err != nil {
+		return err
+	}
 	return c.JSON(&Response{
 		Message: "删除成功",
 		Data:    data,

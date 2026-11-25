@@ -50,13 +50,6 @@ func ListFavorites(c *fiber.Ctx) error {
 		if err != nil {
 			return err
 		}
-		if enabled && len(data) > 0 {
-			var visible []int
-			if err := FilterHoles(DB.Model(&Hole{}), userID).Where("hole.id IN ?", data).Pluck("hole.id", &visible).Error; err != nil {
-				return err
-			}
-			data = visible
-		}
 		return c.JSON(Map{"data": data})
 	} else {
 		// get order
