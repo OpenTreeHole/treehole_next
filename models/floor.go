@@ -116,12 +116,27 @@ func (floor *Floor) Preprocess(c *fiber.Ctx) error {
 }
 
 // MakeFloorQuerySet 构建楼层查询集。若传入 tx 则基于该 DB，否则使用全局 DB。
-func MakeFloorQuerySet(_ *fiber.Ctx, tx ...*gorm.DB) (*gorm.DB, error) {
+func MakeFloorQuerySet(c *fiber.Ctx, tx ...*gorm.DB) (*gorm.DB, error) {
 	db := DB
 	if len(tx) > 0 && tx[0] != nil {
 		db = tx[0]
 	}
-	return db.Preload("Mention"), nil
+	enabled, err := ContentFilterEnabled(c)
+	if err != nil {
+		return nil, err
+	}
+	if enabled {
+		user, err := GetCurrLoginUser(c)
+		if err != nil {
+			return nil, err
+		}
+		visible := VisibleHoleIDs(DB, user.ID)
+		db = db.Where("floor.hole_id IN (?)", visible).
+			Preload("Mention", "hole_id IN (?)", visible)
+	} else {
+		db = db.Preload("Mention")
+	}
+	return db, nil
 }
 
 // MakeQuerySet creates a query set for the Floors model.
@@ -602,12 +617,12 @@ func (floor *Floor) SendSensitive(_ *gorm.DB) error {
 	// construct message
 	desc := "您有待审核的内容"
 	message := Notification{
-		Data:          floor,
-		Recipients:    userIDs,
-		Description:   desc,
-		Title:         desc,
-		Type:          MessageTypeSensitive,
-		URL:           fmt.Sprintf("/api/floors/%d", floor.ID),
+		Data:           floor,
+		Recipients:     userIDs,
+		Description:    desc,
+		Title:          desc,
+		Type:           MessageTypeSensitive,
+		URL:            fmt.Sprintf("/api/floors/%d", floor.ID),
 		RelatedFloorID: &floor.ID,
 	}
 	_, err := message.Send()

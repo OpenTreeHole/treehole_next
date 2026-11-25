@@ -23,6 +23,10 @@ func ListFavorites(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
+	enabled, err := ContentFilterEnabled(c)
+	if err != nil {
+		return err
+	}
 
 	var query ListFavoriteModel
 	err = common.ValidateQuery(c, &query)
@@ -46,6 +50,13 @@ func ListFavorites(c *fiber.Ctx) error {
 		if err != nil {
 			return err
 		}
+		if enabled && len(data) > 0 {
+			var visible []int
+			if err := FilterHoles(DB.Model(&Hole{}), userID).Where("hole.id IN ?", data).Pluck("hole.id", &visible).Error; err != nil {
+				return err
+			}
+			data = visible
+		}
 		return c.JSON(Map{"data": data})
 	} else {
 		// get order
@@ -61,12 +72,16 @@ func ListFavorites(c *fiber.Ctx) error {
 
 		// get favorites
 		holes := make(Holes, 0)
+		querySet := DB
+		if enabled {
+			querySet = FilterHoles(querySet, userID)
+		}
 		if query.FavoriteGroupID == nil {
-			err = DB.
+			err = querySet.
 				Joins("JOIN user_favorites ON user_favorites.hole_id = hole.id AND user_favorites.user_id = ?", userID).
 				Order(order).Find(&holes).Error
 		} else {
-			err = DB.
+			err = querySet.
 				Joins("JOIN user_favorites ON user_favorites.hole_id = hole.id AND user_favorites.user_id = ? AND user_favorites.favorite_group_id = ?", userID, *query.FavoriteGroupID).
 				Order(order).Find(&holes).Error
 		}

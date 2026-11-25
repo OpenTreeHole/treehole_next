@@ -50,8 +50,8 @@ func (division *Division) GetID() int {
 
 type Divisions []*Division
 
-// UserHiddenDivision hides a division from a user's division list. It does not
-// restrict access to the division or its content through other endpoints.
+// UserHiddenDivision hides a division from a user's division list. When the
+// extended content filter is enabled, it also excludes that division's holes.
 type UserHiddenDivision struct {
 	UserID     int `gorm:"primaryKey;autoIncrement:false"`
 	DivisionID int `gorm:"primaryKey;autoIncrement:false"`
@@ -80,7 +80,21 @@ func (division *Division) Preprocess(c *fiber.Ctx) error {
 	if len(pinned) == 0 {
 		return nil
 	}
-	DB.Find(&division.Holes, pinned)
+	query := DB.Model(&Hole{})
+	enabled, err := ContentFilterEnabled(c)
+	if err != nil {
+		return err
+	}
+	if enabled {
+		user, err := GetCurrLoginUser(c)
+		if err != nil {
+			return err
+		}
+		query = FilterHoles(query, user.ID)
+	}
+	if err := query.Find(&division.Holes, pinned).Error; err != nil {
+		return err
+	}
 	if len(division.Holes) == 0 {
 		return nil
 	}

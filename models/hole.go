@@ -405,6 +405,13 @@ func MakeHoleQuerySet(c *fiber.Ctx, tx ...*gorm.DB) (*gorm.DB, error) {
 	if err != nil {
 		return nil, err
 	}
+	enabled, err := ContentFilterEnabled(c)
+	if err != nil {
+		return nil, err
+	}
+	if enabled {
+		db = FilterHoles(db, user.ID)
+	}
 	if user.IsAdmin {
 		return db.Unscoped(), nil
 	}

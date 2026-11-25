@@ -2,6 +2,8 @@ package apis
 
 import (
 	"github.com/opentreehole/go-common"
+	"strconv"
+	"strings"
 
 	"treehole_next/apis/division"
 	"treehole_next/apis/favourite"
@@ -37,6 +39,7 @@ func RegisterRoutes(app *fiber.App) {
 	group := app.Group("/api")
 	group.Get("/", Index)
 	group.Use(MiddlewareGetUser)
+	group.Use(MiddlewareContentAccess)
 	division.RegisterRoutes(group)
 	tag.RegisterRoutes(group)
 	hole.RegisterRoutes(group)
@@ -47,6 +50,75 @@ func RegisterRoutes(app *fiber.App) {
 	penalty.RegisterRoutes(group)
 	user.RegisterRoutes(group)
 	message.RegisterRoutes(group)
+}
+
+// MiddlewareContentAccess guards direct URLs, including nested floor and
+// summary routes. List queries are filtered separately before pagination.
+func MiddlewareContentAccess(c *fiber.Ctx) error {
+	if c.Method() != fiber.MethodGet {
+		return c.Next()
+	}
+	enabled, err := models.ContentFilterEnabled(c)
+	if err != nil {
+		return err
+	}
+	if !enabled {
+		return c.Next()
+	}
+	user, err := models.GetCurrLoginUser(c)
+	if err != nil {
+		return err
+	}
+	parts := strings.Split(strings.Trim(c.Path(), "/"), "/")
+	if len(parts) < 3 || parts[0] != "api" {
+		return c.Next()
+	}
+	var count int64
+	switch parts[1] {
+	case "divisions":
+		id, parseErr := strconv.Atoi(parts[2])
+		if parseErr != nil {
+			return c.Next()
+		}
+		err = models.DB.Model(&models.UserHiddenDivision{}).Where("user_id = ? AND division_id = ?", user.ID, id).Count(&count).Error
+		if err != nil {
+			return err
+		}
+		if count > 0 {
+			return common.NotFound()
+		}
+	case "holes", "floors":
+		id, parseErr := strconv.Atoi(parts[2])
+		if parseErr != nil {
+			return c.Next()
+		}
+		query := models.FilterHoles(models.DB.Model(&models.Hole{}), user.ID)
+		if parts[1] == "holes" {
+			query = query.Where("hole.id = ?", id)
+		} else {
+			query = query.Joins("JOIN floor ON floor.hole_id = hole.id").Where("floor.id = ?", id)
+		}
+		if err = query.Count(&count).Error; err != nil {
+			return err
+		}
+		if count == 0 {
+			return common.NotFound()
+		}
+	case "tags":
+		query := models.DB.Model(&models.UserHiddenTag{}).Where("user_id = ?", user.ID)
+		if id, parseErr := strconv.Atoi(parts[2]); parseErr == nil {
+			query = query.Where("LOWER(name) IN (?)", models.DB.Model(&models.Tag{}).Select("LOWER(name)").Where("id = ?", id))
+		} else {
+			query = query.Where("LOWER(name) = LOWER(?)", parts[2])
+		}
+		if err = query.Count(&count).Error; err != nil {
+			return err
+		}
+		if count > 0 {
+			return common.NotFound()
+		}
+	}
+	return c.Next()
 }
 
 func MiddlewareGetUser(c *fiber.Ctx) error {

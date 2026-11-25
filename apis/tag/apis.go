@@ -31,6 +31,24 @@ func ListTags(c *fiber.Ctx) error {
 	}
 
 	tags := make(Tags, 0, 10)
+	enabled, err := ContentFilterEnabled(c)
+	if err != nil {
+		return err
+	}
+	if enabled {
+		user, err := GetCurrLoginUser(c)
+		if err != nil {
+			return err
+		}
+		querySet := DB.Where("LOWER(name) NOT IN (SELECT LOWER(name) FROM user_hidden_tag WHERE user_id = ?)", user.ID)
+		if query.Search != "" {
+			querySet = querySet.Where("name LIKE ?", "%"+query.Search+"%")
+		}
+		if err := querySet.Order("temperature DESC").Find(&tags).Error; err != nil {
+			return err
+		}
+		return Serialize(c, &tags)
+	}
 	if query.Search == "" {
 		if GetCache("tags", &tags) {
 			return c.JSON(&tags)

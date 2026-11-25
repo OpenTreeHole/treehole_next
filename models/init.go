@@ -141,6 +141,8 @@ func InitDB() {
 	err = DB.AutoMigrate(
 		&Division{},
 		&UserHiddenDivision{},
+		&UserContentFilter{},
+		&UserHiddenTag{},
 		&Tag{},
 		&User{},
 		&Floor{},
