@@ -11,7 +11,7 @@ type UserContentFilter struct {
 	UserID int `gorm:"primaryKey;autoIncrement:false"`
 }
 
-// UserHiddenTag stores an exact tag name for an individual user.
+// UserHiddenTag stores a tag keyword for an individual user.
 type UserHiddenTag struct {
 	UserID int    `gorm:"primaryKey;autoIncrement:false"`
 	Name   string `gorm:"primaryKey;size:64"`
@@ -36,11 +36,21 @@ func ContentFilterEnabled(c *fiber.Ctx) (bool, error) {
 	return enabled, nil
 }
 
+// HiddenTagIDs matches the configured keywords literally within the current
+// tag names. A leading asterisk on a rule is a tag prefix, not a wildcard.
+func HiddenTagIDs(db *gorm.DB, userID int) *gorm.DB {
+	return db.Session(&gorm.Session{NewDB: true}).Model(&Tag{}).Select("tag.id").
+		Where(`EXISTS (SELECT 1 FROM user_hidden_tag rule WHERE rule.user_id = ?
+			AND LENGTH(REPLACE(rule.name, '*', '')) > 0
+			AND INSTR(LOWER(tag.name), LOWER(CASE WHEN SUBSTR(rule.name, 1, 1) = '*'
+				THEN SUBSTR(rule.name, 2) ELSE rule.name END)) > 0)`, userID)
+}
+
 // FilterHoles applies account-specific division and tag restrictions to a
 // query whose hole table is named "hole".
 func FilterHoles(db *gorm.DB, userID int) *gorm.DB {
 	return db.Where(`NOT EXISTS (SELECT 1 FROM user_hidden_division uhd WHERE uhd.user_id = ? AND uhd.division_id = hole.division_id)`, userID).
-		Where(`NOT EXISTS (SELECT 1 FROM hole_tags ht JOIN tag t ON t.id = ht.tag_id JOIN user_hidden_tag uht ON LOWER(uht.name) = LOWER(t.name) WHERE ht.hole_id = hole.id AND uht.user_id = ?)`, userID)
+		Where(`NOT EXISTS (SELECT 1 FROM hole_tags ht WHERE ht.hole_id = hole.id AND ht.tag_id IN (?))`, HiddenTagIDs(db, userID))
 }
 
 func VisibleHoleIDs(db *gorm.DB, userID int) *gorm.DB {

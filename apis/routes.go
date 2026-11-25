@@ -2,6 +2,7 @@ package apis
 
 import (
 	"github.com/opentreehole/go-common"
+	"net/url"
 	"strconv"
 	"strings"
 
@@ -105,11 +106,19 @@ func MiddlewareContentAccess(c *fiber.Ctx) error {
 			return common.NotFound()
 		}
 	case "tags":
-		query := models.DB.Model(&models.UserHiddenTag{}).Where("user_id = ?", user.ID)
-		if id, parseErr := strconv.Atoi(parts[2]); parseErr == nil {
-			query = query.Where("LOWER(name) IN (?)", models.DB.Model(&models.Tag{}).Select("LOWER(name)").Where("id = ?", id))
+		query := models.DB.Model(&models.Tag{}).Where("id IN (?)", models.HiddenTagIDs(models.DB, user.ID))
+		if len(parts) == 3 {
+			id, parseErr := strconv.Atoi(parts[2])
+			if parseErr != nil {
+				return c.Next()
+			}
+			query = query.Where("id = ?", id)
 		} else {
-			query = query.Where("LOWER(name) = LOWER(?)", parts[2])
+			name, err := url.PathUnescape(parts[2])
+			if err != nil {
+				return fiber.ErrBadRequest
+			}
+			query = query.Where("LOWER(name) = LOWER(?)", name)
 		}
 		if err = query.Count(&count).Error; err != nil {
 			return err

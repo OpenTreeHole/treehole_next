@@ -20,7 +20,7 @@ func TestContentFilterEndpoints(t *testing.T) {
 		DB.Where("user_id = ?", 1).Delete(&UserHiddenTag{})
 	})
 
-	tag := Tag{Name: "lgbt"}
+	tag := Tag{Name: "*lGbT+讨论"}
 	require.NoError(t, DB.Create(&tag).Error)
 	safeTag := Tag{Name: "filtertestsafe"}
 	require.NoError(t, DB.Create(&safeTag).Error)
@@ -45,14 +45,19 @@ func TestContentFilterEndpoints(t *testing.T) {
 	testCommon(t, "get", fmt.Sprintf("/api/floors/%d", floorIDs[allowed.ID]), 200)
 	testCommon(t, "get", "/api/divisions/2", 404)
 	testCommon(t, "get", fmt.Sprintf("/api/tags/%d", tag.ID), 404)
-	testCommon(t, "get", "/api/tags/lgbt/holes", 404)
+	testCommon(t, "get", "/api/tags/*lGbT+讨论/holes", 404)
 	byTag := testAPIArray(t, "get", "/api/tags/filtertestsafe/holes", 200)
+	foundAllowed := false
 	for _, item := range byTag {
 		require.NotEqualValues(t, blockedByTag.ID, item["id"])
+		if int(item["id"].(float64)) == allowed.ID {
+			foundAllowed = true
+		}
 	}
+	require.True(t, foundAllowed)
 	tags := testAPIArray(t, "get", "/api/tags", 200)
 	for _, item := range tags {
-		require.NotEqual(t, "lgbt", item["name"])
+		require.NotEqual(t, tag.Name, item["name"])
 	}
 	search := testAPIArray(t, "get", "/api/floors/search?search=contentfiltersearch", 200)
 	searchIDs := map[int]bool{}
@@ -86,4 +91,10 @@ func TestContentFilterEndpoints(t *testing.T) {
 	var visible []int
 	require.NoError(t, FilterHoles(DB.Model(&Hole{}), 2).Where("hole.id IN ?", []int{blockedByTag.ID, blockedByDivision.ID, allowed.ID}).Pluck("hole.id", &visible).Error)
 	require.Len(t, visible, 3)
+
+	// List-only configuration must not enable the extended restrictions.
+	require.NoError(t, DB.Delete(&UserContentFilter{}, "user_id = ?", 1).Error)
+	testCommon(t, "get", fmt.Sprintf("/api/holes/%d", blockedByTag.ID), 200)
+	testCommon(t, "get", fmt.Sprintf("/api/holes/%d", blockedByDivision.ID), 200)
+	testCommon(t, "get", fmt.Sprintf("/api/tags/%d", tag.ID), 200)
 }

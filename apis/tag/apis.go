@@ -40,7 +40,7 @@ func ListTags(c *fiber.Ctx) error {
 		if err != nil {
 			return err
 		}
-		querySet := DB.Where("LOWER(name) NOT IN (SELECT LOWER(name) FROM user_hidden_tag WHERE user_id = ?)", user.ID)
+		querySet := DB.Where("tag.id NOT IN (?)", HiddenTagIDs(DB, user.ID))
 		if query.Search != "" {
 			querySet = querySet.Where("name LIKE ?", "%"+query.Search+"%")
 		}
